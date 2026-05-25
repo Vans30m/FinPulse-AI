@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@tanstack/react-query": "^5.100.14",
+    "autoprefixer": "^10.5.0",
+    "axios": "^1.16.1",
+    "postcss": "^8.5.15",
+    "react-router-dom": "^7.15.1",
+    "tailwindcss": "^4.3.0",
+    "zustand": "^5.0.13"
+  }
+}
