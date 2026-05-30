@@ -39,30 +39,35 @@
   "marketCards": [
     {
       "symbol": "NIFTY 50",
+      "tvSymbol": "NSE:NIFTY",
       "price": "24,814.10",
       "change": "+0.84%",
       "direction": "up"
     },
     {
       "symbol": "SENSEX",
+      "tvSymbol": "BSE:SENSEX",
       "price": "81,992.02",
       "change": "+0.52%",
       "direction": "up"
     },
     {
       "symbol": "USD/INR",
+      "tvSymbol": "FX_IDC:USDINR",
       "price": "83.12",
       "change": "-0.14%",
       "direction": "down"
     },
     {
       "symbol": "GOLD",
+      "tvSymbol": "TVC:GOLD",
       "price": "72,440",
       "change": "+0.31%",
       "direction": "up"
     },
     {
       "symbol": "BTC",
+      "tvSymbol": "BINANCE:BTCUSDT",
       "price": "67,210",
       "change": "-1.12%",
       "direction": "down"

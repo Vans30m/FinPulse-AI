@@ -6,8 +6,8 @@ import {
   Globe,
   LineChart,
   Sparkles,
-  TrendingDown,
-  TrendingUp,
+  Trash2,
+  Plus,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import data from './data/mockData.json'
@@ -51,7 +51,6 @@ function App() {
     hero,
     heroMetrics,
     heroPanels,
-    marketCards,
     briefingCards,
     heatmap,
     watchlist,
@@ -65,6 +64,30 @@ function App() {
     { id: 'alerts', label: 'Alerts' },
   ]
   const [activeSection, setActiveSection] = useState('pulse')
+  const [localWatchlist, setLocalWatchlist] = useState(watchlist)
+  const [newSymbol, setNewSymbol] = useState('')
+  const [newName, setNewName] = useState('')
+
+  const handleAddStock = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newSymbol || !newName) return
+    setLocalWatchlist([
+      ...localWatchlist,
+      {
+        name: newName,
+        symbol: newSymbol.toUpperCase(),
+        price: '---',
+        change: '---',
+        sentiment: 'neutral',
+      },
+    ])
+    setNewSymbol('')
+    setNewName('')
+  }
+
+  const handleDeleteStock = (symbolStr: string) => {
+    setLocalWatchlist(localWatchlist.filter((item) => item.symbol !== symbolStr))
+  }
 
   useEffect(() => {
     const sections = navItems
@@ -231,38 +254,26 @@ function App() {
               Global data sync
             </div>
           </div>
-          <div className="mt-5 grid gap-4 md:grid-cols-5">
-            {marketCards.map((card, index) => (
-              <motion.div
-                key={card.symbol}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.06 }}
-                className="rounded-2xl border border-white/10 bg-night-800/60 px-4 py-3"
-              >
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                  {card.symbol}
-                </p>
-                <p className="mt-2 text-lg font-semibold text-white">
-                  {card.price}
-                </p>
-                <div
-                  className={`mt-3 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
-                    card.direction === 'up'
-                      ? 'bg-emerald-400/15 text-emerald-300'
-                      : 'bg-rose-500/15 text-rose-300'
-                  }`}
-                >
-                  {card.direction === 'up' ? (
-                    <TrendingUp className="h-3 w-3" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3" />
-                  )}
-                  {card.change}
-                </div>
-              </motion.div>
-            ))}
+          <div className="mt-5">
+             <div className="overflow-hidden rounded-2xl border border-white/10 bg-night-800/60">
+              <TradingViewWidget
+                 className="min-h-[80px]"
+                 scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js"
+                 config={{
+                  symbols: [
+                    { proName: 'NSE:NIFTY', title: 'NIFTY 50' },
+                    { proName: 'BSE:SENSEX', title: 'SENSEX' },
+                    { proName: 'FX_IDC:USDINR', title: 'USD/INR' },
+                    { proName: 'TVC:GOLD', title: 'Gold' },
+                    { proName: 'BINANCE:BTCUSDT', title: 'Bitcoin' }
+                  ],
+                  colorTheme: 'dark',
+                  isTransparent: true,
+                  showSymbolLogo: true,
+                  locale: 'en'
+                }}
+              />
+            </div>
           </div>
         </section>
 
@@ -410,17 +421,38 @@ function App() {
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]" id="watchlist">
           <div className="glass-panel p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Watchlist Preview</h2>
-              <button className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">
-                Manage
-              </button>
             </div>
+            
+            <form onSubmit={handleAddStock} className="mb-4 flex gap-2">
+              <input
+                type="text"
+                placeholder="Name (e.g. Apple)"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-night-800/60 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
+              />
+              <input
+                type="text"
+                placeholder="Symbol (AAPL)"
+                value={newSymbol}
+                onChange={(e) => setNewSymbol(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-night-800/60 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
+              />
+              <button
+                type="submit"
+                className="flex items-center justify-center rounded-xl bg-cyan-400/20 px-3 py-2 text-cyan-300 transition hover:bg-cyan-400/30"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </form>
+
             <div className="mt-4 space-y-3">
-              {watchlist.map((item) => (
+              {localWatchlist.map((item) => (
                 <div
                   key={item.symbol}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-night-800/60 px-4 py-3"
+                  className="group flex items-center justify-between rounded-2xl border border-white/10 bg-night-800/60 px-4 py-3 transition hover:border-white/20"
                 >
                   <div>
                     <p className="text-sm font-semibold text-white">{item.name}</p>
@@ -428,21 +460,30 @@ function App() {
                       {item.symbol}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-white">
-                      {item.price}
-                    </p>
-                    <span
-                      className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        item.sentiment === 'positive'
-                          ? 'bg-emerald-400/15 text-emerald-300'
-                          : item.sentiment === 'negative'
-                          ? 'bg-rose-500/15 text-rose-300'
-                          : 'bg-white/10 text-slate-300'
-                      }`}
+                  <div className="flex items-center gap-4 text-right">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {item.price}
+                      </p>
+                      <span
+                        className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          item.sentiment === 'positive'
+                            ? 'bg-emerald-400/15 text-emerald-300'
+                            : item.sentiment === 'negative'
+                            ? 'bg-rose-500/15 text-rose-300'
+                            : 'bg-white/10 text-slate-300'
+                        }`}
+                      >
+                        {item.change}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteStock(item.symbol)}
+                      className="opacity-0 transition-opacity group-hover:opacity-100 p-2 text-slate-400 hover:text-rose-400"
+                      aria-label={`Delete ${item.symbol}`}
                     >
-                      {item.change}
-                    </span>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               ))}
