@@ -16,22 +16,59 @@ interface WatchlistProps {
 }
 
 export default function Watchlist({ initialData }: WatchlistProps) {
-  // Separate search states for Symbol and Name
-  const [symbolSearch, setSymbolSearch] = useState('');
-  const [nameSearch, setNameSearch] = useState('');
-  
-  // Sort state
-  const [sortField, setSortField] = useState<'symbol' | 'price'>('symbol');
+  // Filters
+  const [search, setSearch] = useState('');
+  const [changeFilter, setChangeFilter] = useState('');
+  const [sentimentFilter, setSentimentFilter] = useState('');
+
+  // Sorting
+  const [sortField, setSortField] = useState<'name' | 'price' | 'change' | 'sentiment'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Handle multi-column filtering
+  // Apply all filters
   const filteredData = initialData.filter((item) => {
-    const matchesSymbol = item.symbol.toLowerCase().includes(symbolSearch.toLowerCase());
-    const matchesName = item.name.toLowerCase().includes(nameSearch.toLowerCase());
-    return matchesSymbol && matchesName;
+    const q = search.toLowerCase();
+    const companyOrSymbol =
+      item.name.toLowerCase().includes(q) || item.symbol.toLowerCase().includes(q);
+
+    // "Change" filter (Bullish/Bearish)
+    const matchesChange =
+      changeFilter === '' ||
+      (changeFilter === 'Bullish' && item.isPositive) ||
+      (changeFilter === 'Bearish' && !item.isPositive);
+
+    // AI Sentiment filter (Bullish/Bearish/Neutral)
+    const matchesSentiment =
+      sentimentFilter === '' || (item.sentiment || 'Neutral') === sentimentFilter;
+
+    return companyOrSymbol && matchesChange && matchesSentiment;
   });
 
-  const handleSort = (field: 'symbol' | 'price') => {
+  // Sorting logic
+  const sortedData = [...filteredData].sort((a, b) => {
+    let result = 0;
+    switch (sortField) {
+      case 'name':
+        result = a.name.localeCompare(b.name);
+        break;
+      case 'price':
+        result = parseFloat(a.price) - parseFloat(b.price);
+        break;
+      case 'change':
+        result = parseFloat(a.change) - parseFloat(b.change);
+        break;
+      case 'sentiment':
+        result = (a.sentiment || 'Neutral').localeCompare(b.sentiment || 'Neutral');
+        break;
+      default:
+        result = 0;
+    }
+    return sortDirection === 'asc' ? result : -result;
+  });
+
+  const handleSort = (
+    field: 'name' | 'price' | 'change' | 'sentiment'
+  ) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -46,99 +83,117 @@ export default function Watchlist({ initialData }: WatchlistProps) {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
-              
-              {/* SYMBOL SECTION WITH EMBEDDED FILTER */}
-              <th className="p-4 min-w-[150px]">
+
+              {/* COMPANY NAME */}
+              <th className="p-4 min-w-[200px] align-top">
                 <div className="flex flex-col gap-1.5">
-                  <button 
-                    onClick={() => handleSort('symbol')}
-                    className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors self-start"
+                  <button
+                    onClick={() => handleSort('name')}
+                    className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
                   >
-                    Symbol
+                    Company Name
                     <ArrowUpDown className="h-3 w-3" />
                   </button>
                   <div className="relative flex items-center">
                     <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                     <input
                       type="text"
-                      placeholder="Filter symbol..."
-                      value={symbolSearch}
-                      onChange={(e) => setSymbolSearch(e.target.value)}
-                      className="w-full bg-slate-100 dark:bg-white/5 pl-8 pr-2 py-1 text-xs rounded-md border border-transparent focus:border-blue-500 dark:focus:border-cyan-500 focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      placeholder="Search by company or symbol..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full bg-slate-100 dark:bg-night-800 dark:text-white pl-8 pr-2 py-1 text-xs rounded-md border border-transparent focus:border-blue-500 dark:focus:border-cyan-500 focus:outline-none text-slate-900"
                     />
                   </div>
                 </div>
               </th>
 
-              {/* NAME SECTION WITH EMBEDDED FILTER */}
-              <th className="p-4 min-w-[200px]">
+              {/* PRICE */}
+              <th className="p-4 min-w-[120px] align-top">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Company Name
-                  </span>
-                  <div className="relative flex items-center">
-                    <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-                    <input
-                      type="text"
-                      placeholder="Filter name..."
-                      value={nameSearch}
-                      onChange={(e) => setNameSearch(e.target.value)}
-                      className="w-full bg-slate-100 dark:bg-white/5 pl-8 pr-2 py-1 text-xs rounded-md border border-transparent focus:border-blue-500 dark:focus:border-cyan-500 focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                    />
-                  </div>
+                  <button 
+                    onClick={() => handleSort('price')}
+                    className="flex items-center gap-1 justify-start text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                  >
+                    Price
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                  {/* No price filter, spacer for alignment */}
+                  <div style={{height: "28px"}}></div>
                 </div>
               </th>
 
-              {/* PRICE SECTION */}
-              <th className="p-4 text-right">
-                <button 
-                  onClick={() => handleSort('price')}
-                  className="flex items-center justify-end gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors w-full"
-                >
-                  Price
-                  <ArrowUpDown className="h-3 w-3" />
-                </button>
+              {/* CHANGE */}
+              <th className="p-4 min-w-[110px] align-top">
+                <div className="flex flex-col gap-1.5">
+                  <button 
+                    onClick={() => handleSort('change')}
+                    className="flex items-center gap-1 justify-start text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                  >
+                    Change
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                  <select
+                    value={changeFilter}
+                    onChange={(e) => setChangeFilter(e.target.value)}
+                    className="w-full bg-slate-100 dark:bg-night-800 dark:text-white pl-3 pr-2 py-1 text-xs rounded-md border border-transparent focus:border-blue-500 dark:focus:border-cyan-500 focus:outline-none text-slate-900"
+                  >
+                    <option value="">All</option>
+                    <option value="Bullish">Bullish</option>
+                    <option value="Bearish">Bearish</option>
+                  </select>
+                </div>
               </th>
 
-              {/* CHANGE SECTION */}
-              <th className="p-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Change
-              </th>
-
-              {/* SENTIMENT SECTION */}
-              <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                AI Sentiment
+              {/* SENTIMENT */}
+              <th className="p-4 min-w-[130px] align-top">
+                <div className="flex flex-col gap-1.5">
+                  <button 
+                    onClick={() => handleSort('sentiment')}
+                    className="flex items-center gap-1 justify-start text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                  >
+                    AI Sentiment
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                  <select
+                    value={sentimentFilter}
+                    onChange={(e) => setSentimentFilter(e.target.value)}
+                    className="w-full bg-slate-100 dark:bg-night-800 dark:text-white pl-3 pr-2 py-1 text-xs rounded-md border border-transparent focus:border-blue-500 dark:focus:border-cyan-500 focus:outline-none text-slate-900"
+                  >
+                    <option value="">All</option>
+                    <option value="Bullish">Bullish</option>
+                    <option value="Bearish">Bearish</option>
+                    <option value="Neutral">Neutral</option>
+                  </select>
+                </div>
               </th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {filteredData.length > 0 ? (
-              filteredData.map((item) => (
+            {sortedData.length > 0 ? (
+              sortedData.map((item) => (
                 <tr 
                   key={item.symbol} 
                   className="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors group cursor-pointer"
                 >
-                  {/* Symbol */}
-                  <td className="p-4 font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
-                    {item.symbol}
-                  </td>
-                  
                   {/* Name */}
-                  <td className="p-4 text-sm text-slate-600 dark:text-slate-300">
-                    {item.name}
+                  <td className="p-4 text-sm text-slate-600 dark:text-slate-300 font-bold group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                    {item.name}{' '}
+                    <span className="font-normal text-xs text-slate-400 dark:text-slate-500">
+                      ({item.symbol})
+                    </span>
                   </td>
-                  
-                  {/* Price */}
-                  <td className="p-4 text-right font-semibold text-slate-900 dark:text-white">
-                    {item.price}
+                  {/* Price (EMPHASIZED) */}
+                  <td className="p-4">
+                    <span className="text-lg font-extrabold text-blue-700 dark:text-cyan-300 bg-slate-50 dark:bg-cyan-900/20 rounded px-2 py-1 tracking-wide">
+                      {item.price}
+                    </span>
                   </td>
-                  
                   {/* Change */}
-                  <td className="p-4 text-right">
+                  <td className="p-4 text-sm">
                     <div className="flex flex-col items-end">
-                      <span className={`text-sm font-medium ${item.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {item.change}
+                      <span className={`font-medium ${item.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {item.isPositive ? 'Bullish' : 'Bearish'}
                       </span>
                       <span className={`text-xs font-bold px-1.5 py-0.5 rounded mt-0.5 ${
                         item.isPositive 
@@ -149,7 +204,6 @@ export default function Watchlist({ initialData }: WatchlistProps) {
                       </span>
                     </div>
                   </td>
-
                   {/* Sentiment */}
                   <td className="p-4 text-center">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
@@ -168,8 +222,8 @@ export default function Watchlist({ initialData }: WatchlistProps) {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="p-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                  No stocks match your specific header filters.
+                <td colSpan={4} className="p-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                  No stocks match your filters.
                 </td>
               </tr>
             )}

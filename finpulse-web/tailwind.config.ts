@@ -1,10 +1,15 @@
 import type { Config } from 'tailwindcss'
+import tailwindcssAnimate from 'tailwindcss-animate'
 
 const config: Config = {
-  darkMode: ['class'],
+  // CORRECTED: Changed from ['class'] to 'class' (Official Tailwind v3 syntax)
+  darkMode: 'class', 
+  
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      // These custom colors will power your Dark Mode (Crypto/Hacker theme)
+      // Light Mode will automatically use Tailwind's default Slate & Blue colors!
       colors: {
         night: {
           950: '#070A14',
@@ -52,7 +57,8 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  // CORRECTED: Replaced require() with the imported variable
+  plugins: [tailwindcssAnimate],
 }
 
 export default config
