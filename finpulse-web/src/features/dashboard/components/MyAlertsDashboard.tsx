@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bell, AlertTriangle, CheckCircle2, Plus, X, Target, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+
 interface UserAlert {
   id: string;
   ticker: string;
@@ -17,7 +18,11 @@ export default function MyAlertsDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Form & Search States
-  const [newTicker, setNewTicker] = useState('');
+  const [newTicker, setNewTicker] =
+useState('');
+
+const [selectedAsset, setSelectedAsset] =
+useState<any>(null);
   const [newTarget, setNewTarget] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -79,10 +84,26 @@ export default function MyAlertsDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ticker: newTicker,
-          targetPrice: newTarget,
-          direction: 'ABOVE'
-        })
+  ticker:
+    selectedAsset?.yahooSymbol ||
+    newTicker,
+
+  symbol:
+    selectedAsset?.symbol ||
+    newTicker,
+
+  exchange:
+    selectedAsset?.exchange ||
+    "GLOBAL",
+
+  type:
+    selectedAsset?.type ||
+    "Asset",
+
+  targetPrice: newTarget,
+
+  direction: "ABOVE",
+})
       });
 
       if (res.ok) {
@@ -105,6 +126,7 @@ export default function MyAlertsDashboard() {
   const triggeredCount = myAlerts.filter(a => a.isTriggered).length;
 
   return (
+    
     <div className="w-full max-w-7xl mx-auto px-1 space-y-8">
       
       {/* HEADER & STATS (Unchanged) */}
@@ -181,9 +203,14 @@ export default function MyAlertsDashboard() {
                     placeholder="Search global markets..." 
                     value={newTicker} 
                     onChange={e => {
-                      setNewTicker(e.target.value.toUpperCase());
-                      setShowSuggestions(true);
-                    }} 
+  setSelectedAsset(null);
+
+  setNewTicker(
+    e.target.value.toUpperCase()
+  );
+
+  setShowSuggestions(true);
+}}
                     onFocus={() => setShowSuggestions(true)}
                     className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-2 text-sm rounded-xl outline-none text-slate-900 dark:text-white uppercase pr-10" 
                   />
@@ -197,9 +224,15 @@ export default function MyAlertsDashboard() {
                         key={asset.id} 
                         className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 flex justify-between items-center border-b border-slate-50 dark:border-white/5 last:border-0"
                         onClick={() => {
-                          setNewTicker(asset.symbol);
-                          setShowSuggestions(false);
-                        }}
+  setSelectedAsset(asset);
+
+  setNewTicker(
+    asset.yahooSymbol ||
+    asset.symbol
+  );
+
+  setShowSuggestions(false);
+}}
                       >
                         <div className="flex flex-col">
                           <span className="font-bold text-slate-900 dark:text-white text-sm">{asset.symbol}</span>

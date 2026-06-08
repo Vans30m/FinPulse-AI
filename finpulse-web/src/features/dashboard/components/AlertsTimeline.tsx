@@ -10,8 +10,13 @@ interface LiveNewsItem {
   summary: string;
   type?: 'finnhub' | 'google'; 
 }
+interface AlertsTimelineProps {
+  fullPage?: boolean;
+}
 
-export default function AlertsTimeline() {
+export default function AlertsTimeline({
+  fullPage = false,
+}: AlertsTimelineProps) {
   const [liveNews, setLiveNews] = useState<LiveNewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,16 +76,36 @@ export default function AlertsTimeline() {
   };
 
   return (
-    <div className="w-full glass-card overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-950 shadow-xl transition-colors duration-300 flex flex-col h-full max-h-[600px]">
-      
+    <div className={`
+w-full
+glass-card
+overflow-hidden
+rounded-3xl
+border
+border-slate-200
+dark:border-white/10
+bg-white
+dark:bg-night-950
+shadow-xl
+transition-colors
+duration-300
+flex
+flex-col
+h-full
+${fullPage ? "min-h-[800px]" : "max-h-[600px]"}
+`}>
       {/* HEADER */}
       <div className="border-b border-slate-100 dark:border-white/5 p-5 shrink-0 flex items-center gap-3">
         <div className="p-2 rounded-lg bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400">
           <Newspaper className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Live Market News</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Aggregated from Finnhub & Google News</p>
+          <h2 className="text-xl font-bold">
+  {fullPage
+    ? "Global Market News Center"
+    : "Live Market News"}
+</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Aggregated from Finnhub & Google News</p>
         </div>
       </div>
 

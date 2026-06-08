@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Search, X, Building2, Coins, PieChart, TrendingUp, Loader2 } from 'lucide-react';
+import { useChart } from "../../context/ChartContext";
 
 interface SearchResult {
-  id: string;
   symbol: string;
+  yahooSymbol: string;
   name: string;
-  type: string;
   exchange: string;
-  source?: string;
+  type: string;
 }
 
 export default function CommandPalette() {
+    const { openChart } = useChart();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -145,11 +146,21 @@ export default function CommandPalette() {
           ) : (
             <div className="space-y-1">
               {filteredResults.map((item) => (
-                <button
-                  key={item.id}
-                  className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5 group"
-                  onClick={() => setIsOpen(false)}
-                >
+  <button
+    key={`${item.symbol}-${item.exchange}`}
+    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5 group"
+    onClick={() => {
+      openChart({
+        symbol: item.symbol,
+        yahooSymbol: item.yahooSymbol,
+        name: item.name,
+        exchange: item.exchange,
+        type: item.type,
+      });
+
+      setIsOpen(false);
+    }}
+  >
                   <div className="flex items-center gap-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 shadow-sm group-hover:scale-105 transition-transform">
                       {renderIcon(item.type)}

@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import {
+  useChart,
+}
+from "../../../context/ChartContext";
 
 // 1. Define the Data Types
 type Stock = {
   symbol: string;
+  yahooSymbol: string;
+  exchange: string;
+  type: string;
+
   name: string;
   price: string;
   change: string;
@@ -14,30 +22,94 @@ type Stock = {
 // 2. Mock Data representing your curated lists
 const SCREENER_DATA: Record<string, Stock[]> = {
   'Gainers': [
-    { symbol: 'RELIANCE', name: 'Reliance Ind.', price: '₹2,954.20', change: '+42.10', changePercent: '+1.45%', isPositive: true },
-    { symbol: 'TCS', name: 'Tata Consultancy', price: '₹4,120.50', change: '+85.20', changePercent: '+2.11%', isPositive: true },
-    { symbol: 'ZOMATO', name: 'Zomato Ltd.', price: '₹184.30', change: '+12.40', changePercent: '+7.21%', isPositive: true },
-    { symbol: 'TATAMOTORS', name: 'Tata Motors', price: '₹1,024.15', change: '+34.80', changePercent: '+3.52%', isPositive: true },
-    { symbol: 'JIOFIN', name: 'Jio Financial', price: '₹378.90', change: '+18.10', changePercent: '+5.02%', isPositive: true },
+    {
+  symbol: "RELIANCE",
+  yahooSymbol: "RELIANCE.NS",
+  exchange: "NSE",
+  type: "equity",
+
+  name: "Reliance Ind.",
+  price: "₹2,954.20",
+  change: "+42.10",
+  changePercent: "+1.45%",
+  isPositive: true
+},
+  {
+  symbol: "AAPL",
+  yahooSymbol: "AAPL",
+  exchange: "NASDAQ",
+  type: "equity",
+
+  name: "Apple Inc.",
+  price: "$150.25",
+  change: "+2.15",
+  changePercent: "+1.45%",
+  isPositive: true
+},
+{
+  symbol: "BTCUSD",
+  yahooSymbol: "BTC-USD",
+  exchange: "CRYPTO",
+  type: "crypto",
+
+  name: "Bitcoin",
+  price: "$61,234.56",
+  change: "+1,234.56",
+  changePercent: "+2.05%",
+  isPositive: true
+},
+{
+  symbol: "XAUUSD",
+  yahooSymbol: "GC=F",
+  exchange: "COMEX",
+  type: "commodity",
+
+  name: "Gold",
+  price: "$1,800.75",
+  change: "+15.25",
+  changePercent: "+0.85%",
+  isPositive: true
+}
   ],
   'Losers': [
-    { symbol: 'HDFCBANK', name: 'HDFC Bank', price: '₹1,432.10', change: '-24.50', changePercent: '-1.68%', isPositive: false },
-    { symbol: 'INFY', name: 'Infosys', price: '₹1,489.00', change: '-42.10', changePercent: '-2.75%', isPositive: false },
-    { symbol: 'PAYTM', name: 'One97 Comm.', price: '₹412.30', change: '-18.90', changePercent: '-4.38%', isPositive: false },
-    { symbol: 'ITC', name: 'ITC Limited', price: '₹421.50', change: '-5.20', changePercent: '-1.22%', isPositive: false },
-    { symbol: 'WIPRO', name: 'Wipro Limited', price: '₹482.10', change: '-8.40', changePercent: '-1.71%', isPositive: false },
+    {
+  symbol: "XAUUSD",
+  yahooSymbol: "GC=F",
+  exchange: "COMEX",
+  type: "commodity",
+
+  name: "Gold",
+  price: "$1,800.75",
+  change: "+15.25",
+  changePercent: "+0.85%",
+  isPositive: true},
   ],
   'Active': [
-    { symbol: 'HDFCBANK', name: 'HDFC Bank', price: '₹1,432.10', change: '-24.50', changePercent: '-1.68%', isPositive: false },
-    { symbol: 'RELIANCE', name: 'Reliance Ind.', price: '₹2,954.20', change: '+42.10', changePercent: '+1.45%', isPositive: true },
-    { symbol: 'SBIN', name: 'State Bank', price: '₹765.40', change: '+12.30', changePercent: '+1.63%', isPositive: true },
-    { symbol: 'ICICIBANK', name: 'ICICI Bank', price: '₹1,084.20', change: '+8.90', changePercent: '+0.83%', isPositive: true },
-    { symbol: 'TATAPOWER', name: 'Tata Power', price: '₹418.50', change: '+15.20', changePercent: '+3.77%', isPositive: true },
+    {
+  symbol: "XAUUSD",
+  yahooSymbol: "GC=F",
+  exchange: "COMEX",
+  type: "commodity",
+
+  name: "Gold",
+  price: "$1,800.75",
+  change: "+15.25",
+  changePercent: "+0.85%",
+  isPositive: true},
   ]
 };
 
 export default function MarketScreeners() {
-  const [activeTab, setActiveTab] = useState<'Gainers' | 'Losers' | 'Active'>('Gainers');
+
+  const { openChart } =
+    useChart();
+
+  const [activeTab, setActiveTab] =
+    useState<
+      'Gainers' |
+      'Losers' |
+      'Active'
+    >('Gainers');
 
   const tabs = [
     { id: 'Gainers', label: 'Top Gainers', icon: TrendingUp },
@@ -78,6 +150,21 @@ export default function MarketScreeners() {
         {SCREENER_DATA[activeTab].map((stock) => (
           <div 
             key={stock.symbol}
+onClick={() =>
+  openChart({
+    symbol: stock.symbol,
+    yahooSymbol:
+      stock.yahooSymbol,
+
+    name: stock.name,
+
+    exchange:
+      stock.exchange,
+
+    type:
+      stock.type,
+  })
+}
             className="min-w-[160px] sm:min-w-[180px] shrink-0 snap-start glass-card p-4 hover:border-blue-300 dark:hover:border-cyan-500/50 cursor-pointer group transition-all"
           >
             <div className="flex justify-between items-start mb-3">

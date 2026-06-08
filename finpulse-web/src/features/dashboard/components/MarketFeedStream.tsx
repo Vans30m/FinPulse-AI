@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { TrendingUp, TrendingDown, ArrowUpRight, Globe } from 'lucide-react';
+import {
+  useChart,
+}
+from "../../../context/ChartContext";
 
 interface IndexData {
   name: string;
@@ -66,7 +70,16 @@ const INDICES_DATA: IndexData[] = [
 ];
 
 export default function MarketFeedStream() {
-  const [filter, setFilter] = useState<'All' | 'Domestic' | 'Global'>('All');
+
+  const { openChart } =
+    useChart();
+
+  const [filter, setFilter] =
+    useState<
+      'All' |
+      'Domestic' |
+      'Global'
+    >('All');
 
   const filteredIndices = INDICES_DATA.filter(
     (item) => filter === 'All' || item.type === filter
@@ -104,6 +117,18 @@ export default function MarketFeedStream() {
         {filteredIndices.map((index) => (
           <div
             key={index.symbol}
+onClick={() =>
+  openChart({
+    symbol: index.symbol,
+    yahooSymbol: index.symbol,
+    name: index.name,
+    exchange:
+      index.type === "Domestic"
+        ? "NSE"
+        : "GLOBAL",
+    type: "index",
+  })
+}
             className="glass-card p-5 flex flex-col justify-between hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer group"
           >
             {/* Top row: Name and Arrow Link */}
