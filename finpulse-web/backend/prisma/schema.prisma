@@ -1,0 +1,48 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  name        String?
+  devicePin   String?  // Stored as a hashed representation for safety
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  alerts      Alert[]
+}
+
+model OtpVerification {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  code      String   // The 6-digit verification code
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticker      String
+  targetPrice Float
+  direction   String   // "ABOVE" or "BELOW"
+  isTriggered Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Asset {
+  id        String   @id @default(uuid())
+  symbol    String   @unique
+  name      String
+  type      String   // e.g., "US", "Domestic", "Forex", "ETF"
+  category  String   // e.g., "Stock", "Currency", "Fund"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
