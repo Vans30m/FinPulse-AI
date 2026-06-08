@@ -1,235 +1,529 @@
-import { useState } from 'react';
-import { Search, TrendingUp, TrendingDown, ArrowUpDown } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { TrendingUp, TrendingDown, Plus, Trash2, FolderPlus, X, ChevronDown, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  useChart,
+}
+from "../../../context/ChartContext";
 
+// ==========================================
+// INTERFACES
+// ==========================================
 interface WatchlistItem {
+  id: string;
   symbol: string;
+  yahooSymbol?: string;
+  exchange?: string;
+  type?: string;
+
   name: string;
   price: string;
   change: string;
   changePercent: string;
   isPositive: boolean;
-  sentiment?: 'Bullish' | 'Bearish' | 'Neutral';
+
+  sentiment?: "Bullish" | "Bearish" | "Neutral";
 }
 
-interface WatchlistProps {
-  initialData: WatchlistItem[];
+interface WatchlistData {
+  id: string;
+  name: string;
+  items: WatchlistItem[];
 }
 
-export default function Watchlist({ initialData }: WatchlistProps) {
-  // Filters
-  const [search, setSearch] = useState('');
-  const [changeFilter, setChangeFilter] = useState('');
-  const [sentimentFilter, setSentimentFilter] = useState('');
+const defaultWatchlists: WatchlistData[] = [
+  {
+    id: "list-1",
+    name: "Main Portfolio",
+    items: [
+      { id: "AAPL", symbol: "AAPL", name: "Apple Inc.", price: "$175.43", change: "1.20", changePercent: "+0.68%", isPositive: true, sentiment: "Bullish" },
+      { id: "MSFT", symbol: "MSFT", name: "Microsoft Corp.", price: "$312.10", change: "-2.40", changePercent: "-0.76%", isPositive: false, sentiment: "Neutral" },
+    ],
+  },
+  {
+    id: "list-2",
+    name: "Crypto Watch",
+    items: [
+      { id: "BTCUSD", symbol: "BTC/USD", name: "Bitcoin", price: "$64,230.00", change: "1200.00", changePercent: "+1.90%", isPositive: true, sentiment: "Bullish" },
+    ],
+  },
+];
 
-  // Sorting
-  const [sortField, setSortField] = useState<'name' | 'price' | 'change' | 'sentiment'>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+export default function Watchlist() {
+  const navigate = useNavigate();
 
-  // Apply all filters
-  const filteredData = initialData.filter((item) => {
+  // ==========================================
+  // STATE MANAGEMENT
+  // ==========================================
+  // Restored the local state for managing multiple watchlists!
+  const [watchlists, setWatchlists] = useState<WatchlistData[]>(defaultWatchlists);
+  const [activeListId, setActiveListId] = useState<string>(defaultWatchlists[0].id);
+
+  const [isCreatingList, setIsCreatingList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [isAddingAsset, setIsAddingAsset] = useState(false);
+
+  const [newAssetSymbol, setNewAssetSymbol] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+const [selectedAssetInfo, setSelectedAssetInfo] =
+useState<{
+  symbol: string;
+  yahooSymbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+} | null>(null);
+
+  // Filter/Sort States
+  let search = "";
+  let changeFilter = "";
+  const [sentimentFilter, setSentimentFilter] = useState< "Bullish" | "Bearish" | "" >("");
+  const sortField: string = "name";
+  const sortDirection: string = "asc";
+
+  const { openChart } =
+    useChart();
+
+  // ==========================================
+  // DEBOUNCED SEARCH EFFECT
+  // ==========================================
+  useEffect(() => {
+    if (!newAssetSymbol.trim() || !showSuggestions) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(newAssetSymbol)}`);
+        if (res.ok) {
+          const data = await res.json();
+          // Safety check: Ensure the response is an array
+          setSuggestions(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Search fetch failed:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [newAssetSymbol, showSuggestions]);
+
+  // ==========================================
+  // HANDLERS
+  // ==========================================
+  const activeWatchlist = watchlists.find((w) => w.id === activeListId) || watchlists[0];
+
+  const handleCreateWatchlist = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newListName.trim()) return;
+
+    const newList: WatchlistData = {
+      id: `list-${Date.now()}`,
+      name: newListName.trim(),
+      items: [],
+    };
+
+    setWatchlists([...watchlists, newList]);
+    setActiveListId(newList.id);
+    setNewListName("");
+    setIsCreatingList(false);
+  };
+
+  const handleAddAsset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAssetSymbol.trim()) return;
+
+    const assetName = selectedAssetInfo?.name || `${newAssetSymbol.toUpperCase()} (Pending Data)`;
+
+    const mockNewAsset: WatchlistItem = {
+  id: selectedAssetInfo?.yahooSymbol ||
+      newAssetSymbol.toUpperCase(),
+
+  symbol:
+    selectedAssetInfo?.symbol ||
+    newAssetSymbol.toUpperCase(),
+
+  yahooSymbol:
+    selectedAssetInfo?.yahooSymbol ||
+    newAssetSymbol.toUpperCase(),
+
+  exchange:
+    selectedAssetInfo?.exchange ||
+    "GLOBAL",
+
+  type:
+    selectedAssetInfo?.type ||
+    "Asset",
+
+  name: assetName,
+      price: "$0.00",
+      change: "0.00",
+      changePercent: "0.00%",
+      isPositive: true,
+      sentiment: "Neutral",
+    };
+
+    setWatchlists(
+      watchlists.map((list) => {
+        if (list.id === activeListId) {
+          if (list.items.find((i) => i.symbol === mockNewAsset.symbol)) return list;
+          return { ...list, items: [...list.items, mockNewAsset] };
+        }
+        return list;
+      })
+    );
+
+    setNewAssetSymbol("");
+    setSelectedAssetInfo(null);
+    setIsAddingAsset(false);
+  };
+
+  const handleRemoveAsset = (assetId: string) => {
+    setWatchlists(
+      watchlists.map((list) => {
+        if (list.id === activeListId) {
+          return { ...list, items: list.items.filter((item) => item.id !== assetId) };
+        }
+        return list;
+      })
+    );
+  };
+
+  const handleDeleteWatchlist = () => {
+    if (watchlists.length === 1) return;
+    const filteredLists = watchlists.filter((w) => w.id !== activeListId);
+    setWatchlists(filteredLists);
+    setActiveListId(filteredLists[0].id);
+  };
+
+  // ==========================================
+  // FILTERING & SORTING LOGIC
+  // ==========================================
+  const filteredData = activeWatchlist.items.filter((item) => {
     const q = search.toLowerCase();
-    const companyOrSymbol =
-      item.name.toLowerCase().includes(q) || item.symbol.toLowerCase().includes(q);
-
-    // "Change" filter (Bullish/Bearish)
-    const matchesChange =
-      changeFilter === '' ||
-      (changeFilter === 'Bullish' && item.isPositive) ||
-      (changeFilter === 'Bearish' && !item.isPositive);
-
-    // AI Sentiment filter (Bullish/Bearish/Neutral)
-    const matchesSentiment =
-      sentimentFilter === '' || (item.sentiment || 'Neutral') === sentimentFilter;
-
+    const companyOrSymbol = item.name.toLowerCase().includes(q) || item.symbol.toLowerCase().includes(q);
+    const matchesChange = changeFilter === "" || (changeFilter === "Bullish" && item.isPositive) || (changeFilter === "Bearish" && !item.isPositive);
+    const matchesSentiment = sentimentFilter === "" || (item.sentiment || "Neutral") === sentimentFilter;
     return companyOrSymbol && matchesChange && matchesSentiment;
   });
 
-  // Sorting logic
   const sortedData = [...filteredData].sort((a, b) => {
     let result = 0;
     switch (sortField) {
-      case 'name':
+      case "name":
         result = a.name.localeCompare(b.name);
         break;
-      case 'price':
-        result = parseFloat(a.price) - parseFloat(b.price);
+      case "price":
+        result = parseFloat(a.price.replace(/[^0-9.-]+/g, "")) - parseFloat(b.price.replace(/[^0-9.-]+/g, ""));
         break;
-      case 'change':
+      case "change":
         result = parseFloat(a.change) - parseFloat(b.change);
         break;
-      case 'sentiment':
-        result = (a.sentiment || 'Neutral').localeCompare(b.sentiment || 'Neutral');
+      case "sentiment":
+        result = (a.sentiment || "Neutral").localeCompare(b.sentiment || "Neutral");
         break;
       default:
         result = 0;
     }
-    return sortDirection === 'asc' ? result : -result;
+    return sortDirection === "asc" ? result : -result;
   });
 
-  const handleSort = (
-    field: 'name' | 'price' | 'change' | 'sentiment'
-  ) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
   return (
-    <div className="w-full glass-card overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-xl transition-colors duration-300">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
+    <div className="w-full space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div
+  onClick={() => setSentimentFilter("")}
+  className={`cursor-pointer rounded-3xl p-5 text-white transition-all
+    ${
+      sentimentFilter === ""
+        ? "bg-gradient-to-br from-blue-600 to-cyan-500 ring-2 ring-blue-300"
+        : "bg-gradient-to-br from-blue-600 to-cyan-500 opacity-80 hover:opacity-100"
+    }`}
+>
+          <p className="text-sm opacity-80">
+  Total Assets {sentimentFilter === ""}
+</p>
+          <h2 className="text-3xl font-bold">{activeWatchlist.items.length}</h2>
+        </div>
 
-              {/* COMPANY NAME */}
-              <th className="p-4 min-w-[200px] align-top">
-                <div className="flex flex-col gap-1.5">
-                  <button
-                    onClick={() => handleSort('name')}
-                    className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-                  >
-                    Company Name
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                  <div className="relative flex items-center">
-                    <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-                    <input
-                      type="text"
-                      placeholder="Search by company or symbol..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="w-full bg-slate-100 dark:bg-night-800 dark:text-white pl-8 pr-2 py-1 text-xs rounded-md border border-transparent focus:border-blue-500 dark:focus:border-cyan-500 focus:outline-none text-slate-900"
-                    />
+        <div
+  onClick={() =>
+    setSentimentFilter(
+      sentimentFilter === "Bullish" ? "" : "Bullish"
+    )
+  }
+  className={`cursor-pointer rounded-3xl backdrop-blur-xl p-5 border transition-all
+    ${
+      sentimentFilter === "Bullish"
+        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10"
+        : "bg-white/70 dark:bg-night-900/70 border-slate-200 dark:border-white/10"
+    }`}
+>
+  <p className="text-sm text-slate-500">
+  Bullish Signals {sentimentFilter === "Bullish"}
+</p>
+          <h2 className="text-3xl font-bold text-emerald-500">
+            {activeWatchlist.items.filter((i) => i.sentiment === "Bullish").length}
+          </h2>
+        </div>
+
+        <div
+  onClick={() =>
+    setSentimentFilter(
+      sentimentFilter === "Bearish" ? "" : "Bearish"
+    )
+  }
+  className={`cursor-pointer rounded-3xl backdrop-blur-xl p-5 border transition-all
+    ${
+      sentimentFilter === "Bearish"
+        ? "border-rose-500 bg-rose-50 dark:bg-rose-500/10"
+        : "bg-white/70 dark:bg-night-900/70 border-slate-200 dark:border-white/10"
+    }`}
+>
+  <p className="text-sm text-slate-500">
+  Bearish Signals {sentimentFilter === "Bearish"}
+</p>
+          <h2 className="text-3xl font-bold text-rose-500">
+            {activeWatchlist.items.filter((i) => i.sentiment === "Bearish").length}
+          </h2>
+        </div>
+
+        <div className="rounded-3xl bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-5 border border-slate-200 dark:border-white/10">
+          <p className="text-sm text-slate-500">AI Confidence</p>
+          <h2 className="text-3xl font-bold">84%</h2>
+        </div>
+      </div>
+
+      {/* WATCHLIST CONTROLS HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-4 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {isCreatingList ? (
+            <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2">
+              <input
+                autoFocus
+                type="text"
+                placeholder="List Name..."
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                className="bg-slate-100 dark:bg-night-800 border border-slate-200 dark:border-white/10 px-3 py-2 text-sm rounded-lg outline-none text-slate-900 dark:text-white"
+              />
+              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors">
+                <Plus className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsCreatingList(false)}
+                className="bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-600 dark:text-slate-300 p-2 rounded-lg transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </form>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="flex gap-2 overflow-x-auto">
+                  {watchlists.map((list) => (
+                    <button
+                      key={list.id}
+                      onClick={() => setActiveListId(list.id)}
+                      className={`px-4 py-2 rounded-xl whitespace-nowrap transition-all ${
+                        activeListId === list.id
+                          ? "bg-cyan-500 text-white"
+                          : "bg-slate-100 dark:bg-night-800 text-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      {list.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsCreatingList(true)}
+                title="Create New Watchlist"
+                className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-400 transition-colors"
+              >
+                <FolderPlus className="h-4 w-4" />
+              </button>
+
+              {watchlists.length > 1 && (
+                <button
+                  onClick={handleDeleteWatchlist}
+                  title="Delete Current Watchlist"
+                  className="p-2.5 rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right Side: Add Asset Button */}
+        <button
+          onClick={() => setIsAddingAsset(true)}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-900 px-4 py-2.5 rounded-xl text-sm font-bold shadow-md transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Add Symbol
+        </button>
+      </div>
+
+      {/* MAIN TABLE CARD */}
+      <div className="w-full glass-card overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl shadow-xl transition-colors duration-300">
+        <div className="p-5">
+          {sortedData.length > 0 ? (
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 cursor-pointer">
+              {sortedData.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() =>
+  openChart({
+    symbol: item.symbol,
+    yahooSymbol: item.symbol,
+    name: item.name,
+    exchange: "WATCHLIST",
+    type: "asset",
+  })
+}
+                  
+                  className="group rounded-3xl cursor-pointer border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 p-5 hover:shadow-xl transition-all hover:-translate-y-1">
+                  {/* Header */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-900 dark:text-white">{item.symbol}</h3>
+                      <p className="text-sm text-slate-500">{item.name}</p>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveAsset(item.id);
+                      }}
+                      className="text-slate-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Price */}
+                  <div className="mt-5">
+                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{item.price}</p>
+                    <div className={`flex items-center gap-2 mt-2 ${item.isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                      {item.isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                      <span>{item.changePercent}</span>
+                    </div>
+                  </div>
+
+                  {/* AI Sentiment */}
+                  <div className="mt-5 flex justify-between items-center">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        item.sentiment === "Bullish"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : item.sentiment === "Bearish"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      {item.sentiment}
+                    </span>
+                    <div className="w-12 h-12 rounded-full border-4 border-cyan-500 flex items-center justify-center font-bold text-sm">
+                      92
+                    </div>
                   </div>
                 </div>
-              </th>
-
-              {/* PRICE */}
-              <th className="p-4 min-w-[120px] align-top">
-                <div className="flex flex-col gap-1.5">
-                  <button 
-                    onClick={() => handleSort('price')}
-                    className="flex items-center gap-1 justify-start text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-                  >
-                    Price
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                  {/* No price filter, spacer for alignment */}
-                  <div style={{height: "28px"}}></div>
-                </div>
-              </th>
-
-              {/* CHANGE */}
-              <th className="p-4 min-w-[110px] align-top">
-                <div className="flex flex-col gap-1.5">
-                  <button 
-                    onClick={() => handleSort('change')}
-                    className="flex items-center gap-1 justify-start text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-                  >
-                    Change
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                  <select
-                    value={changeFilter}
-                    onChange={(e) => setChangeFilter(e.target.value)}
-                    className="w-full bg-slate-100 dark:bg-night-800 dark:text-white pl-3 pr-2 py-1 text-xs rounded-md border border-transparent focus:border-blue-500 dark:focus:border-cyan-500 focus:outline-none text-slate-900"
-                  >
-                    <option value="">All</option>
-                    <option value="Bullish">Bullish</option>
-                    <option value="Bearish">Bearish</option>
-                  </select>
-                </div>
-              </th>
-
-              {/* SENTIMENT */}
-              <th className="p-4 min-w-[130px] align-top">
-                <div className="flex flex-col gap-1.5">
-                  <button 
-                    onClick={() => handleSort('sentiment')}
-                    className="flex items-center gap-1 justify-start text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-                  >
-                    AI Sentiment
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                  <select
-                    value={sentimentFilter}
-                    onChange={(e) => setSentimentFilter(e.target.value)}
-                    className="w-full bg-slate-100 dark:bg-night-800 dark:text-white pl-3 pr-2 py-1 text-xs rounded-md border border-transparent focus:border-blue-500 dark:focus:border-cyan-500 focus:outline-none text-slate-900"
-                  >
-                    <option value="">All</option>
-                    <option value="Bullish">Bullish</option>
-                    <option value="Bearish">Bearish</option>
-                    <option value="Neutral">Neutral</option>
-                  </select>
-                </div>
-              </th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {sortedData.length > 0 ? (
-              sortedData.map((item) => (
-                <tr 
-                  key={item.symbol} 
-                  className="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors group cursor-pointer"
-                >
-                  {/* Name */}
-                  <td className="p-4 text-sm text-slate-600 dark:text-slate-300 font-bold group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
-                    {item.name}{' '}
-                    <span className="font-normal text-xs text-slate-400 dark:text-slate-500">
-                      ({item.symbol})
-                    </span>
-                  </td>
-                  {/* Price (EMPHASIZED) */}
-                  <td className="p-4">
-                    <span className="text-lg font-extrabold text-blue-700 dark:text-cyan-300 bg-slate-50 dark:bg-cyan-900/20 rounded px-2 py-1 tracking-wide">
-                      {item.price}
-                    </span>
-                  </td>
-                  {/* Change */}
-                  <td className="p-4 text-sm">
-                    <div className="flex flex-col items-end">
-                      <span className={`font-medium ${item.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {item.isPositive ? 'Bullish' : 'Bearish'}
-                      </span>
-                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded mt-0.5 ${
-                        item.isPositive 
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300' 
-                          : 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300'
-                      }`}>
-                        {item.changePercent}
-                      </span>
-                    </div>
-                  </td>
-                  {/* Sentiment */}
-                  <td className="p-4 text-center">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      item.sentiment === 'Bullish'
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400'
-                        : item.sentiment === 'Bearish'
-                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400'
-                        : 'bg-slate-100 text-slate-800 dark:bg-white/10 dark:text-slate-400'
-                    }`}>
-                      {item.sentiment === 'Bullish' && <TrendingUp className="h-3 w-3" />}
-                      {item.sentiment === 'Bearish' && <TrendingDown className="h-3 w-3" />}
-                      {item.sentiment || 'Neutral'}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="p-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                  No stocks match your filters.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">📈</div>
+              <h3 className="font-bold text-lg">No Assets Added</h3>
+              <p className="text-slate-500">Start tracking your favorite stocks</p>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ADD ASSET MODAL */}
+      {isAddingAsset && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm" onClick={() => setIsAddingAsset(false)} />
+          <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add Symbol to Watchlist</h3>
+              <button onClick={() => setIsAddingAsset(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddAsset} className="space-y-4">
+              <div className="relative">
+                <label className="text-xs font-bold text-slate-500 block mb-1">Search Asset</label>
+                <div className="relative">
+                  <input
+                    autoFocus
+                    type="text"
+                    required
+                    placeholder="e.g. Apple or AAPL"
+                    value={newAssetSymbol}
+                    onChange={(e) => {
+                      setNewAssetSymbol(e.target.value.toUpperCase());
+                      setSelectedAssetInfo(null);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-3 text-sm rounded-xl outline-none text-slate-900 dark:text-white uppercase pr-10"
+                  />
+                  {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 animate-spin" />}
+                </div>
+
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
+                    {suggestions.map((asset) => (
+                      <div
+                        key={asset.id}
+                        className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 flex justify-between items-center border-b border-slate-50 dark:border-white/5 last:border-0"
+                        onClick={() => {
+                          setNewAssetSymbol(asset.symbol);
+                          setSelectedAssetInfo({
+  symbol: asset.symbol,
+  yahooSymbol: asset.yahooSymbol,
+  name: asset.name,
+  exchange: asset.exchange,
+  type: asset.type,
+});
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-900 dark:text-white text-sm">{asset.symbol}</span>
+                          <span className="text-xs text-slate-500 line-clamp-1">{asset.name}</span>
+                        </div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded">
+                          {asset.type?.replace("Common ", "")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-slate-400 mt-2">
+                  *In a production environment, this will fetch real data from Finnhub/Dhan before adding.
+                </p>
+              </div>
+
+              <button type="submit" className="w-full rounded-xl bg-blue-600 dark:bg-cyan-500 py-3 text-sm font-bold text-white dark:text-night-900 mt-4 shadow-md hover:scale-[1.02] transition-transform">
+                Add to {activeWatchlist.name}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

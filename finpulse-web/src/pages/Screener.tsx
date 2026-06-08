@@ -1,10 +1,6 @@
 import { useState } from "react";
-import {
-  Filter,
-  TrendingUp,
-  TrendingDown,
-  Search,
-} from "lucide-react";
+import {Filter,TrendingUp,TrendingDown,Search} from "lucide-react";
+import { useChart } from "../context/ChartContext";
 
 interface Stock {
   symbol: string;
@@ -59,6 +55,7 @@ const STOCKS: Stock[] = [
 ];
 
 export default function Screener() {
+  const { openChart } = useChart();
   const [search, setSearch] = useState("");
   const [sector, setSector] =
     useState("All");
@@ -225,17 +222,35 @@ export default function Screener() {
 
         {filteredStocks.map((stock) => (
           <div
-            key={stock.symbol}
-            className="
-            rounded-3xl
-            border
-            bg-white
-            dark:bg-night-900
-            p-5
-            hover:shadow-xl
-            transition-all
-            "
-          >
+  key={stock.symbol}
+  onClick={() =>
+    openChart({
+      symbol: stock.symbol,
+
+      yahooSymbol:
+        stock.symbol,
+
+      name:
+        stock.company,
+
+      exchange:
+        "NASDAQ",
+
+      type:
+        "stock",
+    })
+  }
+  className="
+  rounded-3xl
+  border
+  bg-white
+  dark:bg-night-900
+  p-5
+  hover:shadow-xl
+  transition-all
+  cursor-pointer
+  "
+>
             <div className="flex justify-between">
 
               <div>

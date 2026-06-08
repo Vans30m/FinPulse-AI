@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import StockSearch from "../components/ui/StockSearch";
+import { useChart } from "../context/ChartContext";
 
 interface MarketAsset {
   symbol: string;
+  yahooSymbol: string;
+  exchange: string;
+  type: string;
+
   name: string;
   category: string;
   price: string;
@@ -13,89 +19,56 @@ interface MarketAsset {
 
 const marketData: MarketAsset[] = [
   // Stocks
-  {
-    symbol: "AAPL",
-    name: "Apple Inc.",
-    category: "Stocks",
-    price: "$175.43",
-    change: "+0.68%",
-    positive: true,
-  },
-  {
-    symbol: "MSFT",
-    name: "Microsoft",
-    category: "Stocks",
-    price: "$312.10",
-    change: "-0.76%",
-    positive: false,
-  },
-  {
-    symbol: "NVDA",
-    name: "NVIDIA",
-    category: "Stocks",
-    price: "$982.11",
-    change: "+2.45%",
-    positive: true,
-  },
+      {
+  symbol: "RELIANCE",
+  yahooSymbol: "RELIANCE.NS",
+  exchange: "NSE",
+  type: "equity",
 
-  // Crypto
+  name: "Reliance Ind.",
+  category: "Stocks",
+  price: "₹2,954.20",
+  change: "+1.45%",
+  positive: true
+},
   {
-    symbol: "BTCUSD",
-    name: "Bitcoin",
-    category: "Crypto",
-    price: "$64,200",
-    change: "+1.90%",
-    positive: true,
-  },
-  {
-    symbol: "ETHUSD",
-    name: "Ethereum",
-    category: "Crypto",
-    price: "$3,120",
-    change: "+1.12%",
-    positive: true,
-  },
-
-  // Forex
-  {
-    symbol: "EURUSD",
-    name: "Euro / US Dollar",
-    category: "Forex",
-    price: "1.0845",
-    change: "-0.20%",
-    positive: false,
-  },
-  {
-    symbol: "GBPUSD",
-    name: "British Pound / US Dollar",
-    category: "Forex",
-    price: "1.2760",
-    change: "+0.18%",
-    positive: true,
-  },
-
-  // Commodities
-  {
-    symbol: "XAUUSD",
-    name: "Gold",
-    category: "Commodities",
-    price: "$2,350",
-    change: "+0.44%",
-    positive: true,
-  },
-  {
-    symbol: "XAGUSD",
-    name: "Silver",
-    category: "Commodities",
-    price: "$30.15",
-    change: "-0.11%",
-    positive: false,
-  },
+  symbol: "AAPL",
+  yahooSymbol: "AAPL",
+  exchange: "NASDAQ",
+  type: "equity",
+  name: "Apple Inc.",
+  category: "Stocks",
+  price: "$150.25",
+  change: "+2.15",
+  positive: true
+},
+{
+  symbol: "BTCUSD",
+  yahooSymbol: "BTC-USD",
+  exchange: "CRYPTO",
+  type: "crypto",
+  name: "Bitcoin",
+  category: "Crypto",
+  price: "$61,234.56",
+  change: "+1,234.56",
+  positive: true
+},
+{
+  symbol: "XAUUSD",
+  yahooSymbol: "GC=F",
+  exchange: "COMEX",
+  type: "commodity",
+  name: "Gold",
+  category: "Commodities",
+  price: "$1,800.75",
+  change: "+15.25",
+  positive: true
+}
 ];
 
 export default function Markets() {
   const navigate = useNavigate();
-
+  const { openChart } = useChart();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] =
     useState("All");
@@ -142,41 +115,21 @@ export default function Markets() {
         </p>
       </div>
 
-      {/* Search */}
-
-      <div className="relative">
-
-        <Search
-          className="
-          absolute
-          left-4
-          top-1/2
-          -translate-y-1/2
-          h-4
-          w-4
-          text-slate-400
-          "
-        />
-
-        <input
-          type="text"
-          placeholder="Search assets..."
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-          className="
-          w-full
-          pl-11
-          pr-4
-          py-3
-          rounded-2xl
-          border
-          bg-white
-          dark:bg-night-900
-          "
-        />
-      </div>
+      {/* Global Asset Search */}
+<StockSearch
+  placeholder="Search Markets"
+  onSelect={(asset) => {
+    openChart({
+      symbol: asset.symbol,
+      yahooSymbol:
+        asset.yahooSymbol,
+      name: asset.name,
+      exchange:
+        asset.exchange,
+      type: asset.type,
+    });
+  }}
+/>
 
       {/* Categories */}
 
@@ -221,10 +174,23 @@ export default function Markets() {
           <div
             key={asset.symbol}
             onClick={() =>
-              navigate(
-                `/asset/${asset.symbol}`
-              )
-            }
+  openChart({
+    symbol: asset.symbol,
+
+    yahooSymbol:
+      asset.category === "Crypto"
+        ? `${asset.symbol.replace("USD", "")}-USD`
+        : asset.symbol,
+
+    name: asset.name,
+
+    exchange:
+      asset.category,
+
+    type:
+      asset.category.toLowerCase(),
+  })
+}
             className="
             cursor-pointer
             rounded-3xl
