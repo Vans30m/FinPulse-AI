@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Plus, Trash2, FolderPlus, X, ChevronDown, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  useChart,
-}
-from "../../../context/ChartContext";
+import { useChart } from "../../../context/ChartContext";
+import { getStockSentiment } from "../../../services/marketService";
 
 // ==========================================
 // INTERFACES
@@ -15,14 +13,14 @@ interface WatchlistItem {
   yahooSymbol?: string;
   exchange?: string;
   type?: string;
-
   name: string;
   price: string;
-  change: string;
+  change: string; // Changed to string to match your mock data ("1.20", etc.)
   changePercent: string;
   isPositive: boolean;
-
   sentiment?: "Bullish" | "Bearish" | "Neutral";
+  aiScore?: number;
+  aiReason?: string;
 }
 
 interface WatchlistData {
@@ -36,15 +34,15 @@ const defaultWatchlists: WatchlistData[] = [
     id: "list-1",
     name: "Main Portfolio",
     items: [
-      { id: "AAPL", symbol: "AAPL", name: "Apple Inc.", price: "$175.43", change: "1.20", changePercent: "+0.68%", isPositive: true, sentiment: "Bullish" },
-      { id: "MSFT", symbol: "MSFT", name: "Microsoft Corp.", price: "$312.10", change: "-2.40", changePercent: "-0.76%", isPositive: false, sentiment: "Neutral" },
+      { id: "AAPL", symbol: "AAPL", name: "Apple Inc.", price: "$175.43", change: "1.20", changePercent: "+0.68%", isPositive: true },
+      { id: "MSFT", symbol: "MSFT", name: "Microsoft Corp.", price: "$312.10", change: "-2.40", changePercent: "-0.76%", isPositive: false },
     ],
   },
   {
     id: "list-2",
     name: "Crypto Watch",
     items: [
-      { id: "BTCUSD", symbol: "BTC/USD", name: "Bitcoin", price: "$64,230.00", change: "1200.00", changePercent: "+1.90%", isPositive: true, sentiment: "Bullish" },
+      { id: "BTCUSD", symbol: "BTC/USD", name: "Bitcoin", price: "$64,230.00", change: "1200.00", changePercent: "+1.90%", isPositive: true },
     ],
   },
 ];
@@ -55,9 +53,40 @@ export default function Watchlist() {
   // ==========================================
   // STATE MANAGEMENT
   // ==========================================
-  // Restored the local state for managing multiple watchlists!
   const [watchlists, setWatchlists] = useState<WatchlistData[]>(defaultWatchlists);
   const [activeListId, setActiveListId] = useState<string>(defaultWatchlists[0].id);
+
+  const loadAISentiment = async () => {
+    const updatedLists = await Promise.all(
+      watchlists.map(async (list) => {
+        const items = await Promise.all(
+          list.items.map(async (item) => {
+            try {
+              const ai = await getStockSentiment(item.symbol);
+              return {
+                ...item,
+                aiScore: ai.score,
+                aiReason: ai.reason,
+              };
+            } catch {
+              return item;
+            }
+          })
+        );
+
+        return {
+          ...list,
+          items,
+        };
+      })
+    );
+
+    setWatchlists(updatedLists);
+  };
+
+  useEffect(() => {
+    loadAISentiment();
+  }, []);
 
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -67,24 +96,22 @@ export default function Watchlist() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-const [selectedAssetInfo, setSelectedAssetInfo] =
-useState<{
-  symbol: string;
-  yahooSymbol: string;
-  name: string;
-  exchange: string;
-  type: string;
-} | null>(null);
+  const [selectedAssetInfo, setSelectedAssetInfo] = useState<{
+    symbol: string;
+    yahooSymbol: string;
+    name: string;
+    exchange: string;
+    type: string;
+  } | null>(null);
 
   // Filter/Sort States
   let search = "";
   let changeFilter = "";
-  const [sentimentFilter, setSentimentFilter] = useState< "Bullish" | "Bearish" | "" >("");
+  const [sentimentFilter, setSentimentFilter] = useState<"Bullish" | "Bearish" | "">("");
   const sortField: string = "name";
   const sortDirection: string = "asc";
 
-  const { openChart } =
-    useChart();
+  const { openChart } = useChart();
 
   // ==========================================
   // DEBOUNCED SEARCH EFFECT
@@ -101,7 +128,6 @@ useState<{
         const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(newAssetSymbol)}`);
         if (res.ok) {
           const data = await res.json();
-          // Safety check: Ensure the response is an array
           setSuggestions(Array.isArray(data) ? data : []);
         }
       } catch (error) {
@@ -142,31 +168,16 @@ useState<{
     const assetName = selectedAssetInfo?.name || `${newAssetSymbol.toUpperCase()} (Pending Data)`;
 
     const mockNewAsset: WatchlistItem = {
-  id: selectedAssetInfo?.yahooSymbol ||
-      newAssetSymbol.toUpperCase(),
-
-  symbol:
-    selectedAssetInfo?.symbol ||
-    newAssetSymbol.toUpperCase(),
-
-  yahooSymbol:
-    selectedAssetInfo?.yahooSymbol ||
-    newAssetSymbol.toUpperCase(),
-
-  exchange:
-    selectedAssetInfo?.exchange ||
-    "GLOBAL",
-
-  type:
-    selectedAssetInfo?.type ||
-    "Asset",
-
-  name: assetName,
+      id: selectedAssetInfo?.yahooSymbol || newAssetSymbol.toUpperCase(),
+      symbol: selectedAssetInfo?.symbol || newAssetSymbol.toUpperCase(),
+      yahooSymbol: selectedAssetInfo?.yahooSymbol || newAssetSymbol.toUpperCase(),
+      exchange: selectedAssetInfo?.exchange || "GLOBAL",
+      type: selectedAssetInfo?.type || "Asset",
+      name: assetName,
       price: "$0.00",
       change: "0.00",
       changePercent: "0.00%",
       isPositive: true,
-      sentiment: "Neutral",
     };
 
     setWatchlists(
@@ -238,57 +249,31 @@ useState<{
     <div className="w-full space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div
-  onClick={() => setSentimentFilter("")}
-  className={`cursor-pointer rounded-3xl p-5 text-white transition-all
-    ${
-      sentimentFilter === ""
-        ? "bg-gradient-to-br from-blue-600 to-cyan-500 ring-2 ring-blue-300"
-        : "bg-gradient-to-br from-blue-600 to-cyan-500 opacity-80 hover:opacity-100"
-    }`}
->
-          <p className="text-sm opacity-80">
-  Total Assets {sentimentFilter === ""}
-</p>
+          onClick={() => setSentimentFilter("")}
+          className={`cursor-pointer rounded-3xl p-5 text-white transition-all
+            ${sentimentFilter === "" ? "bg-gradient-to-br from-blue-600 to-cyan-500 ring-2 ring-blue-300" : "bg-gradient-to-br from-blue-600 to-cyan-500 opacity-80 hover:opacity-100"}`}
+        >
+          <p className="text-sm opacity-80">Total Assets</p>
           <h2 className="text-3xl font-bold">{activeWatchlist.items.length}</h2>
         </div>
 
         <div
-  onClick={() =>
-    setSentimentFilter(
-      sentimentFilter === "Bullish" ? "" : "Bullish"
-    )
-  }
-  className={`cursor-pointer rounded-3xl backdrop-blur-xl p-5 border transition-all
-    ${
-      sentimentFilter === "Bullish"
-        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10"
-        : "bg-white/70 dark:bg-night-900/70 border-slate-200 dark:border-white/10"
-    }`}
->
-  <p className="text-sm text-slate-500">
-  Bullish Signals {sentimentFilter === "Bullish"}
-</p>
+          onClick={() => setSentimentFilter(sentimentFilter === "Bullish" ? "" : "Bullish")}
+          className={`cursor-pointer rounded-3xl backdrop-blur-xl p-5 border transition-all
+            ${sentimentFilter === "Bullish" ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" : "bg-white/70 dark:bg-night-900/70 border-slate-200 dark:border-white/10"}`}
+        >
+          <p className="text-sm text-slate-500">Bullish Signals</p>
           <h2 className="text-3xl font-bold text-emerald-500">
             {activeWatchlist.items.filter((i) => i.sentiment === "Bullish").length}
           </h2>
         </div>
 
         <div
-  onClick={() =>
-    setSentimentFilter(
-      sentimentFilter === "Bearish" ? "" : "Bearish"
-    )
-  }
-  className={`cursor-pointer rounded-3xl backdrop-blur-xl p-5 border transition-all
-    ${
-      sentimentFilter === "Bearish"
-        ? "border-rose-500 bg-rose-50 dark:bg-rose-500/10"
-        : "bg-white/70 dark:bg-night-900/70 border-slate-200 dark:border-white/10"
-    }`}
->
-  <p className="text-sm text-slate-500">
-  Bearish Signals {sentimentFilter === "Bearish"}
-</p>
+          onClick={() => setSentimentFilter(sentimentFilter === "Bearish" ? "" : "Bearish")}
+          className={`cursor-pointer rounded-3xl backdrop-blur-xl p-5 border transition-all
+            ${sentimentFilter === "Bearish" ? "border-rose-500 bg-rose-50 dark:bg-rose-500/10" : "bg-white/70 dark:bg-night-900/70 border-slate-200 dark:border-white/10"}`}
+        >
+          <p className="text-sm text-slate-500">Bearish Signals</p>
           <h2 className="text-3xl font-bold text-rose-500">
             {activeWatchlist.items.filter((i) => i.sentiment === "Bearish").length}
           </h2>
@@ -383,16 +368,16 @@ useState<{
                 <div
                   key={item.id}
                   onClick={() =>
-  openChart({
-    symbol: item.symbol,
-    yahooSymbol: item.symbol,
-    name: item.name,
-    exchange: "WATCHLIST",
-    type: "asset",
-  })
-}
-                  
-                  className="group rounded-3xl cursor-pointer border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 p-5 hover:shadow-xl transition-all hover:-translate-y-1">
+                    openChart({
+                      symbol: item.symbol,
+                      yahooSymbol: item.symbol,
+                      name: item.name,
+                      exchange: "WATCHLIST",
+                      type: "asset",
+                    })
+                  }
+                  className="group rounded-3xl cursor-pointer border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 p-5 hover:shadow-xl transition-all hover:-translate-y-1"
+                >
                   {/* Header */}
                   <div className="flex justify-between items-start">
                     <div>
@@ -421,20 +406,11 @@ useState<{
                   </div>
 
                   {/* AI Sentiment */}
-                  <div className="mt-5 flex justify-between items-center">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.sentiment === "Bullish"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : item.sentiment === "Bearish"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {item.sentiment}
-                    </span>
-                    <div className="w-12 h-12 rounded-full border-4 border-cyan-500 flex items-center justify-center font-bold text-sm">
-                      92
+                  <div className="mt-4">
+                    <div className="text-xs uppercase text-slate-400 mb-1">AI Insight</div>
+                    <div className="text-sm text-slate-300">{item.aiReason || "Analyzing sentiment..."}</div>
+                    <div className="w-12 h-12 rounded-full border-4 border-cyan-500 flex items-center justify-center font-bold text-sm mt-2">
+                      {item.aiScore || "--"}
                     </div>
                   </div>
                 </div>
@@ -492,12 +468,12 @@ useState<{
                         onClick={() => {
                           setNewAssetSymbol(asset.symbol);
                           setSelectedAssetInfo({
-  symbol: asset.symbol,
-  yahooSymbol: asset.yahooSymbol,
-  name: asset.name,
-  exchange: asset.exchange,
-  type: asset.type,
-});
+                            symbol: asset.symbol,
+                            yahooSymbol: asset.yahooSymbol,
+                            name: asset.name,
+                            exchange: asset.exchange,
+                            type: asset.type,
+                          });
                           setShowSuggestions(false);
                         }}
                       >
