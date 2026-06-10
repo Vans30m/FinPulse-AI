@@ -3,6 +3,26 @@ import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, 
 import { BarChart3 } from "lucide-react";
 import AssetChartModal from "../../../components/charts/AssetChartModal";
 import StockSearch from "../../../components/ui/StockSearch";
+import PortfolioAllocationChart
+from "./PortfolioAllocationChart";
+import PortfolioHealthCard
+from "./PortfolioHealthCard";
+import PortfolioInsightsCard
+from "./PortfolioInsightsCard";
+import RebalancingCard
+from "./RebalancingCard";
+import PortfolioPerformanceChart
+from "./PortfolioPerformanceChart";
+import RiskSimulatorCard
+from "./RiskSimulatorCard";
+import SectorExposureCard
+from "./SectorExposureCard";
+import AISectorAnalysisCard
+from "./AISectorAnalysisCard";
+import EarningsCalendarCard
+from "./EarningsCalendarCard";
+
+
 
 interface Holding {
   ticker: string;
@@ -10,6 +30,7 @@ interface Holding {
   exchange?: string;
   type?: string;
   name: string;
+  sector: string;
   shares: number;
   avgCost: number;
   currentPrice: number;
@@ -34,81 +55,102 @@ interface MarketSection {
 
 const INITIAL_SECTIONS: MarketSection[] = [
   {
-    id: 'domestic',
-    title: 'Domestic Market',
-    region: 'National Equities',
-    icon: <Layers className="h-5 w-5 text-blue-600 dark:text-cyan-400" />,
-    holdings: [
-      {
-        ticker: 'RELIANCE',
-        name: 'Reliance Industries Ltd.',
-        shares: 45,
-        avgCost: 2450.00,
-        currentPrice: 2870.50,
-        marketValue: 129172.50,
-        totalGain: 18922.50,
-        gainPercent: 17.16,
-        colorClass: { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' }
+  id: 'domestic',
+  title: 'Indian Market',
+  region: 'India',
+  icon: <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
+  holdings: [
+    {
+      ticker: 'RELIANCE',
+      name: 'Reliance Industries Ltd.',
+      sector: 'Energy',
+      shares: 45,
+      avgCost: 2450.00,
+      currentPrice: 2870.50,
+      marketValue: 129172.50,
+      totalGain: 18922.50,
+      gainPercent: 17.16,
+      colorClass: {
+        bg: 'bg-indigo-50 dark:bg-indigo-950/40',
+        text: 'text-indigo-600 dark:text-indigo-400',
+        border: 'border-indigo-200/50 dark:border-indigo-900/50'
       }
-    ]
-  },
-  {
-    id: 'us',
-    title: 'US Market',
-    region: 'North America',
-    icon: <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
-    holdings: [
-      {
-        ticker: 'NVDA',
-        name: 'NVIDIA Corporation',
-        shares: 15,
-        avgCost: 420.00,
-        currentPrice: 875.12,
-        marketValue: 13126.80,
-        totalGain: 6826.80,
-        gainPercent: 108.36,
-        colorClass: { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200/50 dark:border-emerald-900/50' }
+    }
+  ]
+},
+{
+  id: 'us',
+  title: 'US Market',
+  region: 'North America',
+  icon: <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
+  holdings: [
+    {
+      ticker: 'NVDA',
+      name: 'NVIDIA Corporation',
+      sector: 'Technology',
+      shares: 15,
+      avgCost: 420.00,
+      currentPrice: 875.12,
+      marketValue: 13126.80,
+      totalGain: 6826.80,
+      gainPercent: 108.36,
+      colorClass: {
+        bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+        text: 'text-emerald-600 dark:text-emerald-400',
+        border: 'border-emerald-200/50 dark:border-emerald-900/50'
       }
-    ]
-  },
-  {
-    id: 'other',
-    title: 'Other Markets',
-    region: 'Global / Exotic',
-    icon: <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-    holdings: [
-      {
-        ticker: 'SMI',
-        name: 'Swiss Market Index',
-        shares: 5,
-        avgCost: 10750,
-        currentPrice: 11500,
-        marketValue: 57500,
-        totalGain: 3750,
-        gainPercent: 7.0,
-        colorClass: { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200/50 dark:border-purple-900/50' }
+    }
+  ]
+},
+{
+  id: 'other',
+  title: 'Other Markets',
+  region: 'Global / Exotic',
+  icon: <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  holdings: [
+    {
+      ticker: 'SMI',
+      name: 'Swiss Market Index',
+      sector: 'Index',
+      shares: 5,
+      avgCost: 10750,
+      currentPrice: 11500,
+      marketValue: 57500,
+      totalGain: 3750,
+      gainPercent: 7.0,
+      colorClass: {
+        bg: 'bg-purple-50 dark:bg-purple-950/40',
+        text: 'text-purple-600 dark:text-purple-400',
+        border: 'border-purple-200/50 dark:border-purple-900/50'
       }
-    ]
-  },
-  {
-    id: 'crypto',
-    title: 'Crypto Market',
-    region: 'Digital Assets',
-    icon: <Bitcoin className="h-5 w-5 text-amber-500 dark:text-amber-300" />,
-    holdings: [
-      {
-        ticker: 'BTC',
-        name: 'Bitcoin',
-        shares: 0.42,
-        avgCost: 48000,
-        currentPrice: 67500,
-        marketValue: 28350,
-        totalGain: 8190,
-        gainPercent: 40.6,
-        colorClass: { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200/50 dark:border-amber-900/50' }
+    }
+  ]
+},
+{
+  id: 'crypto',
+  title: 'Crypto Market',
+  region: 'Digital Assets',
+  icon: <Bitcoin className="h-5 w-5 text-amber-500 dark:text-amber-300" />,
+  holdings: [
+    {
+      ticker: 'BTC',
+      name: 'Bitcoin',
+      sector: 'Crypto',
+      shares: 0.42,
+      avgCost: 48000,
+      currentPrice: 67500,
+      marketValue: 28350,
+      totalGain: 8190,
+      gainPercent: 40.6,
+      colorClass: {
+        bg: 'bg-amber-50 dark:bg-amber-950/40',
+        text: 'text-amber-600 dark:text-amber-400',
+        border: 'border-amber-200/50 dark:border-amber-900/50'
       }
-    ]
-  },
+    }
+  ]
+},
+
   {
     id: 'metals',
     title: 'Precious Metals',
@@ -116,6 +158,44 @@ const INITIAL_SECTIONS: MarketSection[] = [
     icon: <Coins className="h-5 w-5 text-yellow-500 dark:text-yellow-300" />,
     holdings: []
   }
+];
+
+const performanceData = [
+  {
+    month: "Jan",
+    value: 100000,
+  },
+  {
+    month: "Feb",
+    value: 104000,
+  },
+  {
+    month: "Mar",
+    value: 111000,
+  },
+  {
+    month: "Apr",
+    value: 108000,
+  },
+  {
+    month: "May",
+    value: 118000,
+  },
+];
+
+const earningsData = [
+  {
+    symbol: "NVDA",
+    date: "Aug 28 2026",
+  },
+  {
+    symbol: "RELIANCE",
+    date: "Sep 05 2026",
+  },
+  {
+    symbol: "BTC",
+    date: "N/A",
+  },
 ];
 
 export default function PortfolioDashboard() {
@@ -209,16 +289,12 @@ const [chartAsset, setChartAsset] =
 
     const newHolding: Holding = {
   ticker: selectedAsset.ticker,
-
   yahooSymbol:
     selectedAsset.yahooSymbol,
-
   exchange:
     selectedAsset.exchange,
-
   type:
     selectedAsset.type,
-
   name: selectedAsset.name,
       shares: numShares,
       avgCost: numCost,
@@ -226,7 +302,18 @@ const [chartAsset, setChartAsset] =
       marketValue: numShares * (numCost * 1.04),
       totalGain: (numShares * (numCost * 1.04)) - (numShares * numCost),
       gainPercent: 4.00,
-      colorClass: chosenColor
+      colorClass: chosenColor,
+  sector:
+  selectedAsset.type ===
+  "Crypto"
+    ? "Crypto"
+    : selectedAsset.type ===
+      "Forex"
+    ? "Forex"
+    : selectedAsset.type ===
+      "Commodity"
+    ? "Commodities"
+    : "Technology",
     };
 
     setSections(prev => prev.map(sec => {
@@ -245,6 +332,263 @@ const [chartAsset, setChartAsset] =
 
   const totalNetValue = sections.reduce((sum, sec) => sum + sec.holdings.reduce((s, h) => s + h.marketValue, 0), 0);
   const totalGain = sections.reduce((sum, sec) => sum + sec.holdings.reduce((s, h) => s + h.totalGain, 0), 0);
+  const allocationData =
+  sections
+    .map((section) => ({
+      name: section.title,
+      value:
+        section.holdings.reduce(
+          (sum, h) =>
+            sum +
+            h.marketValue,
+          0
+        ),
+    }))
+    .filter(
+      (x) => x.value > 0
+    );
+
+    const totalAssets =
+  sections.reduce(
+    (sum, section) =>
+      sum +
+      section.holdings.length,
+    0
+  );
+
+  const sectorMap =
+  new Map<
+    string,
+    number
+  >();
+
+sections.forEach(
+  (section) => {
+    section.holdings.forEach(
+      (holding) => {
+        const currentValue =
+          sectorMap.get(
+            holding.sector
+          ) || 0;
+
+        sectorMap.set(
+          holding.sector,
+          currentValue +
+            holding.marketValue
+        );
+      }
+    );
+  }
+);
+
+const sectorExposure =
+  Array.from(
+    sectorMap.entries()
+  ).map(
+    ([sector, value]) => ({
+      sector,
+
+      percentage:
+        totalNetValue > 0
+          ? (
+              (value /
+                totalNetValue) *
+              100
+            ).toFixed(1)
+          : "0",
+
+      value,
+    })
+  );
+
+  const sortedSectors =
+  [...sectorExposure].sort(
+    (a, b) =>
+      Number(b.percentage) -
+      Number(a.percentage)
+  );
+
+const topSector =
+  sortedSectors[0];
+
+let sectorInsight =
+  "Portfolio is well diversified.";
+
+let sectorDiversificationScore =
+  100;
+
+if (
+  topSector &&
+  Number(
+    topSector.percentage
+  ) > 50
+) {
+  sectorInsight =
+    `${topSector.sector} dominates the portfolio. Risk of over-concentration is high.`;
+
+  sectorDiversificationScore =
+    60;
+}
+else if (
+  topSector &&
+  Number(
+    topSector.percentage
+  ) > 35
+) {
+  sectorInsight =
+    `${topSector.sector} has a large allocation. Consider adding exposure to other sectors.`;
+
+  sectorDiversificationScore =
+    80;
+}
+
+let sectorRecommendation =
+  "Portfolio allocation looks healthy.";
+
+if (
+  topSector &&
+  Number(
+    topSector.percentage
+  ) > 40
+) {
+  sectorRecommendation =
+    `Reduce ${topSector.sector} exposure and increase diversification.`;
+}
+
+const diversificationScore =
+  Math.min(
+    100,
+    totalAssets * 12
+  );
+
+const healthScore =
+  Math.round(
+    diversificationScore
+  );
+
+const risk =
+  sections.find(
+    (s) => s.id === "crypto"
+  )?.holdings.length
+    ? "Medium"
+    : "Low";
+
+const growth =
+  sections.find(
+    (s) => s.id === "us"
+  )?.holdings.length
+    ? "High"
+    : "Moderate";
+
+const cryptoValue =
+  sections
+    .find(
+      (s) =>
+        s.id === "crypto"
+    )
+    ?.holdings.reduce(
+      (sum, h) =>
+        sum + h.marketValue,
+      0
+    ) || 0;
+
+const cryptoPercentage =
+  totalNetValue > 0
+    ? (
+        (cryptoValue /
+          totalNetValue) *
+        100
+      ).toFixed(1)
+    : "0";
+
+const usAssets =
+  sections.find(
+    (s) => s.id === "us"
+  )?.holdings.length || 0;
+
+const insights = [];
+
+if (Number(cryptoPercentage) > 15) {
+  insights.push(
+    `Crypto exposure is ${cryptoPercentage}% of the portfolio.`
+  );
+}
+
+if (usAssets > 0) {
+  insights.push(
+    "US equities contribute strongly to growth potential."
+  );
+}
+
+if (healthScore > 80) {
+  insights.push(
+    "Portfolio diversification is excellent."
+  );
+}
+
+if (healthScore > 60) {
+  insights.push(
+    "Risk profile appears balanced."
+  );
+}
+
+if (totalGain > 0) {
+  insights.push(
+    "Portfolio is currently generating positive returns."
+  );
+}
+
+const rebalancingSuggestions: string[] = [];
+
+const cryptoPercentageNumber =
+  Number(cryptoPercentage);
+
+if (cryptoPercentageNumber > 25) {
+  rebalancingSuggestions.push(
+    "Reduce crypto exposure below 25%."
+  );
+}
+
+if (healthScore < 60) {
+  rebalancingSuggestions.push(
+    "Increase diversification across asset classes."
+  );
+}
+
+if (usAssets > totalAssets / 2) {
+  rebalancingSuggestions.push(
+    "Portfolio heavily depends on US equities."
+  );
+}
+
+if (
+  rebalancingSuggestions.length === 0
+) {
+  rebalancingSuggestions.push(
+    "Portfolio allocation appears balanced."
+  );
+}
+
+const riskScore =
+  Math.min(
+    100,
+    Math.round(
+      cryptoPercentageNumber * 2 +
+      totalAssets * 5
+    )
+  );
+
+const expectedReturn =
+  Math.round(
+    healthScore * 0.15
+  );
+
+const bestCase =
+  expectedReturn + 15;
+
+const worstCase =
+  -(riskScore / 5);
+
 
   return (
     
@@ -466,6 +810,88 @@ const [chartAsset, setChartAsset] =
     setChartAsset(null);
   }}
 />
+
+<PortfolioAllocationChart
+  data={allocationData}
+/>
+
+<div className="mt-8">
+
+  <PortfolioHealthCard
+    score={healthScore}
+    diversification={
+      healthScore > 80
+        ? "Excellent"
+        : healthScore > 60
+        ? "Good"
+        : "Needs Improvement"
+    }
+    risk={risk}
+    growth={growth}
+  />
+</div>
+
+<div className="mt-8">
+
+  <PortfolioInsightsCard
+    insights={insights}
+  />
+
+<div className="mt-8">
+  <RebalancingCard
+    suggestions={
+      rebalancingSuggestions
+    }
+  />
+</div>
+
+<div className="mt-8">
+  <PortfolioPerformanceChart
+    data={performanceData}
+  />
+</div>
+
+<div className="mt-8">
+  <RiskSimulatorCard
+    riskScore={riskScore}
+    expectedReturn={expectedReturn}
+    bestCase={bestCase}
+    worstCase={worstCase}
+  />
+</div>
+
+<div className="mt-8">
+  <SectorExposureCard
+    sectors={
+      sectorExposure
+    }
+  />
+</div>
+
+<div className="mt-8">
+  <AISectorAnalysisCard
+    insight={sectorInsight}
+    recommendation={
+      sectorRecommendation
+    }
+    score={
+      sectorDiversificationScore
+    }
+    topSector={
+      topSector?.sector ||
+      "N/A"
+    }
+  />
+</div>
+
+<div className="mt-8">
+  <EarningsCalendarCard
+    earnings={earningsData}
+  />
+</div>
+
+
+      </div>
     </div>
   );
 }
