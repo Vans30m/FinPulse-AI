@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, ArrowUpDown, Search } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, ArrowUpDown, Search, Table, LayoutGrid, Inbox } from 'lucide-react';
 
-interface PerformanceData {
+export interface PerformanceData {
   ticker: string;
   name: string;
   colorClass: {
@@ -17,81 +17,19 @@ interface PerformanceData {
   change1y: number;
 }
 
-const initialStocksData: PerformanceData[] = [
-  {
-    ticker: 'AAPL',
-    name: 'Apple Inc.',
-    colorClass: { bg: 'bg-slate-100 dark:bg-slate-800/60', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-300/50' },
-    price: 178.52,
-    change1d: 1.24,
-    change1w: -0.45,
-    change1m: 3.12,
-    change3m: -2.15,
-    change1y: 14.82,
-  },
-  {
-    ticker: 'MSFT',
-    name: 'Microsoft Corporation',
-    colorClass: { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/50 dark:border-blue-900/50' },
-    price: 415.60,
-    change1d: 0.85,
-    change1w: 2.11,
-    change1m: 5.43,
-    change3m: 8.92,
-    change1y: 28.41,
-  },
-  {
-    ticker: 'NVDA',
-    name: 'NVIDIA Corporation',
-    colorClass: { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200/50 dark:border-emerald-900/50' },
-    price: 875.12,
-    change1d: 3.62,
-    change1w: 5.84,
-    change1m: 14.22,
-    change3m: 38.51,
-    change1y: 212.35,
-  },
-  {
-    ticker: 'TSLA',
-    name: 'Tesla, Inc.',
-    colorClass: { bg: 'bg-rose-50 dark:bg-rose-950/40', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200/50 dark:border-rose-900/50' },
-    price: 175.34,
-    change1d: -2.18,
-    change1w: -4.32,
-    change1m: -8.15,
-    change3m: -18.42,
-    change1y: -12.04,
-  },
-  {
-    ticker: 'AMZN',
-    name: 'Amazon.com, Inc.',
-    colorClass: { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200/50 dark:border-amber-900/50' },
-    price: 174.42,
-    change1d: 0.41,
-    change1w: 1.05,
-    change1m: 4.88,
-    change3m: 11.23,
-    change1y: 41.65,
-  },
-  {
-    ticker: 'GOOGL',
-    name: 'Alphabet Inc.',
-    colorClass: { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200/50 dark:border-purple-900/50' },
-    price: 151.60,
-    change1d: -0.12,
-    change1w: 1.87,
-    change1m: 6.15,
-    change3m: 5.24,
-    change1y: 34.18,
-  },
-];
+interface StockPerformanceTableProps {
+  customData?: PerformanceData[];
+}
 
 type SortKey = 'ticker' | 'price' | 'change1d' | 'change1w' | 'change1m' | 'change3m' | 'change1y';
 
-export default function StockPerformanceTable() {
+export default function StockPerformanceTable({ customData }: StockPerformanceTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('change1d');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'heatmap'>('table');
+
+  const activeDataSource = customData || [];
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -102,7 +40,7 @@ export default function StockPerformanceTable() {
     }
   };
 
-  const sortedStocks = [...initialStocksData]
+  const sortedStocks = [...activeDataSource]
     .filter(
       (stock) =>
         stock.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -135,87 +73,140 @@ export default function StockPerformanceTable() {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 rounded-3xl shadow-xl overflow-hidden">
+    <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden">
       {/* Table Header Section */}
-      <div className="p-6 border-b border-slate-100 dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/50">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Multi-Period Performance</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Performance Analytics</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Compare equity returns across different timeline intervals.
           </p>
         </div>
 
-        {/* Search Input Filter */}
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Filter by name or ticker..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-white/10 outline-none focus:border-blue-600 dark:focus:border-cyan-400 transition-colors"
-          />
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* Search Input Filter */}
+          <div className="relative flex-1 sm:flex-initial sm:w-64">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Filter active pool..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-blue-600 dark:focus:border-blue-400 transition-all"
+            />
+          </div>
+
+          {/* Premium Segmented Controls View Switcher */}
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/40 dark:border-slate-700/50">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'table' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <Table className="h-3.5 w-3.5" />
+              <span>Table</span>
+            </button>
+            <button
+              onClick={() => setViewMode('heatmap')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'heatmap' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>Heatmap</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Table Wrapper */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse whitespace-nowrap">
-          <thead>
-            <tr className="bg-slate-50/70 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              <th className="py-4 px-6 cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => handleSort('ticker')}>
-                <div className="flex items-center gap-1">Company <ArrowUpDown className="h-3 w-3" /></div>
-              </th>
-              <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => handleSort('price')}>
-                <div className="flex items-center justify-end gap-1">Price <ArrowUpDown className="h-3 w-3" /></div>
-              </th>
-              <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => handleSort('change1d')}>
-                <div className="flex items-center justify-end gap-1">1 Day <ArrowUpDown className="h-3 w-3" /></div>
-              </th>
-              <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => handleSort('change1w')}>
-                <div className="flex items-center justify-end gap-1">1 Week <ArrowUpDown className="h-3 w-3" /></div>
-              </th>
-              <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => handleSort('change1m')}>
-                <div className="flex items-center justify-end gap-1">1 Month <ArrowUpDown className="h-3 w-3" /></div>
-              </th>
-              <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => handleSort('change3m')}>
-                <div className="flex items-center justify-end gap-1">3 Month <ArrowUpDown className="h-3 w-3" /></div>
-              </th>
-              <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => handleSort('change1y')}>
-                <div className="flex items-center justify-end gap-1">1 Year <ArrowUpDown className="h-3 w-3" /></div>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {sortedStocks.map((stock) => (
-              <tr key={stock.ticker} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors group">
-                {/* Name & Unique Color Ticker Badge */}
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-1 text-xs font-bold tracking-wide rounded-lg border ${stock.colorClass.bg} ${stock.colorClass.text} ${stock.colorClass.border}`}>
-                      {stock.ticker}
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
-                        {stock.name}
-                      </span>
-                    </div>
+      {/* Render Dynamic Viewport Engine Wrapper */}
+      <div className="relative min-h-[220px]">
+        {sortedStocks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Inbox className="h-8 w-8 text-slate-400 mb-2" />
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">No active assets evaluated</h4>
+            <p className="text-xs text-slate-400 max-w-xs mt-1">Add items via the backtest search input bar above.</p>
+          </div>
+        ) : viewMode === 'table' ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50/70 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="py-4 px-6 cursor-pointer hover:text-slate-900 dark:hover:text-white select-none" onClick={() => handleSort('ticker')}>
+                    <div className="flex items-center gap-1">Company <ArrowUpDown className="h-3 w-3" /></div>
+                  </th>
+                  <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white select-none" onClick={() => handleSort('price')}>
+                    <div className="flex items-center justify-end gap-1">Price <ArrowUpDown className="h-3 w-3" /></div>
+                  </th>
+                  <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white select-none" onClick={() => handleSort('change1d')}>
+                    <div className="flex items-center justify-end gap-1">1 Day <ArrowUpDown className="h-3 w-3" /></div>
+                  </th>
+                  <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white select-none" onClick={() => handleSort('change1w')}>
+                    <div className="flex items-center justify-end gap-1">1 Week <ArrowUpDown className="h-3 w-3" /></div>
+                  </th>
+                  <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white select-none" onClick={() => handleSort('change1m')}>
+                    <div className="flex items-center justify-end gap-1">1 Month <ArrowUpDown className="h-3 w-3" /></div>
+                  </th>
+                  <th className="py-4 px-6 text-right cursor-pointer hover:text-slate-900 dark:hover:text-white select-none" onClick={() => handleSort('change1y')}>
+                    <div className="flex items-center justify-end gap-1">1 Year <ArrowUpDown className="h-3 w-3" /></div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                {sortedStocks.map((stock) => (
+                  <tr key={stock.ticker} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors group">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${stock.colorClass.bg} ${stock.colorClass.text} ${stock.colorClass.border}`}>
+                          {stock.ticker}
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {stock.name}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-right font-mono text-sm font-medium text-slate-900 dark:text-white">
+                      ${stock.price.toFixed(2)}
+                    </td>
+                    <td className="py-4 px-6 text-right">{renderPercentage(stock.change1d)}</td>
+                    <td className="py-4 px-6 text-right">{renderPercentage(stock.change1w)}</td>
+                    <td className="py-4 px-6 text-right">{renderPercentage(stock.change1m)}</td>
+                    <td className="py-4 px-6 text-right">{renderPercentage(stock.change1y)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* HEATMAP VIEW */
+          <div className="p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {sortedStocks.map((stock) => {
+              const isPositive = stock.change1y >= 0;
+              return (
+                <div
+                  key={stock.ticker}
+                  className={`p-4 rounded-xl flex flex-col justify-between h-28 border border-slate-200/10 shadow-sm transition-transform hover:-translate-y-0.5 ${
+                    isPositive 
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400' 
+                      : 'bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-400'
+                  }`}
+                >
+                  <div>
+                    <span className="text-sm font-black block">{stock.ticker}</span>
+                    <span className="text-[10px] text-slate-400 truncate block mt-0.5">{stock.name}</span>
                   </div>
-                </td>
-                {/* Last Price */}
-                <td className="py-4 px-6 text-right font-mono text-sm font-medium text-slate-900 dark:text-white">
-                  ${stock.price.toFixed(2)}
-                </td>
-                {/* Multi-Period Percentage Fields */}
-                <td className="py-4 px-6 text-right">{renderPercentage(stock.change1d)}</td>
-                <td className="py-4 px-6 text-right">{renderPercentage(stock.change1w)}</td>
-                <td className="py-4 px-6 text-right">{renderPercentage(stock.change1m)}</td>
-                <td className="py-4 px-6 text-right">{renderPercentage(stock.change3m)}</td>
-                <td className="py-4 px-6 text-right">{renderPercentage(stock.change1y)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <div className="text-right">
+                    <span className="text-xs font-mono block font-semibold text-slate-800 dark:text-slate-200">${stock.price.toFixed(2)}</span>
+                    <span className="text-sm font-bold block mt-0.5">{isPositive ? '+' : ''}{stock.change1y.toFixed(2)}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
