@@ -24,6 +24,8 @@ import globalMarketsRoutes
 from "./routes/globalMarkets.js";
 import screenerRoutes
 from "./routes/screener.js";
+import indexSummaryRoutes
+from "./routes/indexSummary.js";
 
 dotenv.config();
 
@@ -66,6 +68,10 @@ app.use(
 app.use(
   "/api/screener",
   screenerRoutes
+);
+app.use(
+  "/api/index-summary",
+  indexSummaryRoutes
 );
 // ==========================================
 // 1. OMNI-SEARCH: FINNHUB + YAHOO FINANCE
