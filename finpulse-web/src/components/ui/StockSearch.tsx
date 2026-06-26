@@ -1,26 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, Building2 } from 'lucide-react';
+import { searchAssets } from "../../services/marketService";
 
-// 1. Define the data structure matching your screenshot
+// Define the data structure matching your screenshot
 interface StockResult {
   symbol: string;
+  yahooSymbol: string;
   name: string;
-  type: string;
   exchange: string;
+  type: string;
 }
 
-// 2. Mock Data (Based on your Wipro example)
-const MOCK_DB: StockResult[] = [
-  { symbol: 'WIPRO', name: 'Wipro Limited', type: 'stock', exchange: 'NSE' },
-  { symbol: 'WIPRO', name: 'WIPRO FUTURES', type: 'futures', exchange: 'NSE' },
-  { symbol: 'WIPRO', name: 'Wipro Limited', type: 'stock', exchange: 'BSE' },
-  { symbol: 'WIT', name: 'Wipro Limited', type: 'dr', exchange: 'NYSE' },
-  { symbol: 'WIT5204970', name: 'Wipro IT Services LLC 1.5% 23-JUN-2026', type: 'bond corporate', exchange: 'FINRA' },
-  { symbol: 'WIOA', name: 'Wipro Limited Sponsored ADR', type: 'dr', exchange: 'GETTEX' },
-  { symbol: 'WIPR', name: 'WIPRO', type: 'futures', exchange: 'BSE' },
-];
+interface StockSearchProps {
+  placeholder?: string;
 
-export default function StockSearch() {
+  onSelect: (
+    asset: StockResult
+  ) => void;
+}
+
+export default function StockSearch({
+  placeholder = "Search symbols, ideas, scripts...",
+  onSelect,
+}: StockSearchProps){
+  
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<StockResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -51,17 +54,32 @@ export default function StockSearch() {
     setIsOpen(true);
 
     // This setTimeout acts as our "Debounce" AND simulates network latency
-    const delayDebounceFn = setTimeout(() => {
-      // TODO: Replace this with your actual API call (e.g., AlphaVantage or FastAPI backend)
-      const filteredResults = MOCK_DB.filter(
-        (item) =>
-          item.symbol.toLowerCase().includes(query.toLowerCase()) ||
-          item.name.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      setResults(filteredResults);
-      setIsSearching(false);
-    }, 300);
+      const delayDebounceFn =
+setTimeout(async () => {
+        // TODO: Replace this with your actual API call (e.g., AlphaVantage or FastAPI backend)
+        try {
+
+  const data =
+    await searchAssets(
+      query
+    );
+
+  setResults(data);
+
+} catch (error) {
+
+  console.error(
+    "Search Error:",
+    error
+  );
+
+  setResults([]);
+
+} finally {
+
+  setIsSearching(false);
+}
+      }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
@@ -72,11 +90,13 @@ export default function StockSearch() {
     setIsOpen(false);
   };
 
-  const handleSelect = (result: StockResult) => {
-    console.log('Selected:', result);
-    // TODO: Navigate to stock detail page or add to watchlist
-    clearSearch();
-  };
+const handleSelect =
+(result: StockResult) => {
+
+  onSelect(result);
+
+  clearSearch();
+};
 
   return (
     <div className="relative w-full max-w-lg" ref={searchRef}>
@@ -88,7 +108,7 @@ export default function StockSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length > 0 && setIsOpen(true)}
-          placeholder="Search symbols, ideas, scripts..."
+          placeholder={placeholder}
           className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-800/80 py-2.5 pl-10 pr-10 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-600/50 dark:focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-blue-600/50 dark:focus:ring-cyan-400/50 transition-all"
         />
         {query && (

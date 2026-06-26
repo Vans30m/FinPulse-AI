@@ -23,11 +23,13 @@ import {
 interface Props {
   symbol: string;
   timeframe: string;
+  height?: number;
 }
 
 export default function CandlestickChart({
   symbol,
   timeframe,
+  height = 350,
 }: Props) {
   const chartContainerRef =
     useRef<HTMLDivElement>(null);
@@ -65,7 +67,7 @@ export default function CandlestickChart({
         width:
           container.clientWidth,
 
-        height: 550,
+        height,
 
         grid: {
           vertLines: {
@@ -425,11 +427,11 @@ export default function CandlestickChart({
       </div>
 
       <div
-        ref={chartContainerRef}
-        className="
-        w-full
-        h-[550px]
-        "
+  ref={chartContainerRef}
+  className="w-full"
+        style={{
+  height: `${height}px`,
+}}
       />
     </div>
   );
