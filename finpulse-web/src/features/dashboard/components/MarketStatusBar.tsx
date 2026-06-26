@@ -1,28 +1,278 @@
-export default function MarketStatusBar() {
+function isMarketOpen(
+  timezone: string,
+  openHour: number,
+  openMinute: number,
+  closeHour: number,
+  closeMinute: number
+) {
+  const localTime = new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: timezone,
+    })
+  );
+
+  const day = localTime.getDay();
+
+  // Weekend
+  if (day === 0 || day === 6) {
+    return false;
+  }
+
+  const currentMinutes =
+    localTime.getHours() * 60 +
+    localTime.getMinutes();
+
+  const openMinutes =
+    openHour * 60 + openMinute;
+
+  const closeMinutes =
+    closeHour * 60 + closeMinute;
+
   return (
-    <div className="
-      flex
-      gap-6
-      px-6
-      py-2
-      text-sm
-      border-b
-      border-white/10
-    ">
-      <div className="text-green-400">
-        ● NSE OPEN
-      </div>
+    currentMinutes >= openMinutes &&
+    currentMinutes <= closeMinutes
+  );
+}
 
-      <div className="text-red-400">
-        ● NASDAQ CLOSED
-      </div>
+function getForexStatus() {
+  const utc = new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "UTC",
+    })
+  );
 
-      <div className="text-green-400">
-        ● CRYPTO OPEN
-      </div>
+  const day = utc.getUTCDay();
+  const hour = utc.getUTCHours();
 
-      <div className="text-green-400">
-        ● FOREX OPEN
+  // Forex closes Friday 22:00 UTC
+  if (day === 5 && hour >= 22) {
+    return "CLOSED";
+  }
+
+  // Saturday closed
+  if (day === 6) {
+    return "CLOSED";
+  }
+
+  // Sunday opens 22:00 UTC
+  if (day === 0 && hour < 22) {
+    return "CLOSED";
+  }
+
+  return "OPEN";
+}
+
+export default function MarketStatusBar() {
+  const indiaOpen = isMarketOpen(
+    "Asia/Kolkata",
+    9,
+    15,
+    15,
+    30
+  );
+
+  const usOpen = isMarketOpen(
+    "America/New_York",
+    9,
+    30,
+    16,
+    0
+  );
+
+  const europeOpen = isMarketOpen(
+    "Europe/London",
+    8,
+    0,
+    16,
+    30
+  );
+
+  const japanOpen = isMarketOpen(
+    "Asia/Tokyo",
+    9,
+    0,
+    15,
+    0
+  );
+
+  const hongKongOpen = isMarketOpen(
+    "Asia/Hong_Kong",
+    9,
+    30,
+    16,
+    0
+  );
+
+  const koreaOpen = isMarketOpen(
+    "Asia/Seoul",
+    9,
+    0,
+    15,
+    30
+  );
+
+  const forexStatus = getForexStatus();
+
+  const markets = [
+    {
+      name: "India",
+      symbol: "🇮🇳",
+      status: indiaOpen ? "OPEN" : "CLOSED",
+      color: indiaOpen
+        ? "text-emerald-500"
+        : "text-rose-500",
+    },
+
+    {
+      name: "US",
+      symbol: "🇺🇸",
+      status: usOpen ? "OPEN" : "CLOSED",
+      color: usOpen
+        ? "text-emerald-500"
+        : "text-rose-500",
+    },
+
+    {
+      name: "Europe",
+      symbol: "🇪🇺",
+      status: europeOpen ? "OPEN" : "CLOSED",
+      color: europeOpen
+        ? "text-emerald-500"
+        : "text-rose-500",
+    },
+
+    {
+      name: "Japan",
+      symbol: "🇯🇵",
+      status: japanOpen ? "OPEN" : "CLOSED",
+      color: japanOpen
+        ? "text-emerald-500"
+        : "text-rose-500",
+    },
+
+    {
+      name: "Hong Kong",
+      symbol: "🇭🇰",
+      status: hongKongOpen
+        ? "OPEN"
+        : "CLOSED",
+      color: hongKongOpen
+        ? "text-emerald-500"
+        : "text-rose-500",
+    },
+
+    {
+      name: "South Korea",
+      symbol: "🇰🇷",
+      status: koreaOpen
+        ? "OPEN"
+        : "CLOSED",
+      color: koreaOpen
+        ? "text-emerald-500"
+        : "text-rose-500",
+    },
+
+    {
+      name: "Crypto",
+      symbol: "₿",
+      status: "24/7",
+      color: "text-cyan-500",
+    },
+
+    {
+      name: "Forex",
+      symbol: "💱",
+      status: forexStatus,
+      color:
+        forexStatus === "OPEN"
+          ? "text-violet-500"
+          : "text-rose-500",
+    },
+  ];
+
+  const scrollingMarkets = [
+    ...markets,
+    ...markets,
+    ...markets,
+  ];
+
+  return (
+    <div
+      className="
+      relative flex items-center overflow-hidden w-full h-14
+      rounded-2xl border border-slate-200/60 bg-white/70 backdrop-blur-md
+      dark:bg-night-900/70 dark:border-night-800
+    "
+    >
+      <div className="flex w-full overflow-hidden">
+        <div
+          className="
+          flex gap-4 items-center animate-marquee whitespace-nowrap
+          hover:[animation-play-state:paused]
+          cursor-pointer select-none
+        "
+        >
+          {scrollingMarkets.map(
+            (market, index) => (
+              <div
+                key={`${market.name}-${index}`}
+                className="
+                flex items-center gap-2.5 shrink-0
+                rounded-xl px-3.5 py-1.5
+                border border-slate-100
+                dark:border-night-700/40
+                bg-slate-50/80
+                dark:bg-night-800/50
+                transition-all duration-200
+                hover:scale-105
+              "
+              >
+                <span className="text-base leading-none">
+                  {market.symbol}
+                </span>
+
+                <span
+                  className="
+                  text-xs font-bold
+                  text-slate-700
+                  dark:text-slate-300
+                "
+                >
+                  {market.name}
+                </span>
+
+                <div
+                  className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-current/10 ${market.color}`}
+                >
+                  <span
+                    className={`
+                    h-1.5 w-1.5 rounded-full
+                    ${
+                      market.status !==
+                        "CLOSED" &&
+                      market.status !== "24/7"
+                        ? "animate-pulse"
+                        : ""
+                    }
+                    bg-current
+                  `}
+                  />
+
+                  <span
+                    className="
+                    text-[10px]
+                    font-black
+                    tracking-wide
+                    uppercase
+                  "
+                  >
+                    {market.status}
+                  </span>
+                </div>
+              </div>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

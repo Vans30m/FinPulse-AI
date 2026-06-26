@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Layers, Plus, X, Coins, Bitcoin, Loader2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Coins, Bitcoin, Loader2, Sparkles } from 'lucide-react';
 import { BarChart3 } from "lucide-react";
-import AssetChartModal from "../../../components/charts/AssetChartModal";
-import StockSearch from "../../../components/ui/StockSearch";
 import PortfolioAllocationChart
 from "./PortfolioAllocationChart";
 import PortfolioHealthCard
@@ -21,8 +19,8 @@ import AISectorAnalysisCard
 from "./AISectorAnalysisCard";
 import EarningsCalendarCard
 from "./EarningsCalendarCard";
-
-
+import { useChart }
+from "../../../context/ChartContext";
 
 interface Holding {
   ticker: string;
@@ -51,7 +49,6 @@ interface MarketSection {
   icon: React.ReactNode;
   holdings: Holding[];
 }
-
 
 const INITIAL_SECTIONS: MarketSection[] = [
   {
@@ -222,11 +219,11 @@ useState<{
   const [shares, setShares] = useState('');
   const [cost, setCost] = useState('');
 
-  const [chartOpen, setChartOpen] =
-  useState(false);
+  const [aiTab, setAiTab] = useState<"health" | "insights" | "sectors" | "rebalance">("health");
 
-const [chartAsset, setChartAsset] =
-  useState<any>(null);
+  const {
+  openChart,
+} = useChart();
 
   // Finnhub Debounced Search
   useEffect(() => {
@@ -585,164 +582,336 @@ const expectedReturn =
 
 const bestCase =
   expectedReturn + 15;
-
 const worstCase =
   -(riskScore / 5);
 
+  const filteredHoldings = sections
+    .filter((section) => activeMarket === 'all' || activeMarket === section.id)
+    .flatMap((section) => 
+      section.holdings.map(h => ({
+        ...h,
+        category: section.title,
+        sectionId: section.id,
+        icon: section.icon
+      }))
+    );
 
   return (
-    
     <div className="space-y-8 w-full max-w-7xl mx-auto px-1 relative">
 
-      {/* HEADER & AGGREGATES (Unchanged) */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* HEADER & AGGREGATES */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Asset Portfolio</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Global allocation breakdown with modular tracking.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-display">
+            Asset Portfolio
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Global allocation breakdown with modular tracking.
+          </p>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200/60 dark:border-white/10 text-xs font-bold overflow-x-auto custom-scrollbar">
             {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
               <button 
                 key={tab} 
                 onClick={() => setActiveMarket(tab)} 
-                className={`px-3 py-1.5 rounded-lg capitalize ${activeMarket === tab ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500'}`}
+                className={`px-3.5 py-2 rounded-lg capitalize transition-all whitespace-nowrap ${
+                  activeMarket === tab 
+                    ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                }`}
               >
                 {tab}
               </button>
             ))}
           </div>
-          <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1.5 rounded-xl bg-blue-600 dark:bg-cyan-400 px-4 py-2 text-sm font-bold text-white dark:text-night-900 shadow-md hover:scale-[1.02] transition-transform ml-auto md:ml-0">
+          <button 
+            onClick={() => setIsModalOpen(true)} 
+            className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 px-4.5 py-2.5 text-sm font-bold text-white dark:text-night-900 shadow-md hover:scale-[1.02] active:scale-95 transition-all ml-auto sm:ml-0 whitespace-nowrap"
+          >
             <Plus className="h-4 w-4" /> Add Asset
           </button>
         </div>
       </div>
 
+      {/* Aggregate Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 p-6 rounded-3xl shadow-md flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400"><PieChart className="h-6 w-6" /></div>
-          <div><p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Net Value</p><h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">${totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</h3></div>
+        <div className="glass-panel p-6 flex items-center gap-4 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
+          <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400">
+            <PieChart className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Net Value</p>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+              ${totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </h3>
+          </div>
         </div>
-        <div className="bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 p-6 rounded-3xl shadow-md flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"><TrendingUp className="h-6 w-6" /></div>
-          <div><p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Returns</p><h3 className={`text-2xl font-black mt-1 ${totalGain >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>{totalGain >= 0 ? '+' : ''}${totalGain.toLocaleString(undefined, { maximumFractionDigits: 2 })}</h3></div>
+
+        <div className="glass-panel p-6 flex items-center gap-4 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
+          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-450">
+            <TrendingUp className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Returns</p>
+            <h3 className={`text-2xl font-black mt-1 ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+              {totalGain >= 0 ? '+' : ''}${totalGain.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </h3>
+          </div>
         </div>
         
-        <div className="bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 p-6 rounded-3xl shadow-md flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400"><Globe className="h-6 w-6" /></div>
-          <div><p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Asset Classes</p><h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">5 Unique Hubs</h3></div>
+        <div className="glass-panel p-6 flex items-center gap-4 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
+          <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
+            <Globe className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Asset Classes</p>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">5 Unique Hubs</h3>
+          </div>
         </div>
       </div>
 
-      {/* ASSET LISTS (Unchanged) */}
-      <div className="space-y-8">
-        {sections.filter((section) => activeMarket === 'all' || activeMarket === section.id).map((section) => (
-            <div key={section.id} className="bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 rounded-3xl shadow-xl overflow-hidden">
-              <div className="p-6 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-100 dark:border-white/5 flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-white dark:bg-white/5 border border-slate-200/60 dark:border-white/10">{section.icon}</div>
-                <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">{section.title}</h2><p className="text-xs text-slate-400 dark:text-slate-500">{section.region}</p></div>
+      {/* Main Dashboard Layout Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left 2 Columns: Charts & Holdings Table */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* Performance Chart */}
+          <PortfolioPerformanceChart
+            data={performanceData}
+          />
+
+          {/* Unified Holdings Card */}
+          <div className="glass-panel overflow-hidden shadow-lg transition-all duration-300">
+            <div className="p-6 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Portfolio Positions</h2>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Live holdings index list across active categories.</p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse whitespace-nowrap">
-                  <thead>
-                    <tr className="border-b border-slate-100 dark:border-white/5 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-6">Asset Name</th><th className="py-3.5 px-6 text-right">Quantity / Vol</th>
-                    <th className="py-3.5 px-6 text-right">Avg Buy Price</th><th className="py-3.5 px-6 text-right">Current Price</th>
-                    <th className="py-3.5 px-6 text-right">Market Value</th><th className="py-3.5 px-6 text-right">Total Returns</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                    {section.holdings.map((asset) => (
-                      <tr key={asset.ticker} className="hover:bg-slate-50/40 dark:hover:bg-white/[0.005] transition-colors group">
-                        <td className="py-4 px-6"><div className="flex items-center gap-3"><span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>{asset.ticker}</span><span className="text-sm font-semibold text-slate-900 dark:text-white">{asset.name}</span></div></td>
-                        <td className="py-4 px-6 text-right font-mono text-sm text-slate-600 dark:text-slate-300">{asset.shares.toLocaleString()}</td>
-                        <td className="py-4 px-6 text-right font-mono text-sm text-slate-600 dark:text-slate-300">${asset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                        <td className="py-4 px-6 text-right font-mono text-sm font-semibold text-slate-900 dark:text-white">${asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                        <td className="py-4 px-6 text-right font-mono text-sm font-bold text-slate-900 dark:text-white">${asset.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                        <td className="py-4 px-6 text-right">
-                          <div className={`flex flex-col items-end ${asset.totalGain >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                            <span className="text-sm font-semibold flex items-center gap-0.5">{asset.totalGain >= 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}${Math.abs(asset.totalGain).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                            <span className="text-xs">{asset.gainPercent.toFixed(2)}%</span>
-                          </div>
-                          {<button
-    onClick={() => {
-      setChartAsset({
-  symbol: asset.ticker,
-
-  yahooSymbol:
-    asset.yahooSymbol ||
-    asset.ticker,
-
-  name: asset.name,
-
-  exchange:
-    asset.exchange ||
-    "GLOBAL",
-
-  type:
-    asset.type ||
-    "Asset",
-});
-
-      setChartOpen(true);
-    }}
-    className="
-    inline-flex
-    items-center
-    gap-2
-    px-3
-    py-2
-    rounded-xl
-    bg-blue-600
-    hover:bg-blue-700
-    dark:bg-cyan-500
-    dark:hover:bg-cyan-400
-    text-white
-    text-xs
-    font-semibold
-    transition-all
-    "
-  >
-    <BarChart3 className="h-4 w-4" />
-    View Chart
-</button> }
-                        </td>
-                      </tr>
-                    ))}
-                    {section.holdings.length === 0 && (
-                      <tr><td colSpan={7} className="py-8 text-center text-sm text-slate-400">No open positions recorded in this asset category.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-cyan-400">
+                {filteredHoldings.length} Positions
+              </span>
             </div>
-          ))}
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <th className="py-4 px-6">Asset / Hub</th>
+                    <th className="py-4 px-6 text-right">Qty / Vol</th>
+                    <th className="py-4 px-6 text-right">Avg Cost</th>
+                    <th className="py-4 px-6 text-right">Current Price</th>
+                    <th className="py-4 px-6 text-right">Market Value</th>
+                    <th className="py-4 px-6 text-right">Returns</th>
+                    <th className="py-4 px-6 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                  {filteredHoldings.map((asset) => (
+                    <tr key={asset.ticker} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group">
+                      <td className="py-4.5 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2.5 py-0.5 text-[10px] font-black rounded border leading-tight ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>
+                                {asset.ticker}
+                              </span>
+                              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                                {asset.name}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
+                              {asset.category}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4.5 px-6 text-right font-mono text-sm text-slate-600 dark:text-slate-300">
+                        {asset.shares.toLocaleString()}
+                      </td>
+                      <td className="py-4.5 px-6 text-right font-mono text-sm text-slate-600 dark:text-slate-300">
+                        ${asset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-4.5 px-6 text-right font-mono text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        ${asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-4.5 px-6 text-right font-mono text-sm font-bold text-slate-900 dark:text-white">
+                        ${asset.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-4.5 px-6 text-right">
+                        <div className={`flex flex-col items-end ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                          <span className="text-sm font-semibold flex items-center gap-0.5">
+                            {asset.totalGain >= 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+                            ${Math.abs(asset.totalGain).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[10px] font-medium opacity-85">
+                            {asset.gainPercent.toFixed(2)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4.5 px-6 text-center">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openChart({
+                              symbol: asset.ticker,
+                              yahooSymbol: asset.yahooSymbol || asset.ticker,
+                              name: asset.name,
+                              exchange: asset.exchange || "GLOBAL",
+                              type: asset.type || "Asset",
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-cyan-400 hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-xs font-bold transition-all"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5" />
+                          Chart
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredHoldings.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-sm text-slate-400">
+                        No active holdings found in this category.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right 1 Column: AI Diagnostics & Analytics Side Panel */}
+        <div className="lg:col-span-1 space-y-8">
+          
+          <PortfolioAllocationChart
+            data={allocationData}
+          />
+
+          {/* Combined AI Analyst Tabbed Card */}
+          <div className="glass-panel p-6 border-slate-200 dark:border-slate-800/60 shadow-lg">
+            <div className="flex items-center gap-2.5 mb-5 border-b border-slate-100 dark:border-slate-800/60 pb-4">
+              <Sparkles className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                AI Portfolio Analyst
+              </h2>
+            </div>
+
+            {/* Tab selection cluster */}
+            <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 p-1 rounded-2xl mb-6">
+              {[
+                { id: "health", label: "Health" },
+                { id: "insights", label: "Insights" },
+                { id: "sectors", label: "Sectors" },
+                { id: "rebalance", label: "Realignment" }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setAiTab(tab.id as any)}
+                  className={`px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+                    aiTab === tab.id
+                      ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm border border-slate-100 dark:border-white/5"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-350"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab content wrapper */}
+            <div className="min-h-[220px] flex flex-col justify-between">
+              {aiTab === "health" && (
+                <PortfolioHealthCard
+                  score={healthScore}
+                  diversification={
+                    healthScore > 80
+                      ? "Excellent"
+                      : healthScore > 60
+                      ? "Good"
+                      : "Needs Improvement"
+                  }
+                  risk={risk}
+                  growth={growth}
+                />
+              )}
+
+              {aiTab === "insights" && (
+                <PortfolioInsightsCard
+                  insights={insights}
+                />
+              )}
+
+              {aiTab === "sectors" && (
+                <AISectorAnalysisCard
+                  insight={sectorInsight}
+                  recommendation={sectorRecommendation}
+                  score={sectorDiversificationScore}
+                  topSector={topSector?.sector || "N/A"}
+                />
+              )}
+
+              {aiTab === "rebalance" && (
+                <RebalancingCard
+                  suggestions={rebalancingSuggestions}
+                />
+              )}
+            </div>
+          </div>
+
+          <RiskSimulatorCard
+            riskScore={riskScore}
+            expectedReturn={expectedReturn}
+            bestCase={bestCase}
+            worstCase={worstCase}
+          />
+
+          <SectorExposureCard
+            sectors={sectorExposure}
+          />
+
+          <EarningsCalendarCard
+            earnings={earningsData}
+          />
+
+        </div>
+
       </div>
 
       {/* MODAL WITH NEW DEBOUNCED SEARCH */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 p-6">
+          <div className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsModalOpen(false)} />
+          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-6">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add Asset Position</h3>
-              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"><X className="h-4 w-4" /></button>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white font-display">Add Asset Position</h3>
+              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
             <form onSubmit={handleAddAsset} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">Asset Category</label>
-                <select value={marketId} onChange={e => setMarketId(e.target.value)} className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-2 text-sm rounded-xl outline-none text-slate-900 dark:text-white">
-                  <option value="domestic" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white">Domestic Stock</option>
-                  <option value="us" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white">US Stock</option>
-                  <option value="other" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white">Other Market</option>
-                  <option value="crypto" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white">Crypto</option>
-                  <option value="metals" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white">Precious Metals</option>
+                <label className="text-xs font-bold text-slate-500 block mb-1.5">Asset Category</label>
+                <select 
+                  value={marketId} 
+                  onChange={e => setMarketId(e.target.value)} 
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors"
+                >
+                  <option value="domestic" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Domestic Stock</option>
+                  <option value="us" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">US Stock</option>
+                  <option value="other" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Other Market</option>
+                  <option value="crypto" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Crypto</option>
+                  <option value="metals" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Precious Metals</option>
                 </select>
               </div>
               
               <div className="relative">
-                <label className="text-xs font-bold text-slate-500 block mb-1">Search Asset</label>
+                <label className="text-xs font-bold text-slate-500 block mb-1.5">Search Asset</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -753,15 +922,15 @@ const worstCase =
                       setShowSuggestions(true);
                     }}
                     onFocus={() => setShowSuggestions(true)}
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-2 text-sm rounded-xl outline-none text-slate-900 dark:text-white pr-10"
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white pr-10 focus:border-blue-500 dark:focus:border-cyan-400 transition-colors"
                     placeholder="e.g. Apple or AAPL"
                     required
                   />
-                  {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 animate-spin" />}
+                  {isSearching && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 animate-spin" />}
                 </div>
 
                 {showSuggestions && assetSuggestions.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
+                  <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
                     {assetSuggestions.map((asset) => (
                       <div 
                         key={asset.id} 
@@ -779,119 +948,50 @@ const worstCase =
                 )}
                 
                 {selectedAsset && (
-                  <p className="mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    Selected: {selectedAsset.name}
+                  <p className="mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-450 flex items-center gap-1.5">
+                    ✓ Selected: {selectedAsset.name}
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-500 block mb-1">Quantity</label>
-                  <input type="number" step="any" required placeholder="0" value={shares} onChange={e => setShares(e.target.value)} className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-2 text-sm rounded-xl outline-none text-slate-900 dark:text-white" />
+                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Quantity</label>
+                  <input 
+                    type="number" 
+                    step="any" 
+                    required 
+                    placeholder="0" 
+                    value={shares} 
+                    onChange={e => setShares(e.target.value)} 
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors" 
+                  />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-500 block mb-1">Average Price ($)</label>
-                  <input type="number" step="any" required placeholder="0.00" value={cost} onChange={e => setCost(e.target.value)} className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-2 text-sm rounded-xl outline-none text-slate-900 dark:text-white" />
+                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Average Price ($)</label>
+                  <input 
+                    type="number" 
+                    step="any" 
+                    required 
+                    placeholder="0.00" 
+                    value={cost} 
+                    onChange={e => setCost(e.target.value)} 
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors" 
+                  />
                 </div>
               </div>
-              <button type="submit" className="w-full rounded-xl bg-blue-600 dark:bg-cyan-400 py-3 text-sm font-bold text-white dark:text-night-900 mt-2 shadow-md">
+              
+              <button 
+                type="submit" 
+                className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 py-3 text-sm font-bold text-white dark:text-night-900 mt-2 shadow-md transition-all active:scale-95"
+              >
                 Log Position
               </button>
             </form>
           </div>
         </div>
       )}
-        <AssetChartModal
-  open={chartOpen}
-  asset={chartAsset}
-  onClose={() => {
-    setChartOpen(false);
-    setChartAsset(null);
-  }}
-/>
 
-<PortfolioAllocationChart
-  data={allocationData}
-/>
-
-<div className="mt-8">
-
-  <PortfolioHealthCard
-    score={healthScore}
-    diversification={
-      healthScore > 80
-        ? "Excellent"
-        : healthScore > 60
-        ? "Good"
-        : "Needs Improvement"
-    }
-    risk={risk}
-    growth={growth}
-  />
-</div>
-
-<div className="mt-8">
-
-  <PortfolioInsightsCard
-    insights={insights}
-  />
-
-<div className="mt-8">
-  <RebalancingCard
-    suggestions={
-      rebalancingSuggestions
-    }
-  />
-</div>
-
-<div className="mt-8">
-  <PortfolioPerformanceChart
-    data={performanceData}
-  />
-</div>
-
-<div className="mt-8">
-  <RiskSimulatorCard
-    riskScore={riskScore}
-    expectedReturn={expectedReturn}
-    bestCase={bestCase}
-    worstCase={worstCase}
-  />
-</div>
-
-<div className="mt-8">
-  <SectorExposureCard
-    sectors={
-      sectorExposure
-    }
-  />
-</div>
-
-<div className="mt-8">
-  <AISectorAnalysisCard
-    insight={sectorInsight}
-    recommendation={
-      sectorRecommendation
-    }
-    score={
-      sectorDiversificationScore
-    }
-    topSector={
-      topSector?.sector ||
-      "N/A"
-    }
-  />
-</div>
-
-<div className="mt-8">
-  <EarningsCalendarCard
-    earnings={earningsData}
-  />
-</div>
-
-
-      </div>
     </div>
   );
 }

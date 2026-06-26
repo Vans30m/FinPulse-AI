@@ -3,6 +3,8 @@ import { TrendingUp, TrendingDown, Plus, Trash2, FolderPlus, X, ChevronDown, Loa
 import { useNavigate } from "react-router-dom";
 import { useChart } from "../../../context/ChartContext";
 import { getStockSentiment } from "../../../services/marketService";
+import AIRankingCard
+from "./AIRankingCard";
 
 // ==========================================
 // INTERFACES
@@ -245,6 +247,26 @@ export default function Watchlist() {
     return sortDirection === "asc" ? result : -result;
   });
 
+  const rankedAssets =
+  [...activeWatchlist.items]
+    .filter(
+      (item) =>
+        item.aiScore !== undefined
+    )
+    .sort(
+      (a, b) =>
+        (b.aiScore || 0) -
+        (a.aiScore || 0)
+    )
+    .slice(0, 5)
+    .map((item) => ({
+      symbol: item.symbol,
+      score: item.aiScore || 0,
+      verdict:
+        item.aiReason ||
+        "No analysis available",
+    }));
+
   return (
     <div className="w-full space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -404,15 +426,6 @@ export default function Watchlist() {
                       <span>{item.changePercent}</span>
                     </div>
                   </div>
-
-                  {/* AI Sentiment */}
-                  <div className="mt-4">
-                    <div className="text-xs uppercase text-slate-400 mb-1">AI Insight</div>
-                    <div className="text-sm text-slate-300">{item.aiReason || "Analyzing sentiment..."}</div>
-                    <div className="w-12 h-12 rounded-full border-4 border-cyan-500 flex items-center justify-center font-bold text-sm mt-2">
-                      {item.aiScore || "--"}
-                    </div>
-                  </div>
                 </div>
               ))}
             </div>
@@ -500,6 +513,11 @@ export default function Watchlist() {
           </div>
         </div>
       )}
+
+      <AIRankingCard
+  assets={rankedAssets}
+/>
+
     </div>
   );
 }

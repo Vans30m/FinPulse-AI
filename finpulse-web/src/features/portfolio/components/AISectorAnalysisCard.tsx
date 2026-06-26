@@ -1,3 +1,5 @@
+import { Star, AlertCircle } from "lucide-react";
+
 interface Props {
   insight: string;
   recommendation: string;
@@ -12,42 +14,38 @@ export default function AISectorAnalysisCard({
   topSector,
 }: Props) {
   return (
-    <div className="rounded-3xl border border-cyan-500/20 bg-cyan-500/5 p-6">
-
-      <h2 className="text-xl font-bold mb-4">
-        AI Sector Analysis
-      </h2>
-
-      <div className="text-4xl font-bold text-cyan-400">
-        {score}/100
+    <div className="space-y-6 animate-in fade-in duration-200">
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Diagnostics Summary</span>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">Sector Allocation Analysis</h3>
+        </div>
+        <div className="flex items-baseline gap-1 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 px-3 py-1.5 rounded-xl">
+          <span className="text-2xl font-black text-cyan-500">
+            {score}
+          </span>
+          <span className="text-[10px] font-bold text-slate-405 uppercase">/100</span>
+        </div>
       </div>
 
-      <div className="text-sm text-slate-400">
-        Diversification Score
+      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-405 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 p-3 rounded-2xl">
+        <Star className="h-4 w-4 text-cyan-500" />
+        <span>Top Sector Concentration: <strong className="text-slate-805 dark:text-slate-200">{topSector}</strong></span>
       </div>
 
-      <div className="mt-4">
-        <span className="font-semibold">
-          Top Sector:
-        </span>
-        {" "}
-        {topSector}
-      </div>
-
-      <p className="mt-4 text-slate-300">
+      <p className="text-sm text-slate-655 dark:text-slate-300 leading-relaxed">
         {insight}
       </p>
 
-      <div className="mt-4 rounded-xl bg-slate-900/50 p-3">
-        <div className="font-semibold text-cyan-400">
+      <div className="rounded-2xl bg-cyan-500/[0.03] border border-cyan-500/10 p-4 space-y-1">
+        <div className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5" />
           Recommendation
         </div>
-
-        <div className="mt-1 text-sm">
+        <p className="text-sm text-slate-750 dark:text-slate-350 leading-relaxed font-semibold">
           {recommendation}
-        </div>
+        </p>
       </div>
-
     </div>
   );
 }

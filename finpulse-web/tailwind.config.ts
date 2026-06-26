@@ -8,8 +8,8 @@ const config: Config = {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
-      // These custom colors will power your Dark Mode (Crypto/Hacker theme)
-      // Light Mode will automatically use Tailwind's default Slate & Blue colors!
+      // These custom colors power your Dark Mode (Crypto/Hacker theme)
+      // Light Mode automatically uses Tailwind's default Slate & Blue colors!
       colors: {
         night: {
           950: '#070A14',
@@ -37,6 +37,11 @@ const config: Config = {
         grid: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)',
       },
       keyframes: {
+        // Added: Marquee logic for seamless infinite scroll
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-33.333%)' },
+        },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-10px)' },
@@ -51,6 +56,8 @@ const config: Config = {
         },
       },
       animation: {
+        // Added: 30s linear marquee animation configuration
+        marquee: 'marquee 30s linear infinite',
         float: 'float 8s ease-in-out infinite',
         shimmer: 'shimmer 2.5s linear infinite',
         pulseLine: 'pulseLine 8s linear infinite',
