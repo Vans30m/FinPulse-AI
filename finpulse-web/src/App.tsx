@@ -20,6 +20,7 @@ import AssetChartModal from "./components/charts/AssetChartModal";
 import { useChart} from "./context/ChartContext";
 import AIMarketSentiment from "./features/dashboard/components/AIMarketSentiment";
 import MarketExplanation from "./features/dashboard/components/MarketExplanation";
+import GlobalEarningsCalendar from "./components/home/GlobalEarningsCalendar";
 
 // New Footer Pages
 import Analytics from "./pages/Analytics";
@@ -151,6 +152,8 @@ export default function App() {
                       marketRegion={marketRegion}
                       onMarketChange={setMarketRegion}
                     />
+                    
+                    <GlobalEarningsCalendar />
                     
                     {/* Updated with the marketRegion prop */}
                     <MarketScreeners

@@ -5,14 +5,15 @@ import {
   SMA,
   EMA,
 } from "technicalindicators";
-import { GLOBAL_INDICES } from "../config/globalIndices.js";
-import { DOMESTIC_INDICES } from "../config/domesticIndices.js";
+import { GLOBAL_INDICES, DOMESTIC_INDICES, MARKET_UNIVERSE } from "../config/markets.js";
 import NodeCache from "node-cache";
 
 const screenerCache =
   new NodeCache({
     stdTTL: 60,
   });
+
+const earningsCache = new NodeCache({ stdTTL: 720 });
 
 const yahooFinance =
   new YahooFinance();
@@ -750,3 +751,208 @@ export async function getIndexSummary(
     volume: quote.regularMarketVolume,
   };
 }
+
+export async function getUpcomingEarnings(symbol: string) {
+  try {
+    const result: any = await yahooFinance.quoteSummary(symbol, {
+      modules: ["price", "summaryProfile", "summaryDetail", "calendarEvents", "defaultKeyStatistics"]
+    });
+
+    const price = result.price || {};
+    const profile = result.summaryProfile || {};
+    const detail = result.summaryDetail || {};
+    const calendar = result.calendarEvents || {};
+    const stats = result.defaultKeyStatistics || {};
+
+    const companyName = price.longName || price.shortName || symbol;
+    const changePercent = price.regularMarketChangePercent ? price.regularMarketChangePercent * 100 : 0;
+    
+    let logo = `https://assets.financialmodelingprep.com/imgs/symbol/${symbol}.png`;
+    if (profile.website) {
+      const domain = profile.website.replace(/https?:\/\/(www\.)?/, "").split("/")[0];
+      logo = `https://logo.clearbit.com/${domain}`;
+    }
+
+    return {
+      symbol,
+      name: companyName,
+      exchange: price.exchangeName || price.exchange || "N/A",
+      sector: profile.sector || "N/A",
+      industry: profile.industry || "N/A",
+      currency: price.currency || "USD",
+      marketCap: price.marketCap || detail.marketCap || 0,
+      price: price.regularMarketPrice || 0,
+      change: price.regularMarketChange || 0,
+      changePercent,
+      earningsDate: calendar.earnings?.earningsDate?.[0] || null,
+      estimatedEPS: calendar.earnings?.earningsAverage !== undefined ? calendar.earnings.earningsAverage : (stats.forwardEps !== undefined ? stats.forwardEps : null),
+      logo,
+      summary: profile.longBusinessSummary || "No summary available.",
+      weekHigh52: detail.fiftyTwoWeekHigh || price.fiftyTwoWeekHigh || 0,
+      weekLow52: detail.fiftyTwoWeekLow || price.fiftyTwoWeekLow || 0,
+      dividendYield: detail.dividendYield !== undefined ? detail.dividendYield * 100 : 0,
+      peRatio: detail.trailingPE || stats.trailingPE || 0,
+      eps: stats.trailingEps || 0,
+      website: profile.website || "",
+      previousEPS: stats.trailingEps !== undefined ? stats.trailingEps : null,
+      revenue: detail.totalRevenue || 0
+    };
+  } catch (error) {
+    console.error(`Error in getUpcomingEarnings for ${symbol}:`, error);
+    throw error;
+  }
+}
+
+export async function getUpcomingEarningsForMarket(market: string) {
+  const normalizedMarket = market.toLowerCase().replace(/\s+/g, "");
+  
+  // 1. Check cache first
+  const cacheKey = `earnings-calendar-${normalizedMarket}`;
+  const cachedData = earningsCache.get(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  const symbols = MARKET_UNIVERSE[normalizedMarket];
+  if (!symbols) {
+    throw new Error(`Unsupported market/region: ${market}`);
+  }
+
+  // 2. Process symbols in batches of 100 to avoid rate limits
+  const batchSize = 100;
+  const batches: string[][] = [];
+  for (let i = 0; i < symbols.length; i += batchSize) {
+    batches.push(symbols.slice(i, i + batchSize));
+  }
+
+  const successfulQuotes: any[] = [];
+  let successCount = 0;
+
+  for (const batch of batches) {
+    try {
+      // Fetch batch of quotes concurrently
+      const results = await Promise.allSettled([
+        yahooFinance.quote(batch)
+      ]);
+
+      for (const res of results) {
+        if (res.status === "fulfilled") {
+          const quotesArray = res.value;
+          if (Array.isArray(quotesArray)) {
+            successfulQuotes.push(...quotesArray);
+            successCount += quotesArray.length;
+          } else if (quotesArray) {
+            successfulQuotes.push(quotesArray);
+            successCount += 1;
+          }
+        } else {
+          console.error(`[Earnings Calendar] Batch fetch failed:`, res.reason);
+        }
+      }
+    } catch (err) {
+      console.error(`[Earnings Calendar] Error processing batch of size ${batch.length}:`, err);
+    }
+  }
+
+  // 3. Filter quotes that have valid earnings timestamps and occur today or in the future
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const validQuotes = successfulQuotes.filter((q) => {
+    if (!q || !q.symbol) return false;
+
+    // Must have at least one upcoming earnings field
+    const hasEarnings = q.earningsTimestamp || q.earningsTimestampStart || q.earningsTimestampEnd;
+    if (!hasEarnings) return false;
+
+    // Get the earliest valid earnings date from the available fields
+    const dates = [q.earningsTimestamp, q.earningsTimestampStart, q.earningsTimestampEnd]
+      .map(d => d ? new Date(d).getTime() : null)
+      .filter((t): t is number => t !== null && !isNaN(t));
+
+    if (dates.length === 0) return false;
+
+    const earliestDate = Math.min(...dates);
+
+    // Keep today and future dates only
+    return earliestDate >= today.getTime();
+  });
+
+  const upcomingCount = validQuotes.length;
+
+  // 4. Sort chronologically (closest upcoming earnings date first)
+  validQuotes.sort((a, b) => {
+    const getEarliestTimestamp = (q: any) => {
+      const dates = [q.earningsTimestamp, q.earningsTimestampStart, q.earningsTimestampEnd]
+        .map(d => d ? new Date(d).getTime() : null)
+        .filter((t): t is number => t !== null && !isNaN(t));
+      return dates.length > 0 ? Math.min(...dates) : Infinity;
+    };
+
+    return getEarliestTimestamp(a) - getEarliestTimestamp(b);
+  });
+
+  // 5. Slice to the top 10 closest upcoming earnings announcements
+  const top10Quotes = validQuotes.slice(0, 10);
+  const targetSymbols = top10Quotes.map(q => q.symbol);
+
+  // 6. Concurrently fetch full profile details for ONLY the top 10 stocks
+  const detailPromises = targetSymbols.map(async (symbol) => {
+    try {
+      const data = await getUpcomingEarnings(symbol);
+      return {
+        ...data,
+        country: market
+      };
+    } catch (err) {
+      console.error(`[Earnings Calendar] Failed to fetch full details for ${symbol}:`, err);
+
+      // Resilient fallback: build a minimal structure from the quote object
+      const q = top10Quotes.find(item => item.symbol === symbol);
+      if (!q) return null;
+
+      const estEPS = q.epsCurrentYear || q.epsTrailingTwelveMonths || null;
+      return {
+        symbol: q.symbol,
+        name: q.longName || q.shortName || q.symbol,
+        exchange: q.exchange || "N/A",
+        sector: "N/A",
+        industry: "N/A",
+        currency: q.currency || "USD",
+        marketCap: q.marketCap || 0,
+        price: q.regularMarketPrice || 0,
+        change: q.regularMarketChange || 0,
+        changePercent: q.regularMarketChangePercent || 0,
+        earningsDate: q.earningsTimestamp ? new Date(q.earningsTimestamp).toISOString() : null,
+        estimatedEPS: estEPS,
+        logo: `https://logo.clearbit.com/${(q.symbol.split(".")[0]).toLowerCase()}.com`,
+        summary: "Detailed company overview is currently unavailable.",
+        weekHigh52: q.fiftyTwoWeekHigh || 0,
+        weekLow52: q.fiftyTwoWeekLow || 0,
+        dividendYield: q.trailingAnnualDividendYield || 0,
+        peRatio: q.trailingPE || null,
+        eps: q.epsTrailingTwelveMonths || null,
+        website: "",
+        previousEPS: null,
+        revenue: 0,
+        country: market
+      };
+    }
+  });
+
+  const finalResults = await Promise.all(detailPromises);
+  const cleanFinalResults = finalResults.filter((item): item is NonNullable<typeof item> => item !== null);
+
+  // 7. Log metrics for development tracking
+  console.log(`[Earnings Calendar] Scanned symbols count: ${symbols.length}`);
+  console.log(`[Earnings Calendar] Successful Yahoo responses: ${successCount}`);
+  console.log(`[Earnings Calendar] Companies with upcoming earnings: ${upcomingCount}`);
+  console.log(`[Earnings Calendar] Companies returned: ${cleanFinalResults.length}`);
+
+  // 8. Cache result
+  earningsCache.set(cacheKey, cleanFinalResults);
+
+  return cleanFinalResults;
+}
+
+

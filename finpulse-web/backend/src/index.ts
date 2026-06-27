@@ -6,26 +6,22 @@ import { PrismaClient } from '@prisma/client';
 import Parser from 'rss-parser';
 import YahooFinance from 'yahoo-finance2';
 import chartRoutes from "./routes/charts.js";
-import newsRoutes from "./routes/newsRoutes.js";
-import marketExplanationRoutes from "./routes/marketExplanationRoutes.js";
-import stockSentimentRoutes from "./routes/stockSentimentRoutes.js";
-import technicalRoutes from "./routes/technicalRoutes.js";
-import fundamentalsRoutes from "./routes/fundamentalsRoutes.js";
-import financialHealthRoutes from "./routes/financialHealthRoutes.js";
-import analystRoutes
-from "./routes/analyst.js";
-import companyNewsRoutes
-from "./routes/companyNews.js";
-import newsSentimentRoute
-from "./routes/newsSentiment.js";
-import aiScoreRoutes
-from "./routes/aiScore.js";
-import globalMarketsRoutes
-from "./routes/globalMarkets.js";
-import screenerRoutes
-from "./routes/screener.js";
-import indexSummaryRoutes
-from "./routes/indexSummary.js";
+import { newsRoutes, companyNewsRoutes } from "./routes/news.js";
+import {
+  globalMarketsRoutes,
+  indexSummaryRoutes,
+  technicalRoutes,
+  fundamentalsRoutes,
+  financialHealthRoutes,
+  screenerRoutes,
+  marketExplanationRoutes
+} from "./routes/markets.js";
+import {
+  aiScoreRoutes,
+  analystRoutes,
+  stockSentimentRoutes
+} from "./routes/ai.js";
+import { getUpcomingEarningsForMarket } from "./services/yahooService.js";
 
 dotenv.config();
 
@@ -54,10 +50,6 @@ app.use(
   companyNewsRoutes
 );
 app.use(
-  "/api/news-sentiment",
-  newsSentimentRoute
-);
-app.use(
   "/api/ai-score",
   aiScoreRoutes
 );
@@ -73,6 +65,20 @@ app.use(
   "/api/index-summary",
   indexSummaryRoutes
 );
+// ==========================================
+// 0. GLOBAL EARNINGS CALENDAR ENDPOINT
+// ==========================================
+app.get(["/api/earnings/calendar/:market", "/api/earnings/upcoming/:market"], async (req, res) => {
+  try {
+    const market = String(req.params.market || "");
+    const data = await getUpcomingEarningsForMarket(market);
+    res.json(data);
+  } catch (error: any) {
+    console.error(`Error in GET earnings endpoint for ${req.params.market}:`, error);
+    res.status(500).json({ error: error.message || "Failed to fetch earnings calendar" });
+  }
+});
+
 // ==========================================
 // 1. OMNI-SEARCH: FINNHUB + YAHOO FINANCE
 // ==========================================

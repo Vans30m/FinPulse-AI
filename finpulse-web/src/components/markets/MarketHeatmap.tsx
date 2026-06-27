@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 
 interface Market {
   symbol: string;
@@ -21,9 +20,6 @@ interface Props {
 }
 
 export default function MarketHeatmap({ markets }: Props) {
-  // State tracking which market object is clicked and open for detailed chart review
-  const [activeMarket, setActiveMarket] = useState<Market | null>(null);
-  const navigate = useNavigate();
 
   // 1. Auto-sort markets from highest gainer to biggest loser
   const sortedMarkets = useMemo(() => {
@@ -64,7 +60,6 @@ export default function MarketHeatmap({ markets }: Props) {
           return (
             <div
               key={market.symbol}
-              onClick={() => setActiveMarket(market)} // Launches the detail panel matching this market instance
               className={`
                 group relative flex aspect-square cursor-pointer flex-col items-center justify-center 
                 rounded-2xl border p-3 text-center transition-all duration-300 ease-out 

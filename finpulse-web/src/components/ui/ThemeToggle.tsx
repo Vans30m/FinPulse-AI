@@ -6,8 +6,7 @@ export default function ThemeToggle() {
 
   return (
     <button
-      // We explicitly pass the mouse event 'e' into the function here
-      onClick={(e) => toggleTheme(e)}
+      onClick={() => toggleTheme()}
       className="rounded-lg p-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/5 dark:hover:text-white transition-colors"
       aria-label="Toggle theme"
     >

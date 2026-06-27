@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function MarketFeedStream({
-  marketRegion,
+  marketRegion: _marketRegion,
   onMarketChange,
 }: Props) {
   const { data: markets = [], isLoading } =

@@ -47,19 +47,19 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
   if (!isOpen) return null;
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    // Simulate backend check: Does this user already have a PIN on this device?
-    const savedPin = localStorage.getItem(`finpulse_pin_${email}`);
-    
-    if (savedPin) {
-      setStep('enter-pin');
-    } else {
-      setStep('set-pin');
-    }
-  };
+  // const handleEmailSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!email) return;
+  // 
+  //   // Simulate backend check: Does this user already have a PIN on this device?
+  //   const savedPin = localStorage.getItem(`finpulse_pin_${email}`);
+  //   
+  //   if (savedPin) {
+  //     setStep('enter-pin');
+  //   } else {
+  //     setStep('set-pin');
+  //   }
+  // };
 
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Only allow numbers

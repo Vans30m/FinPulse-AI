@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { LineChart as LineChartIcon, BarChart3, Table as TableIcon, Plus, Loader2, X } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart as LineChartIcon, Table as TableIcon, Plus, Loader2, X } from 'lucide-react';
 
 const CHART_COLORS = ['#10b981', '#3b82f6', '#a855f7', '#f59e42', '#ef4444'];
 
