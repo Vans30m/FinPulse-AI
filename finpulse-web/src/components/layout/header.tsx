@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   LogIn,
@@ -11,9 +11,8 @@ import ThemeToggle from '../ui/ThemeToggle';
 import LightLogo from '../../assets/Dark_Logo.png'; 
 import DarkLogo from '../../assets/Light_Logo.png';
 import { Link, NavLink } from "react-router-dom";
-import { motion } from 'framer-motion';
-import { useChart }
-from "../../context/ChartContext";
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { useChart } from "../../context/ChartContext";
 
 interface NavItem {
   id: string;
@@ -30,15 +29,38 @@ interface HeaderProps {
 export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutClick }: HeaderProps) {
   const { user } = useAppData();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const { chartOpen } =
-  useChart();
+  const [hoveredTab, setHoveredTab] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { chartOpen } = useChart();
+
+  // Track scroll position to change styling dynamically (Stripe-like effect)
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 15) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   if (chartOpen) {
-  return null;
-}
+    return null;
+  }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-night-950/80 backdrop-blur-xl transition-colors duration-300">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+    <motion.header 
+      animate={{
+        height: isScrolled ? "56px" : "64px",
+        backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0.95)",
+        boxShadow: isScrolled ? "0 4px 20px -5px rgba(0, 0, 0, 0.05)" : "0 0px 0px rgba(0, 0, 0, 0)"
+      }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-white/[0.06] backdrop-blur-xl dark:!bg-night-950/80 transition-colors duration-300 flex items-center"
+    >
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6">
         
         <div className="flex items-center gap-8">
           {/* Brand Logo - Navigates Home */}
@@ -46,61 +68,76 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
             <img 
               src={DarkLogo} 
               alt="FinPulse Logo" 
-              className="h-8 w-auto object-contain transition-transform group-hover:scale-105 block dark:hidden" 
+              className="h-7 w-auto object-contain transition-transform duration-300 group-hover:scale-105 block dark:hidden" 
             />
             <img 
               src={LightLogo} 
               alt="FinPulse Logo" 
-              className="h-8 w-auto object-contain transition-transform group-hover:scale-105 hidden dark:block" 
+              className="h-7 w-auto object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block" 
             />
           </Link>
 
-          {/* Navigation Items with Sliding Blue Indicator */}
-          <nav className="hidden md:flex items-center gap-2 relative">
-            {navItems.map((item) => {
-              const path = item.id === "pulse" ? "/pulse" : `/${item.id.toLowerCase()}`;
-              
-              return (
-                <NavLink
-                  key={item.id}
-                  to={path}
-                  end={item.id === "pulse"} // Fixes partial matching box behavior on home route
-                  className={({ isActive }) =>
-                    `relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-300 z-10
-                    ${
-                      isActive
-                        ? "text-white"
-                        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeNavIndicator"
-                          className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20 -z-10"
-                          transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                        />
-                      )}
-                      {item.label}
-                    </>
-                  )}
-                </NavLink>
-              );
-            })}
-          </nav>
+          {/* Navigation Items with Jitter-Free Isolated LayoutGroup */}
+          <LayoutGroup id="navbar">
+            <nav 
+              className="hidden md:flex items-center gap-1 relative"
+              onMouseLeave={() => setHoveredTab(null)}
+            >
+              {navItems.map((item) => {
+                const path = item.id === "pulse" ? "/pulse" : `/${item.id.toLowerCase()}`;
+                
+                return (
+                  <NavLink
+                    key={item.id}
+                    to={path}
+                    end={item.id === "pulse"}
+                    onMouseEnter={() => setHoveredTab(item.id)}
+                    className={({ isActive }) =>
+                      `relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-300 z-10 ${
+                        isActive
+                          ? "text-white dark:text-night-950"
+                          : "text-slate-500 hover:text-slate-900 dark:text-slate-450 dark:hover:text-white"
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <span className="relative z-10 flex items-center justify-center">
+                        {/* Hover Pill Background */}
+                        {hoveredTab === item.id && !isActive && (
+                          <motion.span
+                            layoutId="navbarHoverPill"
+                            className="absolute inset-0 -mx-1.5 -my-1 rounded-xl bg-slate-100/70 dark:bg-white/[0.04] -z-20"
+                            transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                          />
+                        )}
+
+                        {/* Active Selection Sliding Indicator */}
+                        {isActive && (
+                          <motion.span
+                            layoutId="activeNavIndicator"
+                            className="absolute inset-0 -mx-1.5 -my-1 bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 rounded-xl shadow-lg shadow-cyan-500/20 dark:shadow-cyan-400/10 -z-30"
+                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                          />
+                        )}
+                        {item.label}
+                      </span>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </LayoutGroup>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
           {/* Global Search Button */}
           <button 
             onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-            className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-night-900 px-3 py-1.5 text-sm text-slate-500 dark:text-slate-400 transition-colors hover:border-blue-300 dark:hover:border-cyan-500/50"
+            className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
           >
-            <Search className="h-4 w-4" />
+            <Search className="h-3.5 w-3.5" />
             <span>Search</span>
-            <kbd className="ml-2 rounded bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300">Ctrl K</kbd>
+            <kbd className="ml-2 rounded bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-500 dark:text-slate-400">Ctrl K</kbd>
           </button>
 
           <ThemeToggle />
@@ -111,58 +148,67 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
           {!isLoggedIn ? (
             <button 
               onClick={onLoginClick}
-              className="hidden sm:flex items-center gap-2 rounded-xl bg-blue-600 dark:bg-cyan-400 px-4 py-2 text-sm font-bold text-white dark:text-night-900 shadow-sm transition-all hover:bg-blue-700 dark:hover:bg-cyan-300 hover:shadow-md hover:-translate-y-0.5"
+              className="hidden sm:flex items-center gap-2 rounded-xl bg-blue-600 dark:bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all duration-350 hover:bg-blue-700 dark:hover:bg-cyan-300 hover:-translate-y-0.5"
             >
-              <LogIn className="h-4 w-4" />
+              <LogIn className="h-3.5 w-3.5 stroke-[2.5]" />
               Sign In
             </button>
           ) : (
             <div className="relative hidden sm:block">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+                className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all"
               >
-                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md">
-                  <UserCircle className="h-6 w-6" />
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md text-xs font-black">
+                  {user?.name ? user.name.slice(0, 2).toUpperCase() : 'US'}
                 </div>
 
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  <p className="text-xs font-black text-slate-900 dark:text-white leading-tight">
                     {user?.name || 'User'}
                   </p>
-                  <p className="text-xs text-slate-500">Account</p>
+                  <p className="text-[10px] font-extrabold text-slate-450 dark:text-slate-500 leading-none">Account</p>
                 </div>
 
-                <ChevronDown className={`h-4 w-4 transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-300 ${showProfileMenu ? "rotate-180" : ""}`} />
               </button>
 
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-xl overflow-hidden z-50">
-                  <Link
-                    to="/profile"
-                    onClick={() => setShowProfileMenu(false)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+              {/* Jitter-Free Animated Profile Dropdown */}
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="absolute right-0 mt-2 w-52 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-xl overflow-hidden z-50 p-1.5"
                   >
-                    <UserCircle className="h-4 w-4" />
-                    <span>My Profile</span>
-                  </Link>
+                    <Link
+                      to="/profile"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                    >
+                      <UserCircle className="h-4 w-4" />
+                      <span>My Profile</span>
+                    </Link>
 
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      onLogoutClick();
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        onLogoutClick();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

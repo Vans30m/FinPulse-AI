@@ -1,15 +1,16 @@
 import { useState, useMemo, } from "react";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
-import GlobalSnapshot from "../components/markets/GlobalSnapshot";
 import MarketHeatmap from "../components/markets/MarketHeatmap";
 import {useNavigate} from "react-router-dom";
 import MarketStatusBar from "../features/dashboard/components/MarketStatusBar";
+import { Search, X } from "lucide-react";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
 
 export default function Markets() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("default");
+  const [searchQueries, setSearchQueries] = useState<Record<string, string>>({});
   const { data: markets = [], isLoading } = useGlobalMarkets();
 
   const categories = [
@@ -25,42 +26,6 @@ export default function Markets() {
     Taiwan: "🇹🇼",
     "South Korea": "🇰🇷",
   };
-
-  // Safely calculate top gainer and exclude VIX
-  const topGainer = useMemo(() => {
-    if (!markets.length) return null;
-    const nonVixMarkets = markets.filter(
-      (m: any) => 
-        !m?.name?.toLowerCase().includes("vix") && 
-        !m?.symbol?.toLowerCase().includes("vix")
-    );
-    if (!nonVixMarkets.length) return null;
-    return [...nonVixMarkets].sort((a, b) => (parseFloat(b.changePercent) || 0) - (parseFloat(a.changePercent) || 0))[0];
-  }, [markets]);
-
-  const topLoser = useMemo(() => {
-    if (!markets.length) return null;
-    const nonVixMarkets = markets.filter(
-      (m: any) => 
-        !m?.name?.toLowerCase().includes("vix") && 
-        !m?.symbol?.toLowerCase().includes("vix")
-    );
-    if (!nonVixMarkets.length) return null;
-    return [...nonVixMarkets].sort((a, b) => (parseFloat(a.changePercent) || 0) - (parseFloat(b.changePercent) || 0))[0];
-  }, [markets]);
-
-  const snapshotMarkets = useMemo(() => {
-    if (!markets || !Array.isArray(markets)) return [];
-    return markets.filter((m: any) => {
-      const searchString = `${m?.name || ""} ${m?.symbol || ""}`.toLowerCase();
-      return (
-        searchString.includes("nifty") ||
-        searchString.includes("banknifty") ||
-        searchString.includes("dow") ||
-        searchString.includes("nasdaq")
-      );
-    });
-  }, [markets]);
 
   const groupedMarkets = useMemo(() => {
     if (!markets || !Array.isArray(markets)) return {};
@@ -134,43 +99,6 @@ export default function Markets() {
         <MarketStatusBar />
       </div>
 
-      {/* 2. Global Snapshot */}
-      <div className="rounded-2xl border border-slate-200/60 bg-white/50 backdrop-blur-md p-2 shadow-sm dark:border-night-800 dark:bg-night-900/50">
-        <GlobalSnapshot markets={snapshotMarkets} />
-      </div>
-
-      {/* 3. Top Movers Highlights */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {topGainer && (
-          <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm transition-all dark:border-emerald-500/10 dark:from-emerald-500/5 dark:to-night-900">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Top Gainer</p>
-              <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white leading-tight">{topGainer.name}</h3>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-extrabold tabular-nums text-slate-900 dark:text-white">
-                {Number(topGainer.price).toLocaleString()}
-              </p>
-              <p className="text-sm font-bold text-emerald-500 mt-0.5">+{Number(topGainer.changePercent).toFixed(2)}%</p>
-            </div>
-          </div>
-        )}
-        {topLoser && (
-          <div className="flex items-center justify-between rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 to-white p-5 shadow-sm transition-all dark:border-rose-500/10 dark:from-rose-500/5 dark:to-night-900">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Top Loser</p>
-              <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white leading-tight">{topLoser.name}</h3>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-extrabold tabular-nums text-slate-900 dark:text-white">
-                {Number(topLoser.price).toLocaleString()}
-              </p>
-              <p className="text-sm font-bold text-rose-500 mt-0.5">{Number(topLoser.changePercent).toFixed(2)}%</p>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* 4. Heatmap */}
       <div className="rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm dark:border-night-800 dark:bg-night-900/50">
         <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-500">Market Heatmap</h3>
@@ -221,112 +149,154 @@ export default function Markets() {
 
           return (
             <div key={region} className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center gap-4">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
-                  <span className="mr-2 opacity-90">{REGION_FLAGS[region as keyof typeof REGION_FLAGS]}</span>
-                  {region}
-                </h2>
-                <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent dark:from-night-800"></div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1">
+                  <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
+                    <span className="mr-2 opacity-90">{REGION_FLAGS[region as keyof typeof REGION_FLAGS]}</span>
+                    {region}
+                  </h2>
+                  <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent dark:from-night-800"></div>
+                </div>
+
+                {/* Country-specific Search Bar */}
+                <div className="relative w-full sm:w-72 group">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                    <Search className={`h-4 w-4 transition-colors duration-300 ${searchQueries[region] ? "text-blue-600 dark:text-cyan-400" : "text-slate-400 dark:text-slate-500"}`} />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder={`Search ${region} indices...`}
+                    value={searchQueries[region] || ""}
+                    onChange={(e) => setSearchQueries(prev => ({ ...prev, [region]: e.target.value }))}
+                    className="w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/50 dark:bg-white/5 py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none shadow-sm transition-all duration-300 hover:bg-slate-200/40 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 focus:bg-white dark:focus:bg-night-950 focus:border-blue-600 dark:focus:border-cyan-400 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-cyan-400/10 focus:shadow-[0_0_20px_rgba(6,182,212,0.15)]"
+                  />
+                  {searchQueries[region] && (
+                    <button
+                      onClick={() => setSearchQueries(prev => ({ ...prev, [region]: "" }))}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-7 w-7 rounded-xl text-slate-400 hover:bg-slate-200/80 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-200"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {regionMarkets.map((market: any) => {
-                  const changePercent = parseFloat(market.changePercent) || 0;
-                  const change = parseFloat(market.change) || 0;
-                  const price = parseFloat(market.price) || 0;
-                  const isPositive = changePercent >= 0;
+              {(() => {
+                const query = (searchQueries[region] || "").toLowerCase().trim();
+                const filteredMarkets = regionMarkets.filter((market: any) =>
+                  (market.name || "").toLowerCase().includes(query) ||
+                  (market.symbol || "").toLowerCase().includes(query)
+                );
 
-                  const mockHistory = Array.from({ length: 15 }).map((_, idx) => ({
-                    price: price * (1 + (Math.random() * 0.02 - 0.01) * (15 - idx))
-                  }));
-                  mockHistory.push({ price });
-
-                  const strokeColor = isPositive ? "#10b981" : "#f43f5e";
-                  const gradientId = `gradient-${market.symbol.replace(/\^/g, '')}`;
-
+                if (filteredMarkets.length === 0) {
                   return (
-                    <div
-                      key={market.symbol}
-                      onClick={() =>
-                        navigate(
-                          `/asset/${encodeURIComponent(market.symbol)}`,
-                          { state: { name: market.name } }
-                        )
-                      }
-                      className="
-                        relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-6 
-                        backdrop-blur-sm transition-all duration-300 ease-out shadow-sm
-                        hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/5 
-                        dark:border-night-800 dark:bg-night-900/80 dark:hover:border-night-600
-                      "
-                    >
-                      <div className="flex items-start justify-between gap-3 relative z-10">
-                        <div>
-                          <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 line-clamp-1 leading-tight">
-                            {market.name}
-                          </h3>
-                        </div>
-                        <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-night-800 dark:text-slate-400">
-                          {market.region}
-                        </span>
-                      </div>
-
-                      <div className="mt-6 flex items-end justify-between relative z-10">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-baseline gap-1.5">
-                            <p className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
-                              {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
-                          </div>
-
-                          <div
-                            className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${
-                              isPositive ? "text-emerald-500" : "text-rose-500"
-                            }`}
-                          >
-                            <span className="flex items-center justify-center rounded-full bg-current/10 p-0.5">
-                              {isPositive ? (
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                                </svg>
-                              ) : (
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" />
-                                </svg>
-                              )}
-                            </span>
-                            <span>{Math.abs(change).toFixed(2)}</span>
-                            <span>({isPositive ? "+" : ""}{changePercent.toFixed(2)}%)</span>
-                          </div>
-                        </div>
-
-                        {/* Recharts Sparkline */}
-                        <div className="h-14 w-28 opacity-75 group-hover:opacity-100 transition-opacity duration-300">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={mockHistory}>
-                              <defs>
-                                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor={strokeColor} stopOpacity={0.35} />
-                                  <stop offset="95%" stopColor={strokeColor} stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <Area
-                                type="monotone"
-                                dataKey="price"
-                                stroke={strokeColor}
-                                strokeWidth={2.5}
-                                fillOpacity={1}
-                                fill={`url(#${gradientId})`}
-                                isAnimationActive={false}
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
+                    <div className="rounded-2xl border border-slate-200/60 bg-white/50 dark:border-night-800 dark:bg-night-900/50 p-8 text-center text-slate-400 dark:text-slate-500">
+                      No indices match "{query}" in this region.
                     </div>
                   );
-                })}
-              </div>
+                }
+
+                return (
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    {filteredMarkets.map((market: any) => {
+                      const changePercent = parseFloat(market.changePercent) || 0;
+                      const change = parseFloat(market.change) || 0;
+                      const price = parseFloat(market.price) || 0;
+                      const isPositive = changePercent >= 0;
+
+                      const mockHistory = Array.from({ length: 15 }).map((_, idx) => ({
+                        price: price * (1 + (Math.random() * 0.02 - 0.01) * (15 - idx))
+                      }));
+                      mockHistory.push({ price });
+
+                      const strokeColor = isPositive ? "#10b981" : "#f43f5e";
+                      const gradientId = `gradient-${market.symbol.replace(/\^/g, '')}`;
+
+                      return (
+                        <div
+                          key={market.symbol}
+                          onClick={() =>
+                            navigate(
+                              `/asset/${encodeURIComponent(market.symbol)}`,
+                              { state: { name: market.name } }
+                            )
+                          }
+                          className="
+                            relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-6 
+                            backdrop-blur-sm transition-all duration-300 ease-out shadow-sm
+                            hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/5 
+                            dark:border-night-800 dark:bg-night-900/80 dark:hover:border-night-600
+                          "
+                        >
+                          <div className="flex items-start justify-between gap-3 relative z-10">
+                            <div>
+                              <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 line-clamp-1 leading-tight">
+                                {market.name}
+                              </h3>
+                            </div>
+                            <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-night-800 dark:text-slate-400">
+                              {market.region}
+                            </span>
+                          </div>
+
+                          <div className="mt-6 flex items-end justify-between relative z-10">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-baseline gap-1.5">
+                                <p className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
+                                  {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                              </div>
+
+                              <div
+                                className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${
+                                  isPositive ? "text-emerald-500" : "text-rose-500"
+                                }`}
+                              >
+                                <span className="flex items-center justify-center rounded-full bg-current/10 p-0.5">
+                                  {isPositive ? (
+                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" />
+                                    </svg>
+                                  )}
+                                </span>
+                                <span>{Math.abs(change).toFixed(2)}</span>
+                                <span>({isPositive ? "+" : ""}{changePercent.toFixed(2)}%)</span>
+                              </div>
+                            </div>
+
+                            {/* Recharts Sparkline */}
+                            <div className="h-14 w-28 opacity-75 group-hover:opacity-100 transition-opacity duration-300">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={mockHistory}>
+                                  <defs>
+                                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor={strokeColor} stopOpacity={0.35} />
+                                      <stop offset="95%" stopColor={strokeColor} stopOpacity={0} />
+                                    </linearGradient>
+                                  </defs>
+                                  <Area
+                                    type="monotone"
+                                    dataKey="price"
+                                    stroke={strokeColor}
+                                    strokeWidth={2.5}
+                                    fillOpacity={1}
+                                    fill={`url(#${gradientId})`}
+                                    isAnimationActive={false}
+                                  />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           );
         })}

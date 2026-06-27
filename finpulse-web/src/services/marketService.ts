@@ -279,3 +279,17 @@ export async function getIndexSummary(
 
   return response.json();
 }
+
+export async function getUpcomingEarnings(market: string) {
+  const response = await fetch(
+    `http://localhost:3000/api/earnings/calendar/${encodeURIComponent(market)}`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch upcoming earnings: ${response.status}`
+    );
+  }
+
+  return response.json();
+}

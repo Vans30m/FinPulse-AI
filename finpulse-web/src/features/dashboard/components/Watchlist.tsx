@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Plus, Trash2, FolderPlus, X, ChevronDown, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useChart } from "../../../context/ChartContext";
+import { motion } from "framer-motion";
+import { TrendingUp, TrendingDown, Plus, Trash2, FolderPlus, X, Loader2 } from "lucide-react";
 import { getStockSentiment } from "../../../services/marketService";
-import AIRankingCard
-from "./AIRankingCard";
+import AIRankingCard from "./AIRankingCard";
 
 // ==========================================
 // INTERFACES
@@ -50,7 +49,6 @@ const defaultWatchlists: WatchlistData[] = [
 ];
 
 export default function Watchlist() {
-  const navigate = useNavigate();
 
   // ==========================================
   // STATE MANAGEMENT
@@ -113,7 +111,7 @@ export default function Watchlist() {
   const sortField: string = "name";
   const sortDirection: string = "asc";
 
-  const { openChart } = useChart();
+  const navigate = useNavigate();
 
   // ==========================================
   // DEBOUNCED SEARCH EFFECT
@@ -386,48 +384,73 @@ export default function Watchlist() {
         <div className="p-5">
           {sortedData.length > 0 ? (
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 cursor-pointer">
-              {sortedData.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() =>
-                    openChart({
-                      symbol: item.symbol,
-                      yahooSymbol: item.symbol,
-                      name: item.name,
-                      exchange: "WATCHLIST",
-                      type: "asset",
-                    })
-                  }
-                  className="group rounded-3xl cursor-pointer border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 p-5 hover:shadow-xl transition-all hover:-translate-y-1"
-                >
-                  {/* Header */}
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-lg text-slate-900 dark:text-white">{item.symbol}</h3>
-                      <p className="text-sm text-slate-500">{item.name}</p>
+              {sortedData.map((item, idx) => {
+                const getAvatarColor = (sym: string) => {
+                  const colors = [
+                    "from-blue-500 to-indigo-600 shadow-blue-500/10",
+                    "from-cyan-500 to-blue-600 shadow-cyan-500/10",
+                    "from-emerald-500 to-teal-600 shadow-emerald-500/10",
+                    "from-violet-500 to-purple-600 shadow-violet-500/10",
+                    "from-rose-500 to-pink-600 shadow-rose-500/10"
+                  ];
+                  return colors[sym.charCodeAt(0) % colors.length];
+                };
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: idx * 0.05 }}
+                    onClick={() =>
+                      navigate(`/asset/${item.symbol}`, {
+                        state: { name: item.name }
+                      })
+                    }
+                    className="group rounded-3xl cursor-pointer border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-5 hover:shadow-xl hover:border-blue-500/40 dark:hover:border-cyan-400/40 transition-all hover:-translate-y-1 relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/[0.01] dark:bg-cyan-500/[0.01] blur-2xl pointer-events-none rounded-full" />
+                    
+                    {/* Header */}
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarColor(item.symbol)} flex items-center justify-center text-white text-xs font-black uppercase shadow-md shrink-0`}>
+                          {item.symbol.slice(0, 2).replace("/", "").replace("^", "")}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-base text-slate-900 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                            {item.symbol}
+                          </h3>
+                          <p className="text-xs font-semibold text-slate-450 dark:text-slate-500 truncate max-w-[130px] mt-0.5">
+                            {item.name}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveAsset(item.id);
+                        }}
+                        className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition-colors shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveAsset(item.id);
-                      }}
-                      className="text-slate-400 hover:text-red-500"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Price */}
-                  <div className="mt-5">
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{item.price}</p>
-                    <div className={`flex items-center gap-2 mt-2 ${item.isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                      {item.isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                      <span>{item.changePercent}</span>
+                    {/* Price & Change */}
+                    <div className="mt-6 flex items-baseline justify-between">
+                      <p className="text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                        {item.price}
+                      </p>
+                      <div className={`flex items-center gap-1 text-xs font-black ${item.isPositive ? "text-emerald-500" : "text-rose-500"}`}>
+                        {item.isPositive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                        <span>{item.changePercent}</span>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-16">

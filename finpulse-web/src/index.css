@@ -7,6 +7,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    scrollbar-gutter: stable;
   }
 
   /* Dual Theme Body */

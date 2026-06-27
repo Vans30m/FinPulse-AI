@@ -12,7 +12,8 @@ import PortfolioDashboard from './features/portfolio/components/PortfolioDashboa
 import PerformanceComparison from './features/dashboard/components/PerformanceComparison';
 import MyAlertsDashboard from './features/dashboard/components/MyAlertsDashboard';
 import AssetDetails from "./pages/AssetDetails";
-import {Routes, Route, Navigate} from "react-router-dom";
+import {Routes, Route, Navigate, useLocation} from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import Markets from "./pages/Markets";
 import News from './pages/News';
 import Profile from "./pages/Profile";
@@ -38,6 +39,7 @@ import Disclosures from "./pages/Disclosures";
 import Security from "./pages/Security";
 
 export default function App() {
+  const location = useLocation();
 
   const [isLoggedIn, setIsLoggedIn] = useState(true); // <-- CHANGED 1: Start as logged in for easier testing
   
@@ -134,98 +136,179 @@ export default function App() {
           }
         />
         
-        <Routes>
-          <Route
-            path="/"
-            element={<Navigate to="/pulse" />}
-          />
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route
+              path="/"
+              element={<Navigate to="/pulse" />}
+            />
 
-          <Route
-            path="/pulse"
-            element={
-              <div className="space-y-8">
-                <AIMarketSentiment />
-                <MarketExplanation />
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-                  <div className="lg:col-span-2 space-y-8">
-                    <MarketFeedStream
-                      marketRegion={marketRegion}
-                      onMarketChange={setMarketRegion}
-                    />
-                    
-                    <GlobalEarningsCalendar />
-                    
-                    {/* Updated with the marketRegion prop */}
-                    <MarketScreeners
-                      marketRegion={marketRegion}
-                    />
-                    
-                    <InvestmentCalculator />
+            <Route
+              path="/pulse"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="space-y-8">
+                    <AIMarketSentiment />
+                    <MarketExplanation />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+                      <div className="lg:col-span-2 space-y-8">
+                        <MarketFeedStream
+                          marketRegion={marketRegion}
+                          onMarketChange={setMarketRegion}
+                        />
+                        
+                        <GlobalEarningsCalendar />
+                        
+                        {/* Updated with the marketRegion prop */}
+                        <MarketScreeners
+                          marketRegion={marketRegion}
+                        />
+                        
+                        <InvestmentCalculator />
+                      </div>
+
+                      <div className="space-y-6 sm:space-y-8">
+                        <AlertsTimeline />
+                      </div>
+                    </div>
                   </div>
+                </motion.div>
+              }
+            />
 
-                  <div className="space-y-6 sm:space-y-8">
-                    <AlertsTimeline />
-                  </div>
-                </div>
-              </div>
-            }
-          />
+            <Route
+              path="/watchlist"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Watchlist />
+                </motion.div>
+              }
+            />
 
-          <Route
-            path="/watchlist"
-            element={<Watchlist />}
-          />
+            <Route
+              path="/portfolio"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <PortfolioDashboard />
+                </motion.div>
+              }
+            />
 
-          <Route
-            path="/portfolio"
-            element={<PortfolioDashboard />}
-          />
+            <Route
+              path="/performance"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <PerformanceComparison />
+                </motion.div>
+              }
+            />
 
-          <Route
-            path="/performance"
-            element={<PerformanceComparison />}
-          />
+            <Route
+              path="/alerts"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <MyAlertsDashboard />
+                </motion.div>
+              }
+            />
 
-          <Route
-            path="/alerts"
-            element={<MyAlertsDashboard />}
-          />
+            <Route
+              path="/asset/:symbol"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <AssetDetails />
+                </motion.div>
+              }
+            />
 
-          <Route
-            path="/asset/:symbol"
-            element={<AssetDetails />}
-          />
+            <Route
+              path="/markets"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Markets />
+                </motion.div>
+              }
+            />
 
-          <Route
-            path="/markets"
-            element={<Markets />}
-          />
+            <Route
+              path="/news"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <News />
+                </motion.div>
+              }
+            />
 
-          <Route
-            path="/news"
-            element={<News />}
-          />
+            <Route
+              path="/profile"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Profile />
+                </motion.div>
+              }
+            />
 
-          <Route
-            path="/profile"
-            element={<Profile />}
-          />
-
-          {/* Footer Routes */}
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/docs" element={<Docs />} />
-          <Route path="/api" element={<ApiRef />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/careers" element={<Careers />} />
-          <Route path="/press" element={<Press />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/disclosures" element={<Disclosures />} />
-          <Route path="/security" element={<Security />} />
-        </Routes>
+            {/* Footer Routes */}
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/api" element={<ApiRef />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/press" element={<Press />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/disclosures" element={<Disclosures />} />
+            <Route path="/security" element={<Security />} />
+          </Routes>
+        </AnimatePresence>
       </main>
 
       <Footer />
