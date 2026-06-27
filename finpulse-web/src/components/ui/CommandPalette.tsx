@@ -11,7 +11,7 @@ interface SearchResult {
 }
 
 export default function CommandPalette() {
-    const { openChart } = useChart();
+  const { openChart } = useChart();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -86,16 +86,16 @@ export default function CommandPalette() {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh] px-4 sm:px-0">
-      
+
       {/* Blurred Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm transition-opacity"
         onClick={() => setIsOpen(false)}
       />
 
       {/* Palette Container */}
       <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* Search Input Area */}
         <div className="flex items-center border-b border-slate-100 dark:border-white/5 px-4">
           <Search className="h-5 w-5 text-slate-400" />
@@ -108,7 +108,7 @@ export default function CommandPalette() {
             className="flex-1 bg-transparent px-4 py-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none"
           />
           {isLoading && <Loader2 className="h-4 w-4 text-blue-500 animate-spin mr-3" />}
-          <button 
+          <button
             onClick={() => setIsOpen(false)}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"
           >
@@ -122,11 +122,10 @@ export default function CommandPalette() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
-                activeTab === tab
+              className={`whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${activeTab === tab
                   ? 'bg-blue-600 text-white dark:bg-cyan-500 dark:text-night-950'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10'
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -146,21 +145,21 @@ export default function CommandPalette() {
           ) : (
             <div className="space-y-1">
               {filteredResults.map((item) => (
-  <button
-    key={`${item.symbol}-${item.exchange}`}
-    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5 group"
-    onClick={() => {
-      openChart({
-        symbol: item.symbol,
-        yahooSymbol: item.yahooSymbol,
-        name: item.name,
-        exchange: item.exchange,
-        type: item.type,
-      });
+                <button
+                  key={`${item.symbol}-${item.exchange}`}
+                  className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5 group"
+                  onClick={() => {
+                    openChart({
+                      symbol: item.symbol,
+                      yahooSymbol: item.yahooSymbol,
+                      name: item.name,
+                      exchange: item.exchange,
+                      type: item.type,
+                    });
 
-      setIsOpen(false);
-    }}
-  >
+                    setIsOpen(false);
+                  }}
+                >
                   <div className="flex items-center gap-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 shadow-sm group-hover:scale-105 transition-transform">
                       {renderIcon(item.type)}
@@ -174,7 +173,7 @@ export default function CommandPalette() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Asset Class Badge - TradingView Style */}
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] uppercase text-slate-400 font-medium tracking-wider">

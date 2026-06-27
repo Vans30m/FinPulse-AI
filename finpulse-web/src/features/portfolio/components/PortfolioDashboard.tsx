@@ -15,10 +15,7 @@ import RiskSimulatorCard
 from "./RiskSimulatorCard";
 import SectorExposureCard
 from "./SectorExposureCard";
-import AISectorAnalysisCard
-from "./AISectorAnalysisCard";
-import EarningsCalendarCard
-from "./EarningsCalendarCard";
+import AISectorAnalysisCard from "./AISectorAnalysisCard";
 import { useChart }
 from "../../../context/ChartContext";
 
@@ -180,21 +177,6 @@ const performanceData = [
   },
 ];
 
-const earningsData = [
-  {
-    symbol: "NVDA",
-    date: "Aug 28 2026",
-  },
-  {
-    symbol: "RELIANCE",
-    date: "Sep 05 2026",
-  },
-  {
-    symbol: "BTC",
-    date: "N/A",
-  },
-];
-
 export default function PortfolioDashboard() {
   const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
   const [activeMarket, setActiveMarket] = useState<string>('all');
@@ -327,29 +309,55 @@ useState<{
     setIsModalOpen(false);
   };
 
-  const totalNetValue = sections.reduce((sum, sec) => sum + sec.holdings.reduce((s, h) => s + h.marketValue, 0), 0);
-  const totalGain = sections.reduce((sum, sec) => sum + sec.holdings.reduce((s, h) => s + h.totalGain, 0), 0);
-  const allocationData =
-  sections
+  const getHoldingValueInUSD = (h: Holding, sectionId: string) => {
+    if (sectionId === 'domestic') {
+      return h.marketValue / 83;
+    }
+    return h.marketValue;
+  };
+
+  const getHoldingGainInUSD = (h: Holding, sectionId: string) => {
+    if (sectionId === 'domestic') {
+      return h.totalGain / 83;
+    }
+    return h.totalGain;
+  };
+
+  const displayCurrency = activeMarket === 'domestic' ? '₹' : '$';
+
+  const totalNetValue = sections
+    .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
+    .reduce((sum, sec) => {
+      return sum + sec.holdings.reduce((s, h) => {
+        if (activeMarket === 'all') {
+          return s + getHoldingValueInUSD(h, sec.id);
+        }
+        return s + h.marketValue;
+      }, 0);
+    }, 0);
+
+  const totalGain = sections
+    .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
+    .reduce((sum, sec) => {
+      return sum + sec.holdings.reduce((s, h) => {
+        if (activeMarket === 'all') {
+          return s + getHoldingGainInUSD(h, sec.id);
+        }
+        return s + h.totalGain;
+      }, 0);
+    }, 0);
+
+  const allocationData = sections
     .map((section) => ({
       name: section.title,
-      value:
-        section.holdings.reduce(
-          (sum, h) =>
-            sum +
-            h.marketValue,
-          0
-        ),
+      value: section.holdings.reduce((sum, h) => {
+        return sum + (section.id === 'domestic' ? h.marketValue / 83 : h.marketValue);
+      }, 0),
     }))
-    .filter(
-      (x) => x.value > 0
-    );
+    .filter((x) => x.value > 0);
 
-    const totalAssets =
-  sections.reduce(
-    (sum, section) =>
-      sum +
-      section.holdings.length,
+  const totalAssets = sections.reduce(
+    (sum, section) => sum + section.holdings.length,
     0
   );
 
@@ -600,36 +608,22 @@ const worstCase =
     <div className="space-y-8 w-full max-w-7xl mx-auto px-1 relative">
 
       {/* HEADER & AGGREGATES */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-slate-100 dark:border-slate-800/80 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-display">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
             Asset Portfolio
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
             Global allocation breakdown with modular tracking.
           </p>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200/60 dark:border-white/10 text-xs font-bold overflow-x-auto custom-scrollbar">
-            {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
-              <button 
-                key={tab} 
-                onClick={() => setActiveMarket(tab)} 
-                className={`px-3.5 py-2 rounded-lg capitalize transition-all whitespace-nowrap ${
-                  activeMarket === tab 
-                    ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          {/* Add Asset CTA Button */}
           <button 
             onClick={() => setIsModalOpen(true)} 
-            className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 px-4.5 py-2.5 text-sm font-bold text-white dark:text-night-900 shadow-md hover:scale-[1.02] active:scale-95 transition-all ml-auto sm:ml-0 whitespace-nowrap"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-650 dark:from-cyan-500 dark:to-blue-600 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-cyan-400 dark:hover:to-blue-500 px-5 py-3 text-sm font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 dark:hover:shadow-cyan-400/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 w-full sm:w-auto sm:ml-auto lg:ml-0"
           >
-            <Plus className="h-4 w-4" /> Add Asset
+            <Plus className="h-4 w-4 stroke-[3]" /> Add Asset Position
           </button>
         </div>
       </div>
@@ -643,7 +637,7 @@ const worstCase =
           <div>
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Net Value</p>
             <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-              ${totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              {displayCurrency}{totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </h3>
           </div>
         </div>
@@ -655,7 +649,7 @@ const worstCase =
           <div>
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Returns</p>
             <h3 className={`text-2xl font-black mt-1 ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
-              {totalGain >= 0 ? '+' : ''}${totalGain.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              {totalGain >= 0 ? '+' : ''}{displayCurrency}{totalGain.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </h3>
           </div>
         </div>
@@ -671,214 +665,224 @@ const worstCase =
         </div>
       </div>
 
-      {/* Main Dashboard Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left 2 Columns: Charts & Holdings Table */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Performance Chart */}
-          <PortfolioPerformanceChart
-            data={performanceData}
-          />
+      {/* 1. Performance Chart (Full Page Width) */}
+      <PortfolioPerformanceChart
+        data={performanceData}
+      />
 
-          {/* Unified Holdings Card */}
-          <div className="glass-panel overflow-hidden shadow-lg transition-all duration-300">
-            <div className="p-6 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Portfolio Positions</h2>
-                <p className="text-xs text-slate-400 dark:text-slate-500">Live holdings index list across active categories.</p>
-              </div>
-              <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-cyan-400">
-                {filteredHoldings.length} Positions
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse whitespace-nowrap">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    <th className="py-4 px-6">Asset / Hub</th>
-                    <th className="py-4 px-6 text-right">Qty / Vol</th>
-                    <th className="py-4 px-6 text-right">Avg Cost</th>
-                    <th className="py-4 px-6 text-right">Current Price</th>
-                    <th className="py-4 px-6 text-right">Market Value</th>
-                    <th className="py-4 px-6 text-right">Returns</th>
-                    <th className="py-4 px-6 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                  {filteredHoldings.map((asset) => (
-                    <tr key={asset.ticker} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group">
-                      <td className="py-4.5 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2.5 py-0.5 text-[10px] font-black rounded border leading-tight ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>
-                                {asset.ticker}
-                              </span>
-                              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-                                {asset.name}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
-                              {asset.category}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4.5 px-6 text-right font-mono text-sm text-slate-600 dark:text-slate-300">
-                        {asset.shares.toLocaleString()}
-                      </td>
-                      <td className="py-4.5 px-6 text-right font-mono text-sm text-slate-600 dark:text-slate-300">
-                        ${asset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-4.5 px-6 text-right font-mono text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        ${asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-4.5 px-6 text-right font-mono text-sm font-bold text-slate-900 dark:text-white">
-                        ${asset.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-4.5 px-6 text-right">
-                        <div className={`flex flex-col items-end ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
-                          <span className="text-sm font-semibold flex items-center gap-0.5">
-                            {asset.totalGain >= 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
-                            ${Math.abs(asset.totalGain).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </span>
-                          <span className="text-[10px] font-medium opacity-85">
-                            {asset.gainPercent.toFixed(2)}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-4.5 px-6 text-center">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openChart({
-                              symbol: asset.ticker,
-                              yahooSymbol: asset.yahooSymbol || asset.ticker,
-                              name: asset.name,
-                              exchange: asset.exchange || "GLOBAL",
-                              type: asset.type || "Asset",
-                            })
-                          }
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-cyan-400 hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-xs font-bold transition-all"
-                        >
-                          <BarChart3 className="h-3.5 w-3.5" />
-                          Chart
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredHoldings.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-sm text-slate-400">
-                        No active holdings found in this category.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+      {/* 2. Unified Holdings Card (Full-width Section below main chart) */}
+      <div className="glass-panel overflow-hidden shadow-lg transition-all duration-300">
+        <div className="p-6 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-100 dark:border-slate-800/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Portfolio Positions</h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Live holdings index list across active categories.</p>
           </div>
 
-        </div>
-
-        {/* Right 1 Column: AI Diagnostics & Analytics Side Panel */}
-        <div className="lg:col-span-1 space-y-8">
-          
-          <PortfolioAllocationChart
-            data={allocationData}
-          />
-
-          {/* Combined AI Analyst Tabbed Card */}
-          <div className="glass-panel p-6 border-slate-200 dark:border-slate-800/60 shadow-lg">
-            <div className="flex items-center gap-2.5 mb-5 border-b border-slate-100 dark:border-slate-800/60 pb-4">
-              <Sparkles className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                AI Portfolio Analyst
-              </h2>
-            </div>
-
-            {/* Tab selection cluster */}
-            <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 p-1 rounded-2xl mb-6">
-              {[
-                { id: "health", label: "Health" },
-                { id: "insights", label: "Insights" },
-                { id: "sectors", label: "Sectors" },
-                { id: "rebalance", label: "Realignment" }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setAiTab(tab.id as any)}
-                  className={`px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-                    aiTab === tab.id
-                      ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm border border-slate-100 dark:border-white/5"
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-350"
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            {/* Market Tab Selector */}
+            <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner">
+              {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
+                <button 
+                  key={tab} 
+                  onClick={() => setActiveMarket(tab)} 
+                  className={`px-3 py-1.5 rounded-lg capitalize transition-all duration-300 whitespace-nowrap ${
+                    activeMarket === tab 
+                      ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  {tab.label}
+                  {tab === 'all' ? 'All Assets' : tab === 'us' ? 'US' : tab}
                 </button>
               ))}
             </div>
 
-            {/* Tab content wrapper */}
-            <div className="min-h-[220px] flex flex-col justify-between">
-              {aiTab === "health" && (
-                <PortfolioHealthCard
-                  score={healthScore}
-                  diversification={
-                    healthScore > 80
-                      ? "Excellent"
-                      : healthScore > 60
-                      ? "Good"
-                      : "Needs Improvement"
-                  }
-                  risk={risk}
-                  growth={growth}
-                />
-              )}
+            <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-cyan-400">
+              {filteredHoldings.length} Positions
+            </span>
+          </div>
+        </div>
 
-              {aiTab === "insights" && (
-                <PortfolioInsightsCard
-                  insights={insights}
-                />
+        <div className="w-full overflow-hidden">
+          <table className="w-full text-left border-collapse table-auto">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50/50 dark:bg-white/[0.01]">
+                <th className="py-4 px-4">Asset / Hub</th>
+                <th className="py-4 px-4 text-right">Qty / Vol</th>
+                <th className="py-4 px-4 text-right">Avg Cost</th>
+                <th className="py-4 px-4 text-right">Current Price</th>
+                <th className="py-4 px-4 text-right">Market Value</th>
+                <th className="py-4 px-4 text-right">Returns</th>
+                <th className="py-4 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+              {filteredHoldings.map((asset) => {
+                const posCurrency = asset.sectionId === 'domestic' ? '₹' : '$';
+                return (
+                  <tr key={asset.ticker} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle">
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col gap-1 justify-center">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`px-2 py-0.5 text-[9px] font-black rounded border leading-tight ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>
+                            {asset.ticker}
+                          </span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                            {asset.name}
+                          </span>
+                        </div>
+                        <span className="text-[9px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
+                          {asset.category}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right font-mono text-sm text-slate-650 dark:text-slate-300 align-middle">
+                      {asset.shares.toLocaleString()}
+                    </td>
+                    <td className="py-4 px-4 text-right font-mono text-sm text-slate-600 dark:text-slate-355 align-middle">
+                      {posCurrency}{asset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-4 px-4 text-right font-mono text-sm font-semibold text-slate-800 dark:text-slate-200 align-middle">
+                      {posCurrency}{asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-4 px-4 text-right font-mono text-sm font-bold text-slate-950 dark:text-white align-middle">
+                      {posCurrency}{asset.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-4 px-4 text-right align-middle">
+                      <div className={`flex flex-col items-end justify-center ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                        <span className="text-sm font-semibold flex items-center gap-0.5">
+                          {asset.totalGain >= 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+                          {posCurrency}{Math.abs(asset.totalGain).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-[10px] font-medium opacity-85">
+                          {asset.gainPercent.toFixed(2)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center align-middle">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openChart({
+                            symbol: asset.ticker,
+                            yahooSymbol: asset.yahooSymbol || asset.ticker,
+                            name: asset.name,
+                            exchange: asset.exchange || "GLOBAL",
+                            type: asset.type || "Asset",
+                          })
+                        }
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-cyan-400 hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-xs font-bold transition-all"
+                      >
+                        <BarChart3 className="h-3.5 w-3.5" />
+                        Chart
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredHoldings.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-sm text-slate-400">
+                    No active holdings found in this category.
+                  </td>
+                </tr>
               )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-              {aiTab === "sectors" && (
-                <AISectorAnalysisCard
-                  insight={sectorInsight}
-                  recommendation={sectorRecommendation}
-                  score={sectorDiversificationScore}
-                  topSector={topSector?.sector || "N/A"}
-                />
-              )}
+      {/* 3. Diagnostics Grid (2x2 layout for Allocation, AI Analyst, Risk, and Sectors) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Card 1: Allocation Chart */}
+        <PortfolioAllocationChart
+          data={allocationData}
+        />
 
-              {aiTab === "rebalance" && (
-                <RebalancingCard
-                  suggestions={rebalancingSuggestions}
-                />
-              )}
-            </div>
+        {/* Card 2: Combined AI Analyst Tabbed Card */}
+        <div className="glass-panel p-6 border-slate-200 dark:border-slate-800/60 shadow-lg">
+          <div className="flex items-center gap-2.5 mb-5 border-b border-slate-100 dark:border-slate-800/60 pb-4">
+            <Sparkles className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              AI Portfolio Analyst
+            </h2>
           </div>
 
-          <RiskSimulatorCard
-            riskScore={riskScore}
-            expectedReturn={expectedReturn}
-            bestCase={bestCase}
-            worstCase={worstCase}
-          />
+          {/* Tab selection cluster */}
+          <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 p-1 rounded-2xl mb-6">
+            {[
+              { id: "health", label: "Health" },
+              { id: "insights", label: "Insights" },
+              { id: "sectors", label: "Sectors" },
+              { id: "rebalance", label: "Realignment" }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setAiTab(tab.id as any)}
+                className={`px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+                  aiTab === tab.id
+                    ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm border border-slate-100 dark:border-white/5"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-355"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-          <SectorExposureCard
-            sectors={sectorExposure}
-          />
+          {/* Tab content wrapper */}
+          <div className="min-h-[220px] flex flex-col justify-between">
+            {aiTab === "health" && (
+              <PortfolioHealthCard
+                score={healthScore}
+                diversification={
+                  healthScore > 80
+                    ? "Excellent"
+                    : healthScore > 60
+                    ? "Good"
+                    : "Needs Improvement"
+                }
+                risk={risk}
+                growth={growth}
+              />
+            )}
 
-          <EarningsCalendarCard
-            earnings={earningsData}
-          />
+            {aiTab === "insights" && (
+              <PortfolioInsightsCard
+                insights={insights}
+              />
+            )}
 
+            {aiTab === "sectors" && (
+              <AISectorAnalysisCard
+                insight={sectorInsight}
+                recommendation={sectorRecommendation}
+                score={sectorDiversificationScore}
+                topSector={topSector?.sector || "N/A"}
+              />
+            )}
+
+            {aiTab === "rebalance" && (
+              <RebalancingCard
+                suggestions={rebalancingSuggestions}
+              />
+            )}
+          </div>
         </div>
+
+        {/* Card 3: Portfolio Risk Analysis */}
+        <RiskSimulatorCard
+          riskScore={riskScore}
+          expectedReturn={expectedReturn}
+          bestCase={bestCase}
+          worstCase={worstCase}
+        />
+
+        {/* Card 4: Sector Exposure */}
+        <SectorExposureCard
+          sectors={sectorExposure}
+        />
 
       </div>
 

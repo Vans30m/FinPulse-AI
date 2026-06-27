@@ -1,33 +1,54 @@
-import { useState, useEffect, useRef } from 'react';
-import { Search, X, Building2 } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Search, X, Pin, History } from 'lucide-react';
 import { searchAssets } from "../../services/marketService";
 
-// Define the data structure matching your screenshot
 interface StockResult {
   symbol: string;
   yahooSymbol: string;
   name: string;
   exchange: string;
   type: string;
+  price?: number;
 }
 
 interface StockSearchProps {
   placeholder?: string;
+  onSelect: (asset: StockResult) => void;
+}
 
-  onSelect: (
-    asset: StockResult
-  ) => void;
+function resolveSymbolType(symbol: string): "Stocks" | "Indices" | "Crypto" | "Forex" | "Commodities" {
+  if (!symbol) return "Stocks";
+  const upper = symbol.toUpperCase();
+  if (upper.endsWith("=X")) return "Forex";
+  if (upper.endsWith("-USD")) return "Crypto";
+  if (upper.endsWith("=F")) return "Commodities";
+  if (upper.startsWith("^") || upper.endsWith(".NS")) return "Indices";
+  return "Stocks";
 }
 
 export default function StockSearch({
   placeholder = "Search symbols, ideas, scripts...",
   onSelect,
-}: StockSearchProps){
+}: StockSearchProps) {
   
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<StockResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string>("All");
+
+  // Local Storage lists
+  const [recentSearches, setRecentSearches] = useState<StockResult[]>(() => {
+    const saved = localStorage.getItem("finpulse-recent-searches");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [pinnedAssets, setPinnedAssets] = useState<StockResult[]>(() => {
+    const saved = localStorage.getItem("finpulse-pinned-assets");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Query Cache
+  const [searchCache] = useState<Record<string, StockResult[]>>({});
   
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -42,47 +63,56 @@ export default function StockSearch({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced Search Logic
+  // Update localStorage when lists change
+  useEffect(() => {
+    localStorage.setItem("finpulse-recent-searches", JSON.stringify(recentSearches));
+  }, [recentSearches]);
+
+  useEffect(() => {
+    localStorage.setItem("finpulse-pinned-assets", JSON.stringify(pinnedAssets));
+  }, [pinnedAssets]);
+
+  // Debounced Search Logic with Local Caching
   useEffect(() => {
     if (query.trim().length === 0) {
       setResults([]);
-      setIsOpen(false);
+      setIsSearching(false);
+      return;
+    }
+
+    const trimmedQuery = query.trim().toLowerCase();
+    
+    // Check Cache first
+    if (searchCache[trimmedQuery]) {
+      setResults(searchCache[trimmedQuery]);
+      setIsOpen(true);
       return;
     }
 
     setIsSearching(true);
     setIsOpen(true);
 
-    // This setTimeout acts as our "Debounce" AND simulates network latency
-      const delayDebounceFn =
-setTimeout(async () => {
-        // TODO: Replace this with your actual API call (e.g., AlphaVantage or FastAPI backend)
-        try {
-
-  const data =
-    await searchAssets(
-      query
-    );
-
-  setResults(data);
-
-} catch (error) {
-
-  console.error(
-    "Search Error:",
-    error
-  );
-
-  setResults([]);
-
-} finally {
-
-  setIsSearching(false);
-}
-      }, 500);
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const data = await searchAssets(query);
+        // Enrich data with resolved types
+        const enriched = data.map((item: any) => ({
+          ...item,
+          type: resolveSymbolType(item.symbol)
+        }));
+        
+        searchCache[trimmedQuery] = enriched;
+        setResults(enriched);
+      } catch (error) {
+        console.error("Search Error:", error);
+        setResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [query]);
+  }, [query, searchCache]);
 
   const clearSearch = () => {
     setQuery('');
@@ -90,31 +120,94 @@ setTimeout(async () => {
     setIsOpen(false);
   };
 
-const handleSelect =
-(result: StockResult) => {
+  const handleSelect = (result: StockResult) => {
+    onSelect(result);
+    
+    // Add to Recent Searches
+    setRecentSearches(prev => {
+      const filtered = prev.filter(item => item.symbol !== result.symbol);
+      return [result, ...filtered].slice(0, 5); // Keep top 5
+    });
 
-  onSelect(result);
+    clearSearch();
+  };
 
-  clearSearch();
-};
+  const handleTogglePin = (e: React.MouseEvent, result: StockResult) => {
+    e.stopPropagation();
+    setPinnedAssets(prev => {
+      const isPinned = prev.some(item => item.symbol === result.symbol);
+      if (isPinned) {
+        return prev.filter(item => item.symbol !== result.symbol);
+      } else {
+        return [...prev, result];
+      }
+    });
+  };
+
+  // Grouped and filtered results
+  const groupedAndFilteredResults = useMemo(() => {
+    const listToProcess = query.trim().length === 0 ? [...pinnedAssets, ...recentSearches] : results;
+    
+    const groups: Record<string, StockResult[]> = {
+      Stocks: [],
+      Indices: [],
+      Crypto: [],
+      Forex: [],
+      Commodities: []
+    };
+
+    listToProcess.forEach(item => {
+      const category = resolveSymbolType(item.symbol);
+      if (groups[category]) {
+        groups[category].push(item);
+      } else {
+        groups.Stocks.push(item);
+      }
+    });
+
+    if (activeFilter === "All") return groups;
+    
+    // Filtered representation
+    return {
+      [activeFilter]: groups[activeFilter] || []
+    };
+  }, [results, activeFilter, query, pinnedAssets, recentSearches]);
+
+  // Total results count check
+  const hasResults = useMemo(() => {
+    return Object.values(groupedAndFilteredResults).some(arr => arr.length > 0);
+  }, [groupedAndFilteredResults]);
+
+  const filterTabs = ["All", "Stocks", "Indices", "Crypto", "Forex", "Commodities"];
+
+  const getLetterAvatarColor = (symbol: string) => {
+    const colors = [
+      "from-blue-500 to-indigo-600",
+      "from-cyan-500 to-blue-600",
+      "from-emerald-500 to-teal-600",
+      "from-purple-500 to-violet-600",
+      "from-rose-500 to-pink-600"
+    ];
+    return colors[symbol.charCodeAt(0) % colors.length];
+  };
 
   return (
     <div className="relative w-full max-w-lg" ref={searchRef}>
       {/* Search Input Field */}
       <div className="relative flex items-center">
-        <Search className="absolute left-3 h-5 w-5 text-slate-500 dark:text-slate-400" />
+        <Search className="absolute left-3.5 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => query.length > 0 && setIsOpen(true)}
+          onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-800/80 py-2.5 pl-10 pr-10 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-600/50 dark:focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-blue-600/50 dark:focus:ring-cyan-400/50 transition-all"
+          className="w-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] py-3 pl-11 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-night-900 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-blue-500/20 dark:focus:ring-cyan-400/20 shadow-inner transition-all duration-300"
         />
         {query && (
           <button
             onClick={clearSearch}
-            className="absolute right-3 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="absolute right-3.5 p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -123,50 +216,92 @@ const handleSelect =
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className="absolute top-full mt-2 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-night-900 shadow-2xl z-50">
+        <div className="absolute top-full mt-3 w-full overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/80 bg-white dark:bg-night-900 shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
           
-          {/* Fake Tabs to match TradingView UI */}
-          <div className="flex gap-4 border-b border-slate-200 dark:border-white/5 px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span className="text-slate-900 dark:text-white border-b-2 border-blue-600 dark:border-cyan-400 pb-2 -mb-3">Symbols</span>
-            <span className="hover:text-slate-900 dark:hover:text-white cursor-pointer">Ideas</span>
-            <span className="hover:text-slate-900 dark:hover:text-white cursor-pointer">People</span>
+          {/* Quick Filters */}
+          <div className="flex gap-1.5 border-b border-slate-100 dark:border-slate-800/60 px-4 py-3 overflow-x-auto custom-scrollbar text-[11px] font-extrabold">
+            {filterTabs.map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveFilter(tab)}
+                className={`px-3 py-1.5 rounded-lg border transition-all ${
+                  activeFilter === tab
+                    ? "bg-blue-600 dark:bg-cyan-500 border-blue-600 dark:border-cyan-400 text-white dark:text-night-950 shadow-sm"
+                    : "bg-slate-50 dark:bg-white/[0.01] border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
           <div className="max-h-96 overflow-y-auto py-2">
             {isSearching ? (
-              <div className="px-4 py-6 text-center text-sm text-slate-500">
-                Searching markets...
+              <div className="px-4 py-12 text-center text-sm text-slate-400 dark:text-slate-500 animate-pulse font-medium">
+                Searching global markets...
               </div>
-            ) : results.length > 0 ? (
-              results.map((item, index) => (
-                <div
-                  key={`${item.symbol}-${index}`}
-                  onClick={() => handleSelect(item)}
-                  className="flex cursor-pointer items-center justify-between px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-                >
-                  {/* Left Side: Icon, Symbol, Name */}
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white dark:bg-night-800 border border-slate-200 dark:border-white/10">
-                      <Building2 className="h-4 w-4 text-slate-500 dark:text-slate-300" />
+            ) : hasResults ? (
+              Object.entries(groupedAndFilteredResults).map(([category, items]) => {
+                if (items.length === 0) return null;
+                return (
+                  <div key={category} className="space-y-1 py-1">
+                    <div className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-white/[0.01]">
+                      {category}
                     </div>
-                    <div className="flex flex-col truncate">
-                      <span className="text-sm font-semibold text-slate-900 dark:text-white">{item.symbol}</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{item.name}</span>
-                    </div>
-                  </div>
+                    {items.map((item, idx) => {
+                      const isPinned = pinnedAssets.some(p => p.symbol === item.symbol);
+                      return (
+                        <div
+                          key={`${item.symbol}-${idx}`}
+                          onClick={() => handleSelect(item)}
+                          className="flex cursor-pointer items-center justify-between px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-all group border-b border-transparent hover:border-slate-100 dark:hover:border-slate-800/40"
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            {/* Logo avatar */}
+                            <div className={`h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br ${getLetterAvatarColor(item.symbol)} text-white text-xs font-black uppercase shadow-sm`}>
+                              {item.symbol.slice(0, 2).replace("^", "")}
+                            </div>
+                            <div className="flex flex-col truncate">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                                  {item.symbol}
+                                </span>
+                                {query.length === 0 && (
+                                  <History className="h-3 w-3 text-slate-350 dark:text-slate-600" />
+                                )}
+                              </div>
+                              <span className="text-xs text-slate-400 dark:text-slate-500 truncate font-medium">
+                                {item.name}
+                              </span>
+                            </div>
+                          </div>
 
-                  {/* Right Side: Type and Exchange */}
-                  <div className="flex flex-shrink-0 items-center gap-3 pl-4">
-                    <span className="text-[10px] lowercase text-slate-500">{item.type}</span>
-                    <span className="flex h-5 items-center rounded bg-slate-200 dark:bg-white/10 px-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-300">
-                      {item.exchange}
-                    </span>
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-5 items-center rounded-lg bg-slate-100 dark:bg-white/5 px-2 text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-white/5">
+                              {item.exchange || "GLOBAL"}
+                            </span>
+                            <button
+                              onClick={(e) => handleTogglePin(e, item)}
+                              className={`p-1.5 rounded-lg border hover:bg-slate-100 dark:hover:bg-white/10 transition-all ${
+                                isPinned
+                                  ? "border-amber-500/30 text-amber-500 bg-amber-500/5"
+                                  : "border-transparent text-slate-400 dark:text-slate-600"
+                              }`}
+                            >
+                              <Pin className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
-              <div className="px-4 py-6 text-center text-sm text-slate-500">
-                No symbols found for "{query}"
+              <div className="px-4 py-12 text-center text-sm text-slate-400 dark:text-slate-500 font-medium">
+                {query.trim().length === 0
+                  ? "Type to search stocks, crypto, forex, commodities..."
+                  : `No assets match "${query}"`}
               </div>
             )}
           </div>

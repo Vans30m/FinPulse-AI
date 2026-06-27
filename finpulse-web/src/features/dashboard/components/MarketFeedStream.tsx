@@ -43,7 +43,7 @@ const navigate = useNavigate();
         filter === type
       );
     })
-    .slice(0, 8);
+    .slice(0, 9);
 
   if (isLoading) {
     return (
