@@ -1,24 +1,19 @@
-import {
-  createChart,
-  ColorType,
-  CandlestickSeries,
+import { 
+  createChart, 
+  ColorType, 
+  CandlestickSeries, 
+  HistogramSeries, 
+  CrosshairMode, 
+  LineStyle 
 } from "lightweight-charts";
+import { useEffect, useRef, useState } from "react";
+import { getStockCandles, getFundamentals, calculateAvgVolume, mergeDailyMetrics, type DailyMarketMetrics } from "../../services/marketService";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
-import {
-  Plus,
-  Minus,
-  RotateCcw,
-} from "lucide-react";
-
-import {
-  getStockCandles,
-} from "../../services/marketService";
+import { ChartHeader } from "./ChartHeader";
+import { PriceInfoBar } from "./PriceInfoBar";
+import { ChartToolbar } from "./ChartToolbar";
+import { LoadingChart } from "./LoadingChart";
+import TimeframeSelector from "./TimeframeSelector";
 
 interface Props {
   symbol: string;
@@ -28,411 +23,312 @@ interface Props {
 
 export default function CandlestickChart({
   symbol,
-  timeframe,
+  timeframe: propTimeframe,
   height = 350,
 }: Props) {
-  const chartContainerRef =
-    useRef<HTMLDivElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<any>(null);
+  const candleSeriesRef = useRef<any>(null);
+  const volumeSeriesRef = useRef<any>(null);
 
-  const chartRef =
-    useRef<any>(null);
+  // Price Lines Array Reference to clear overlays during re-renders smoothly
+  const addedPriceLinesRef = useRef<any[]>([]);
 
-  const candleSeriesRef =
-    useRef<any>(null);
+  // States
+  const [currentTimeframe, setCurrentTimeframe] = useState<string>(propTimeframe || "1D");
+  const [showTimeframes, setShowTimeframes] = useState<boolean>(false);
+  const [hoveredCandle, setHoveredCandle] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  
+  const [fundamentals, setFundamentals] = useState<any>(null);
+  const [metrics, setMetrics] = useState<DailyMarketMetrics | null>(null);
 
-  const [hoveredCandle,
-    setHoveredCandle] =
-    useState<any>(null);
+  const [meta, setMeta] = useState({
+    name: "Asset",
+    exchange: "GLOBAL",
+    price: 0,
+    change: 0,
+    changePercent: 0,
+    marketState: "CLOSED",
+    currency: "USD"
+  });
 
   useEffect(() => {
-    const container =
-      chartContainerRef.current;
+    if (propTimeframe) {
+      setCurrentTimeframe(propTimeframe);
+    }
+  }, [propTimeframe]);
 
+  useEffect(() => {
+    const container = chartContainerRef.current;
     if (!container) return;
 
-    const chart = createChart(
-      container,
-      {
-        layout: {
-          background: {
-            type:
-              ColorType.Solid,
-            color:
-              "transparent",
-          },
-          textColor:
-            "#94a3b8",
+    setLoading(true);
+    const historicalLogicalRange = chartRef.current?.timeScale().getVisibleLogicalRange();
+
+    // Initialize Lightweight Chart Engine Core
+    const chart = createChart(container, {
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "#64748b", 
+        fontSize: 11,
+        fontFamily: "JetBrains Mono, Menlo, monospace",
+      },
+      width: container.clientWidth,
+      height,
+      grid: {
+        vertLines: { color: "rgba(30, 41, 59, 0.04)", style: LineStyle.Solid },
+        horzLines: { color: "rgba(30, 41, 59, 0.04)", style: LineStyle.Solid },
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: {
+          color: "#64748b",
+          width: 1,
+          style: LineStyle.Dashed,
+          labelBackgroundColor: "#1e293b",
         },
-
-        width:
-          container.clientWidth,
-
-        height,
-
-        grid: {
-          vertLines: {
-            color:
-              "#1e293b20",
-          },
-          horzLines: {
-            color:
-              "#1e293b20",
-          },
+        horzLine: {
+          color: "#64748b",
+          width: 1,
+          style: LineStyle.Dashed,
+          labelBackgroundColor: "#1e293b",
         },
-
-        crosshair: {
-          mode: 1,
+      },
+      rightPriceScale: {
+        borderVisible: false,
+        alignLabels: true,
+        scaleMargins: {
+          top: 0.1,    // Reserve upper breathing room
+          bottom: 0.3, // Anchor price above the volume bar grid panels
         },
-
-        rightPriceScale: {
-          borderVisible: false,
-        },
-
-        timeScale: {
-          borderVisible: false,
-          timeVisible: true,
-          secondsVisible: false,
-        },
-      }
-    );
+      },
+      timeScale: {
+        borderVisible: false,
+        timeVisible: true,
+        secondsVisible: false,
+        shiftVisibleRangeOnNewBar: true,
+        rightOffset: 12, 
+        barSpacing: 6,
+      },
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: true },
+      handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
+    });
 
     chartRef.current = chart;
 
-    const candleSeries =
-      chart.addSeries(
-        CandlestickSeries
-      );
+    // Create Candlestick Panel Layout Matrix
+    const candleSeries = chart.addSeries(CandlestickSeries, {
+      upColor: "#22c55e",
+      downColor: "#ef4444",
+      borderVisible: false,
+      wickUpColor: "#22c55e",
+      wickDownColor: "#ef4444",
+    });
+    candleSeriesRef.current = candleSeries;
 
-    candleSeriesRef.current =
-      candleSeries;
+    // Create Volume Panels Histogram Layout Matrix
+    const volumeSeries = chart.addSeries(HistogramSeries, {
+      priceFormat: { type: "volume" },
+      priceScaleId: "volume-pane", // Separate coordinate workspace pane ID
+    });
+    volumeSeriesRef.current = volumeSeries;
 
-    chart.subscribeCrosshairMove(
-      (param) => {
-        if (
-          !param.seriesData ||
-          !param.seriesData.size
-        )
-          return;
+    // Isolate Volume Scaling Parameters directly to the bottom 22% of window
+    chart.priceScale("volume-pane").applyOptions({
+      borderVisible: false,
+      scaleMargins: {
+        top: 0.78,
+        bottom: 0,
+      },
+    });
 
-        const candle =
-          param.seriesData.get(
-            candleSeries
-          );
-
-        if (candle) {
-          setHoveredCandle(
-            candle
-          );
-        }
+    // Crosshair Sync Handler
+    chart.subscribeCrosshairMove((param) => {
+      if (!param.seriesData || !param.seriesData.size) {
+        setHoveredCandle(null);
+        return;
       }
-    );
+      
+      const candle = param.seriesData.get(candleSeries);
+      const volData: any = param.seriesData.get(volumeSeries);
+
+      if (candle) {
+        setHoveredCandle({
+          ...candle,
+          volume: volData ? volData.value : undefined
+        });
+      }
+    });
+
+    const handleDoubleClickReset = () => {
+      chart.timeScale().fitContent();
+    };
+    container.addEventListener("dblclick", handleDoubleClickReset);
 
     async function loadData() {
       try {
-        const data =
-          await getStockCandles(
-            symbol,
-            timeframe
-          );
+        const [data, fundamentalsResponse] = await Promise.all([
+          getStockCandles(symbol, currentTimeframe),
+          getFundamentals(symbol).catch(() => null)
+        ]);
 
-        console.log(
-          "Yahoo Response:",
-          data
-        );
+        if (fundamentalsResponse) {
+          setFundamentals(fundamentalsResponse);
+          setMeta({
+            name: fundamentalsResponse.name || "Asset",
+            exchange: fundamentalsResponse.marketState ? "GLOBAL" : "INDEX",
+            price: fundamentalsResponse.price || 0,
+            change: fundamentalsResponse.change || 0,
+            changePercent: fundamentalsResponse.changePercent || 0,
+            marketState: fundamentalsResponse.marketState || "CLOSED",
+            currency: fundamentalsResponse.currency || "USD"
+          });
+        }
 
-        if (
-          !data?.quotes ||
-          !Array.isArray(
-            data.quotes
-          )
-        ) {
-          console.error(
-            "No Yahoo candle data",
-            data
-          );
+        if (!data?.quotes || !Array.isArray(data.quotes)) {
+          console.error("No valid chart candle payload available:", data);
           return;
         }
 
-        const candles =
-          data.quotes
-            .filter(
-              (q: any) =>
-                q &&
-                q.date &&
-                q.open != null &&
-                q.high != null &&
-                q.low != null &&
-                q.close != null
-            )
-            .map(
-              (q: any) => ({
-                time:
-                  Math.floor(
-                    new Date(
-                      q.date
-                    ).getTime() /
-                      1000
-                  ) as any,
+        // Structural translation mapping parameters 
+        const mappedCandles = data.quotes
+          .filter((q: any) => q && q.date && q.open != null && q.high != null && q.low != null && q.close != null)
+          .map((q: any) => ({
+            time: Math.floor(new Date(q.date).getTime() / 1000) as any,
+            open: Number(q.open),
+            high: Number(q.high),
+            low: Number(q.low),
+            close: Number(q.close),
+            volume: q.volume ? Number(q.volume) : 0
+          }));
 
-                open:
-                  Number(
-                    q.open
-                  ),
+        if (!mappedCandles.length) return;
 
-                high:
-                  Number(
-                    q.high
-                  ),
+        // Set candles data
+        candleSeries.setData(mappedCandles);
 
-                low:
-                  Number(
-                    q.low
-                  ),
+        // Generate green/red volume bars coloring properties dynamically
+        const volumeBars = mappedCandles.map((c: any) => ({
+          time: c.time,
+          value: c.volume,
+          color: c.close >= c.open ? "rgba(34, 197, 94, 0.45)" : "rgba(239, 68, 68, 0.45)"
+        }));
+        volumeSeries.setData(volumeBars);
 
-                close:
-                  Number(
-                    q.close
-                  ),
-              })
-            );
+        // Apply global market indicator structures
+        if (fundamentalsResponse) {
+          const computedMetrics = mergeDailyMetrics(mappedCandles, fundamentalsResponse);
+          setMetrics(computedMetrics);
 
-        if (
-          !candles.length
-        ) {
-          console.error(
-            "No valid candles found"
-          );
-          return;
+          // Purge active tracker lines cleanly
+          addedPriceLinesRef.current.forEach(line => candleSeries.removePriceLine(line));
+          addedPriceLinesRef.current = [];
+
+          const appendTrackingLine = (price: number, color: string, style: any, title: string) => {
+            if (!price) return;
+            const line = candleSeries.createPriceLine({
+              price,
+              color,
+              lineWidth: 1,
+              lineStyle: style,
+              axisLabelVisible: true,
+              title,
+            });
+            addedPriceLinesRef.current.push(line);
+          };
+
+          // Append lines according to directives
+          appendTrackingLine(computedMetrics.currentPrice, "#3b82f6", LineStyle.Solid, "LAST");
+          appendTrackingLine(computedMetrics.previousClose, "#64748b", LineStyle.Dashed, "PREV CLOSE");
+          appendTrackingLine(computedMetrics.dayHigh, "#22c55e", LineStyle.Dotted, "DAY HIGH");
+          appendTrackingLine(computedMetrics.dayLow, "#ef4444", LineStyle.Dotted, "DAY LOW");
         }
 
-        console.log(
-          "Candles Loaded:",
-          candles.length
-        );
-
-        candleSeries.setData(
-          candles
-        );
-
-        // Show latest candle
-        setHoveredCandle(
-          candles[
-            candles.length -
-              1
-          ]
-        );
-
-        // Current price line
-        candleSeries.createPriceLine(
-          {
-            price:
-              candles[
-                candles.length -
-                  1
-              ].close,
-
-            color:
-              "#22c55e",
-
-            lineWidth:
-              2,
-
-            lineStyle:
-              2,
-
-            axisLabelVisible:
-              true,
-
-            title:
-              "Current",
-          }
-        );
-
-        chart
-          .timeScale()
-          .fitContent();
+        if (historicalLogicalRange) {
+          chart.timeScale().setVisibleLogicalRange(historicalLogicalRange);
+        } else {
+          chart.timeScale().fitContent();
+        }
       } catch (error) {
-        console.error(
-          "Chart Error:",
-          error
-        );
+        console.error("Fatal exception during rendering execution pipeline:", error);
+      } finally {
+        setLoading(false);
       }
     }
 
     loadData();
 
-    const resizeObserver =
-      new ResizeObserver(
-        (entries) => {
-          if (
-            !entries.length
-          )
-            return;
-
-          chart.applyOptions({
-            width:
-              entries[0]
-                .contentRect
-                .width,
-          });
-        }
-      );
-
-    resizeObserver.observe(
-      container
-    );
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (!entries.length) return;
+      chart.applyOptions({ width: entries[0].contentRect.width });
+    });
+    resizeObserver.observe(container);
 
     return () => {
+      container.removeEventListener("dblclick", handleDoubleClickReset);
       resizeObserver.disconnect();
       chart.remove();
     };
-  }, [symbol, timeframe]);
+  }, [symbol, currentTimeframe, height]);
 
   const zoomIn = () => {
-    const range =
-      chartRef.current
-        ?.timeScale()
-        .getVisibleLogicalRange();
-
+    const range = chartRef.current?.timeScale().getVisibleLogicalRange();
     if (!range) return;
-
-    chartRef.current
-      .timeScale()
-      .setVisibleLogicalRange({
-        from:
-          range.from + 5,
-        to:
-          range.to - 5,
-      });
+    chartRef.current?.timeScale().setVisibleLogicalRange({ from: range.from + 4, to: range.to - 4 });
   };
 
   const zoomOut = () => {
-    const range =
-      chartRef.current
-        ?.timeScale()
-        .getVisibleLogicalRange();
-
+    const range = chartRef.current?.timeScale().getVisibleLogicalRange();
     if (!range) return;
-
-    chartRef.current
-      .timeScale()
-      .setVisibleLogicalRange({
-        from:
-          range.from - 5,
-        to:
-          range.to + 5,
-      });
-  };
-
-  const resetZoom = () => {
-    chartRef.current
-      ?.timeScale()
-      .fitContent();
+    chartRef.current?.timeScale().setVisibleLogicalRange({ from: range.from - 4, to: range.to + 4 });
   };
 
   return (
-    <div className="relative">
-      {hoveredCandle && (
-        <div
-          className="
-          flex
-          flex-wrap
-          gap-5
-          mb-4
-          text-sm
-          font-medium
-          text-slate-300
-          "
-        >
-          <span>
-            O{" "}
-            {hoveredCandle.open?.toFixed(
-              2
-            )}
-          </span>
+    <div className="w-full flex flex-col space-y-4 select-none">
+      <ChartHeader
+        name={meta.name}
+        symbol={symbol}
+        exchange={meta.exchange}
+        price={meta.price}
+        change={meta.change}
+        changePercent={meta.changePercent}
+        marketState={meta.marketState}
+        currency={meta.currency}
+      />
 
-          <span>
-            H{" "}
-            {hoveredCandle.high?.toFixed(
-              2
-            )}
-          </span>
+      <div>
+        <ChartToolbar 
+          onZoomIn={zoomIn} 
+          onZoomOut={zoomOut} 
+          onReset={() => chartRef.current?.timeScale().fitContent()} 
+          showTimeframes={showTimeframes}
+          onToggleTimeframes={() => setShowTimeframes(!showTimeframes)}
+        />
 
-          <span>
-            L{" "}
-            {hoveredCandle.low?.toFixed(
-              2
-            )}
-          </span>
+        {showTimeframes && (
+          <div className="mb-4 animate-in fade-in slide-in-from-top-1 duration-200">
+            <TimeframeSelector selected={currentTimeframe} onChange={setCurrentTimeframe} />
+          </div>
+        )}
 
-          <span>
-            C{" "}
-            {hoveredCandle.close?.toFixed(
-              2
-            )}
-          </span>
-        </div>
-      )}
-
-      <div
-        className="
-        absolute
-        top-0
-        right-0
-        z-20
-        flex
-        gap-2
-        "
-      >
-        <button
-          onClick={zoomIn}
-          className="
-          p-2
-          rounded-lg
-          bg-slate-800
-          hover:bg-slate-700
-          text-white
-          "
-        >
-          <Plus size={16} />
-        </button>
-
-        <button
-          onClick={zoomOut}
-          className="
-          p-2
-          rounded-lg
-          bg-slate-800
-          hover:bg-slate-700
-          text-white
-          "
-        >
-          <Minus size={16} />
-        </button>
-
-        <button
-          onClick={resetZoom}
-          className="
-          p-2
-          rounded-lg
-          bg-slate-800
-          hover:bg-slate-700
-          text-white
-          "
-        >
-          <RotateCcw
-            size={16}
-          />
-        </button>
+        <PriceInfoBar
+          hoveredData={hoveredCandle}
+          fundamentals={fundamentals}
+          metrics={metrics}
+        />
       </div>
 
-      <div
-  ref={chartContainerRef}
-  className="w-full"
-        style={{
-  height: `${height}px`,
-}}
-      />
+      <div className="relative w-full">
+        {loading && <LoadingChart height={height} />}
+        <div
+          ref={chartContainerRef}
+          className={`w-full cursor-crosshair transition-opacity duration-300 ease-out ${
+            loading ? "opacity-0 absolute pointer-events-none" : "opacity-100"
+          }`}
+          style={{ height: `${height}px` }}
+        />
+      </div>
     </div>
   );
 }

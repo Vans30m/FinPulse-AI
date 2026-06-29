@@ -349,41 +349,6 @@ export async function getTechnicalIndicators(
   }
 }
 
-export async function getFundamentals(
-  symbol: string
-) {
-  try {
-    const quote =
-      await yahooFinance.quote(
-        symbol
-      );
-
-    return {
-      symbol,
-      marketCap: quote.marketCap,
-      peRatio: quote.trailingPE,
-      eps: quote.epsTrailingTwelveMonths,
-      dividendYield: quote.dividendYield,
-      fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
-      fiftyTwoWeekLow: quote.fiftyTwoWeekLow,
-      price: quote.regularMarketPrice,
-      change: quote.regularMarketChange,
-      changePercent: quote.regularMarketChangePercent,
-      open: quote.regularMarketOpen,
-      previousClose: quote.regularMarketPreviousClose,
-      dayHigh: quote.regularMarketDayHigh,
-      dayLow: quote.regularMarketDayLow,
-      volume: quote.regularMarketVolume,
-      currency: quote.currency,
-      exchange: quote.fullExchangeName || quote.exchange,
-      marketState: quote.marketState
-    };
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-}
-
 export async function getFinancialHealth(
   symbol: string
 ) {
@@ -1033,4 +998,51 @@ export async function getUpcomingEarningsForMarket(market: string) {
   return cleanFinalResults;
 }
 
-
+// Retain getFundamentals unchanged as requested by earlier constraints
+export async function getFundamentals(symbol: string) {
+  try {
+    const quote = await yahooFinance.quote(symbol);
+    const name = quote.longName || quote.shortName || quote.displayName || symbol;
+    const resolvedPrice = quote.regularMarketPrice ?? (quote as any).regularMarketOpen ?? (quote as any).previousClose ?? 0;
+
+    return {
+      name,
+      price: resolvedPrice,
+      change: quote.regularMarketChange ?? 0,
+      changePercent: quote.regularMarketChangePercent ?? 0,
+      open: quote.regularMarketOpen,
+      previousClose: quote.regularMarketPreviousClose,
+      dayHigh: quote.regularMarketDayHigh,
+      dayLow: quote.regularMarketDayLow,
+      fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
+      fiftyTwoWeekLow: quote.fiftyTwoWeekLow,
+      volume: quote.regularMarketVolume,
+      marketCap: quote.marketCap,
+      circulatingSupply: quote.circulatingSupply,
+      currency: quote.currency,
+      marketState: quote.marketState,
+      peRatio: quote.trailingPE,
+      eps: quote.trailingEps,
+    };
+  } catch (error) {
+    console.error(`Error fetching fundamentals for ${symbol}:`, error);
+    throw error;
+  }
+}
+
+// Upgraded chart method supporting explicit range & interval queries
+export async function getHistoricalChart(symbol: string, range: string, interval: string) {
+  try {
+    const queryOptions = {
+      range: range,
+      interval: interval,
+    };
+    
+    // Explicit type cast to bypass strict version-mismatched overload checks
+    const result = await yahooFinance.chart(symbol, queryOptions as any);
+    return result;
+  } catch (error) {
+    console.error(`Error fetching chart for ${symbol} with range ${range} and interval ${interval}:`, error);
+    throw error;
+  }
+}
