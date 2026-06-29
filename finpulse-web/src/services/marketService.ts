@@ -1,295 +1,188 @@
-export async function getStockCandles(
-  symbol: string,
-  timeframe: string
-) {
-  let range = "1y";
+export interface FundamentalData {
+  name?: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  open?: number;
+  previousClose?: number;
+  dayHigh?: number;
+  dayLow?: number;
+  fiftyTwoWeekHigh?: number;
+  fiftyTwoWeekLow?: number;
+  volume?: number;
+  marketCap?: number;
+  circulatingSupply?: number;
+  currency?: string;
+  marketState?: string;
+  peRatio?: number;
+  eps?: number;
+}
 
-  switch (timeframe) {
-    case "1D":
-      range = "1d";
-      break;
+// Helper mapping object conforming exactly to TradingView / Yahoo parameters mappings
+export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }> = {
+  "1m":   { range: "1d",   interval: "1m" },
+  "5m":   { range: "5d",   interval: "5m" },
+  "15m":  { range: "5d",   interval: "15m" },
+  "30m":  { range: "5d",   interval: "30m" },
+  "1H":   { range: "7d",   interval: "1h" },
+  "4H":   { range: "30d",  interval: "1h" }, // Yahoo lacks a native 4h interval; 1h handles this smoothly
+  "1D":   { range: "1mo",  interval: "1d" },
+  "1W":   { range: "3mo",  interval: "1wk" },
+  "1M":   { range: "6mo",  interval: "1mo" },
+  "3M":   { range: "1y",   interval: "1mo" },
+  "6M":   { range: "2y",   interval: "1mo" },
+  "YTD":  { range: "ytd",  interval: "1d" },
+  "1Y":   { range: "1y",   interval: "1d" },
+  "5Y":   { range: "5y",   interval: "1wk" },
+  "MAX":  { range: "max",  interval: "1mo" },
+};
 
-    case "1W":
-      range = "5d";
-      break;
-
-    case "1M":
-      range = "1mo";
-      break;
-
-    case "6M":
-      range = "6mo";
-      break;
-
-    case "1Y":
-      range = "1y";
-      break;
-
-    case "MAX":
-      range = "max";
-      break;
-  }
+export async function getStockCandles(symbol: string, timeframe: string) {
+  // Graceful configuration extraction with fallback safety
+  const config = TIMEFRAME_MAPPS[timeframe] || { range: "1y", interval: "1d" };
 
   const response = await fetch(
-    `http://localhost:3000/api/charts/${symbol}?range=${range}`
+    `http://localhost:3000/api/charts/${symbol}?range=${config.range}&interval=${config.interval}`
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch chart data: ${response.status}`
-    );
+    throw new Error(`Failed to fetch chart data: ${response.status}`);
   }
 
   return response.json();
 }
 
-export async function searchAssets(
-  query: string
-) {
+// Preserve all previous workspace interfaces untouched
+export async function getFundamentals(symbol: string): Promise<FundamentalData> {
+  const response = await fetch(`http://localhost:3000/api/fundamentals/${symbol}`);
+  if (!response.ok) throw new Error("Failed to fetch fundamentals");
+  return response.json();
+}
 
-  if (!query.trim()) {
-    return [];
-  }
-
-  const response =
-    await fetch(
-      `http://localhost:3000/api/search?q=${encodeURIComponent(
-        query
-      )}`
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      `Search failed: ${response.status}`
-    );
-  }
-
+export async function searchAssets(query: string) {
+  if (!query.trim()) return [];
+  const response = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(query)}`);
+  if (!response.ok) throw new Error(`Search failed: ${response.status}`);
   return response.json();
 }
 
 export async function getAISentiment() {
-  const response = await fetch(
-    "http://localhost:3000/api/news-sentiment/sentiment"
-  );
-
+  const response = await fetch("http://localhost:3000/api/news-sentiment/sentiment");
   return response.json();
 }
 
 export async function getMarketExplanation() {
-  const response =
-    await fetch(
-      "http://localhost:3000/api/market-explanation"
-    );
-
+  const response = await fetch("http://localhost:3000/api/market-explanation");
   return response.json();
 }
 
-export async function getStockSentiment(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/stock-sentiment/${symbol}`
-    );
-
+export async function getStockSentiment(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/stock-sentiment/${symbol}`);
   return response.json();
 }
 
-export async function getFundamentals(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/fundamentals/${symbol}`
-    );
-
+export async function getFinancialHealth(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/financial-health/${symbol}`);
   return response.json();
 }
 
-export async function getFinancialHealth(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/financial-health/${symbol}`
-    );
-
+export async function getTechnicals(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/technical/${symbol}`);
   return response.json();
 }
 
-export async function getTechnicals(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/technical/${symbol}`
-    );
-
+export async function getAnalystConsensus(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/analyst/${symbol}`);
   return response.json();
 }
 
-export async function getAnalystConsensus(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/analyst/${symbol}`
-    );
-
+export async function getCompanyNews(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/company-news/${symbol}`);
+  if (!response.ok) throw new Error("Failed to fetch company news");
   return response.json();
 }
 
-export async function getCompanyNews(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/company-news/${symbol}`
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to fetch company news"
-    );
-  }
-
+export async function getNewsSentiment(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/news-sentiment/${symbol}`);
+  if (!response.ok) throw new Error("Failed to fetch news sentiment");
   return response.json();
 }
 
-export async function getNewsSentiment(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/news-sentiment/${symbol}`
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to fetch news sentiment"
-    );
-  }
-
+export async function getAIScore(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/ai-score/${symbol}`);
+  if (!response.ok) throw new Error("Failed to fetch AI score");
   return response.json();
 }
 
-export async function getAIScore(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/ai-score/${symbol}`
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to fetch AI score"
-    );
-  }
-
+export async function fetchGlobalMarkets() {
+  const response = await fetch("http://localhost:3000/api/global-markets");
   return response.json();
 }
 
-export async function
-fetchGlobalMarkets() {
-
-  const response =
-    await fetch(
-      "http://localhost:3000/api/global-markets"
-    );
-
+export async function getMarketHistory(symbol: string, range: string = "1mo") {
+  const response = await fetch(`http://localhost:3000/api/global-markets/history/${encodeURIComponent(symbol)}?range=${range}`);
+  if (!response.ok) throw new Error("Failed to fetch market history");
   return response.json();
 }
 
-export async function getMarketHistory(
-  symbol: string,
-  range: string = "1mo"
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/global-markets/history/${encodeURIComponent(
-        symbol
-      )}?range=${range}`
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to fetch market history"
-    );
-  }
-
+export async function getMarketScreener(market: string, type: string) {
+  const endpoint = market === "india" ? `/api/screener/india?type=${type}` : `/api/screener?market=us&type=${type}`;
+  const response = await fetch(`http://localhost:3000${endpoint}`);
+  if (!response.ok) throw new Error("Failed to fetch screener");
   return response.json();
 }
 
-export async function getMarketScreener(
-  market: string,
-  type: string
-) {
-  const endpoint =
-    market === "india"
-      ? `/api/screener/india?type=${type}`
-      : `/api/screener?market=us&type=${type}`;
-
-  const response =
-    await fetch(
-      `http://localhost:3000${endpoint}`
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to fetch screener"
-    );
-  }
-
+export async function getDomesticScreener(type: string) {
+  const response = await fetch(`http://localhost:3000/api/screener/india?type=${type}`);
+  if (!response.ok) throw new Error("Failed to fetch screener");
   return response.json();
 }
 
-export async function getDomesticScreener(
-  type: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/screener/india?type=${type}`
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to fetch screener"
-    );
-  }
-
-  return response.json();
-}
-
-export async function getIndexSummary(
-  symbol: string
-) {
-  const response =
-    await fetch(
-      `http://localhost:3000/api/index-summary/${encodeURIComponent(
-        symbol
-      )}`
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to fetch index summary"
-    );
-  }
-
+export async function getIndexSummary(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/index-summary/${encodeURIComponent(symbol)}`);
+  if (!response.ok) throw new Error("Failed to fetch index summary");
   return response.json();
 }
 
 export async function getUpcomingEarnings(market: string) {
-  const response = await fetch(
-    `http://localhost:3000/api/earnings/calendar/${encodeURIComponent(market)}`
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch upcoming earnings: ${response.status}`
-    );
-  }
-
+  const response = await fetch(`http://localhost:3000/api/earnings/calendar/${encodeURIComponent(market)}`);
+  if (!response.ok) throw new Error(`Failed to fetch upcoming earnings: ${response.status}`);
   return response.json();
+}
+
+// Add these helper methods to your existing marketService.ts file:
+
+/**
+ * Calculates the simple moving average of volume directly from the candle array
+ */
+export function calculateAvgVolume(candles: any[], period: number = 20): number {
+  if (!candles || candles.length === 0) return 0;
+  const count = Math.min(candles.length, period);
+  const sum = candles.slice(-count).reduce((acc, bar) => acc + (bar.volume || 0), 0);
+  return Math.round(sum / count);
+}
+
+/**
+ * Transforms standard candle arrays and fundamental payloads into a clean metric snapshot
+ */
+export function mergeDailyMetrics(candles: any[], fundamentals: FundamentalData): DailyMarketMetrics {
+  const latestBar = candles[candles.length - 1] || {};
+  
+  return {
+    currentPrice: fundamentals.price,
+    previousClose: fundamentals.previousClose ?? latestBar.close ?? 0,
+    dayHigh: fundamentals.dayHigh ?? latestBar.high ?? 0,
+    dayLow: fundamentals.dayLow ?? latestBar.low ?? 0,
+    currentVolume: fundamentals.volume ?? latestBar.volume ?? 0,
+    avgVolume: calculateAvgVolume(candles)
+  };
+}
+
+export interface DailyMarketMetrics {
+  currentPrice: number;
+  previousClose: number;
+  dayHigh: number;
+  dayLow: number;
+  currentVolume: number;
+  avgVolume: number;
 }

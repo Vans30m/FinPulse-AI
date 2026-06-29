@@ -9,16 +9,12 @@ import {
 } from "../services/marketService";
 import { ArrowLeft } from "lucide-react";
 
-// Reusable Components
-import AssetHeader from "../components/asset/AssetHeader";
 import AssetOverview from "../components/asset/AssetOverview";
 import AssetTabs from "../components/asset/AssetTabs";
-import NewsList from "../components/asset/NewsList";
 import TechnicalCard from "../components/asset/TechnicalCard";
 import FinancialCard from "../components/asset/FinancialCard";
 import AISummaryCard from "../components/asset/AISummaryCard";
 import CandlestickChart from "../components/charts/CandlestickChart";
-import TimeframeSelector from "../components/charts/TimeframeSelector";
 
 function resolveSymbolType(symbol: string): "Stock" | "Index" | "Crypto" | "Forex" | "Commodities" {
   if (!symbol) return "Stock";
@@ -36,10 +32,13 @@ export default function AssetDetails() {
   const location = useLocation();
 
   const assetType = resolveSymbolType(symbol);
-  const assetName = location.state?.name || symbol;
+  
+  const [assetName, setAssetName] = useState(
+    location.state?.name || symbol
+  );
+  
   const assetExchange = location.state?.exchange || (assetType === "Crypto" ? "BINANCE" : "GLOBAL");
 
-  // Determine Tab set based on Asset Type
   const tabsMap: Record<string, string[]> = {
     Stock: ["overview", "chart", "financials", "technicals", "ai_analysis"],
     Index: ["overview", "chart", "technicals", "ai_analysis"],
@@ -52,7 +51,6 @@ export default function AssetDetails() {
   const [activeTab, setActiveTab] = useState("overview");
   const [timeframe, setTimeframe] = useState("1D");
 
-  // Data States
   const [quoteData, setQuoteData] = useState<{
     price: number;
     change: number;
@@ -80,13 +78,14 @@ export default function AssetDetails() {
   const [aiScore, setAiScore] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  // Fetch basic Quote and Fundamentals data on symbol load
   useEffect(() => {
     const fetchBaseQuote = async () => {
       try {
-        // Query Fundamentals to fetch quote stats
         const fundData = await getFundamentals(symbol);
         if (fundData) {
+          if (fundData?.name) {
+            setAssetName(fundData.name);
+          }
           setQuoteData(prev => ({
             ...prev,
             price: fundData.price || prev.price || 150.0,
@@ -113,7 +112,6 @@ export default function AssetDetails() {
     fetchBaseQuote();
   }, [symbol]);
 
-  // Tab-specific details lazy fetching
   useEffect(() => {
     const fetchTabDetails = async () => {
       setLoadingDetails(true);
@@ -156,20 +154,7 @@ export default function AssetDetails() {
         </button>
       </div>
 
-      {/* Asset Header Info */}
-      <AssetHeader
-        name={assetName}
-        symbol={symbol}
-        exchange={assetExchange}
-        price={quoteData.price}
-        change={quoteData.change}
-        changePercent={quoteData.changePercent}
-        currency={quoteData.currency}
-        assetType={assetType}
-        marketState={quoteData.marketState}
-      />
-
-      {/* Main Tab Controller Space (Full-width Layout) */}
+      {/* Main Tab Controller Space */}
       <div className="w-full space-y-6">
         <AssetTabs
           tabs={tabs}
@@ -179,19 +164,13 @@ export default function AssetDetails() {
 
         <div className="transition-all duration-300">
           {activeTab === "chart" && (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-6 bg-white dark:bg-slate-900 shadow-sm space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">Valuation Chart</h3>
-                <TimeframeSelector selected={timeframe} onChange={setTimeframe} />
-              </div>
-              <div className="w-full bg-slate-50 dark:bg-slate-950/40 rounded-xl p-2 overflow-hidden">
-                <CandlestickChart symbol={symbol} timeframe={timeframe} />
-              </div>
-            </div>
+            <CandlestickChart symbol={symbol} timeframe={timeframe} />
           )}
 
           {activeTab === "overview" && (
             <AssetOverview
+              name={assetName}
+              symbol={symbol}
               price={quoteData.price}
               open={quoteData.open}
               previousClose={quoteData.previousClose}
@@ -213,10 +192,6 @@ export default function AssetDetails() {
 
           {activeTab === "technicals" && (
             <TechnicalCard data={technicals} loading={loadingDetails} />
-          )}
-
-          {activeTab === "news" && (
-            <NewsList news={news} loading={loadingDetails} />
           )}
 
           {activeTab === "ai_analysis" && (
