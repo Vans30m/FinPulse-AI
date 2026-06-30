@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid
-} from "recharts";
+import CandlestickChart from "../../../components/charts/CandlestickChart";
 import { TrendingUp } from "lucide-react";
 
 interface Props {
@@ -58,6 +50,17 @@ export default function PortfolioPerformanceChart({
 
   const chartData = datasets[timeframe];
 
+  // Map month strings to sequential date strings for lightweight-charts compatibility
+  const mappedChartData = chartData.map((d, index) => {
+    const date = new Date("2026-01-01");
+    date.setDate(date.getDate() + index);
+    const timeStr = date.toISOString().split("T")[0];
+    return {
+      time: timeStr,
+      value: d.value
+    };
+  });
+
   return (
     <div className="glass-panel p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -87,52 +90,11 @@ export default function PortfolioPerformanceChart({
       </div>
 
       <div className="h-[320px] w-full">
-        <ResponsiveContainer
-          width="100%"
-          height="100%"
-        >
-          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800/60" />
-            <XAxis 
-              dataKey="month" 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
-            />
-            <YAxis 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
-              tickFormatter={(v) => `$${(v / 1000)}k`}
-            />
-            <Tooltip 
-              contentStyle={{
-                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '12px',
-                color: '#fff',
-                fontSize: '12px',
-                fontWeight: '600'
-              }}
-              formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Value']}
-              labelStyle={{ color: '#94a3b8' }}
-            />
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke="#3b82f6"
-              strokeWidth={3}
-              fillOpacity={1}
-              fill="url(#colorValue)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <CandlestickChart
+          customData={mappedChartData}
+          chartType="area"
+          height={320}
+        />
       </div>
     </div>
   );

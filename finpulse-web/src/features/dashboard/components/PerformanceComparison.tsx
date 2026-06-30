@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import CandlestickChart from '../../../components/charts/CandlestickChart';
 import { LineChart as LineChartIcon, Table as TableIcon, Plus, Loader2, X } from 'lucide-react';
 
 const CHART_COLORS = ['#10b981', '#3b82f6', '#a855f7', '#f59e42', '#ef4444'];
@@ -9,25 +9,6 @@ const initialSummaryData = [
   { symbol: 'AAPL', name: 'Apple Inc', type: 'Stock', endValue: 0, totalReturn: 0, annualReturn: 0, color: CHART_COLORS[0] },
   { symbol: 'META', name: 'Meta Platforms Inc', type: 'Stock', endValue: 0, totalReturn: 0, annualReturn: 0, color: CHART_COLORS[1] },
 ];
-
-function CustomLineTooltip({ active, payload, label }: any) {
-  if (!active || !payload || !payload.length) return null;
-  return (
-    <div style={{ background: "#1a1b1e", border: "1px solid #333", color: "#fff", borderRadius: 8, padding: 12, minWidth: 110 }}>
-      <div style={{ fontWeight: 600, marginBottom: 6 }}>{label}</div>
-      {payload.map((entry: any) => (
-        <div key={entry.dataKey} style={{ display: "flex", alignItems: "center", marginBottom: 2 }}>
-          <span style={{ background: entry.color, borderRadius: "50%", width: 9, height: 9, display: "inline-block", marginRight: 8 }}></span>
-          <span style={{ minWidth: 36, color: entry.color, fontWeight: 600 }}>{entry.name}</span>
-          <span style={{ marginLeft: 7, fontWeight: 700, color: "#fff" }}>
-            {typeof entry.value === 'number' ? entry.value.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 }) : entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function PerformanceComparison() {
   const [summaryData, setSummaryData] = useState(initialSummaryData);
   const [showAdd, setShowAdd] = useState<null | number>(null);
@@ -49,6 +30,35 @@ export default function PerformanceComparison() {
 
   // Dynamically extract currently selected track keys
   const symbols = useMemo(() => summaryData.map(x => x.symbol), [summaryData]);
+
+  const mappedGrowthData = useMemo(() => {
+    if (!liveGrowthData || !Array.isArray(liveGrowthData)) return [];
+    
+    return liveGrowthData
+      .map((d: any) => {
+        let timeStr = "";
+        try {
+          const parsedDate = new Date(d.date);
+          if (!isNaN(parsedDate.getTime())) {
+            timeStr = parsedDate.toISOString().split("T")[0];
+          } else {
+            timeStr = d.date;
+          }
+        } catch {
+          timeStr = d.date;
+        }
+        
+        return {
+          ...d,
+          time: timeStr
+        };
+      })
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+  }, [liveGrowthData]);
+
+  const seriesKeys = useMemo(() => {
+    return summaryData.map(asset => ({ key: asset.symbol, color: asset.color }));
+  }, [summaryData]);
 
   // Debounced Auto-Complete Search Input Field Listener
   useEffect(() => {
@@ -253,16 +263,12 @@ export default function PerformanceComparison() {
         {activeTab === 'growth' && (
           <div className="h-[400px] w-full animate-in fade-in">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Real Portfolio Growth (Yahoo Finance Engine)</h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <LineChart data={liveGrowthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                <XAxis dataKey="date" stroke="#666" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#666" tick={{ fontSize: 12 }} tickFormatter={(val) => `$${val.toLocaleString()}`} />
-                <Tooltip content={CustomLineTooltip as any} />
-                <Legend iconType="circle" />
-                {summaryData.map((asset) => <Line key={asset.symbol} type="monotone" dataKey={asset.symbol} name={asset.symbol} stroke={asset.color} strokeWidth={2} dot={false} activeDot={{ r: 6 }} />)}
-              </LineChart>
-            </ResponsiveContainer>
+            <CandlestickChart
+              customMultiData={mappedGrowthData}
+              seriesKeys={seriesKeys}
+              chartType="multiline"
+              height={320}
+            />
           </div>
         )}
         {activeTab === 'summary' && (
