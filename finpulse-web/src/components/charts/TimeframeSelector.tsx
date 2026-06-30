@@ -1,50 +1,38 @@
-interface Props {
+import { memo } from "react";
+
+interface TimeframeSelectorProps {
   selected: string;
-  onChange: (
-    value: string
-  ) => void;
+  onChange: (timeframe: string) => void;
 }
 
-const timeframes = [
-  "1D",
-  "1W",
-  "1M",
-  "6M",
-  "1Y",
-  "MAX",
+export const TIMEFRAMES = [
+  "1m", "5m", "15m", "30m", "1H", "4H", "1D", "1W", "1M", "3M", "6M", "YTD", "1Y", "5Y", "MAX"
 ];
 
-export default function TimeframeSelector({
-  selected,
-  onChange,
-}: Props) {
+function TimeframeSelector({ selected, onChange }: TimeframeSelectorProps) {
   return (
-    <div className="flex gap-2 flex-wrap">
-      {timeframes.map(
-        (tf) => (
-          <button
-            key={tf}
-            onClick={() =>
-              onChange(tf)
-            }
-            className={`
-              px-4 py-2
-              rounded-xl
-              text-sm
-              font-medium
-              transition-all
-
-              ${
-                selected === tf
-                  ? "bg-cyan-500 text-white"
-                  : "bg-slate-100 dark:bg-night-800"
-              }
-            `}
-          >
-            {tf}
-          </button>
-        )
-      )}
+    <div className="w-full overflow-x-auto no-scrollbar scroll-smooth flex items-center bg-slate-100/80 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/40 dark:border-white/5">
+      <div className="flex items-center gap-1 min-w-max">
+        {TIMEFRAMES.map((tf) => {
+          const isActive = selected === tf;
+          return (
+            <button
+              key={tf}
+              type="button"
+              onClick={() => onChange(tf)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wide font-mono transition-all duration-150 ${
+                isActive
+                  ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm scale-[1.02]"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-white/[0.02]"
+              }`}
+            >
+              {tf}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
+export default memo(TimeframeSelector);

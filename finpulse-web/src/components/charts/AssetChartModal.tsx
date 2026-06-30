@@ -6,16 +6,12 @@ import {
   Brain, 
   Activity, 
   TrendingUp, 
-  Target, 
   Briefcase, 
   Tags,
-  CheckCircle2,
   ExternalLink,
-  ChevronRight,
   Loader2,
   Compass,
   Layers,
-  Flame,
   ShieldCheck,
   Coins,
   Star,
@@ -23,9 +19,7 @@ import {
   Camera,
   RotateCcw,
   Settings,
-  Sliders,
-  Sparkles,
-  Info
+  Sliders
 } from "lucide-react";
 import CandlestickChart from "./CandlestickChart";
 import {
@@ -106,7 +100,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const [analyst, setAnalyst] = useState<AnalystConsensus | null>(null);
   const [news, setNews] = useState<any[]>([]);
   const [newsSentiment, setNewsSentiment] = useState<NewsSentiment | null>(null);
-  const [aiScoreMetrics, setAiScoreMetrics] = useState<AIScore | null>(null);
+  const [, setAiScoreMetrics] = useState<AIScore | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -127,11 +121,6 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
     };
   }, [symbol]);
 
-  const availableTabs = useMemo<TabType[]>(() => {
-    return isStock 
-      ? ["overview", "financials", "technicals", "news"] 
-      : ["overview", "technicals", "news"];
-  }, [isStock]);
 
   useEffect(() => {
     if (!isStock && activeTab === "financials") {
@@ -214,15 +203,6 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
     return Math.min(Math.max(((currentAssetPrice - fundamentals.fiftyTwoWeekLow) / totalRange) * 100, 0), 100);
   }, [fundamentals, currentAssetPrice]);
 
-  const calculatedPiotroskiScore = useMemo(() => {
-    if (!financialHealth) return 5;
-    let score = 4;
-    if ((financialHealth.profitMargin ?? 0) > 0.15) score += 1;
-    if ((financialHealth.revenueGrowth ?? 0) > 0.05) score += 1;
-    if ((financialHealth.earningsGrowth ?? 0) > 0.08) score += 1;
-    if (fundamentals && (fundamentals.peRatio ?? 0) < 25) score += 1;
-    return Math.min(score, 9);
-  }, [financialHealth, fundamentals]);
 
   const derivedDuPontMetrics = useMemo(() => {
     const margin = financialHealth?.profitMargin || 0.12;

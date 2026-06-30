@@ -1,4 +1,4 @@
-import React from "react";
+import { memo } from "react";
 
 interface ChartHeaderProps {
   name: string;
@@ -11,7 +11,7 @@ interface ChartHeaderProps {
   currency?: string;
 }
 
-export const ChartHeader: React.FC<ChartHeaderProps> = ({
+export const ChartHeader = memo<ChartHeaderProps>(({
   name,
   symbol,
   exchange,
@@ -60,4 +60,4 @@ export const ChartHeader: React.FC<ChartHeaderProps> = ({
       </div>
     </div>
   );
-};
+});
