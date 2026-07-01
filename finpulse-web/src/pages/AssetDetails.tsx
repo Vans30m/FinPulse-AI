@@ -49,7 +49,7 @@ export default function AssetDetails() {
   const tabs = tabsMap[assetType] || ["overview", "chart"];
 
   const [activeTab, setActiveTab] = useState("overview");
-  const [timeframe, setTimeframe] = useState("1D");
+  const [timeframe] = useState("1D");
 
   const [quoteData, setQuoteData] = useState<{
     price: number;
@@ -74,7 +74,7 @@ export default function AssetDetails() {
 
   const [financials, setFinancials] = useState<any>(null);
   const [technicals, setTechnicals] = useState<any>(null);
-  const [news, setNews] = useState<any[]>([]);
+  const [_news, setNews] = useState<any[]>([]);
   const [aiScore, setAiScore] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 

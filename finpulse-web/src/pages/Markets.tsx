@@ -4,7 +4,7 @@ import MarketHeatmap from "../components/markets/MarketHeatmap";
 import {useNavigate} from "react-router-dom";
 import MarketStatusBar from "../features/dashboard/components/MarketStatusBar";
 import { Search, X } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import CandlestickChart from "../components/charts/CandlestickChart";
 
 export default function Markets() {
   const navigate = useNavigate();
@@ -204,13 +204,17 @@ export default function Markets() {
                       const price = parseFloat(market.price) || 0;
                       const isPositive = changePercent >= 0;
 
-                      const mockHistory = Array.from({ length: 15 }).map((_, idx) => ({
-                        price: price * (1 + (Math.random() * 0.02 - 0.01) * (15 - idx))
-                      }));
-                      mockHistory.push({ price });
-
-                      const strokeColor = isPositive ? "#10b981" : "#f43f5e";
-                      const gradientId = `gradient-${market.symbol.replace(/\^/g, '')}`;
+                      const mockHistory = Array.from({ length: 15 }).map((_, idx) => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - (15 - idx));
+                        const timeStr = date.toISOString().split("T")[0];
+                        return {
+                          time: timeStr,
+                          value: price * (1 + (Math.random() * 0.02 - 0.01) * (15 - idx))
+                        };
+                      });
+                      const todayStr = new Date().toISOString().split("T")[0];
+                      mockHistory.push({ time: todayStr, value: price });
 
                       return (
                         <div
@@ -268,27 +272,14 @@ export default function Markets() {
                               </div>
                             </div>
 
-                            {/* Recharts Sparkline */}
-                            <div className="h-14 w-28 opacity-75 group-hover:opacity-100 transition-opacity duration-300">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={mockHistory}>
-                                  <defs>
-                                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor={strokeColor} stopOpacity={0.35} />
-                                      <stop offset="95%" stopColor={strokeColor} stopOpacity={0} />
-                                    </linearGradient>
-                                  </defs>
-                                  <Area
-                                    type="monotone"
-                                    dataKey="price"
-                                    stroke={strokeColor}
-                                    strokeWidth={2.5}
-                                    fillOpacity={1}
-                                    fill={`url(#${gradientId})`}
-                                    isAnimationActive={false}
-                                  />
-                                </AreaChart>
-                              </ResponsiveContainer>
+                            {/* Recharts Sparkline replaced with CandlestickChart in mini mode */}
+                            <div className="h-14 w-28 opacity-75 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                              <CandlestickChart
+                                customData={mockHistory}
+                                mini={true}
+                                chartType="area"
+                                height={56}
+                              />
                             </div>
                           </div>
                         </div>
