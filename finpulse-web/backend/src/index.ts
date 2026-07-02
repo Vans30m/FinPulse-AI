@@ -21,7 +21,7 @@ import {
   analystRoutes,
   stockSentimentRoutes
 } from "./routes/ai.js";
-import { getUpcomingEarningsForMarket } from "./services/yahooService.js";
+import { getUpcomingEarningsForMarket, getAssetEvents } from "./services/yahooService.js";
 
 dotenv.config();
 
@@ -76,6 +76,17 @@ app.get(["/api/earnings/calendar/:market", "/api/earnings/upcoming/:market"], as
   } catch (error: any) {
     console.error(`Error in GET earnings endpoint for ${req.params.market}:`, error);
     res.status(500).json({ error: error.message || "Failed to fetch earnings calendar" });
+  }
+});
+
+app.get("/api/events/:symbol", async (req, res) => {
+  try {
+    const symbol = String(req.params.symbol || "");
+    const data = await getAssetEvents(symbol);
+    res.json(data);
+  } catch (error: any) {
+    console.error(`Error in GET events for ${req.params.symbol}:`, error);
+    res.status(500).json({ error: error.message || "Failed to fetch asset events" });
   }
 });
 

@@ -7,7 +7,6 @@ import {
   Maximize2, 
   Minimize2, 
   Camera, 
-  Sliders, 
   LineChart, 
   Check, 
   Star, 
@@ -15,14 +14,16 @@ import {
   SlidersHorizontal,
   Loader2
 } from "lucide-react";
+import TimeframeSelector from "./TimeframeSelector";
 
 interface ChartToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
-  showTimeframes: boolean;
-  onToggleTimeframes: () => void;
-  
+
+  currentTimeframe: string;
+  onTimeframeChange: (tf: string) => void;
+
   // Technical indicator props
   activeOverlays: string[];
   activePanes: string[];
@@ -45,15 +46,26 @@ interface ChartToolbarProps {
   onSettingsChange: (settings: any) => void;
 }
 
-const OVERLAYS = ["EMA 20", "EMA 50", "EMA 200", "SMA", "VWAP", "Bollinger Bands"];
+const OVERLAYS = [
+  "EMA 20", 
+  "EMA 50", 
+  "EMA 200", 
+  "SMA", 
+  "VWAP", 
+  "Bollinger Bands",
+  "Last Price",
+  "Previous Close",
+  "Day High",
+  "Day Low"
+];
 const PANES = ["RSI", "MACD", "Stochastic", "ATR"];
 
 export const ChartToolbar = memo<ChartToolbarProps>(({
   onZoomIn,
   onZoomOut,
   onReset,
-  showTimeframes,
-  onToggleTimeframes,
+  currentTimeframe,
+  onTimeframeChange,
   activeOverlays,
   activePanes,
   onToggleOverlay,
@@ -128,11 +140,9 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:3500/api/search?q=${encodeURIComponent(compareInput)}`);
-        // Fallback search to port 3000 if 3500 fails
-        const finalRes = res.ok ? res : await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(compareInput)}`);
-        if (finalRes.ok) {
-          const data = await finalRes.json();
+        const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(compareInput)}`);
+        if (res.ok) {
+          const data = await res.json();
           setSuggestions(Array.isArray(data) ? data : []);
         }
       } catch (err) {
@@ -147,21 +157,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-2 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/60 dark:border-slate-800/60 rounded-xl mb-4 relative z-30">
       <div className="flex flex-wrap items-center gap-1.5">
-        {/* Timeframes Toggle */}
-        <button 
-          onClick={onToggleTimeframes}
-          title="Toggle Timeframes" 
-          aria-expanded={showTimeframes}
-          aria-label="Toggle Timeframe Selector"
-          className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 ${
-            showTimeframes 
-              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-sm" 
-              : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-          }`}
-        >
-          <Sliders className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Timeframes</span>
-        </button>
+        <TimeframeSelector selected={currentTimeframe} onChange={onTimeframeChange} />
 
         {/* Indicators Dropdown */}
         <div className="relative" ref={dropdownRef}>
@@ -326,7 +322,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
                   placeholder="Enter ticker (e.g. AAPL)..."
                   value={compareInput}
                   onChange={(e) => setCompareInput(e.target.value.toUpperCase())}
-                  className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 pl-8 pr-3 py-1.5 text-xs rounded-lg outline-none text-slate-900 dark:text-white uppercase"
+                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-8 pr-3 py-1.5 text-xs rounded-lg outline-none text-slate-900 dark:text-slate-100 uppercase placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
                 {isSearching && <Loader2 className="absolute right-2.5 h-3.5 w-3.5 text-slate-400 animate-spin" />}
               </div>
@@ -335,7 +331,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
                 <div className="max-h-40 overflow-y-auto border-t border-slate-100 dark:border-slate-800 pt-1.5 space-y-0.5">
                   {suggestions.map((asset) => (
                     <button
-                      key={asset.id}
+                      key={`${asset.symbol}-${asset.exchange || 'GLOBAL'}`}
                       onClick={() => {
                         onCompareSymbol(asset.symbol);
                         setCompareInput("");
@@ -435,7 +431,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
                   type="checkbox"
                   checked={settings.gridVisible}
                   onChange={(e) => onSettingsChange({ ...settings, gridVisible: e.target.checked })}
-                  className="rounded text-blue-500 h-4 w-4 bg-slate-50 dark:bg-slate-850 border-slate-200 dark:border-slate-700 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="rounded text-blue-500 h-4 w-4 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
                 />
               </div>
 
@@ -444,12 +440,12 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
                 <select
                   value={settings.lineThickness}
                   onChange={(e) => onSettingsChange({ ...settings, lineThickness: Number(e.target.value) })}
-                  className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded p-1.5 outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded p-1.5 outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
-                  <option value={1}>1px (Thin)</option>
-                  <option value={2}>2px (Normal)</option>
-                  <option value={3}>3px (Medium)</option>
-                  <option value={4}>4px (Thick)</option>
+                  <option value={1} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">1px (Thin)</option>
+                  <option value={2} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">2px (Normal)</option>
+                  <option value={3} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">3px (Medium)</option>
+                  <option value={4} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">4px (Thick)</option>
                 </select>
               </div>
             </div>

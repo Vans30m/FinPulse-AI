@@ -1,4 +1,5 @@
 export interface FundamentalData {
+  symbol?: string;
   name?: string;
   price: number;
   change: number;
@@ -26,9 +27,9 @@ export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }
   "30m":  { range: "5d",   interval: "30m" },
   "1H":   { range: "7d",   interval: "1h" },
   "4H":   { range: "30d",  interval: "1h" }, // Yahoo lacks a native 4h interval; 1h handles this smoothly
-  "1D":   { range: "1mo",  interval: "1d" },
-  "1W":   { range: "3mo",  interval: "1wk" },
-  "1M":   { range: "6mo",  interval: "1mo" },
+  "1D":   { range: "6mo",  interval: "1d" },
+  "1W":   { range: "1y",   interval: "1wk" },
+  "1M":   { range: "5y",   interval: "1mo" },
   "3M":   { range: "1y",   interval: "1mo" },
   "6M":   { range: "2y",   interval: "1mo" },
   "YTD":  { range: "ytd",  interval: "1d" },
@@ -147,6 +148,12 @@ export async function getIndexSummary(symbol: string) {
 export async function getUpcomingEarnings(market: string) {
   const response = await fetch(`http://localhost:3000/api/earnings/calendar/${encodeURIComponent(market)}`);
   if (!response.ok) throw new Error(`Failed to fetch upcoming earnings: ${response.status}`);
+  return response.json();
+}
+
+export async function getAssetEvents(symbol: string) {
+  const response = await fetch(`http://localhost:3000/api/events/${encodeURIComponent(symbol)}`);
+  if (!response.ok) throw new Error("Failed to fetch asset events");
   return response.json();
 }
 

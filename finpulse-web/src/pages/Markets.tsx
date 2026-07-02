@@ -1,10 +1,56 @@
-import { useState, useMemo, } from "react";
+import { useState, useMemo } from "react";
 import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
 import MarketHeatmap from "../components/markets/MarketHeatmap";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import MarketStatusBar from "../features/dashboard/components/MarketStatusBar";
 import { Search, X } from "lucide-react";
-import CandlestickChart from "../components/charts/CandlestickChart";
+
+function Sparkline({ data, isPositive }: { data: { value: number }[]; isPositive: boolean }) {
+  const gradientId = useMemo(() => `sparkline-grad-${Math.random().toString(36).substring(2, 9)}`, []);
+  if (!data || data.length === 0) return null;
+  
+  const values = data.map(d => d.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min === 0 ? 1 : max - min;
+  
+  const height = 40;
+  const width = 100;
+  const padding = 2;
+  
+  const points = data.map((d, index) => {
+    const x = padding + (index / (data.length - 1)) * (width - 2 * padding);
+    const y = height - padding - ((d.value - min) / range) * (height - 2 * padding);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  
+  const pathD = `M ${points.join(" L ")}`;
+  const areaD = `${pathD} L ${width - padding},${height} L ${padding},${height} Z`;
+  const strokeColor = isPositive ? "#10b981" : "#f43f5e";
+
+  return (
+    <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`}>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
+        </linearGradient>
+      </defs>
+      <path
+        d={areaD}
+        fill={`url(#${gradientId})`}
+      />
+      <path
+        d={pathD}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export default function Markets() {
   const navigate = useNavigate();
@@ -272,13 +318,11 @@ export default function Markets() {
                               </div>
                             </div>
 
-                            {/* Recharts Sparkline replaced with CandlestickChart in mini mode */}
+                            {/* Lightweight SVG Sparkline instead of heavy CandlestickChart */}
                             <div className="h-14 w-28 opacity-75 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                              <CandlestickChart
-                                customData={mockHistory}
-                                mini={true}
-                                chartType="area"
-                                height={56}
+                              <Sparkline
+                                data={mockHistory}
+                                isPositive={isPositive}
                               />
                             </div>
                           </div>
