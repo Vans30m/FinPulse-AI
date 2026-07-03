@@ -21,6 +21,7 @@ import {
   analystRoutes,
   stockSentimentRoutes
 } from "./routes/ai.js";
+import portfolioRoutes from "./routes/portfolio.js";
 import { getUpcomingEarningsForMarket, getAssetEvents } from "./services/yahooService.js";
 
 dotenv.config();
@@ -65,6 +66,7 @@ app.use(
   "/api/index-summary",
   indexSummaryRoutes
 );
+app.use("/api/portfolio", portfolioRoutes);
 // ==========================================
 // 0. GLOBAL EARNINGS CALENDAR ENDPOINT
 // ==========================================

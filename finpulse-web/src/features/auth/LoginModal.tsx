@@ -19,11 +19,26 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
   const loginWithGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      console.log("Google Login Success!", tokenResponse);
-      // For now, we will simulate success and push them to the PIN setup
-      // Later, you will send tokenResponse.access_token to your backend
-      setEmail('google_user@gmail.com'); // Mock email
-      setStep('set-pin'); 
+      try {
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+        });
+        const userInfo = await userInfoResponse.json();
+        if (userInfo.email) {
+          setEmail(userInfo.email);
+          const savedPin = localStorage.getItem(`finpulse_pin_${userInfo.email}`);
+          if (savedPin) {
+            setStep('enter-pin');
+          } else {
+            setStep('set-pin');
+          }
+        } else {
+          setError('Failed to retrieve user email from Google.');
+        }
+      } catch (err) {
+        console.error("Google user profile load failed:", err);
+        setError('Failed to load Google profile.');
+      }
     },
     onError: () => setError('Google Login Failed. Please try again.'),
   });
