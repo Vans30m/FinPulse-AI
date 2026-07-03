@@ -7,7 +7,6 @@ import {
   ShieldAlert,
   PieChart as PieIcon,
   Download,
-  Calendar,
   Compass,
   Coins,
   Award,
@@ -24,6 +23,10 @@ import {
   Tooltip as ChartTooltip,
   ResponsiveContainer
 } from "recharts";
+import PerformanceHeatmap from "./performance/PerformanceHeatmap";
+import RollingCagrSection from "./performance/RollingCagrSection";
+import AiPerformanceCoachSection from "./performance/AiPerformanceCoachSection";
+import BenchmarkRadarSection from "./performance/BenchmarkRadarSection";
 
 export default function PerformanceComparison() {
   const [loading, setLoading] = useState(false);
@@ -102,23 +105,307 @@ export default function PerformanceComparison() {
     { name: "Cash Ledger", val: 8.6, count: 860, color: "#64748b" }
   ];
 
-  // Generate mock heatmap days list (140 days back)
-  const heatmapDays = useMemo(() => {
-    const list = [];
-    for (let i = 140; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const isPositive = Math.random() > 0.45;
-      const profitVal = (Math.random() - 0.45) * 450;
-      list.push({
-        date: date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }),
-        return: (isPositive ? "+" : "") + (profitVal / 1000).toFixed(2) + "%",
-        profit: parseFloat(profitVal.toFixed(2)),
-        isPositive
-      });
-    }
-    return list;
-  }, []);
+  const exportToCSV = (isExcel: boolean = false) => {
+    const fileExt = isExcel ? "csv" : "csv";
+    let csvContent = "\uFEFF"; // UTF-8 BOM
+    
+    // Title & Metadata
+    csvContent += "FinPulse Portfolio Performance Analytics Report\n";
+    csvContent += `Export Date,${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
+    csvContent += `Timeframe,${timeframe}\n\n`;
+    
+    // Hero metrics
+    csvContent += "SUMMARY METRICS\n";
+    csvContent += "Metric,Value,Description\n";
+    csvContent += "Portfolio Yield Return,+28.61%,Lifetime aggregated alpha return\n";
+    csvContent += "Today's Profit / Loss,+$145.20,+0.84% single day change\n";
+    csvContent += "Total Net Profit Margin,+$8412.90,Realized + unrealized ledger delta\n";
+    csvContent += "Capital Valuation Ledger,$48610.00,Total asset portfolio valuation\n";
+    csvContent += "AI Rating Score,88/100,Grade A solvency alignment rating\n\n";
+    
+    // Sector Allocation
+    csvContent += "SECTOR ALLOCATIONS\n";
+    csvContent += "Sector,Allocation %,Count ($)\n";
+    sectorAllocations.forEach(item => {
+      csvContent += `"${item.name}",${item.val}%,$${item.count}\n`;
+    });
+    csvContent += "\n";
+    
+    // Contributors
+    csvContent += "TOP ALPHA CONTRIBUTORS\n";
+    csvContent += "Symbol,Name,Return,Profit ($)\n";
+    contributors.forEach(item => {
+      csvContent += `"${item.symbol}","${item.name}",${item.return},+$${item.profit.toFixed(2)}\n`;
+    });
+    csvContent += "\n";
+
+    // Underperformers
+    csvContent += "BIGGEST BETA UNDERPERFORMERS\n";
+    csvContent += "Symbol,Name,Return,Loss ($)\n";
+    losses.forEach(item => {
+      csvContent += `"${item.symbol}","${item.name}",${item.return},-$${Math.abs(item.loss).toFixed(2)}\n`;
+    });
+    csvContent += "\n";
+    
+    // Rolling Returns
+    csvContent += "INTERVAL ROLLING RETURNS LEDGER\n";
+    csvContent += "Period,Return %\n";
+    rollingReturns.forEach(item => {
+      csvContent += `"${item.period}",${item.val}\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `finpulse_portfolio_report_${timeframe.toLowerCase()}.${fileExt}`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToPDF = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const sectorRows = sectorAllocations
+      .map(item => `
+        <tr>
+          <td>${item.name}</td>
+          <td align="right">${item.val}%</td>
+          <td align="right">$${item.count.toLocaleString()}</td>
+        </tr>
+      `)
+      .join("");
+
+    const contributorRows = contributors
+      .map(item => `
+        <tr>
+          <td><strong>${item.symbol}</strong> - ${item.name}</td>
+          <td align="right" style="color: #10b981;">${item.return}</td>
+          <td align="right" style="color: #10b981;">+$${item.profit.toFixed(2)}</td>
+        </tr>
+      `)
+      .join("");
+
+    const lossRows = losses
+      .map(item => `
+        <tr>
+          <td><strong>${item.symbol}</strong> - ${item.name}</td>
+          <td align="right" style="color: #ef4444;">${item.return}</td>
+          <td align="right" style="color: #ef4444;">-$${Math.abs(item.loss).toFixed(2)}</td>
+        </tr>
+      `)
+      .join("");
+
+    const rollingRows = rollingReturns
+      .map(item => `
+        <tr>
+          <td>${item.period}</td>
+          <td align="right" style="color: #10b981;">${item.val}</td>
+        </tr>
+      `)
+      .join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>FinPulse Performance Analytics Report</title>
+          <style>
+            body {
+              font-family: 'Inter', system-ui, -apple-system, sans-serif;
+              color: #0f172a;
+              background-color: #ffffff;
+              margin: 40px;
+              line-height: 1.5;
+            }
+            .header {
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .title {
+              font-size: 24px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: -0.5px;
+              margin: 0;
+            }
+            .subtitle {
+              font-size: 12px;
+              color: #64748b;
+              margin-top: 5px;
+            }
+            .grid-hero {
+              display: grid;
+              grid-template-columns: repeat(5, 1fr);
+              gap: 15px;
+              margin-bottom: 30px;
+            }
+            .card {
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 15px;
+              background-color: #f8fafc;
+            }
+            .card-label {
+              font-size: 9px;
+              text-transform: uppercase;
+              color: #64748b;
+              font-weight: 700;
+            }
+            .card-value {
+              font-size: 18px;
+              font-weight: 800;
+              margin-top: 5px;
+            }
+            .section-title {
+              font-size: 14px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-top: 30px;
+              margin-bottom: 15px;
+              color: #1e3a8a;
+              border-bottom: 1px solid #e2e8f0;
+              padding-bottom: 5px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            th {
+              background-color: #f1f5f9;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              color: #475569;
+              padding: 8px 12px;
+              border: 1px solid #cbd5e1;
+            }
+            td {
+              padding: 8px 12px;
+              font-size: 11px;
+              border: 1px solid #e2e8f0;
+            }
+            .row-split {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 30px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 class="title">FinPulse Analytics Center</h1>
+            <div class="subtitle">Performance & Solvency Portfolio Report | Generated on ${new Date().toLocaleDateString()} | Timeframe: ${timeframe}</div>
+          </div>
+
+          <div class="grid-hero">
+            <div class="card">
+              <div class="card-label">Portfolio Yield Return</div>
+              <div class="card-value" style="color: #10b981;">+28.61%</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Today's Profit / Loss</div>
+              <div class="card-value" style="color: #10b981;">+$145.20</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Total Net Profit Margin</div>
+              <div class="card-value" style="color: #1e3a8a;">+$8,412.90</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Capital Valuation Ledger</div>
+              <div class="card-value">$48,610.00</div>
+            </div>
+            <div class="card">
+              <div class="card-label">AI overall Score</div>
+              <div class="card-value" style="color: #7c3aed;">88/100</div>
+            </div>
+          </div>
+
+          <div class="row-split">
+            <div>
+              <div class="section-title">Sector Allocation Breakdown</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th align="left">Sector</th>
+                    <th align="right">Allocation %</th>
+                    <th align="right">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sectorRows}
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <div class="section-title">Interval Rolling Returns Ledger</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th align="left">Interval</th>
+                    <th align="right">Return %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rollingRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="row-split">
+            <div>
+              <div class="section-title">Top Alpha Contributors</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th align="left">Asset Symbol</th>
+                    <th align="right">Return</th>
+                    <th align="right">Profit Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${contributorRows}
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <div class="section-title">Biggest Beta Underperformers</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th align="left">Asset Symbol</th>
+                    <th align="right">Return</th>
+                    <th align="right">Loss Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${lossRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+
+
+
 
   return (
     <div className="space-y-8 text-slate-105 font-sans selection:bg-blue-500/25 selection:text-white">
@@ -134,7 +421,7 @@ export default function PerformanceComparison() {
             disabled={loading}
             className="flex items-center gap-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
           >
-            <Activity className={`h-4.5 w-4.5 ${loading ? "animate-spin" : ""}`} />
+            <Activity className={`h-4.5 w-4.5 \${loading ? "animate-spin" : ""}`} />
             {loading ? "Re-calculating..." : "Recalculate Solvency"}
           </button>
         </div>
@@ -151,7 +438,7 @@ export default function PerformanceComparison() {
         ].map((card, i) => (
           <div
             key={i}
-            className={`bg-[#121a2a]/45 backdrop-blur-md border border-slate-900 rounded-3xl p-5 shadow-lg bg-gradient-to-br ${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
+            className={`bg-[#121a2a]/45 backdrop-blur-md border border-slate-900 rounded-3xl p-5 shadow-lg bg-gradient-to-br \${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
           >
             <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">{card.label}</span>
             <h3 className="text-2xl font-black text-white tracking-tight mt-2">{card.val}</h3>
@@ -176,7 +463,7 @@ export default function PerformanceComparison() {
                 <button
                   key={tf}
                   onClick={() => setTimeframe(tf as any)}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all \${
                     timeframe === tf
                       ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
                       : "text-slate-400 hover:text-white"
@@ -228,7 +515,7 @@ export default function PerformanceComparison() {
                 <button
                   key={bench}
                   onClick={() => setSelectedBenchmark(bench)}
-                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${
+                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase border transition-all \${
                     selectedBenchmark === bench
                       ? "bg-blue-600/10 text-blue-400 border-blue-500/20 shadow-inner"
                       : "bg-[#050711]/40 text-slate-400 border-slate-900/60 hover:text-white"
@@ -332,7 +619,7 @@ export default function PerformanceComparison() {
               <div key={idx} className="bg-[#050711] border border-slate-900 rounded-2xl p-3">
                 <span className="text-[9px] text-slate-500 font-extrabold uppercase">{r.name}</span>
                 <p className="text-sm font-black text-white mt-1.5 font-mono">{r.val}</p>
-                <span className={`text-[9px] font-black mt-1 block uppercase ${r.color}`}>{r.status}</span>
+                <span className={`text-[9px] font-black mt-1 block uppercase \${r.color}`}>{r.status}</span>
               </div>
             ))}
           </div>
@@ -350,10 +637,10 @@ export default function PerformanceComparison() {
               <div key={i} className="space-y-1">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-350 font-extrabold">{sector.name}</span>
-                  <span className="font-mono text-slate-200 font-bold">{sector.val}% (${sector.count.toLocaleString()})</span>
+                  <span className="font-mono text-slate-200 font-bold">{sector.val}% (\${sector.count.toLocaleString()})</span>
                 </div>
                 <div className="w-full h-1.5 bg-[#050711] rounded-full overflow-hidden border border-slate-900/40">
-                  <div className="h-full rounded-full" style={{ width: `${sector.val}%`, backgroundColor: sector.color }}></div>
+                  <div className="h-full rounded-full" style={{ width: `\${sector.val}%`, backgroundColor: sector.color }}></div>
                 </div>
               </div>
             ))}
@@ -379,7 +666,7 @@ export default function PerformanceComparison() {
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-black text-emerald-400 font-mono">+{c.return}</span>
-                  <span className="text-[10px] text-slate-400 block font-mono">+${c.profit.toFixed(2)} Profit</span>
+                  <span className="text-[10px] text-slate-400 block font-mono">+\${c.profit.toFixed(2)} Profit</span>
                 </div>
               </div>
             ))}
@@ -403,7 +690,7 @@ export default function PerformanceComparison() {
                   </div>
                   <div className="text-right">
                     <span className="text-xs font-black text-rose-500 font-mono">{l.return}</span>
-                    <span className="text-[10px] text-slate-400 block font-mono">-${Math.abs(l.loss).toFixed(2)} P/L</span>
+                    <span className="text-[10px] text-slate-400 block font-mono">-\${Math.abs(l.loss).toFixed(2)} P/L</span>
                   </div>
                 </div>
               ))}
@@ -415,6 +702,12 @@ export default function PerformanceComparison() {
           </div>
         </div>
       </div>
+
+      {/* ==================== 8A. AI PERFORMANCE COACH ==================== */}
+      <AiPerformanceCoachSection />
+
+      {/* ==================== 8B. BENCHMARK RADAR ==================== */}
+      <BenchmarkRadarSection />
 
       {/* ==================== 9. ROLLING RETURNS ==================== */}
       <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
@@ -504,30 +797,10 @@ export default function PerformanceComparison() {
       </div>
 
       {/* ==================== 12. PERFORMANCE CALENDAR HEATMAP ==================== */}
-      <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-        <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-          <Calendar size={15} className="text-blue-400" />
-          <span className="text-xs font-black uppercase tracking-wider text-slate-400">Daily Return Heatmap Ledger</span>
-        </div>
+      <PerformanceHeatmap />
 
-        <div className="flex flex-wrap gap-1 items-center justify-center p-2 bg-[#050711]/60 border border-slate-900 rounded-2xl max-h-[140px] overflow-y-auto custom-scrollbar">
-          {heatmapDays.map((day, idx) => (
-            <div
-              key={idx}
-              title={`${day.date}: ${day.return} ($${day.profit.toFixed(2)})`}
-              className={`h-3 w-3 rounded-sm cursor-pointer transition-colors ${
-                day.isPositive
-                  ? day.profit > 200
-                    ? "bg-emerald-500"
-                    : "bg-emerald-500/40"
-                  : Math.abs(day.profit) > 200
-                  ? "bg-rose-500"
-                  : "bg-rose-500/40"
-              }`}
-            ></div>
-          ))}
-        </div>
-      </div>
+      {/* ==================== 12A. ROLLING CAGR ==================== */}
+      <RollingCagrSection />
 
       {/* ==================== 13. GOALS & 14. FORECAST ==================== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -610,7 +883,7 @@ export default function PerformanceComparison() {
             { label: "Other Income Payouts", val: "$256.70", desc: "Rebates + minor items", color: "border-purple-500/20" },
             { label: "Total Net Profit Margin", val: "$8,412.90", desc: "Aggregated profit delta", color: "border-emerald-500/30 bg-emerald-500/5 text-emerald-400 font-bold" }
           ].map((card, i) => (
-            <div key={i} className={`bg-[#050711]/60 border rounded-2xl p-4 ${card.color}`}>
+            <div key={i} className={`bg-[#050711]/60 border rounded-2xl p-4 \${card.color}`}>
               <span className="text-[9px] text-slate-500 font-extrabold uppercase block">{card.label}</span>
               <p className="text-sm font-black mt-2 font-mono">{card.val}</p>
               <span className="text-[9px] text-slate-400 block mt-1">{card.desc}</span>
@@ -627,24 +900,24 @@ export default function PerformanceComparison() {
         </div>
 
         <div className="flex gap-2">
-          {["CSV", "Excel", "PDF"].map((format) => (
-            <button
-              key={format}
-              onClick={() => {
-                const textContent = `FinPulse Performance Analytics Report\nTimeframe: ${timeframe}\nExport Date: ${new Date().toLocaleDateString()}\n`;
-                const element = document.createElement("a");
-                const file = new Blob([textContent], {type: 'text/plain'});
-                element.href = URL.createObjectURL(file);
-                element.download = `finpulse_performance_report.${format === "CSV" ? "csv" : format === "Excel" ? "xlsx" : "pdf"}`;
-                document.body.appendChild(element);
-                element.click();
-                document.body.removeChild(element);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors"
-            >
-              Export {format}
-            </button>
-          ))}
+          <button
+            onClick={() => exportToCSV(false)}
+            className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={() => exportToCSV(true)}
+            className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors"
+          >
+            Export Excel
+          </button>
+          <button
+            onClick={exportToPDF}
+            className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors"
+          >
+            Export PDF
+          </button>
         </div>
       </div>
 

@@ -820,6 +820,12 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       return `$${val.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
                     };
 
+                    const formatEps = (val: number) => {
+                      if (Math.abs(val) >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
+                      if (Math.abs(val) >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
+                      return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    };
+
                     const prevQuarter = allQuarters[allQuarters.indexOf(heroQuarter) + 1] || allQuarters[allQuarters.length - 1];
 
                     // Sorting & pagination logic
@@ -874,14 +880,14 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               </div>
                               <div>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Quarterly EPS</span>
-                                <p className="text-xl font-black text-white mt-1">${heroQuarter.eps.toFixed(2)}</p>
+                                <p className="text-xl font-black text-white mt-1">{formatEps(heroQuarter.eps)}</p>
                                 <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5 mt-0.5">
                                   <ArrowUpRight size={10} /> +{heroQuarter.surprise}% Beat
                                 </span>
                               </div>
                               <div>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">EPS Est.</span>
-                                <p className="text-xl font-black text-slate-400 mt-1">${(heroQuarter.eps * 0.95).toFixed(2)}</p>
+                                <p className="text-xl font-black text-slate-400 mt-1">{formatEps(heroQuarter.eps * 0.95)}</p>
                               </div>
                             </div>
 
@@ -909,7 +915,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {[
                               { label: "Revenue Trend", val: formatNum(heroQuarter.revenue), growth: heroQuarter.revGrowth, data: allQuarters.map(q => q.revenue).reverse(), color: "#4F9DFF" },
-                              { label: "Quarterly EPS", val: `$${heroQuarter.eps.toFixed(2)}`, growth: heroQuarter.surprise, data: allQuarters.map(q => q.eps).reverse(), color: "#00E676" },
+                              { label: "Quarterly EPS", val: formatEps(heroQuarter.eps), growth: heroQuarter.surprise, data: allQuarters.map(q => q.eps).reverse(), color: "#00E676" },
                               { label: "Operating Income", val: formatNum(heroQuarter.opIncome), growth: 5.8, data: allQuarters.map(q => q.opIncome).reverse(), color: "#A855F7" },
                               { label: "Net Income Margin", val: formatNum(heroQuarter.netIncome), growth: 4.2, data: allQuarters.map(q => q.netIncome).reverse(), color: "#EC4899" }
                             ].map((card, i) => (
@@ -945,7 +951,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                               {[
                                 { name: "Gross Revenue", cur: heroQuarter.revenue, prev: prevQuarter.revenue, format: (v: number) => formatNum(v) },
-                                { name: "Standard EPS", cur: heroQuarter.eps, prev: prevQuarter.eps, format: (v: number) => `$${v.toFixed(2)}` },
+                                { name: "Standard EPS", cur: heroQuarter.eps, prev: prevQuarter.eps, format: (v: number) => formatEps(v) },
                                 { name: "Profit Margin", cur: marginBase * 100, prev: (marginBase * 0.95) * 100, format: (v: number) => `${v.toFixed(2)}%` },
                                 { name: "Operating Margin", cur: heroQuarter.opMargin, prev: prevQuarter.opMargin, format: (v: number) => `${v.toFixed(2)}%` },
                                 { name: "Net Margin Vector", cur: marginBase * 100, prev: (marginBase * 0.98) * 100, format: (v: number) => `${v.toFixed(2)}%` }
@@ -1001,8 +1007,11 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   </defs>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#050711" />
                                   <XAxis dataKey="quarter" stroke="#555" fontSize={10} tickLine={false} />
-                                  <YAxis stroke="#555" fontSize={10} tickLine={false} tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`} />
-                                  <ChartTooltip contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px" }} />
+                                  <YAxis stroke="#555" fontSize={10} tickLine={false} tickFormatter={(v) => formatNum(v)} />
+                                  <ChartTooltip
+                                    contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px" }}
+                                    formatter={(v: any) => [formatNum(Number(v)), "Revenue"]}
+                                  />
                                   <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#4F9DFF" fillOpacity={1} fill="url(#revGrad)" strokeWidth={3} />
                                 </AreaChart>
                               </ResponsiveContainer>
@@ -1044,8 +1053,11 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                 <LineChart data={allQuarters.slice().reverse()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#050711" />
                                   <XAxis dataKey="quarter" stroke="#555" fontSize={10} tickLine={false} />
-                                  <YAxis stroke="#555" fontSize={10} tickLine={false} />
-                                  <ChartTooltip contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px" }} />
+                                  <YAxis stroke="#555" fontSize={10} tickLine={false} tickFormatter={(v) => formatEps(v)} />
+                                  <ChartTooltip
+                                    contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px" }}
+                                    formatter={(v: any) => [formatEps(Number(v)), "EPS"]}
+                                  />
                                   <Line type="monotone" dataKey="eps" name="EPS" stroke="#00E676" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                                 </LineChart>
                               </ResponsiveContainer>
@@ -1054,15 +1066,15 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 border-t border-slate-900 pt-4">
                               <div>
                                 <span className="text-[10px] text-slate-500 uppercase">Highest EPS</span>
-                                <p className="text-sm font-black text-white mt-0.5">${(epsBase * 1.15).toFixed(2)}</p>
+                                <p className="text-sm font-black text-white mt-0.5">{formatEps(epsBase * 1.15)}</p>
                               </div>
                               <div>
                                 <span className="text-[10px] text-slate-500 uppercase">Lowest EPS</span>
-                                <p className="text-sm font-black text-white mt-0.5">${(epsBase * 0.85).toFixed(2)}</p>
+                                <p className="text-sm font-black text-white mt-0.5">{formatEps(epsBase * 0.85)}</p>
                               </div>
                               <div>
                                 <span className="text-[10px] text-slate-500 uppercase">Average EPS</span>
-                                <p className="text-sm font-black text-white mt-0.5">${(epsBase * 0.95).toFixed(2)}</p>
+                                <p className="text-sm font-black text-white mt-0.5">{formatEps(epsBase * 0.95)}</p>
                               </div>
                               <div>
                                 <span className="text-[10px] text-slate-500 uppercase">YoY EPS Growth</span>
@@ -1179,7 +1191,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                           <td className="py-3 px-3 font-sans font-bold text-slate-200">{q.quarter}</td>
                                           <td className="py-3 px-3 text-slate-300">{formatNum(q.revenue)}</td>
                                           <td className="py-3 px-3 text-emerald-400 font-bold">+{q.revGrowth}%</td>
-                                          <td className="py-3 px-3 text-slate-300">${q.eps.toFixed(2)}</td>
+                                          <td className="py-3 px-3 text-slate-300">{formatEps(q.eps)}</td>
                                           <td className="py-3 px-3 text-emerald-400">+{q.surprise}%</td>
                                           <td className={`py-3 px-3 font-bold ${q.reaction.startsWith("+") ? "text-emerald-400" : "text-rose-500"}`}>{q.reaction}</td>
                                           <td className="py-3 px-3"><span className="text-blue-400 font-extrabold">{q.rating}</span></td>
