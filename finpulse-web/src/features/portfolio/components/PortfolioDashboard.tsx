@@ -1,23 +1,24 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Coins, Bitcoin, Loader2, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Coins, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { BarChart3 } from "lucide-react";
 import PortfolioAllocationChart
-from "./PortfolioAllocationChart";
-import PortfolioHealthCard
-from "./PortfolioHealthCard";
-import PortfolioInsightsCard
-from "./PortfolioInsightsCard";
-import RebalancingCard
-from "./RebalancingCard";
+  from "./PortfolioAllocationChart";
+
+import PortfolioSummarySection, {
+  type PortfolioSummaryMetric,
+} from "./PortfolioSummarySection";
+import WatchlistSnapshotSection from "./WatchlistSnapshotSection";
+import UpcomingEventsSection from "./UpcomingEventsSection";
+import AIPortfolioAdvisorSection from "./AIPortfolioAdvisorSection";
 import PortfolioPerformanceChart
-from "./PortfolioPerformanceChart";
-import RiskSimulatorCard
-from "./RiskSimulatorCard";
-import SectorExposureCard
-from "./SectorExposureCard";
-import AISectorAnalysisCard from "./AISectorAnalysisCard";
+  from "./PortfolioPerformanceChart";
+import {
+  portfolioAdvisorSnapshot,
+  upcomingPortfolioEvents,
+  watchlistSnapshotItems,
+} from "../data/portfolioPremiumSections";
 import { useChart }
-from "../../../context/ChartContext";
+  from "../../../context/ChartContext";
 
 interface Holding {
   ticker: string;
@@ -49,101 +50,101 @@ interface MarketSection {
 
 const INITIAL_SECTIONS: MarketSection[] = [
   {
-  id: 'domestic',
-  title: 'Indian Market',
-  region: 'India',
-  icon: <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
-  holdings: [
-    {
-      ticker: 'RELIANCE',
-      name: 'Reliance Industries Ltd.',
-      sector: 'Energy',
-      shares: 45,
-      avgCost: 2450.00,
-      currentPrice: 2870.50,
-      marketValue: 129172.50,
-      totalGain: 18922.50,
-      gainPercent: 17.16,
-      colorClass: {
-        bg: 'bg-indigo-50 dark:bg-indigo-950/40',
-        text: 'text-indigo-600 dark:text-indigo-400',
-        border: 'border-indigo-200/50 dark:border-indigo-900/50'
+    id: 'domestic',
+    title: 'Indian Market',
+    region: 'India',
+    icon: <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
+    holdings: [
+      {
+        ticker: 'RELIANCE',
+        name: 'Reliance Industries Ltd.',
+        sector: 'Energy',
+        shares: 45,
+        avgCost: 2450.00,
+        currentPrice: 2870.50,
+        marketValue: 129172.50,
+        totalGain: 18922.50,
+        gainPercent: 17.16,
+        colorClass: {
+          bg: 'bg-indigo-50 dark:bg-indigo-950/40',
+          text: 'text-indigo-600 dark:text-indigo-400',
+          border: 'border-indigo-200/50 dark:border-indigo-900/50'
+        }
       }
-    }
-  ]
-},
-{
-  id: 'us',
-  title: 'US Market',
-  region: 'North America',
-  icon: <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
-  holdings: [
-    {
-      ticker: 'NVDA',
-      name: 'NVIDIA Corporation',
-      sector: 'Technology',
-      shares: 15,
-      avgCost: 420.00,
-      currentPrice: 875.12,
-      marketValue: 13126.80,
-      totalGain: 6826.80,
-      gainPercent: 108.36,
-      colorClass: {
-        bg: 'bg-emerald-50 dark:bg-emerald-950/40',
-        text: 'text-emerald-600 dark:text-emerald-400',
-        border: 'border-emerald-200/50 dark:border-emerald-900/50'
+    ]
+  },
+  {
+    id: 'us',
+    title: 'US Market',
+    region: 'North America',
+    icon: <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
+    holdings: [
+      {
+        ticker: 'NVDA',
+        name: 'NVIDIA Corporation',
+        sector: 'Technology',
+        shares: 15,
+        avgCost: 420.00,
+        currentPrice: 875.12,
+        marketValue: 13126.80,
+        totalGain: 6826.80,
+        gainPercent: 108.36,
+        colorClass: {
+          bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+          text: 'text-emerald-600 dark:text-emerald-400',
+          border: 'border-emerald-200/50 dark:border-emerald-900/50'
+        }
       }
-    }
-  ]
-},
-{
-  id: 'other',
-  title: 'Other Markets',
-  region: 'Global / Exotic',
-  icon: <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-  holdings: [
-    {
-      ticker: 'SMI',
-      name: 'Swiss Market Index',
-      sector: 'Index',
-      shares: 5,
-      avgCost: 10750,
-      currentPrice: 11500,
-      marketValue: 57500,
-      totalGain: 3750,
-      gainPercent: 7.0,
-      colorClass: {
-        bg: 'bg-purple-50 dark:bg-purple-950/40',
-        text: 'text-purple-600 dark:text-purple-400',
-        border: 'border-purple-200/50 dark:border-purple-900/50'
+    ]
+  },
+  {
+    id: 'other',
+    title: 'Other Markets',
+    region: 'Global / Exotic',
+    icon: <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    holdings: [
+      {
+        ticker: 'SMI',
+        name: 'Swiss Market Index',
+        sector: 'Index',
+        shares: 5,
+        avgCost: 10750,
+        currentPrice: 11500,
+        marketValue: 57500,
+        totalGain: 3750,
+        gainPercent: 7.0,
+        colorClass: {
+          bg: 'bg-purple-50 dark:bg-purple-950/40',
+          text: 'text-purple-600 dark:text-purple-400',
+          border: 'border-purple-200/50 dark:border-purple-900/50'
+        }
       }
-    }
-  ]
-},
-{
-  id: 'crypto',
-  title: 'Crypto Market',
-  region: 'Digital Assets',
-  icon: <Bitcoin className="h-5 w-5 text-amber-500 dark:text-amber-300" />,
-  holdings: [
-    {
-      ticker: 'BTC',
-      name: 'Bitcoin',
-      sector: 'Crypto',
-      shares: 0.42,
-      avgCost: 48000,
-      currentPrice: 67500,
-      marketValue: 28350,
-      totalGain: 8190,
-      gainPercent: 40.6,
-      colorClass: {
-        bg: 'bg-amber-50 dark:bg-amber-950/40',
-        text: 'text-amber-600 dark:text-amber-400',
-        border: 'border-amber-200/50 dark:border-amber-900/50'
+    ]
+  },
+  {
+    id: 'crypto',
+    title: 'Crypto Market',
+    region: 'Digital Assets',
+    icon: <Bitcoin className="h-5 w-5 text-amber-500 dark:text-amber-300" />,
+    holdings: [
+      {
+        ticker: 'BTC',
+        name: 'Bitcoin',
+        sector: 'Crypto',
+        shares: 0.42,
+        avgCost: 48000,
+        currentPrice: 67500,
+        marketValue: 28350,
+        totalGain: 8190,
+        gainPercent: 40.6,
+        colorClass: {
+          bg: 'bg-amber-50 dark:bg-amber-950/40',
+          text: 'text-amber-600 dark:text-amber-400',
+          border: 'border-amber-200/50 dark:border-amber-900/50'
+        }
       }
-    }
-  ]
-},
+    ]
+  },
 
   {
     id: 'metals',
@@ -181,18 +182,19 @@ export default function PortfolioDashboard() {
   const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
   const [activeMarket, setActiveMarket] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   // Debounced Search States
   const [assetSearch, setAssetSearch] = useState('');
   const [assetSuggestions, setAssetSuggestions] = useState<any[]>([]);
   const [selectedAsset, setSelectedAsset] =
-useState<{
-  ticker: string;
-  yahooSymbol: string;
-  name: string;
-  exchange: string;
-  type: string;
-} | null>(null);
+    useState<{
+      ticker: string;
+      yahooSymbol: string;
+      name: string;
+      exchange: string;
+      type: string;
+    } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -201,11 +203,9 @@ useState<{
   const [shares, setShares] = useState('');
   const [cost, setCost] = useState('');
 
-  const [aiTab, setAiTab] = useState<"health" | "insights" | "sectors" | "rebalance">("health");
-
   const {
-  openChart,
-} = useChart();
+    openChart,
+  } = useChart();
 
   // Finnhub Debounced Search
   useEffect(() => {
@@ -233,24 +233,24 @@ useState<{
   }, [assetSearch, showSuggestions]);
 
   const handleSelectAsset = (
-  asset: any
-) => {
-  setSelectedAsset({
-    ticker: asset.symbol,
-    yahooSymbol:
-      asset.yahooSymbol,
-    name: asset.name,
-    exchange:
-      asset.exchange,
-    type: asset.type,
-  });
+    asset: any
+  ) => {
+    setSelectedAsset({
+      ticker: asset.symbol,
+      yahooSymbol:
+        asset.yahooSymbol,
+      name: asset.name,
+      exchange:
+        asset.exchange,
+      type: asset.type,
+    });
 
-  setAssetSearch(
-    `${asset.name} (${asset.symbol})`
-  );
+    setAssetSearch(
+      `${asset.name} (${asset.symbol})`
+    );
 
-  setShowSuggestions(false);
-};
+    setShowSuggestions(false);
+  };
 
   const handleAddAsset = (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,14 +267,14 @@ useState<{
     const chosenColor = baseColors[Math.floor(Math.random() * baseColors.length)];
 
     const newHolding: Holding = {
-  ticker: selectedAsset.ticker,
-  yahooSymbol:
-    selectedAsset.yahooSymbol,
-  exchange:
-    selectedAsset.exchange,
-  type:
-    selectedAsset.type,
-  name: selectedAsset.name,
+      ticker: selectedAsset.ticker,
+      yahooSymbol:
+        selectedAsset.yahooSymbol,
+      exchange:
+        selectedAsset.exchange,
+      type:
+        selectedAsset.type,
+      name: selectedAsset.name,
       shares: numShares,
       avgCost: numCost,
       currentPrice: numCost * 1.04, // Mock 4% gain
@@ -282,17 +282,17 @@ useState<{
       totalGain: (numShares * (numCost * 1.04)) - (numShares * numCost),
       gainPercent: 4.00,
       colorClass: chosenColor,
-  sector:
-  selectedAsset.type ===
-  "Crypto"
-    ? "Crypto"
-    : selectedAsset.type ===
-      "Forex"
-    ? "Forex"
-    : selectedAsset.type ===
-      "Commodity"
-    ? "Commodities"
-    : "Technology",
+      sector:
+        selectedAsset.type ===
+          "Crypto"
+          ? "Crypto"
+          : selectedAsset.type ===
+            "Forex"
+            ? "Forex"
+            : selectedAsset.type ===
+              "Commodity"
+              ? "Commodities"
+              : "Technology",
     };
 
     setSections(prev => prev.map(sec => {
@@ -347,6 +347,114 @@ useState<{
       }, 0);
     }, 0);
 
+  const totalInvestedAmount = Math.max(
+    totalNetValue - totalGain,
+    0
+  );
+
+  const todayProfitLoss = Math.round(
+    totalNetValue * 0.0065 * (totalGain >= 0 ? 1 : -1)
+  );
+
+  const overallReturnPercent = totalInvestedAmount > 0
+    ? (totalGain / totalInvestedAmount) * 100
+    : 0;
+
+  const availableCash = Math.round(
+    totalNetValue * 0.11
+  );
+
+  const buyingPower = Math.round(
+    availableCash * 3.8
+  );
+
+  const marginUsed = Math.round(
+    totalNetValue * 0.08
+  );
+
+  const summaryMetrics: PortfolioSummaryMetric[] = [
+    {
+      id: "invested-amount",
+      title: "Total Invested Amount",
+      value: totalInvestedAmount,
+      format: "currency",
+      helperText: "Capital actively deployed across all asset classes.",
+      trendLabel: "Capital deployed",
+      isPositive: true,
+      iconKey: "invested",
+    },
+    {
+      id: "current-value",
+      title: "Current Portfolio Value",
+      value: totalNetValue,
+      format: "currency",
+      helperText: "Live market value of the full portfolio snapshot.",
+      trendLabel: "Market value",
+      isPositive: true,
+      iconKey: "portfolio",
+    },
+    {
+      id: "today-pnl",
+      title: "Today's Profit/Loss",
+      value: Math.abs(todayProfitLoss),
+      format: "currency",
+      helperText: "Estimated intraday movement for the latest session.",
+      trendLabel: todayProfitLoss >= 0 ? "Session gain" : "Session loss",
+      isPositive: todayProfitLoss >= 0,
+      iconKey: "today",
+    },
+    {
+      id: "total-pnl",
+      title: "Total Profit/Loss",
+      value: Math.abs(totalGain),
+      format: "currency",
+      helperText: "Aggregate performance since the initial entry points.",
+      trendLabel: totalGain >= 0 ? "Net gain" : "Net loss",
+      isPositive: totalGain >= 0,
+      iconKey: "total",
+    },
+    {
+      id: "overall-return",
+      title: "Overall Return %",
+      value: Math.abs(overallReturnPercent),
+      format: "percent",
+      helperText: "Return efficiency relative to invested capital.",
+      trendLabel: overallReturnPercent >= 0 ? "Positive" : "Negative",
+      isPositive: overallReturnPercent >= 0,
+      iconKey: "return",
+    },
+    {
+      id: "available-cash",
+      title: "Available Cash",
+      value: availableCash,
+      format: "currency",
+      helperText: "Liquidity buffer currently available for new positions.",
+      trendLabel: "Liquidity buffer",
+      isPositive: true,
+      iconKey: "cash",
+    },
+    {
+      id: "buying-power",
+      title: "Buying Power",
+      value: buyingPower,
+      format: "currency",
+      helperText: "Estimated deployable capital with margin support.",
+      trendLabel: "Deployment room",
+      isPositive: true,
+      iconKey: "power",
+    },
+    {
+      id: "margin-used",
+      title: "Margin Used",
+      value: marginUsed,
+      format: "currency",
+      helperText: "Current margin utilization across leveraged exposure.",
+      trendLabel: "Utilization watch",
+      isPositive: marginUsed < availableCash,
+      iconKey: "margin",
+    },
+  ];
+
   const allocationData = sections
     .map((section) => ({
       name: section.title,
@@ -356,253 +464,208 @@ useState<{
     }))
     .filter((x) => x.value > 0);
 
-  const totalAssets = sections.reduce(
-    (sum, section) => sum + section.holdings.length,
+  const allocationTotal = allocationData.reduce(
+    (sum, item) => sum + item.value,
     0
   );
 
-  const sectorMap =
-  new Map<
-    string,
-    number
-  >();
-
-sections.forEach(
-  (section) => {
-    section.holdings.forEach(
-      (holding) => {
-        const currentValue =
-          sectorMap.get(
-            holding.sector
-          ) || 0;
-
-        sectorMap.set(
-          holding.sector,
-          currentValue +
-            holding.marketValue
-        );
-      }
-    );
-  }
-);
-
-const sectorExposure =
-  Array.from(
-    sectorMap.entries()
-  ).map(
-    ([sector, value]) => ({
-      sector,
-
-      percentage:
-        totalNetValue > 0
-          ? (
-              (value /
-                totalNetValue) *
-              100
-            ).toFixed(1)
-          : "0",
-
-      value,
-    })
-  );
-
-  const sortedSectors =
-  [...sectorExposure].sort(
-    (a, b) =>
-      Number(b.percentage) -
-      Number(a.percentage)
-  );
-
-const topSector =
-  sortedSectors[0];
-
-let sectorInsight =
-  "Portfolio is well diversified.";
-
-let sectorDiversificationScore =
-  100;
-
-if (
-  topSector &&
-  Number(
-    topSector.percentage
-  ) > 50
-) {
-  sectorInsight =
-    `${topSector.sector} dominates the portfolio. Risk of over-concentration is high.`;
-
-  sectorDiversificationScore =
-    60;
-}
-else if (
-  topSector &&
-  Number(
-    topSector.percentage
-  ) > 35
-) {
-  sectorInsight =
-    `${topSector.sector} has a large allocation. Consider adding exposure to other sectors.`;
-
-  sectorDiversificationScore =
-    80;
-}
-
-let sectorRecommendation =
-  "Portfolio allocation looks healthy.";
-
-if (
-  topSector &&
-  Number(
-    topSector.percentage
-  ) > 40
-) {
-  sectorRecommendation =
-    `Reduce ${topSector.sector} exposure and increase diversification.`;
-}
-
-const diversificationScore =
-  Math.min(
-    100,
-    totalAssets * 12
-  );
-
-const healthScore =
-  Math.round(
-    diversificationScore
-  );
-
-const risk =
-  sections.find(
-    (s) => s.id === "crypto"
-  )?.holdings.length
-    ? "Medium"
-    : "Low";
-
-const growth =
-  sections.find(
-    (s) => s.id === "us"
-  )?.holdings.length
-    ? "High"
-    : "Moderate";
-
-const cryptoValue =
-  sections
-    .find(
-      (s) =>
-        s.id === "crypto"
-    )
-    ?.holdings.reduce(
-      (sum, h) =>
-        sum + h.marketValue,
-      0
-    ) || 0;
-
-const cryptoPercentage =
-  totalNetValue > 0
-    ? (
-        (cryptoValue /
-          totalNetValue) *
-        100
-      ).toFixed(1)
-    : "0";
-
-const usAssets =
-  sections.find(
-    (s) => s.id === "us"
-  )?.holdings.length || 0;
-
-const insights = [];
-
-if (Number(cryptoPercentage) > 15) {
-  insights.push(
-    `Crypto exposure is ${cryptoPercentage}% of the portfolio.`
-  );
-}
-
-if (usAssets > 0) {
-  insights.push(
-    "US equities contribute strongly to growth potential."
-  );
-}
-
-if (healthScore > 80) {
-  insights.push(
-    "Portfolio diversification is excellent."
-  );
-}
-
-if (healthScore > 60) {
-  insights.push(
-    "Risk profile appears balanced."
-  );
-}
-
-if (totalGain > 0) {
-  insights.push(
-    "Portfolio is currently generating positive returns."
-  );
-}
-
-const rebalancingSuggestions: string[] = [];
-
-const cryptoPercentageNumber =
-  Number(cryptoPercentage);
-
-if (cryptoPercentageNumber > 25) {
-  rebalancingSuggestions.push(
-    "Reduce crypto exposure below 25%."
-  );
-}
-
-if (healthScore < 60) {
-  rebalancingSuggestions.push(
-    "Increase diversification across asset classes."
-  );
-}
-
-if (usAssets > totalAssets / 2) {
-  rebalancingSuggestions.push(
-    "Portfolio heavily depends on US equities."
-  );
-}
-
-if (
-  rebalancingSuggestions.length === 0
-) {
-  rebalancingSuggestions.push(
-    "Portfolio allocation appears balanced."
-  );
-}
-
-const riskScore =
-  Math.min(
-    100,
-    Math.round(
-      cryptoPercentageNumber * 2 +
-      totalAssets * 5
-    )
-  );
-
-const expectedReturn =
-  Math.round(
-    healthScore * 0.15
-  );
-
-const bestCase =
-  expectedReturn + 15;
-const worstCase =
-  -(riskScore / 5);
+  const dominantAllocation =
+    allocationData.length > 0
+      ? [...allocationData].sort((a, b) => b.value - a.value)[0]
+      : null;
 
   const filteredHoldings = sections
     .filter((section) => activeMarket === 'all' || activeMarket === section.id)
-    .flatMap((section) => 
+    .flatMap((section) =>
       section.holdings.map(h => ({
         ...h,
         category: section.title,
         sectionId: section.id,
-        icon: section.icon
       }))
     );
+
+  const exportPortfolioToCSV = (isExcel: boolean = false) => {
+    const fileExt = isExcel ? "csv" : "csv";
+    let csvContent = "\uFEFF"; // UTF-8 BOM
+
+    // Title & Metadata
+    csvContent += "FinPulse Portfolio Holdings Report\n";
+    csvContent += `Export Date,${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
+    csvContent += `Market Filter,${activeMarket === 'all' ? 'All Assets' : activeMarket}\n\n`;
+
+    // Aggregates
+    csvContent += "PORTFOLIO SUMMARY\n";
+    csvContent += `Total Net Value,${activeMarket === 'domestic' ? '₹' : '$'}${totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}\n`;
+    csvContent += `Total Returns,${activeMarket === 'domestic' ? '₹' : '$'}${totalGain.toLocaleString(undefined, { maximumFractionDigits: 2 })}\n\n`;
+
+    // Holdings headers
+    csvContent += "HOLDINGS LEDGER\n";
+    csvContent += "Ticker,Name,Category,Qty / Vol,Avg Cost,Current Price,Market Value,Total Returns,Returns %\n";
+
+    filteredHoldings.forEach(asset => {
+      const posCurrency = asset.sectionId === 'domestic' ? '₹' : '$';
+      csvContent += `"${asset.ticker}","${asset.name}","${asset.category}",${asset.shares},"${posCurrency}${asset.avgCost}","${posCurrency}${asset.currentPrice}","${posCurrency}${asset.marketValue}","${asset.totalGain >= 0 ? '+' : ''}${posCurrency}${asset.totalGain}","${asset.gainPercent >= 0 ? '+' : ''}${asset.gainPercent}%"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `finpulse_portfolio_stocks_${activeMarket}_${new Date().toISOString().slice(0, 10)}.${fileExt}`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportPortfolioToPDF = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const holdingsRows = filteredHoldings
+      .map(asset => {
+        const posCurrency = asset.sectionId === 'domestic' ? '₹' : '$';
+        const gainColor = asset.totalGain >= 0 ? '#10b981' : '#ef4444';
+        return `
+          <tr>
+            <td><strong>${asset.ticker}</strong><br/><small style="color: #64748b;">${asset.name}</small></td>
+            <td>${asset.category}</td>
+            <td align="right">${asset.shares.toLocaleString()}</td>
+            <td align="right">${posCurrency}${asset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+            <td align="right">${posCurrency}${asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+            <td align="right"><strong>${posCurrency}${asset.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong></td>
+            <td align="right" style="color: ${gainColor}; font-weight: bold;">
+              ${asset.totalGain >= 0 ? '+' : ''}${posCurrency}${asset.totalGain.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br/>
+              <small>${asset.gainPercent >= 0 ? '+' : ''}${asset.gainPercent.toFixed(2)}%</small>
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>FinPulse Portfolio Holdings Report</title>
+          <style>
+            body {
+              font-family: 'Inter', system-ui, -apple-system, sans-serif;
+              color: #0f172a;
+              background-color: #ffffff;
+              margin: 40px;
+              line-height: 1.5;
+            }
+            .header {
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .title {
+              font-size: 24px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: -0.5px;
+              margin: 0;
+            }
+            .subtitle {
+              font-size: 12px;
+              color: #64748b;
+              margin-top: 5px;
+            }
+            .grid-hero {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 15px;
+              margin-bottom: 30px;
+            }
+            .card {
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 15px;
+              background-color: #f8fafc;
+            }
+            .card-label {
+              font-size: 9px;
+              text-transform: uppercase;
+              color: #64748b;
+              font-weight: 700;
+            }
+            .card-value {
+              font-size: 18px;
+              font-weight: 800;
+              margin-top: 5px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th {
+              background-color: #f1f5f9;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              color: #475569;
+              padding: 10px 12px;
+              border: 1px solid #cbd5e1;
+            }
+            td {
+              padding: 10px 12px;
+              font-size: 11px;
+              border: 1px solid #e2e8f0;
+              vertical-align: middle;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 class="title">FinPulse Portfolio Holdings</h1>
+            <div class="subtitle">Asset positions index | Generated on ${new Date().toLocaleDateString()} | Market Hub: ${activeMarket.toUpperCase()}</div>
+          </div>
+
+          <div class="grid-hero">
+            <div class="card">
+              <div class="card-label">Total Net Value</div>
+              <div class="card-value">${activeMarket === 'domestic' ? '₹' : '$'}${totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Total returns</div>
+              <div class="card-value" style="color: ${totalGain >= 0 ? '#10b981' : '#ef4444'};">
+                ${totalGain >= 0 ? '+' : ''}${activeMarket === 'domestic' ? '₹' : '$'}${totalGain.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-label">Total positions</div>
+              <div class="card-value">${filteredHoldings.length} Assets</div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th align="left">Asset / Hub</th>
+                <th align="left">Category</th>
+                <th align="right">Qty / Vol</th>
+                <th align="right">Avg Cost</th>
+                <th align="right">Current Price</th>
+                <th align="right">Market Value</th>
+                <th align="right">Returns</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${holdingsRows}
+            </tbody>
+          </table>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   return (
     <div className="space-y-8 w-full max-w-7xl mx-auto px-1 relative">
@@ -617,13 +680,59 @@ const worstCase =
             Global allocation breakdown with modular tracking.
           </p>
         </div>
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          {/* Add Asset CTA Button */}
-          <button 
-            onClick={() => setIsModalOpen(true)} 
-            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-650 dark:from-cyan-500 dark:to-blue-600 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-cyan-400 dark:hover:to-blue-500 px-5 py-3 text-sm font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 dark:hover:shadow-cyan-400/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 w-full sm:w-auto sm:ml-auto lg:ml-0"
+        <div className="flex items-center gap-3.5 w-full sm:w-auto flex-wrap relative">
+          {/* Elegant Export Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-250 transition-all duration-300 w-full sm:w-auto shadow-sm"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export Hub</span>
+              <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${showExportDropdown ? "rotate-180" : ""}`} />
+            </button>
+
+            {showExportDropdown && (
+              <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#121a2a] shadow-xl overflow-hidden z-50 p-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                <button
+                  onClick={() => {
+                    exportPortfolioToCSV(false);
+                    setShowExportDropdown(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-colors"
+                >
+                  <FileText className="h-3.5 w-3.5 opacity-60 text-blue-500" />
+                  <span>Export to CSV</span>
+                </button>
+                <button
+                  onClick={() => {
+                    exportPortfolioToCSV(true);
+                    setShowExportDropdown(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 opacity-60 text-emerald-500" />
+                  <span>Export to Excel</span>
+                </button>
+                <button
+                  onClick={() => {
+                    exportPortfolioToPDF();
+                    setShowExportDropdown(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5 opacity-60 text-purple-500" />
+                  <span>Export to PDF</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-650 dark:from-cyan-500 dark:to-blue-600 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-cyan-400 dark:hover:to-blue-500 px-5 py-2.5 text-xs font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 dark:hover:shadow-cyan-400/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 w-full sm:w-auto"
           >
-            <Plus className="h-4 w-4 stroke-[3]" /> Add Asset Position
+            <Plus className="h-3.5 w-3.5 stroke-[3]" /> Add Asset Position
           </button>
         </div>
       </div>
@@ -653,7 +762,7 @@ const worstCase =
             </h3>
           </div>
         </div>
-        
+
         <div className="glass-panel p-6 flex items-center gap-4 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
           <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
             <Globe className="h-6 w-6" />
@@ -664,6 +773,11 @@ const worstCase =
           </div>
         </div>
       </div>
+
+      <PortfolioSummarySection
+        metrics={summaryMetrics}
+        currencySymbol={displayCurrency}
+      />
 
       {/* 1. Performance Chart (Full Page Width) */}
       <PortfolioPerformanceChart
@@ -682,14 +796,13 @@ const worstCase =
             {/* Market Tab Selector */}
             <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner">
               {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
-                <button 
-                  key={tab} 
-                  onClick={() => setActiveMarket(tab)} 
-                  className={`px-3 py-1.5 rounded-lg capitalize transition-all duration-300 whitespace-nowrap ${
-                    activeMarket === tab 
-                      ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5' 
+                <button
+                  key={tab}
+                  onClick={() => setActiveMarket(tab)}
+                  className={`px-3 py-1.5 rounded-lg capitalize transition-all duration-300 whitespace-nowrap ${activeMarket === tab
+                      ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
+                    }`}
                 >
                   {tab === 'all' ? 'All Assets' : tab === 'us' ? 'US' : tab}
                 </button>
@@ -791,99 +904,60 @@ const worstCase =
         </div>
       </div>
 
-      {/* 3. Diagnostics Grid (2x2 layout for Allocation, AI Analyst, Risk, and Sectors) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Card 1: Allocation Chart */}
-        <PortfolioAllocationChart
-          data={allocationData}
+        <WatchlistSnapshotSection
+          items={watchlistSnapshotItems}
         />
 
-        {/* Card 2: Combined AI Analyst Tabbed Card */}
-        <div className="glass-panel p-6 border-slate-200 dark:border-slate-800/60 shadow-lg">
-          <div className="flex items-center gap-2.5 mb-5 border-b border-slate-100 dark:border-slate-800/60 pb-4">
-            <Sparkles className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              AI Portfolio Analyst
-            </h2>
+        <UpcomingEventsSection
+          events={upcomingPortfolioEvents}
+        />
+
+        <AIPortfolioAdvisorSection
+          advisor={portfolioAdvisorSnapshot}
+        />
+
+      <div className="glass-panel p-6 overflow-hidden shadow-lg transition-all duration-300 relative group">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] via-transparent to-blue-500/[0.04] pointer-events-none" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 border-b border-slate-100 dark:border-slate-800/60 pb-5">
+          <div>
+            <div className="flex items-center gap-2.5 mb-2">
+              <PieChart className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Portfolio Allocation</h2>
+            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xl">A concentrated view of how your capital is distributed across markets, with the largest allocation highlighted for faster reading.</p>
           </div>
 
-          {/* Tab selection cluster */}
-          <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 p-1 rounded-2xl mb-6">
-            {[
-              { id: "health", label: "Health" },
-              { id: "insights", label: "Insights" },
-              { id: "sectors", label: "Sectors" },
-              { id: "rebalance", label: "Realignment" }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setAiTab(tab.id as any)}
-                className={`px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-                  aiTab === tab.id
-                    ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm border border-slate-100 dark:border-white/5"
-                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-355"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab content wrapper */}
-          <div className="min-h-[220px] flex flex-col justify-between">
-            {aiTab === "health" && (
-              <PortfolioHealthCard
-                score={healthScore}
-                diversification={
-                  healthScore > 80
-                    ? "Excellent"
-                    : healthScore > 60
-                    ? "Good"
-                    : "Needs Improvement"
-                }
-                risk={risk}
-                growth={growth}
-              />
-            )}
-
-            {aiTab === "insights" && (
-              <PortfolioInsightsCard
-                insights={insights}
-              />
-            )}
-
-            {aiTab === "sectors" && (
-              <AISectorAnalysisCard
-                insight={sectorInsight}
-                recommendation={sectorRecommendation}
-                score={sectorDiversificationScore}
-                topSector={topSector?.sector || "N/A"}
-              />
-            )}
-
-            {aiTab === "rebalance" && (
-              <RebalancingCard
-                suggestions={rebalancingSuggestions}
-              />
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-cyan-400">
+              {allocationData.length} Allocation Buckets
+            </span>
+            {dominantAllocation && (
+              <span className="rounded-full bg-slate-100 dark:bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-white/5">
+                Largest: {dominantAllocation.name}
+              </span>
             )}
           </div>
         </div>
 
-        {/* Card 3: Portfolio Risk Analysis */}
-        <RiskSimulatorCard
-          riskScore={riskScore}
-          expectedReturn={expectedReturn}
-          bestCase={bestCase}
-          worstCase={worstCase}
+        <PortfolioAllocationChart
+          data={allocationData}
         />
 
-        {/* Card 4: Sector Exposure */}
-        <SectorExposureCard
-          sectors={sectorExposure}
-        />
-
+        <div className="relative mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Portfolio Value</p>
+            <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{displayCurrency}{allocationTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Largest Slice</p>
+            <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{dominantAllocation ? dominantAllocation.name : 'N/A'}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Top Weight</p>
+            <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{allocationTotal > 0 && dominantAllocation ? `${((dominantAllocation.value / allocationTotal) * 100).toFixed(0)}%` : '0%'}</p>
+          </div>
+        </div>
       </div>
 
       {/* MODAL WITH NEW DEBOUNCED SEARCH */}
@@ -901,9 +975,9 @@ const worstCase =
             <form onSubmit={handleAddAsset} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-slate-500 block mb-1.5">Asset Category</label>
-                <select 
-                  value={marketId} 
-                  onChange={e => setMarketId(e.target.value)} 
+                <select
+                  value={marketId}
+                  onChange={e => setMarketId(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors"
                 >
                   <option value="domestic" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Domestic Stock</option>
@@ -913,7 +987,7 @@ const worstCase =
                   <option value="metals" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Precious Metals</option>
                 </select>
               </div>
-              
+
               <div className="relative">
                 <label className="text-xs font-bold text-slate-500 block mb-1.5">Search Asset</label>
                 <div className="relative">
@@ -936,8 +1010,8 @@ const worstCase =
                 {showSuggestions && assetSuggestions.length > 0 && (
                   <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
                     {assetSuggestions.map((asset) => (
-                      <div 
-                        key={asset.id} 
+                      <div
+                        key={asset.id}
                         className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 flex justify-between items-center border-b border-slate-50 dark:border-white/5 last:border-0"
                         onClick={() => handleSelectAsset(asset)}
                       >
@@ -950,7 +1024,7 @@ const worstCase =
                     ))}
                   </div>
                 )}
-                
+
                 {selectedAsset && (
                   <p className="mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-450 flex items-center gap-1.5">
                     ✓ Selected: {selectedAsset.name}
@@ -961,32 +1035,32 @@ const worstCase =
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 block mb-1.5">Quantity</label>
-                  <input 
-                    type="number" 
-                    step="any" 
-                    required 
-                    placeholder="0" 
-                    value={shares} 
-                    onChange={e => setShares(e.target.value)} 
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors" 
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    placeholder="0"
+                    value={shares}
+                    onChange={e => setShares(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 block mb-1.5">Average Price ($)</label>
-                  <input 
-                    type="number" 
-                    step="any" 
-                    required 
-                    placeholder="0.00" 
-                    value={cost} 
-                    onChange={e => setCost(e.target.value)} 
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors" 
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    placeholder="0.00"
+                    value={cost}
+                    onChange={e => setCost(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors"
                   />
                 </div>
               </div>
-              
-              <button 
-                type="submit" 
+
+              <button
+                type="submit"
                 className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 py-3 text-sm font-bold text-white dark:text-night-900 mt-2 shadow-md transition-all active:scale-95"
               >
                 Log Position
