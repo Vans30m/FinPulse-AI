@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
 import MarketHeatmap from "../components/markets/MarketHeatmap";
 import { useNavigate } from "react-router-dom";
@@ -49,6 +49,92 @@ function Sparkline({ data, isPositive }: { data: { value: number }[]; isPositive
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+function MarketCard({ market, navigate }: { market: any; navigate: any }) {
+  const [history, setHistory] = useState<any[]>([]);
+  const changePercent = parseFloat(market.changePercent) || 0;
+  const change = parseFloat(market.change) || 0;
+  const price = parseFloat(market.price) || 0;
+  const isPositive = changePercent >= 0;
+
+  useEffect(() => {
+    fetch(`http://localhost:3000/api/global-markets/history/${encodeURIComponent(market.symbol)}?range=1mo`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setHistory(data.map((c: any) => ({ time: c.date, value: c.close || c.value })));
+        }
+      })
+      .catch(err => console.error(err));
+  }, [market.symbol]);
+
+  const sparklineData = history.length > 0 ? history : [{ time: new Date().toISOString(), value: price }];
+
+  return (
+    <div
+      onClick={() =>
+        navigate(
+          `/asset/${encodeURIComponent(market.symbol)}`,
+          { state: { name: market.name } }
+        )
+      }
+      className="
+        relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-6 
+        backdrop-blur-sm transition-all duration-300 ease-out shadow-sm
+        hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/5 
+        dark:border-night-800 dark:bg-night-900/80 dark:hover:border-night-600
+      "
+    >
+      <div className="flex items-start justify-between gap-3 relative z-10">
+        <div>
+          <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 line-clamp-1 leading-tight">
+            {market.name}
+          </h3>
+        </div>
+        <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-night-800 dark:text-slate-400">
+          {market.region}
+        </span>
+      </div>
+
+      <div className="mt-6 flex items-end justify-between relative z-10">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline gap-1.5">
+            <p className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
+              {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          <div
+            className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${
+              isPositive ? "text-emerald-500" : "text-rose-500"
+            }`}
+          >
+            <span className="flex items-center justify-center rounded-full bg-current/10 p-0.5">
+              {isPositive ? (
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                </svg>
+              ) : (
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" />
+                </svg>
+              )}
+            </span>
+            <span>{Math.abs(change).toFixed(2)}</span>
+            <span>({isPositive ? "+" : ""}{changePercent.toFixed(2)}%)</span>
+          </div>
+        </div>
+
+        <div className="h-14 w-28 opacity-75 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+          <Sparkline
+            data={sparklineData}
+            isPositive={isPositive}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -244,91 +330,13 @@ export default function Markets() {
 
                 return (
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    {filteredMarkets.map((market: any) => {
-                      const changePercent = parseFloat(market.changePercent) || 0;
-                      const change = parseFloat(market.change) || 0;
-                      const price = parseFloat(market.price) || 0;
-                      const isPositive = changePercent >= 0;
-
-                      const mockHistory = Array.from({ length: 15 }).map((_, idx) => {
-                        const date = new Date();
-                        date.setDate(date.getDate() - (15 - idx));
-                        const timeStr = date.toISOString().split("T")[0];
-                        return {
-                          time: timeStr,
-                          value: price * (1 + (Math.random() * 0.02 - 0.01) * (15 - idx))
-                        };
-                      });
-                      const todayStr = new Date().toISOString().split("T")[0];
-                      mockHistory.push({ time: todayStr, value: price });
-
-                      return (
-                        <div
-                          key={market.symbol}
-                          onClick={() =>
-                            navigate(
-                              `/asset/${encodeURIComponent(market.symbol)}`,
-                              { state: { name: market.name } }
-                            )
-                          }
-                          className="
-                            relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-6 
-                            backdrop-blur-sm transition-all duration-300 ease-out shadow-sm
-                            hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/5 
-                            dark:border-night-800 dark:bg-night-900/80 dark:hover:border-night-600
-                          "
-                        >
-                          <div className="flex items-start justify-between gap-3 relative z-10">
-                            <div>
-                              <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 line-clamp-1 leading-tight">
-                                {market.name}
-                              </h3>
-                            </div>
-                            <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-night-800 dark:text-slate-400">
-                              {market.region}
-                            </span>
-                          </div>
-
-                          <div className="mt-6 flex items-end justify-between relative z-10">
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-baseline gap-1.5">
-                                <p className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
-                                  {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                              </div>
-
-                              <div
-                                className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${
-                                  isPositive ? "text-emerald-500" : "text-rose-500"
-                                }`}
-                              >
-                                <span className="flex items-center justify-center rounded-full bg-current/10 p-0.5">
-                                  {isPositive ? (
-                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                                    </svg>
-                                  ) : (
-                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" />
-                                    </svg>
-                                  )}
-                                </span>
-                                <span>{Math.abs(change).toFixed(2)}</span>
-                                <span>({isPositive ? "+" : ""}{changePercent.toFixed(2)}%)</span>
-                              </div>
-                            </div>
-
-                            {/* Lightweight SVG Sparkline instead of heavy CandlestickChart */}
-                            <div className="h-14 w-28 opacity-75 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                              <Sparkline
-                                data={mockHistory}
-                                isPositive={isPositive}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {filteredMarkets.map((market: any) => (
+                      <MarketCard
+                        key={market.symbol}
+                        market={market}
+                        navigate={navigate}
+                      />
+                    ))}
                   </div>
                 );
               })()}

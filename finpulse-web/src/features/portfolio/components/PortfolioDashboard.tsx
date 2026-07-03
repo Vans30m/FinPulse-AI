@@ -1,24 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Coins, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { BarChart3 } from "lucide-react";
-import PortfolioAllocationChart
-  from "./PortfolioAllocationChart";
-
-import PortfolioSummarySection, {
-  type PortfolioSummaryMetric,
-} from "./PortfolioSummarySection";
+import PortfolioAllocationChart from "./PortfolioAllocationChart";
+import PortfolioSummarySection, { type PortfolioSummaryMetric } from "./PortfolioSummarySection";
 import WatchlistSnapshotSection from "./WatchlistSnapshotSection";
 import UpcomingEventsSection from "./UpcomingEventsSection";
 import AIPortfolioAdvisorSection from "./AIPortfolioAdvisorSection";
-import PortfolioPerformanceChart
-  from "./PortfolioPerformanceChart";
-import {
-  portfolioAdvisorSnapshot,
-  upcomingPortfolioEvents,
-  watchlistSnapshotItems,
-} from "../data/portfolioPremiumSections";
-import { useChart }
-  from "../../../context/ChartContext";
+import PortfolioPerformanceChart from "./PortfolioPerformanceChart";
+import { useChart } from "../../../context/ChartContext";
+import toast from 'react-hot-toast';
 
 interface Holding {
   ticker: string;
@@ -54,132 +44,51 @@ const INITIAL_SECTIONS: MarketSection[] = [
     title: 'Indian Market',
     region: 'India',
     icon: <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
-    holdings: [
-      {
-        ticker: 'RELIANCE',
-        name: 'Reliance Industries Ltd.',
-        sector: 'Energy',
-        shares: 45,
-        avgCost: 2450.00,
-        currentPrice: 2870.50,
-        marketValue: 129172.50,
-        totalGain: 18922.50,
-        gainPercent: 17.16,
-        colorClass: {
-          bg: 'bg-indigo-50 dark:bg-indigo-950/40',
-          text: 'text-indigo-600 dark:text-indigo-400',
-          border: 'border-indigo-200/50 dark:border-indigo-900/50'
-        }
-      }
-    ]
+    holdings: []
   },
   {
     id: 'us',
     title: 'US Market',
     region: 'North America',
-    icon: <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
-    holdings: [
-      {
-        ticker: 'NVDA',
-        name: 'NVIDIA Corporation',
-        sector: 'Technology',
-        shares: 15,
-        avgCost: 420.00,
-        currentPrice: 875.12,
-        marketValue: 13126.80,
-        totalGain: 6826.80,
-        gainPercent: 108.36,
-        colorClass: {
-          bg: 'bg-emerald-50 dark:bg-emerald-950/40',
-          text: 'text-emerald-600 dark:text-emerald-400',
-          border: 'border-emerald-200/50 dark:border-emerald-900/50'
-        }
-      }
-    ]
-  },
-  {
-    id: 'other',
-    title: 'Other Markets',
-    region: 'Global / Exotic',
-    icon: <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-    holdings: [
-      {
-        ticker: 'SMI',
-        name: 'Swiss Market Index',
-        sector: 'Index',
-        shares: 5,
-        avgCost: 10750,
-        currentPrice: 11500,
-        marketValue: 57500,
-        totalGain: 3750,
-        gainPercent: 7.0,
-        colorClass: {
-          bg: 'bg-purple-50 dark:bg-purple-950/40',
-          text: 'text-purple-600 dark:text-purple-400',
-          border: 'border-purple-200/50 dark:border-purple-900/50'
-        }
-      }
-    ]
+    icon: <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-450" />,
+    holdings: []
   },
   {
     id: 'crypto',
     title: 'Crypto Market',
     region: 'Digital Assets',
     icon: <Bitcoin className="h-5 w-5 text-amber-500 dark:text-amber-300" />,
-    holdings: [
-      {
-        ticker: 'BTC',
-        name: 'Bitcoin',
-        sector: 'Crypto',
-        shares: 0.42,
-        avgCost: 48000,
-        currentPrice: 67500,
-        marketValue: 28350,
-        totalGain: 8190,
-        gainPercent: 40.6,
-        colorClass: {
-          bg: 'bg-amber-50 dark:bg-amber-950/40',
-          text: 'text-amber-600 dark:text-amber-400',
-          border: 'border-amber-200/50 dark:border-amber-900/50'
-        }
-      }
-    ]
+    holdings: []
   },
-
+  {
+    id: 'other',
+    title: 'Other Markets',
+    region: 'Global',
+    icon: <Globe className="h-5 w-5 text-blue-500 dark:text-blue-400" />,
+    holdings: []
+  },
   {
     id: 'metals',
     title: 'Precious Metals',
-    region: 'Physical Commodities',
-    icon: <Coins className="h-5 w-5 text-yellow-500 dark:text-yellow-300" />,
+    region: 'Commodities',
+    icon: <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
     holdings: []
   }
 ];
 
-const performanceData = [
-  {
-    month: "Jan",
-    value: 100000,
-  },
-  {
-    month: "Feb",
-    value: 104000,
-  },
-  {
-    month: "Mar",
-    value: 111000,
-  },
-  {
-    month: "Apr",
-    value: 108000,
-  },
-  {
-    month: "May",
-    value: 118000,
-  },
-];
-
 export default function PortfolioDashboard() {
   const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
+  const [watchlistItems, setWatchlistItems] = useState<any[]>([]);
+  const [portfolioEvents, setPortfolioEvents] = useState<any[]>([]);
+  const [advisorData, setAdvisorData] = useState<any>(null);
+  const performanceData = [
+    { month: "Jan", value: 100000 },
+    { month: "Feb", value: 104000 },
+    { month: "Mar", value: 111000 },
+    { month: "Apr", value: 108000 },
+    { month: "May", value: 118000 }
+  ];
+
   const [activeMarket, setActiveMarket] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
@@ -237,13 +146,24 @@ export default function PortfolioDashboard() {
   ) => {
     setSelectedAsset({
       ticker: asset.symbol,
-      yahooSymbol:
-        asset.yahooSymbol,
+      yahooSymbol: asset.yahooSymbol,
       name: asset.name,
-      exchange:
-        asset.exchange,
+      exchange: asset.exchange,
       type: asset.type,
     });
+
+    const sym = (asset.symbol || "").toUpperCase();
+    if (sym.endsWith(".NS") || sym.endsWith(".BO")) {
+      setMarketId("domestic");
+    } else if (sym === "GC=F" || sym === "SI=F" || sym === "PL=F") {
+      setMarketId("metals");
+    } else if (sym.includes("-USD") || sym.includes("-BTC")) {
+      setMarketId("crypto");
+    } else if (asset.exchange === "HKG" || asset.exchange === "TPE" || asset.exchange === "JPX" || asset.exchange === "OSA") {
+      setMarketId("other");
+    } else {
+      setMarketId("us");
+    }
 
     setAssetSearch(
       `${asset.name} (${asset.symbol})`
@@ -252,61 +172,82 @@ export default function PortfolioDashboard() {
     setShowSuggestions(false);
   };
 
-  const handleAddAsset = (e: React.FormEvent) => {
+  const loadPortfolioData = async () => {
+    try {
+      const [holdingsRes, advisorRes, eventsRes, watchlistRes] = await Promise.all([
+        fetch('http://localhost:3000/api/portfolio/holdings'),
+        fetch('http://localhost:3000/api/portfolio/advisor'),
+        fetch('http://localhost:3000/api/portfolio/events'),
+        fetch('http://localhost:3000/api/portfolio/watchlist')
+      ]);
+
+      if (holdingsRes.ok) {
+        const data = await holdingsRes.json();
+        const mapped = INITIAL_SECTIONS.map(initial => {
+          const found = data.sections?.find((s: any) => s.id === initial.id);
+          return {
+            ...initial,
+            holdings: found ? found.holdings : []
+          };
+        });
+        setSections(mapped);
+      }
+      if (advisorRes.ok) {
+        const data = await advisorRes.json();
+        setAdvisorData(data);
+      }
+      if (eventsRes.ok) {
+        const data = await eventsRes.json();
+        setPortfolioEvents(data || []);
+      }
+      if (watchlistRes.ok) {
+        const data = await watchlistRes.json();
+        setWatchlistItems(data || []);
+      }
+    } catch (err) {
+      console.error("Error loading portfolio data:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadPortfolioData();
+  }, []);
+
+  const handleAddAsset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAsset || !shares || !cost) return;
 
     const numShares = parseFloat(shares);
     const numCost = parseFloat(cost);
 
-    const baseColors = [
-      { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200/50 dark:border-purple-900/50' },
-      { bg: 'bg-sky-50 dark:bg-sky-950/40', text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-200/50 dark:border-sky-900/50' },
-      { bg: 'bg-pink-50 dark:bg-pink-950/40', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-200/50 dark:border-pink-900/50' }
-    ];
-    const chosenColor = baseColors[Math.floor(Math.random() * baseColors.length)];
+    try {
+      const res = await fetch('http://localhost:3000/api/portfolio/holdings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticker: selectedAsset.ticker,
+          name: selectedAsset.name,
+          shares: numShares,
+          avgCost: numCost,
+          marketId
+        })
+      });
 
-    const newHolding: Holding = {
-      ticker: selectedAsset.ticker,
-      yahooSymbol:
-        selectedAsset.yahooSymbol,
-      exchange:
-        selectedAsset.exchange,
-      type:
-        selectedAsset.type,
-      name: selectedAsset.name,
-      shares: numShares,
-      avgCost: numCost,
-      currentPrice: numCost * 1.04, // Mock 4% gain
-      marketValue: numShares * (numCost * 1.04),
-      totalGain: (numShares * (numCost * 1.04)) - (numShares * numCost),
-      gainPercent: 4.00,
-      colorClass: chosenColor,
-      sector:
-        selectedAsset.type ===
-          "Crypto"
-          ? "Crypto"
-          : selectedAsset.type ===
-            "Forex"
-            ? "Forex"
-            : selectedAsset.type ===
-              "Commodity"
-              ? "Commodities"
-              : "Technology",
-    };
-
-    setSections(prev => prev.map(sec => {
-      if (sec.id === marketId) {
-        return { ...sec, holdings: [...sec.holdings, newHolding] };
+      if (res.ok) {
+        toast.success(`Successfully added holding ${selectedAsset.ticker}`);
+        loadPortfolioData();
+        setIsModalOpen(false);
+        setAssetSearch('');
+        setSelectedAsset(null);
+        setShares('');
+        setCost('');
+      } else {
+        toast.error("Failed to add position");
       }
-      return sec;
-    }));
-
-    setAssetSearch('');
-    setSelectedAsset(null);
-    setShares('');
-    setCost('');
-    setIsModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to persist transaction");
+    }
   };
 
   const getHoldingValueInUSD = (h: Holding, sectionId: string) => {
@@ -905,16 +846,23 @@ export default function PortfolioDashboard() {
       </div>
 
         <WatchlistSnapshotSection
-          items={watchlistSnapshotItems}
+          items={watchlistItems}
         />
 
         <UpcomingEventsSection
-          events={upcomingPortfolioEvents}
+          events={portfolioEvents}
         />
 
-        <AIPortfolioAdvisorSection
-          advisor={portfolioAdvisorSnapshot}
-        />
+        {advisorData ? (
+          <AIPortfolioAdvisorSection
+            advisor={advisorData}
+          />
+        ) : (
+          <div className="glass-panel p-6 flex flex-col items-center justify-center min-h-[150px]">
+            <Loader2 className="w-6.5 h-6.5 animate-spin text-cyan-400" />
+            <p className="text-xs text-slate-400 mt-2 font-mono">Synchronizing advisor insights...</p>
+          </div>
+        )}
 
       <div className="glass-panel p-6 overflow-hidden shadow-lg transition-all duration-300 relative group">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] via-transparent to-blue-500/[0.04] pointer-events-none" />
