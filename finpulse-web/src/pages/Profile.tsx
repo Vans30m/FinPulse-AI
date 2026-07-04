@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   TrendingUp, 
   Coins, 
@@ -22,7 +22,7 @@ import SubscriptionCard from "../components/profile/SubscriptionCard";
 
 export default function Profile() {
   const { user, setUser } = useAppData();
-  const [email] = useState("user@example.com");
+  const email = user.email || "user@example.com";
 
   // SECTION 4 - Preferred Markets State
   const [selectedMarkets, setSelectedMarkets] = useState<string[]>(["india", "us", "crypto"]);
@@ -53,10 +53,6 @@ export default function Profile() {
     dailyAiBrief: true
   });
 
-  const handleToggleAi = (key: keyof typeof aiPrefs) => {
-    setAiPrefs(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
   // SECTION 6 - Notification Settings
   const [notifPrefs, setNotifPrefs] = useState({
     priceAlerts: true,
@@ -68,15 +64,136 @@ export default function Profile() {
     breakingNews: true
   });
 
-  const handleToggleNotif = (key: keyof typeof notifPrefs) => {
-    setNotifPrefs(prev => ({ ...prev, [key]: !prev[key] }));
+  const [profileStats, setProfileStats] = useState<{
+    memberSince: string;
+    country: string;
+    currency: string;
+    market: string;
+    plan: string;
+    watchlistCount: number;
+    alertsCount: number;
+    holdingsCount: number;
+    portfolioValue: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+        const userId = storedUser.id;
+        if (!userId) return;
+
+        const res = await fetch(`http://localhost:3000/api/auth/profile-stats/${userId}`);
+        const data = await res.json();
+        if (res.ok) {
+          setProfileStats(data);
+          if (data.preferences) {
+            setAiPrefs(data.preferences);
+          }
+          if (data.notificationSettings) {
+            setNotifPrefs(data.notificationSettings);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load profile stats:", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const handleToggleAi = async (key: keyof typeof aiPrefs) => {
+    const updated = { ...aiPrefs, [key]: !aiPrefs[key] };
+    setAiPrefs(updated);
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+      if (!userId) return;
+
+      await fetch('http://localhost:3000/api/auth/save-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, preferences: updated })
+      });
+    } catch (err) {
+      console.error("Failed to save AI preferences:", err);
+    }
+  };
+
+  const handleToggleNotif = async (key: keyof typeof notifPrefs) => {
+    const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+    setNotifPrefs(updated);
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+      if (!userId) return;
+
+      await fetch('http://localhost:3000/api/auth/save-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, notificationSettings: updated })
+      });
+    } catch (err) {
+      console.error("Failed to save notification settings:", err);
+    }
   };
 
   // Dialog triggers / Actions
-  const handleEditProfile = () => {
-    const newName = prompt("Enter your new profile name:", user.name);
-    if (newName?.trim()) {
-      setUser({ ...user, name: newName.trim() });
+  const handleEditProfile = async () => {
+    const newName = prompt("Enter display name:", user.name);
+    if (newName === null) return;
+
+    const newCountry = prompt("Enter country / location:", profileStats?.country || "India");
+    if (newCountry === null) return;
+
+    const newCurrency = prompt("Enter currency / market (e.g. INR (₹) / NSE / BSE):", `${profileStats?.currency || "INR (₹)"} / ${profileStats?.market || "NSE / BSE"}`);
+    if (newCurrency === null) return;
+
+    // Parse currency and market from combined string
+    const parts = newCurrency.split('/');
+    const currencyStr = parts[0]?.trim() || "INR (₹)";
+    const marketStr = parts.slice(1).join('/')?.trim() || "NSE / BSE";
+
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+
+      if (!userId) {
+        alert("Please log in to edit your profile.");
+        return;
+      }
+
+      const res = await fetch('http://localhost:3000/api/auth/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId, 
+          name: newName.trim() || user.name, 
+          bio: '', 
+          country: newCountry.trim(), 
+          currency: currencyStr
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+        setUser(data.user);
+        
+        // Refresh profile stats to reflect country and currency changes
+        const statsRes = await fetch(`http://localhost:3000/api/auth/profile-stats/${userId}`);
+        const statsData = await statsRes.json();
+        if (statsRes.ok) {
+          setProfileStats(statsData);
+        }
+        
+        alert("Profile details updated successfully!");
+      } else {
+        alert(data.error || "Failed to update profile details.");
+      }
+    } catch (err) {
+      console.error("Failed to update profile details:", err);
+      alert("Connection error. Please try again.");
     }
   };
 
@@ -109,12 +226,30 @@ export default function Profile() {
 
   // Stats definition for SECTION 2 - Investment Summary
   const stats = [
-    { title: "Portfolio Value", value: "$124,560.80", change: "+12.4%", isPositive: true, icon: <DollarSign className="h-5 w-5" /> },
-    { title: "Today's Profit/Loss", value: "+$1,240.20", change: "+1.0%", isPositive: true, icon: <TrendingUp className="h-5 w-5" /> },
-    { title: "Total Return", value: "+$24,800.50", change: "+24.8%", isPositive: true, icon: <Activity className="h-5 w-5" /> },
-    { title: "Watchlist Assets", value: "12 Items", icon: <Bookmark className="h-5 w-5" /> },
-    { title: "Active Alerts", value: "3 Triggered", icon: <Bell className="h-5 w-5" /> },
-    { title: "Total Holdings", value: "8 Positions", icon: <Layers className="h-5 w-5" /> },
+    { 
+      title: "Portfolio Value", 
+      value: profileStats ? `$${profileStats.portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00", 
+      change: undefined, 
+      isPositive: true, 
+      icon: <DollarSign className="h-5 w-5" /> 
+    },
+    { 
+      title: "Today's Profit/Loss", 
+      value: profileStats ? `${profileStats.todayProfitLoss >= 0 ? '+' : ''}$${profileStats.todayProfitLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00", 
+      change: profileStats && profileStats.holdingsCount > 0 ? `${profileStats.todayProfitLossPercent >= 0 ? '+' : ''}${profileStats.todayProfitLossPercent.toFixed(2)}%` : undefined, 
+      isPositive: profileStats ? profileStats.todayProfitLoss >= 0 : true, 
+      icon: <TrendingUp className="h-5 w-5" /> 
+    },
+    { 
+      title: "Total Return", 
+      value: profileStats ? `${profileStats.totalReturn >= 0 ? '+' : ''}$${profileStats.totalReturn.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00", 
+      change: profileStats && profileStats.holdingsCount > 0 ? `${profileStats.totalReturnPercent >= 0 ? '+' : ''}${profileStats.totalReturnPercent.toFixed(2)}%` : undefined, 
+      isPositive: profileStats ? profileStats.totalReturn >= 0 : true, 
+      icon: <Activity className="h-5 w-5" /> 
+    },
+    { title: "Watchlist Assets", value: profileStats ? `${profileStats.watchlistCount} Items` : "0 Items", icon: <Bookmark className="h-5 w-5" /> },
+    { title: "Active Alerts", value: profileStats ? `${profileStats.alertsCount} Active` : "0 Active", icon: <Bell className="h-5 w-5" /> },
+    { title: "Total Holdings", value: profileStats ? `${profileStats.holdingsCount} Positions` : "0 Positions", icon: <Layers className="h-5 w-5" /> },
     { title: "Favorite Market", value: "NSE India", icon: <Coins className="h-5 w-5" /> },
     { title: "Favorite Sector", value: "Technology", icon: <BarChart className="h-5 w-5" /> },
   ];
@@ -126,6 +261,11 @@ export default function Profile() {
       <ProfileHeaderCard
         name={user.name}
         email={email}
+        memberSince={profileStats ? new Date(profileStats.memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : undefined}
+        plan={profileStats?.plan}
+        country={profileStats?.country}
+        currency={profileStats?.currency}
+        market={profileStats?.market}
         onEditProfile={handleEditProfile}
         onChangePassword={handleChangePassword}
         onLogout={handleLogout}

@@ -6,7 +6,12 @@ const prisma = new PrismaClient();
 const portfolioRoutes = express.Router();
 
 // Helper to fetch/create default user
-async function getOrCreateDefaultUser() {
+async function getOrCreateDefaultUser(req?: any) {
+  const userId = req?.headers?.['x-user-id'];
+  if (userId) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user) return user;
+  }
   let user = await prisma.user.findFirst();
   if (!user) {
     user = await prisma.user.create({
@@ -23,7 +28,7 @@ async function getOrCreateDefaultUser() {
 // GET /api/portfolio/holdings - returns calculated holdings sections
 portfolioRoutes.get('/holdings', async (req, res) => {
   try {
-    const user = await getOrCreateDefaultUser();
+    const user = await getOrCreateDefaultUser(req);
     let holdings = await prisma.holding.findMany({
       where: { userId: user.id }
     });
@@ -108,7 +113,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
 portfolioRoutes.post('/holdings', async (req, res) => {
   try {
     const { ticker, name, shares, avgCost, marketId } = req.body;
-    const user = await getOrCreateDefaultUser();
+    const user = await getOrCreateDefaultUser(req);
     const newHolding = await prisma.holding.create({
       data: {
         userId: user.id,
@@ -128,7 +133,7 @@ portfolioRoutes.post('/holdings', async (req, res) => {
 // GET /api/portfolio/advisor - calculated advisor statistics
 portfolioRoutes.get('/advisor', async (req, res) => {
   try {
-    const user = await getOrCreateDefaultUser();
+    const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
 
     const score = Math.min(100, Math.max(30, 40 + holdings.length * 15));
@@ -169,7 +174,7 @@ portfolioRoutes.get('/advisor', async (req, res) => {
 // GET /api/portfolio/events - returns live event calendars
 portfolioRoutes.get('/events', async (req, res) => {
   try {
-    const user = await getOrCreateDefaultUser();
+    const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
     
     const events = await Promise.all(holdings.map(async (h) => {
@@ -236,7 +241,7 @@ portfolioRoutes.get('/watchlist', async (req, res) => {
 portfolioRoutes.get('/rolling-cagr', async (req, res) => {
   try {
     const timeframe = (req.query.timeframe as string) || '1Y';
-    const user = await getOrCreateDefaultUser();
+    const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
 
     const benchmarkSymbols: Record<string, string> = {
@@ -340,7 +345,7 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
 // GET /api/portfolio/benchmarks - dynamic metrics calculations (Sharpe, Volatility, Beta, Alpha, Max Drawdown)
 portfolioRoutes.get('/benchmarks', async (req, res) => {
   try {
-    const user = await getOrCreateDefaultUser();
+    const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
 
     const benchmarkSymbols: Record<string, string> = {
@@ -527,7 +532,7 @@ portfolioRoutes.get('/benchmarks', async (req, res) => {
 portfolioRoutes.get('/heatmap', async (req, res) => {
   try {
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
-    const user = await getOrCreateDefaultUser();
+    const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
 
     const endDate = new Date(Date.UTC(year, 11, 31));
@@ -609,7 +614,7 @@ portfolioRoutes.get('/heatmap', async (req, res) => {
 // GET /api/portfolio/analysis - dynamic AI Performance Coach calculations (Priority 3)
 portfolioRoutes.get('/analysis', async (req, res) => {
   try {
-    const user = await getOrCreateDefaultUser();
+    const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
 
     const benchmarkSymbols: Record<string, string> = {

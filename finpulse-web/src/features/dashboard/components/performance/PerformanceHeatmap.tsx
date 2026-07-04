@@ -225,7 +225,11 @@ export default function PerformanceHeatmap() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:3000/api/portfolio/heatmap?year=${year}`)
+    const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+    const userId = storedUser.id;
+    const headers = userId ? { 'X-User-Id': userId } : undefined;
+
+    fetch(`http://localhost:3000/api/portfolio/heatmap?year=${year}`, { headers })
       .then(res => res.json())
       .then(data => {
         setYearlyData(data || []);

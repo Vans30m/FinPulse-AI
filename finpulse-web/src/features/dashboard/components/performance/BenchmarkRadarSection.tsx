@@ -34,7 +34,11 @@ export default function BenchmarkRadarSection() {
 
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:3000/api/portfolio/benchmarks')
+    const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+    const userId = storedUser.id;
+    const headers = userId ? { 'X-User-Id': userId } : undefined;
+
+    fetch('http://localhost:3000/api/portfolio/benchmarks', { headers })
       .then(res => res.json())
       .then(data => {
         setBenchmarksData(data);

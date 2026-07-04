@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, LayoutDashboard, LockKeyhole } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
+import { useAppData } from '../../context/AppDataContext';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -8,13 +9,23 @@ interface LoginModalProps {
   onLoginSuccess: () => void;
 }
 
-type AuthStep = 'email' | 'set-pin' | 'enter-pin';
+type AuthStep = 'email' | 'otp-verification' | 'reset-pin' | 'set-pin' | 'enter-pin' | 'profile-setup';
 
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
+  const { setUser } = useAppData();
   const [step, setStep] = useState<AuthStep>('email');
+
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [bio, setBio] = useState('');
+  const [profileUserId, setProfileUserId] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const loginWithGoogle = useGoogleLogin({
@@ -26,11 +37,29 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         const userInfo = await userInfoResponse.json();
         if (userInfo.email) {
           setEmail(userInfo.email);
-          const savedPin = localStorage.getItem(`finpulse_pin_${userInfo.email}`);
-          if (savedPin) {
-            setStep('enter-pin');
+          
+          // Verify/Register user in PostgreSQL backend via Neon
+          const backendRes = await fetch('http://localhost:3000/api/auth/google-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: userInfo.email,
+              name: userInfo.name,
+              avatar: userInfo.picture,
+              providerId: userInfo.sub
+            })
+          });
+
+          if (backendRes.ok) {
+            const data = await backendRes.json();
+            if (data.hasPin) {
+              setStep('enter-pin');
+            } else {
+              setStep('set-pin');
+            }
           } else {
-            setStep('set-pin');
+            const errData = await backendRes.json();
+            setError(errData.error || 'Failed to authenticate with backend.');
           }
         } else {
           setError('Failed to retrieve user email from Google.');
@@ -50,8 +79,177 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       setEmail('');
       setPin('');
       setError('');
+      setIsRegisterMode(false);
+      setName('');
+      setPassword('');
+      setOtpCode('');
+      setResetOtp('');
+      setNewPin('');
+      setBio('');
+      setProfileUserId('');
     }
   }, [isOpen]);
+
+  const handleTraditionalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!email || !password) {
+      setError('Email and password are required.');
+      return;
+    }
+
+    try {
+      const endpoint = isRegisterMode ? 'register' : 'login';
+      const res = await fetch(`http://localhost:3000/api/auth/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        if (data.requiresVerification) {
+          setStep('otp-verification');
+          setOtpCode('');
+        } else {
+          localStorage.setItem('finpulse_token', data.token);
+          localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+          setUser(data.user);
+          onLoginSuccess();
+        }
+      } else {
+        setError(data.error || 'Authentication failed.');
+      }
+    } catch (err) {
+      console.error('Traditional auth failed:', err);
+      setError('Connection error. Please try again.');
+    }
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (otpCode.length !== 6) {
+      setError('Please enter a 6-digit verification code.');
+      return;
+    }
+
+    try {
+      const endpoint = isRegisterMode ? 'verify-otp' : 'login-verify-otp';
+      const res = await fetch(`http://localhost:3000/api/auth/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, password, code: otpCode })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('finpulse_token', data.token);
+        localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+        setUser(data.user);
+        if (isRegisterMode) {
+          setProfileUserId(data.user.id);
+          setStep('profile-setup');
+        } else {
+          onLoginSuccess();
+        }
+      } else {
+        setError(data.error || 'Verification failed.');
+      }
+    } catch (err) {
+      console.error('OTP verification failed:', err);
+      setError('Connection error. Please try again.');
+    }
+  };
+
+  const handleForgotPinClick = async () => {
+    setError('');
+    try {
+      const res = await fetch('http://localhost:3000/api/auth/forgot-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setStep('reset-pin');
+        setResetOtp('');
+        setNewPin('');
+      } else {
+        setError(data.error || 'Failed to request PIN reset.');
+      }
+    } catch (err) {
+      console.error('Forgot PIN request failed:', err);
+      setError('Connection error. Please try again.');
+    }
+  };
+
+  const handleResetPinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (resetOtp.length !== 6) {
+      setError('Please enter the 6-digit OTP code.');
+      return;
+    }
+    if (newPin.length !== 6) {
+      setError('Please enter your new 6-digit PIN.');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/api/auth/reset-pin-with-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: resetOtp, newPin })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('finpulse_token', data.token);
+        localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+        setUser(data.user);
+        onLoginSuccess();
+      } else {
+        setError(data.error || 'Reset PIN failed.');
+      }
+    } catch (err) {
+      console.error('Reset PIN failed:', err);
+      setError('Connection error. Please try again.');
+    }
+  };
+
+  const handleProfileSetupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!name.trim()) {
+      setError('Display Name is required.');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/api/auth/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: profileUserId, name, bio })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+        setUser(data.user);
+        onLoginSuccess();
+      } else {
+        setError(data.error || 'Failed to update profile.');
+      }
+    } catch (err) {
+      console.error('Profile setup failed:', err);
+      setError('Connection error. Please try again.');
+    }
+  };
+
+
+
 
   // Focus the hidden PIN input when stepping into PIN modes
   useEffect(() => {
@@ -62,21 +260,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
   if (!isOpen) return null;
 
-  // const handleEmailSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (!email) return;
-  // 
-  //   // Simulate backend check: Does this user already have a PIN on this device?
-  //   const savedPin = localStorage.getItem(`finpulse_pin_${email}`);
-  //   
-  //   if (savedPin) {
-  //     setStep('enter-pin');
-  //   } else {
-  //     setStep('set-pin');
-  //   }
-  // };
-
-  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePinChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // Only allow numbers
     const val = e.target.value.replace(/\D/g, '');
     if (val.length <= 6) {
@@ -84,24 +268,55 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       setError('');
     }
 
-
-    
     // Auto-submit when 6 digits are entered
     if (val.length === 6) {
-      if (step === 'set-pin') {
-        localStorage.setItem(`finpulse_pin_${email}`, val);
-        onLoginSuccess();
-      } else if (step === 'enter-pin') {
-        const savedPin = localStorage.getItem(`finpulse_pin_${email}`);
-        if (val === savedPin) {
-          onLoginSuccess();
-        } else {
-          setError('Incorrect PIN. Please try again.');
-          setPin(''); // Reset on failure
+      try {
+        if (step === 'set-pin') {
+          const res = await fetch('http://localhost:3000/api/auth/set-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, pin: val })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('finpulse_token', data.token);
+            localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+            setUser(data.user);
+            setProfileUserId(data.user.id);
+            setStep('profile-setup');
+          } else {
+            const errData = await res.json();
+            setError(errData.error || 'Failed to save PIN.');
+            setPin('');
+          }
+        } else if (step === 'enter-pin') {
+          const res = await fetch('http://localhost:3000/api/auth/verify-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, pin: val })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('finpulse_token', data.token);
+            localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+            setUser(data.user);
+            onLoginSuccess();
+          } else {
+            const errData = await res.json();
+            setError(errData.error || 'Incorrect PIN. Please try again.');
+            setPin('');
+          }
         }
+      } catch (err) {
+        console.error("PIN authentication failed:", err);
+        setError('Connection error. Please try again.');
+        setPin('');
       }
     }
   };
+
   
 
   return (
@@ -140,11 +355,96 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 <div className="mb-6 flex md:hidden h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-night-900 shadow-md">
                   <LayoutDashboard className="h-6 w-6" />
                 </div>
-                <h2 className="mb-10 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Welcome to FinPulse
+                <h2 className="mb-6 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                  {isRegisterMode ? 'Create your account' : 'Welcome to FinPulse'}
                 </h2>
 
-                {/* 3. ATTACH THE ONCLICK TO THE GOOGLE BUTTON */}
+                {/* Tab selector */}
+                <div className="flex border-b border-slate-200 dark:border-white/10 mb-6">
+                  <button
+                    type="button"
+                    onClick={() => { setIsRegisterMode(false); setError(''); }}
+                    className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all ${
+                      !isRegisterMode 
+                        ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400' 
+                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsRegisterMode(true); setError(''); }}
+                    className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all ${
+                      isRegisterMode 
+                        ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400' 
+                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                    }`}
+                  >
+                    Sign Up
+                  </button>
+                </div>
+
+                <form onSubmit={handleTraditionalSubmit} className="space-y-4 mb-6">
+                  {isRegisterMode && (
+                    <div>
+                      <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="John Doe"
+                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Email address
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      required
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full rounded-xl bg-blue-600 dark:bg-cyan-400 py-3 text-sm font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all hover:bg-blue-700 dark:hover:bg-cyan-300"
+                  >
+                    {isRegisterMode ? 'Create Account' : 'Sign In'}
+                  </button>
+                </form>
+
+                <div className="relative flex items-center justify-center my-6">
+                  <div className="absolute w-full border-t border-slate-200 dark:border-white/10" />
+                  <span className="relative bg-white dark:bg-night-900 px-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    or
+                  </span>
+                </div>
+
+                {/* Google Sign-in */}
                 <button 
                   type="button"
                   onClick={() => loginWithGoogle()} 
@@ -158,7 +458,178 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                   Continue with Google
                 </button>
 
-                
+                {error && (
+                  <p className="mt-4 text-sm text-rose-500 font-medium text-center animate-pulse">{error}</p>
+                )}
+              </div>
+            )}
+
+            {/* STEP 3: OTP VERIFICATION */}
+            {step === 'otp-verification' && (
+              <div className="animate-in slide-in-from-right-4 fade-in duration-300">
+                <button 
+                  onClick={() => setStep('email')}
+                  className="mb-6 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                >
+                  ← Back
+                </button>
+
+                <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-white/5 text-blue-600 dark:text-cyan-400">
+                  <LockKeyhole className="h-6 w-6" />
+                </div>
+
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">
+                  Verify your email
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-10">
+                  We've sent a 6-digit verification code to <span className="font-extrabold">{email}</span>. Please enter it below to complete registration.
+                </p>
+
+                <form onSubmit={handleOtpSubmit} className="space-y-6">
+                  <div>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="Enter code"
+                      className="w-full text-center tracking-[12px] font-black rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-xl text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full rounded-xl bg-blue-600 dark:bg-cyan-400 py-3 text-sm font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all hover:bg-blue-700 dark:hover:bg-cyan-300"
+                  >
+                    Verify & Create Account
+                  </button>
+                </form>
+
+                {error && (
+                  <p className="mt-4 text-sm text-rose-500 font-medium text-center animate-pulse">{error}</p>
+                )}
+              </div>
+            )}
+
+            {/* STEP 4: RESET PIN WITH OTP */}
+            {step === 'reset-pin' && (
+              <div className="animate-in slide-in-from-right-4 fade-in duration-300">
+                <button 
+                  onClick={() => setStep('enter-pin')}
+                  className="mb-6 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                >
+                  ← Back
+                </button>
+
+                <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-white/5 text-blue-600 dark:text-cyan-400">
+                  <LockKeyhole className="h-6 w-6" />
+                </div>
+
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">
+                  Reset your PIN
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
+                  We've sent a 6-digit code to <span className="font-extrabold">{email}</span>. Enter the code and your new 6-digit PIN below.
+                </p>
+
+                <form onSubmit={handleResetPinSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Email OTP Code
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={resetOtp}
+                      onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="Enter 6-digit OTP"
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      New 6-Digit PIN
+                    </label>
+                    <input
+                      type="password"
+                      maxLength={6}
+                      value={newPin}
+                      onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                      placeholder="Enter new 6-digit PIN"
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full rounded-xl bg-blue-600 dark:bg-cyan-400 py-3 text-sm font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all hover:bg-blue-700 dark:hover:bg-cyan-300"
+                  >
+                    Reset PIN & Log In
+                  </button>
+                </form>
+
+                {error && (
+                  <p className="mt-4 text-sm text-rose-500 font-medium text-center animate-pulse">{error}</p>
+                )}
+              </div>
+            )}
+
+            {/* STEP 5: PROFILE SETUP */}
+            {step === 'profile-setup' && (
+              <div className="animate-in slide-in-from-right-4 fade-in duration-300">
+                <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-white/5 text-blue-600 dark:text-cyan-400">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">
+                  Set up your profile
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
+                  Let's personalize your FinPulse AI experience.
+                </p>
+
+                <form onSubmit={handleProfileSetupSubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Display Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your name"
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Bio <span className="text-slate-400 font-normal">(Optional)</span>
+                    </label>
+                    <textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Tell us about your investment journey..."
+                      rows={3}
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full rounded-xl bg-blue-600 dark:bg-cyan-400 py-3 text-sm font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all hover:bg-blue-700 dark:hover:bg-cyan-300"
+                  >
+                    Save & Finish Setup
+                  </button>
+                </form>
+
+                {error && (
+                  <p className="mt-4 text-sm text-rose-500 font-medium text-center animate-pulse">{error}</p>
+                )}
               </div>
             )}
 
@@ -219,6 +690,17 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 {error && (
                   <p className="text-sm text-rose-500 font-medium text-center animate-pulse">{error}</p>
                 )}
+
+                {step === 'enter-pin' && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPinClick}
+                    className="mt-4 w-full text-center text-xs font-semibold text-blue-600 dark:text-cyan-400 hover:underline"
+                  >
+                    Forgot PIN?
+                  </button>
+                )}
+
 
               </div>
             )}

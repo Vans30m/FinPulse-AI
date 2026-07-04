@@ -15,7 +15,8 @@ const queryClient =
   new QueryClient();
 
 // Replace with your actual Google OAuth Client ID
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "277997199364-tnl0a68ph20tdnnf59pa40q13pc6mmod.apps.googleusercontent.com";
+
   
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

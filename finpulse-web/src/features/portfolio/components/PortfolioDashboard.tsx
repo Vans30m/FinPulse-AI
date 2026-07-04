@@ -174,11 +174,15 @@ export default function PortfolioDashboard() {
 
   const loadPortfolioData = async () => {
     try {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+      const headers = userId ? { 'X-User-Id': userId } : undefined;
+
       const [holdingsRes, advisorRes, eventsRes, watchlistRes] = await Promise.all([
-        fetch('http://localhost:3000/api/portfolio/holdings'),
-        fetch('http://localhost:3000/api/portfolio/advisor'),
-        fetch('http://localhost:3000/api/portfolio/events'),
-        fetch('http://localhost:3000/api/portfolio/watchlist')
+        fetch('http://localhost:3000/api/portfolio/holdings', { headers }),
+        fetch('http://localhost:3000/api/portfolio/advisor', { headers }),
+        fetch('http://localhost:3000/api/portfolio/events', { headers }),
+        fetch('http://localhost:3000/api/portfolio/watchlist', { headers })
       ]);
 
       if (holdingsRes.ok) {
@@ -221,9 +225,15 @@ export default function PortfolioDashboard() {
     const numCost = parseFloat(cost);
 
     try {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+
       const res = await fetch('http://localhost:3000/api/portfolio/holdings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(userId ? { 'X-User-Id': userId } : {})
+        },
         body: JSON.stringify({
           ticker: selectedAsset.ticker,
           name: selectedAsset.name,

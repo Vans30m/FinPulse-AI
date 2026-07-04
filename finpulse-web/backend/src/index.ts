@@ -1,9 +1,10 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
 import Parser from 'rss-parser';
+
 import YahooFinance from 'yahoo-finance2';
 import chartRoutes from "./routes/charts.js";
 import { newsRoutes, companyNewsRoutes } from "./routes/news.js";
@@ -29,8 +30,8 @@ import recentRouter from "./routes/recent.js";
 import customScreenerRouter from "./routes/screeners.js";
 import aiHistoryRouter from "./routes/aiHistory.js";
 import { getUpcomingEarningsForMarket, getAssetEvents } from "./services/yahooService.js";
+import authRoutes from "./routes/auth.js";
 
-dotenv.config();
 
 export const yahooFinance = new YahooFinance();
 const app = express();
@@ -79,6 +80,7 @@ app.use("/api/alerts-custom", alertsRouter);
 app.use("/api/recent", recentRouter);
 app.use("/api/saved-screeners", customScreenerRouter);
 app.use("/api/ai-chat", aiHistoryRouter);
+app.use("/api/auth", authRoutes);
 // ==========================================
 // 0. GLOBAL EARNINGS CALENDAR ENDPOINT
 // ==========================================

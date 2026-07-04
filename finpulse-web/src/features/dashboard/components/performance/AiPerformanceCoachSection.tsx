@@ -44,7 +44,11 @@ export default function AiPerformanceCoachSection() {
 
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:3000/api/portfolio/analysis')
+    const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+    const userId = storedUser.id;
+    const headers = userId ? { 'X-User-Id': userId } : undefined;
+
+    fetch('http://localhost:3000/api/portfolio/analysis', { headers })
       .then(res => res.json())
       .then(d => {
         setData(d);
@@ -103,7 +107,11 @@ export default function AiPerformanceCoachSection() {
             type="button"
             onClick={() => {
               setLoading(true);
-              fetch('http://localhost:3000/api/portfolio/analysis')
+              const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+              const userId = storedUser.id;
+              const headers = userId ? { 'X-User-Id': userId } : undefined;
+
+              fetch('http://localhost:3000/api/portfolio/analysis', { headers })
                 .then(res => res.json())
                 .then(d => {
                   setData(d);

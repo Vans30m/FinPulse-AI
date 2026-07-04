@@ -50,7 +50,11 @@ export default function RollingCagrSection() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:3000/api/portfolio/rolling-cagr?timeframe=${timeframe}`)
+    const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+    const userId = storedUser.id;
+    const headers = userId ? { 'X-User-Id': userId } : undefined;
+
+    fetch(`http://localhost:3000/api/portfolio/rolling-cagr?timeframe=${timeframe}`, { headers })
       .then(res => res.json())
       .then(data => {
         setCagrData(data);

@@ -54,7 +54,7 @@ import Security from "./pages/Security";
 export default function App() {
   const location = useLocation();
 
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // <-- Start as logged in for easier testing
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('finpulse_token'));
 
   // The state for managing selected region
   const [marketRegion, setMarketRegion] = useState<"india" | "us">("india");

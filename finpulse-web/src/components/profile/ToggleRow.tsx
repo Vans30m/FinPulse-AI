@@ -33,13 +33,13 @@ export default function ToggleRow({
 
       <button
         onClick={() => onChange(!value)}
-        className={`relative w-12 h-6.5 rounded-full shrink-0 transition-all duration-300 ${
+        className={`w-11 h-6 rounded-full shrink-0 transition-colors duration-300 p-0.5 focus:outline-none ${
           value ? "bg-cyan-500 shadow-md shadow-cyan-500/25" : "bg-slate-200 dark:bg-white/10"
         }`}
       >
         <div
-          className={`absolute top-0.75 h-5 w-5 rounded-full bg-white dark:bg-slate-100 shadow-sm transition-all duration-300 ${
-            value ? "left-6" : "left-0.75"
+          className={`h-5 w-5 rounded-full bg-white shadow transition-transform duration-300 transform ${
+            value ? "translate-x-5" : "translate-x-0"
           }`}
         />
       </button>
