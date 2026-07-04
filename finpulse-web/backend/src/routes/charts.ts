@@ -19,10 +19,17 @@ router.get(
           "1y"
         );
 
+      const interval =
+        String(
+          req.query.interval ||
+          "1d"
+        );
+
       const data =
         await getYahooCandles(
           symbol,
-          range
+          range,
+          interval
         );
 
       res.json(data);

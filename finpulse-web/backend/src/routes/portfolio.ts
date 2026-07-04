@@ -33,20 +33,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
       where: { userId: user.id }
     });
 
-    // Seeding some defaults if empty
-    if (holdings.length === 0) {
-      const seeded = [
-        { userId: user.id, ticker: 'RELIANCE.NS', name: 'Reliance Industries Ltd.', shares: 45, avgCost: 2450.00, marketId: 'domestic' },
-        { userId: user.id, ticker: 'NVDA', name: 'NVIDIA Corporation', shares: 15, avgCost: 420.00, marketId: 'us' },
-        { userId: user.id, ticker: 'BTC-USD', name: 'Bitcoin', shares: 0.42, avgCost: 48000.00, marketId: 'crypto' }
-      ];
-      for (const item of seeded) {
-        await prisma.holding.create({ data: item });
-      }
-      holdings = await prisma.holding.findMany({
-        where: { userId: user.id }
-      });
-    }
+    // No seeding defaults
 
     // Query Yahoo Finance for live prices
     const enrichedHoldings = await Promise.all(holdings.map(async (h) => {
@@ -136,6 +123,32 @@ portfolioRoutes.get('/advisor', async (req, res) => {
     const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
 
+    if (holdings.length === 0) {
+      return res.json({
+        score: 0,
+        status: 'No Assets',
+        ringLabel: '0/100',
+        diversificationScore: 0,
+        sectorExposure: 'N/A',
+        suggestedAllocation: 'N/A',
+        diversificationConfidence: 0,
+        currentRisk: 'N/A',
+        riskLevel: 'N/A',
+        riskAction: 'N/A',
+        riskConfidence: 0,
+        bestOpportunity: 'N/A',
+        opportunityPrice: 0,
+        opportunityUpside: 0,
+        opportunityConfidence: 0,
+        opportunityRating: 'N/A',
+        strengths: [],
+        weaknesses: ['Add transactions to generate advisor insights'],
+        outlook: 'No data available.',
+        healthProgress: 0,
+        actions: []
+      });
+    }
+
     const score = Math.min(100, Math.max(30, 40 + holdings.length * 15));
     const status = score >= 80 ? 'Excellent' : score >= 60 ? 'Optimal' : 'Needs Rebalancing';
     const ringLabel = `${score}/100`;
@@ -210,8 +223,16 @@ portfolioRoutes.get('/events', async (req, res) => {
 // GET /api/portfolio/watchlist - live watchlist summary
 portfolioRoutes.get('/watchlist', async (req, res) => {
   try {
-    const defaultWatchlist = ['AAPL', 'TSLA', 'AMZN', 'RELIANCE.NS'];
-    const enriched = await Promise.all(defaultWatchlist.map(async (symbol) => {
+    const user = await getOrCreateDefaultUser(req);
+    // Fetch user's first watchlist from DB
+    const list = await prisma.watchlist.findFirst({
+      where: { userId: user.id },
+      include: { items: true }
+    });
+    
+    const symbols = list ? list.items.map((item) => item.symbol) : [];
+    
+    const enriched = await Promise.all(symbols.map(async (symbol) => {
       try {
         const quote = await yahooFinance.quote(symbol);
         const changePercent = quote.regularMarketChangePercent || 0;
@@ -243,6 +264,10 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
     const timeframe = (req.query.timeframe as string) || '1Y';
     const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
+
+    if (holdings.length === 0) {
+      return res.json({ series: [], kpis: [] });
+    }
 
     const benchmarkSymbols: Record<string, string> = {
       nifty50: '^NSEI',
@@ -347,6 +372,10 @@ portfolioRoutes.get('/benchmarks', async (req, res) => {
   try {
     const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
+
+    if (holdings.length === 0) {
+      return res.json({});
+    }
 
     const benchmarkSymbols: Record<string, string> = {
       'NIFTY 50': '^NSEI',
@@ -616,6 +645,22 @@ portfolioRoutes.get('/analysis', async (req, res) => {
   try {
     const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
+
+    if (holdings.length === 0) {
+      return res.json({
+        performanceScore: 0,
+        rating: 'N/A',
+        scoreBreakdown: { consistency: 0, riskAdjustedReturn: 0, diversification: 0, growth: 0 },
+        benchmarkRows: [],
+        topContributors: [],
+        weaknesses: ['No assets in portfolio'],
+        missedOpportunities: [],
+        concentrationRisk: 'N/A',
+        riskObservation: 'N/A',
+        insights: [],
+        forecast: []
+      });
+    }
 
     const benchmarkSymbols: Record<string, string> = {
       'NIFTY 50': '^NSEI',

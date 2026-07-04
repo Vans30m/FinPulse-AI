@@ -550,7 +550,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                         Verifying...
                       </>
                     ) : (
-                      'Verify & Create Account'
+                      'Verify'
                     )}
                   </button>
                 </form>

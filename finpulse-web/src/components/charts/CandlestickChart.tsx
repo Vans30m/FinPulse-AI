@@ -35,6 +35,7 @@ interface Props {
   customMultiData?: { time: string | number;[key: string]: any }[];
   seriesKeys?: { key: string; color: string }[];
   onCompareChange?: (symbol: string) => void;
+  onMetaLoaded?: (meta: any) => void;
 }
 
 export default function CandlestickChart({
@@ -47,6 +48,7 @@ export default function CandlestickChart({
   customMultiData,
   seriesKeys,
   onCompareChange,
+  onMetaLoaded,
 }: Props) {
   const chartWrapperRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -727,7 +729,7 @@ export default function CandlestickChart({
 
         if (fundamentalsResponse) {
           setFundamentals(fundamentalsResponse);
-          setMeta({
+          const newMeta = {
             name: fundamentalsResponse.name || "Asset",
             exchange: fundamentalsResponse.marketState ? "GLOBAL" : "INDEX",
             price: fundamentalsResponse.price || 0,
@@ -735,11 +737,16 @@ export default function CandlestickChart({
             changePercent: fundamentalsResponse.changePercent || 0,
             marketState: fundamentalsResponse.marketState || "CLOSED",
             currency: fundamentalsResponse.currency || "USD"
-          });
+          };
+          setMeta(newMeta);
+          if (onMetaLoaded) {
+            onMetaLoaded(newMeta);
+          }
         }
 
         if (!data?.quotes || !Array.isArray(data.quotes)) {
           console.error("No valid chart candle payload available:", data);
+          setLoading(false);
           return;
         }
 
@@ -755,7 +762,10 @@ export default function CandlestickChart({
             volume: q.volume ? Number(q.volume) : 0
           }));
 
-        if (!mappedCandles.length) return;
+        if (!mappedCandles.length) {
+          setLoading(false);
+          return;
+        }
 
         // Set candles data
         if (candleSeriesRef.current) {
@@ -799,9 +809,14 @@ export default function CandlestickChart({
 
     loadData();
 
+    let lastWidth = container.clientWidth;
     const resizeObserver = new ResizeObserver((entries) => {
       if (!entries.length) return;
-      chart.applyOptions({ width: entries[0].contentRect.width });
+      const newWidth = entries[0].contentRect.width;
+      if (Math.abs(newWidth - lastWidth) > 3) {
+        chart.applyOptions({ width: newWidth });
+        lastWidth = newWidth;
+      }
     });
     resizeObserver.observe(container);
 
@@ -1295,16 +1310,20 @@ export default function CandlestickChart({
       };
     });
 
+    let lastSubWidth = chartContainerRef.current?.clientWidth || 0;
     const resizeObserver = new ResizeObserver(() => {
       const container = chartContainerRef.current;
       if (!container) return;
-
-      activePanes.forEach(pane => {
-        const paneChart = subChartsRef.current[pane];
-        if (paneChart) {
-          paneChart.applyOptions({ width: container.clientWidth });
-        }
-      });
+      const newWidth = container.clientWidth;
+      if (Math.abs(newWidth - lastSubWidth) > 3) {
+        activePanes.forEach(pane => {
+          const paneChart = subChartsRef.current[pane];
+          if (paneChart) {
+            paneChart.applyOptions({ width: newWidth });
+          }
+        });
+        lastSubWidth = newWidth;
+      }
     });
 
     if (chartContainerRef.current) {
@@ -1358,12 +1377,12 @@ export default function CandlestickChart({
   return (
     <div
       ref={chartWrapperRef}
-      className={`w-full flex flex-col select-none transition-all duration-300 ${isFullscreen
+      className={`w-full flex flex-col select-none ${isFullscreen
           ? "bg-slate-900 dark:bg-night-950 p-6 overflow-y-auto fixed inset-0 z-[99] h-full w-full"
           : "space-y-4"
         }`}
     >
-      {hasSymbol && (
+      {hasSymbol && !onMetaLoaded && (
         <ChartHeader
           name={meta.name}
           symbol={symbol}

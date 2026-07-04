@@ -22,6 +22,7 @@ import {
   ArrowDownRight
 } from "lucide-react";
 import CandlestickChart from "./CandlestickChart";
+import { ChartHeader } from "./ChartHeader";
 import {
   LineChart,
   Line,
@@ -117,6 +118,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const [eventsData, setEventsData] = useState<any[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [hasComparison, setHasComparison] = useState(false);
+  const [meta, setMeta] = useState<any>(null);
 
   const [periodFilter] = useState<string>("Quarterly");
   const [metricFilter, setMetricFilter] = useState<"All" | "Revenue" | "EPS" | "Health">("All");
@@ -312,75 +314,57 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
         >
 
           {/* ==================== HEADER ==================== */}
-          <div className="grid grid-cols-1 xl:grid-cols-[auto_1fr_auto] gap-6 items-center px-6 py-4 border-b border-slate-900 bg-[#0a0d1d]/60 backdrop-blur-md shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-base shadow-lg shadow-blue-500/10 border border-blue-400/20">
-                {symbol.substring(0, 2).toUpperCase()}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-6 items-center px-6 py-3 border-b border-slate-900 bg-[#0a0d1d]/60 backdrop-blur-md shrink-0">
+            <div>
+              {meta ? (
+                <ChartHeader
+                  name={meta.name}
+                  symbol={symbol}
+                  exchange={meta.exchange}
+                  price={meta.price}
+                  change={meta.change}
+                  changePercent={meta.changePercent}
+                  marketState={meta.marketState}
+                  currency={meta.currency}
+                />
+              ) : (
+                <div className="text-slate-400 font-medium animate-pulse">Loading stock details...</div>
+              )}
+            </div>
+
+            {/* Redesigned Premium 52-Week Range */}
+            <div className="bg-[#0e1224] border border-slate-800/80 px-4 py-2 rounded-xl min-w-[240px] md:min-w-[280px] shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">52W Range</span>
+                <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded leading-none">
+                  {rangeProgressPercentage.toFixed(0)}%
+                </span>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-black text-white tracking-tight">{symbol}</h2>
-                  <button onClick={() => setIsFavorite(!isFavorite)} className="text-slate-500 hover:text-amber-400 transition-colors">
-                    <Star size={16} fill={isFavorite ? "currentColor" : "none"} className={isFavorite ? "text-amber-400" : ""} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 font-medium">
-                  <span className="truncate max-w-[140px]">{asset.name || "Global Asset Index"}</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-700" />
-                  <span>{assetType.toUpperCase()}</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-700" />
-                  <span className="text-slate-500">USD</span>
-                </div>
+
+              {/* Progress bar container */}
+              <div className="w-full h-2 bg-slate-900 rounded-full mt-2 relative border border-slate-800 overflow-hidden">
+                <div
+                  className="absolute top-0 bottom-0 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                  style={{ left: 0, width: `${rangeProgressPercentage}%` }}
+                />
+              </div>
+
+              {/* High/Low Bounds labels */}
+              <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 mt-1.5">
+                <span className="font-bold">L: <span className="text-slate-350 font-extrabold">{fundamentals?.fiftyTwoWeekLow ? fundamentals.fiftyTwoWeekLow.toFixed(2) : "1,820.60"}</span></span>
+                <span className="font-bold">H: <span className="text-slate-350 font-extrabold">{fundamentals?.fiftyTwoWeekHigh ? fundamentals.fiftyTwoWeekHigh.toFixed(2) : "4,395.30"}</span></span>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 xl:justify-center">
-              <div>
-                <div className="text-3xl font-black text-white tracking-tight flex items-baseline gap-1">
-                  {currentAssetPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-bold text-slate-500 ml-1">USD</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-bold mt-0.5">
-                  <span className="text-rose-500">-28.90 (-0.71%)</span>
-                  <span className="text-slate-500 font-medium">Today</span>
-                  {isLoading && (
-                    <span className="inline-flex items-center gap-1 text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20 animate-pulse">
-                      <Loader2 size={10} className="animate-spin" /> LIVE
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar pb-1 xl:pb-0">
-              {/* Redesigned Premium 52-Week Range */}
-              <div className="bg-[#0e1224] border border-slate-800/80 px-4 py-2 rounded-xl min-w-[240px] md:min-w-[280px] shadow-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">52W Range</span>
-                  <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded leading-none">
-                    {rangeProgressPercentage.toFixed(0)}%
-                  </span>
-                </div>
-
-                {/* Progress bar container */}
-                <div className="w-full h-2 bg-slate-900 rounded-full mt-2 relative border border-slate-800 overflow-hidden">
-                  <div
-                    className="absolute top-0 bottom-0 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"
-                    style={{ left: 0, width: `${rangeProgressPercentage}%` }}
-                  />
-                </div>
-
-                {/* High/Low Bounds labels */}
-                <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 mt-1.5">
-                  <span className="font-bold">L: <span className="text-slate-350 font-extrabold">{fundamentals?.fiftyTwoWeekLow ? fundamentals.fiftyTwoWeekLow.toFixed(2) : "1,820.60"}</span></span>
-                  <span className="font-bold">H: <span className="text-slate-350 font-extrabold">{fundamentals?.fiftyTwoWeekHigh ? fundamentals.fiftyTwoWeekHigh.toFixed(2) : "4,395.30"}</span></span>
-                </div>
-              </div>
-
-              <button onClick={onClose} className="p-2 rounded-xl text-slate-500 hover:bg-slate-900 hover:text-slate-200 transition-all ml-2">
-                <X size={20} />
-              </button>
-            </div>
+            <motion.button
+              onClick={onClose}
+              whileHover={{ scale: 1.08, rotate: 90 }}
+              whileTap={{ scale: 0.93 }}
+              className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-rose-600/90 border border-slate-800/80 hover:border-rose-500/50 text-slate-400 hover:text-white transition-colors duration-200 flex items-center justify-center shadow-lg shadow-black/20"
+              aria-label="Close modal"
+            >
+              <X size={24} className="stroke-[2.5]" />
+            </motion.button>
           </div>
 
           {/* ==================== WORKSPACE INTERFACE ==================== */}
@@ -391,30 +375,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
               {/* Left Side: Chart Terminal Frame (PERMANENTLY VISIBLE) */}
               <div className="bg-[#090d1a] border border-slate-900 rounded-2xl flex flex-col overflow-hidden shadow-inner">
 
-                {/* TOOLBAR */}
-                <div className="flex items-center justify-between px-4 py-2 bg-[#0b0f22] border-b border-slate-900/60 overflow-x-auto custom-scrollbar gap-4">
-                  <div className="flex items-center gap-1 bg-[#060914] p-1 rounded-xl border border-slate-900">
-                    {["1D", "1W", "1M", "3M", "6M", "YTD", "1Y", "5Y", "MAX"].map((tf) => (
-                      <button
-                        key={tf}
-                        onClick={() => setTimeframe(tf)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${timeframe === tf ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md" : "text-slate-400 hover:text-white"
-                          }`}
-                      >
-                        {tf}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                {/* TradingView Core Metadata */}
-                <div className="px-4 py-2 bg-[#080b17] border-b border-slate-900/40 text-[11px] font-mono text-slate-400 flex flex-wrap gap-x-4 gap-y-1 items-center">
-                  <span className="font-sans font-bold text-slate-500 text-[10px] uppercase tracking-wider">TradingView Core Index</span>
-                  <span>O <strong className="text-emerald-400 font-medium">4,100.30</strong></span>
-                  <span>H <strong className="text-emerald-400 font-medium">4,119.20</strong></span>
-                  <span>L <strong className="text-rose-400 font-medium">4,057.10</strong></span>
-                  <span>C <strong className="text-rose-400 font-medium">4,078.70</strong></span>
-                </div>
 
                 {/* Live Core Chart Port (Never conditionalized or hidden anymore) */}
                 <div className="flex-1 min-h-[360px] relative p-2 bg-[#060812]">
@@ -422,6 +383,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                     symbol={symbol}
                     timeframe={timeframe}
                     onCompareChange={(compareSym) => setHasComparison(!!compareSym)}
+                    onMetaLoaded={setMeta}
                   />
                 </div>
 
@@ -479,7 +441,11 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                     </div>
                     <div className="text-right border-l border-slate-900 pl-4">
                       <span className="text-[9px] text-slate-500 uppercase tracking-wider block">Avg Price Target</span>
-                      <span className="text-base font-black text-white tracking-tight block mt-0.5">${analyst?.targetPrice ? analyst.targetPrice.toFixed(2) : "4,450.00"}</span>
+                      <span className="text-base font-black text-white tracking-tight block mt-0.5">
+                        {analyst?.targetPrice 
+                          ? new Intl.NumberFormat("en-US", { style: "currency", currency: meta?.currency || "USD" }).format(analyst.targetPrice)
+                          : new Intl.NumberFormat("en-US", { style: "currency", currency: meta?.currency || "USD" }).format(4450.00)}
+                      </span>
                     </div>
                   </div>
                 </div>

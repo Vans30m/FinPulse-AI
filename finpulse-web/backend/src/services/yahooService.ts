@@ -122,23 +122,37 @@ export async function getAssetsHistoricalGrowth(
 // ==========================================
 export async function getYahooCandles(
   symbol: string,
-  range: string
+  range: string,
+  interval: string = "1d"
 ) {
   try {
+    const rangeMsMap: Record<string, number> = {
+      "1d": 1 * 24 * 60 * 60 * 1000,
+      "5d": 5 * 24 * 60 * 60 * 1000,
+      "7d": 7 * 24 * 60 * 60 * 1000,
+      "30d": 30 * 24 * 60 * 60 * 1000,
+      "6mo": 180 * 24 * 60 * 60 * 1000,
+      "1y": 365 * 24 * 60 * 60 * 1000,
+      "2y": 2 * 365 * 24 * 60 * 60 * 1000,
+      "5y": 5 * 365 * 24 * 60 * 60 * 1000,
+      "max": 20 * 365 * 24 * 60 * 60 * 1000,
+    };
+
+    let period1: Date;
+    if (range === "ytd") {
+      period1 = new Date(new Date().getFullYear(), 0, 1);
+    } else {
+      const offset = rangeMsMap[range] || 365 * 24 * 60 * 60 * 1000;
+      period1 = new Date(Date.now() - offset);
+    }
+
     const result =
       await yahooFinance.chart(
         symbol,
         {
-          period1: new Date(
-            Date.now() -
-              365 *
-                24 *
-                60 *
-                60 *
-                1000
-          ),
+          period1,
           period2: new Date(),
-          interval: "1d",
+          interval: interval as any,
         }
       );
 

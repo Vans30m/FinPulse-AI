@@ -32,8 +32,12 @@
   }
 }
 
+.custom-scrollbar {
+  scrollbar-gutter: stable;
+}
 /* Hide scrollbar for Chrome, Safari and Opera but keep functionality */
 .custom-scrollbar::-webkit-scrollbar {
+  width: 6px;  /* Thin vertical scrollbar */
   height: 4px; /* Thin horizontal scrollbar */
 }
 .custom-scrollbar::-webkit-scrollbar-track {
