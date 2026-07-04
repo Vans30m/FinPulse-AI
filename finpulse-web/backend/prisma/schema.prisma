@@ -1,51 +1,261 @@
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum AssetType {
+  STOCK
+  CRYPTO
+  COMMODITY
+  FOREX
+  ETF
+  MUTUAL_FUND
+}
+
+enum TransactionType {
+  BUY
+  SELL
+  DIVIDEND
+  SPLIT
+}
+
+enum PortfolioVisibility {
+  PRIVATE
+  PUBLIC
+  SHARED
+}
+
+enum EventType {
+  EARNINGS
+  DIVIDEND
+  SPLIT
+  MARKET_HOLIDAY
+  OTHER
+}
+
+enum AlertType {
+  PRICE
+  VOLUME
+  PERCENT_CHANGE
+}
+
+enum AlertStatus {
+  ACTIVE
+  TRIGGERED
+  MUTED
+  ARCHIVED
+}
+
+enum AIModel {
+  GEMINI
+  GPT4
+  CLAUDE
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum NotificationType {
+  PRICE_ALERT
+  SYSTEM
+  PORTFOLIO
+  NEWS
+}
+
+enum ActivityType {
+  LOGIN
+  LOGOUT
+  TRANSACTION
+  ALERT_TRIGGER
+  VIEW_ASSET
+  SEARCH
+}
+
+enum Currency {
+  USD
+  EUR
+  INR
+  GBP
+}
+
+enum Language {
+  EN
+  ES
+  HI
+  FR
+}
+
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  name        String?
-  devicePin   String?  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  alerts      Alert[]
-  holdings    Holding[]
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  name                  String?
+  username              String?                @unique
+  avatar                String?
+  phone                 String?
+  country               String?
+  timezone              String?
+  currency              String?
+  bio                   String?
+  occupation            String?
+  preferences           String?                // JSON string for compatibility
+  notificationSettings  String?                // JSON string for compatibility
+  passwordHash          String?
+  devicePin             String?  
+  role                  UserRole               @default(USER)
+  status                UserStatus             @default(ACTIVE)
+  provider              AuthProvider           @default(LOCAL)
+  providerId            String?                @unique
+  isDeleted             Boolean                @default(false)
+  lastLogin             DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  profile                Profile?
+  sessions               Session[]
+  refreshTokens          RefreshToken[]
+  alerts                 Alert[]
+  holdings               Holding[]
+  portfolios             Portfolio[]
+  watchlists             Watchlist[]
+  savedScreeners         SavedScreener[]
+  recentSearches         RecentSearch[]
+  recentlyViewed         RecentlyViewedAsset[]
+  aiSessions             AiSession[]
+  aiChatHistory          AIChatHistory[]
+  notifications          Notification[]
+  userPreference         UserPreference?
+  notificationPreference NotificationPreference?
+  userLayout             UserLayout?
+  activities             UserActivity[]
+  newsBookmarks          NewsBookmark[]
+
+  @@index([email])
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio       String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device       String
+  browser      String
+  ipAddress    String
+  refreshToken String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model OtpVerification {
   id        String   @id @default(uuid())
   email     String   @unique
-  code      String   // The 6-digit verification code
+  code      String   
   expiresAt DateTime
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
 }
 
 model Alert {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ticker      String
-  targetPrice Float
-  direction   String   // "ABOVE" or "BELOW"
-  isTriggered Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id           String         @id @default(uuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticker       String
+  targetPrice  Float
+  currentValue Float?
+  direction    String         
+  type         AlertType      @default(PRICE)
+  status       AlertStatus    @default(ACTIVE)
+  isTriggered  Boolean        @default(false)
+  triggeredAt  DateTime?
+  expiresAt    DateTime?
+  repeat       Boolean        @default(false)
+  enabled      Boolean        @default(true)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  histories    AlertHistory[]
+
+  @@index([userId])
+  @@index([ticker])
+}
+
+model AlertHistory {
+  id             String   @id @default(uuid())
+  alertId        String
+  alert          Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  triggeredPrice Float
+  triggeredAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([alertId])
 }
 
 model Asset {
-  id        String   @id @default(uuid())
-  symbol    String   @unique
+  id        String              @id @default(uuid())
+  symbol    String
   name      String
-  type      String   // e.g., "US", "Domestic", "Forex", "ETF"
-  category  String   // e.g., "Stock", "Currency", "Fund"
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  exchange  String              @default("GLOBAL")
+  type      AssetType           @default(STOCK)
+  category  String?
+  isActive  Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  prices    AssetPriceHistory[]
+
+  @@unique([symbol, exchange])
+  @@index([symbol])
 }
 
 model Holding {
@@ -56,7 +266,367 @@ model Holding {
   name      String
   shares    Float
   avgCost   Float
-  marketId  String   // "domestic", "us", "other", "crypto", "metals"
+  marketId  String   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Portfolio {
+  id           String                 @id @default(uuid())
+  userId       String
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  visibility   PortfolioVisibility    @default(PRIVATE)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  holdings     PortfolioHolding[]
+  transactions PortfolioTransaction[]
+  snapshots    PortfolioSnapshot[]
+  performances PortfolioPerformance[]
+  dividends    PortfolioDividend[]
+
+  @@index([userId])
+}
+
+model PortfolioHolding {
+  id          String    @id @default(uuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  symbol      String
+  name        String
+  shares      Float
+  avgCost     Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([portfolioId])
+  @@index([symbol])
+}
+
+model PortfolioTransaction {
+  id          String          @id @default(uuid())
+  portfolioId String
+  portfolio   Portfolio       @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  symbol      String
+  type        TransactionType
+  shares      Float
+  price       Float
+  fee         Float?          @default(0)
+  date        DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([portfolioId])
+  @@index([symbol])
+  @@index([date])
+}
+
+model PortfolioSnapshot {
+  id          String    @id @default(uuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  value       Float
+  cash        Float?    @default(0)
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+
+  @@index([portfolioId])
+  @@index([date])
+}
+
+model PortfolioPerformance {
+  id          String    @id @default(uuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  returnRate  Float
+  sharpeRatio Float?
+  volatility  Float?
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([portfolioId])
+  @@index([date])
+}
+
+model PortfolioDividend {
+  id          String    @id @default(uuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  symbol      String
+  amount      Float
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([portfolioId])
+  @@index([symbol])
+}
+
+model AssetPriceHistory {
+  id         String   @id @default(uuid())
+  assetId    String
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  closePrice Float
+  highPrice  Float?
+  lowPrice   Float?
+  openPrice  Float?
+  volume     Float?
+  date       DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([assetId, date])
+  @@index([assetId])
+  @@index([date])
+}
+
+model MarketCalendar {
+  id             String    @id @default(uuid())
+  exchange       String
+  event          String
+  type           EventType
+  date           DateTime
+  startTime      DateTime?
+  endTime        DateTime?
+  isMarketClosed Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([exchange])
+  @@index([date])
+}
+
+model Watchlist {
+  id         String          @id @default(uuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  isFavorite Boolean         @default(false)
+  tags       String?         
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  items      WatchlistItem[]
+  watchlistTags WatchlistTag[]
+
+  @@index([userId])
+}
+
+model WatchlistItem {
+  id          String          @id @default(uuid())
+  watchlistId String
+  watchlist   Watchlist       @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  symbol      String
+  notes       String?
+  position    Int             @default(0)
+  favorite    Boolean         @default(false)
+  pinned      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  watchlistNotes WatchlistNote[]
+
+  @@unique([watchlistId, symbol])
+  @@index([watchlistId])
+  @@index([symbol])
+}
+
+model WatchlistNote {
+  id          String        @id @default(uuid())
+  itemId      String
+  item        WatchlistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  pinned      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([itemId])
+}
+
+model WatchlistTag {
+  id          String    @id @default(uuid())
+  watchlistId String
+  watchlist   Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  name        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([watchlistId, name])
+  @@index([watchlistId])
+}
+
+model SavedScreener {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  filters   String   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType @default(SYSTEM)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt @default(now())
+
+  @@index([userId])
+}
+
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme     Theme    @default(DARK)
+  language  Language @default(EN)
+  currency  Currency @default(INR)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model RecentSearch {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@index([userId])
+}
+
+model RecentlyViewedAsset {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  name      String
+  viewedAt  DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+
+  @@index([userId])
+}
+
+model AiSession {
+  id         String          @id @default(uuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt     String
+  response   String
+  model      AIModel         @default(GEMINI)
+  isFavorite Boolean         @default(false)
+  pinned     Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt @default(now())
+  histories  AIChatHistory[]
+
+  @@index([userId])
+}
+
+model AIChatHistory {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String?
+  session   AiSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  model     AIModel    @default(GEMINI)
+  prompt    String
+  response  String
+  createdAt DateTime   @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model financial_knowledge_base {
+  id              Int                     @id @default(autoincrement())
+  ticker          String?
+  source_document String?
+  content_chunk   String?
+  embedding       Unsupported("vector")?
+  created_at      DateTime?               @default(now())
+}
+
+model NotificationPreference {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  priceAlerts         Boolean  @default(true)
+  systemNotifications Boolean  @default(true)
+  portfolioUpdates    Boolean  @default(true)
+  newsAlerts          Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model UserActivity {
+  id        String       @id @default(uuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity  ActivityType
+  details   String?
+  ipAddress String?
+  createdAt DateTime     @default(now())
+
+  @@index([userId])
+}
+
+model UserLayout {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dashboardConfig String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model MarketNews {
+  id          String         @id @default(uuid())
+  title       String
+  summary     String?
+  content     String?
+  source      String
+  url         String         @unique
+  publishedAt DateTime
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  bookmarks   NewsBookmark[]
+
+  @@index([publishedAt])
+}
+
+model NewsBookmark {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  newsId    String
+  news      MarketNews @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@unique([userId, newsId])
+  @@index([userId])
+  @@index([newsId])
+}
+
+model ApiCache {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+}
+

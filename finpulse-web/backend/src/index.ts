@@ -22,6 +22,12 @@ import {
   stockSentimentRoutes
 } from "./routes/ai.js";
 import portfolioRoutes from "./routes/portfolio.js";
+import profileRoutes from "./routes/profile.js";
+import watchlistsRouter from "./routes/watchlists.js";
+import alertsRouter from "./routes/alerts.js";
+import recentRouter from "./routes/recent.js";
+import customScreenerRouter from "./routes/screeners.js";
+import aiHistoryRouter from "./routes/aiHistory.js";
 import { getUpcomingEarningsForMarket, getAssetEvents } from "./services/yahooService.js";
 
 dotenv.config();
@@ -67,6 +73,12 @@ app.use(
   indexSummaryRoutes
 );
 app.use("/api/portfolio", portfolioRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/watchlists", watchlistsRouter);
+app.use("/api/alerts-custom", alertsRouter);
+app.use("/api/recent", recentRouter);
+app.use("/api/saved-screeners", customScreenerRouter);
+app.use("/api/ai-chat", aiHistoryRouter);
 // ==========================================
 // 0. GLOBAL EARNINGS CALENDAR ENDPOINT
 // ==========================================
