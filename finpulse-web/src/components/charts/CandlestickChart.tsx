@@ -632,15 +632,10 @@ export default function CandlestickChart({
       }
 
       // Track comparison series crosshair hover data
-      if (compareSymbolRef.current && overlaySeriesRef.current["comparison"]) {
-        const compSeries = overlaySeriesRef.current["comparison"][0];
-        if (compSeries) {
-          const compCandle: any = param.seriesData.get(compSeries);
-          if (compCandle) {
-            setHoveredCompareCandle(compCandle);
-          } else {
-            setHoveredCompareCandle(null);
-          }
+      if (compareSymbolRef.current && displayCompareCandles && displayCompareCandles.length > 0) {
+        const compCandle = displayCompareCandles.find(c => c.time === time);
+        if (compCandle) {
+          setHoveredCompareCandle(compCandle);
         } else {
           setHoveredCompareCandle(null);
         }
@@ -991,23 +986,7 @@ export default function CandlestickChart({
       }
     }
 
-    // 5. Render Comparison symbol overlay candlestick chart
-    if (compareSymbol && displayCompareCandles.length > 0) {
-      const compareSeries = chart.addCandlestickSeries({
-        upColor: "#3b82f6",
-        downColor: "#ffffff",
-        borderVisible: true,
-        borderUpColor: "#3b82f6",
-        borderDownColor: "#ffffff",
-        wickUpColor: "#3b82f6",
-        wickDownColor: "#ffffff",
-        priceLineVisible: false,
-        lastValueVisible: true,
-        title: compareSymbol,
-      });
-      compareSeries.setData(displayCompareCandles as any);
-      overlaySeriesRef.current["comparison"] = [compareSeries];
-    }
+
 
     // 6. Render price lines conditionally
     if (candleSeries && displayMetrics) {
@@ -1075,7 +1054,12 @@ export default function CandlestickChart({
     const mainChart = chartRef.current;
     if (!mainChart) return;
 
-    activePanes.forEach(pane => {
+    const panesToDraw = [...activePanes];
+    if (compareSymbol && displayCompareCandles.length > 0) {
+      panesToDraw.push("Comparison");
+    }
+
+    panesToDraw.forEach(pane => {
       const containerId = `pane-container-${pane}`;
       const containerEl = document.getElementById(containerId);
       if (!containerEl) return;
@@ -1083,6 +1067,7 @@ export default function CandlestickChart({
       const isDark = document.documentElement.classList.contains("dark");
       const textColorVal = isDark ? "#94a3b8" : "#64748b";
       const gridColorVal = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(30, 41, 59, 0.04)";
+      const isComparison = pane === "Comparison";
 
       // Create sub-chart pane
       const paneChart = createChart(containerEl, {
@@ -1093,7 +1078,7 @@ export default function CandlestickChart({
           fontFamily: "JetBrains Mono, Menlo, monospace",
         },
         width: containerEl.clientWidth,
-        height: 120,
+        height: isComparison ? 200 : 120,
         grid: {
           vertLines: { visible: settings.gridVisible, color: gridColorVal, style: LineStyle.Solid },
           horzLines: { visible: settings.gridVisible, color: gridColorVal, style: LineStyle.Solid },
@@ -1132,7 +1117,20 @@ export default function CandlestickChart({
       subChartsRef.current[pane] = paneChart;
 
       // Render respective series
-      if (pane === "RSI" && indicatorDataRef.current.rsi) {
+      if (pane === "Comparison") {
+        const compareCandleSeries = paneChart.addCandlestickSeries({
+          upColor: "#3b82f6",
+          downColor: "#1e293b",
+          borderVisible: true,
+          borderUpColor: "#3b82f6",
+          borderDownColor: "#3b82f6",
+          wickUpColor: "#3b82f6",
+          wickDownColor: "#3b82f6",
+          priceLineVisible: false,
+          lastValueVisible: true,
+        });
+        compareCandleSeries.setData(displayCompareCandles as any);
+      } else if (pane === "RSI" && indicatorDataRef.current.rsi) {
         const rsiSeries = paneChart.addLineSeries({
           color: "#8b5cf6",
           lineWidth: settings.lineThickness || 2,
@@ -1286,7 +1284,10 @@ export default function CandlestickChart({
 
           if (time) {
             let otherPrice = 0;
-            if (otherPane === "RSI" && indicatorDataRef.current.rsi) {
+            if (otherPane === "Comparison" && displayCompareCandles.length > 0) {
+              const compCandle = displayCompareCandles.find(d => d.time === time);
+              otherPrice = compCandle ? compCandle.close : 0;
+            } else if (otherPane === "RSI" && indicatorDataRef.current.rsi) {
               otherPrice = indicatorDataRef.current.rsi.find(d => d.time === time)?.value ?? 50;
             } else if (otherPane === "MACD" && indicatorDataRef.current.macd) {
               otherPrice = indicatorDataRef.current.macd.find(d => d.time === time)?.macd ?? 0;
@@ -1343,7 +1344,7 @@ export default function CandlestickChart({
       });
       subChartsRef.current = {};
     };
-  }, [activePanes, candles, loading, settings.gridVisible, settings.lineThickness]);
+  }, [activePanes, candles, loading, settings.gridVisible, settings.lineThickness, compareSymbol, displayCompareCandles]);
 
   const zoomIn = useCallback(() => {
     const range = chartRef.current?.timeScale().getVisibleLogicalRange();
@@ -1538,6 +1539,28 @@ export default function CandlestickChart({
       </div>
 
       {/* Synced Indicator Panes */}
+      {compareSymbol && displayCompareCandles.length > 0 && (
+        <div className="relative w-full border border-slate-100 dark:border-white/5 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.01] p-2 mt-2">
+          <div className="absolute top-2 left-3 z-20 flex items-center justify-between w-[95%] pointer-events-none">
+            <span className="text-[10px] font-black tracking-wider uppercase font-mono text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-800 shadow-sm">
+              Comparison: {compareSymbol}
+            </span>
+            <button
+              onClick={() => setCompareSymbol("")}
+              className="text-slate-400 hover:text-rose-500 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors pointer-events-auto shadow-sm"
+              title="Close comparison"
+            >
+              <X size={10} className="stroke-[3]" />
+            </button>
+          </div>
+          <div
+            id="pane-container-Comparison"
+            className="w-full cursor-crosshair"
+            style={{ height: "200px" }}
+          />
+        </div>
+      )}
+
       {!loading && hasSymbol && activePanes.map(pane => (
         <div key={pane} className="relative w-full border border-slate-100 dark:border-white/5 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.01] p-2">
           <div className="absolute top-2 left-3 z-20 flex items-center justify-between w-[95%] pointer-events-none">

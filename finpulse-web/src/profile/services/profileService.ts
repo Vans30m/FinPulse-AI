@@ -1,7 +1,7 @@
 const API_URL = 'http://localhost:3000/api/profile';
 
 function getHeaders() {
-  const token = localStorage.getItem('finpulse-token') || 'simulated-jwt-token-123456';
+  const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || 'simulated-jwt-token-123456';
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`

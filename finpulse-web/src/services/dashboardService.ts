@@ -1,7 +1,7 @@
 const API_BASE = 'http://localhost:3000/api';
 
 function getHeaders() {
-  const token = localStorage.getItem('finpulse-token') || 'simulated-jwt-token-123456';
+  const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || 'simulated-jwt-token-123456';
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
@@ -52,7 +52,10 @@ export const dashboardService = {
       headers: getHeaders(),
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to create watchlist');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to create watchlist');
+    }
     return res.json();
   },
 
@@ -61,7 +64,10 @@ export const dashboardService = {
       method: 'DELETE',
       headers: getHeaders()
     });
-    if (!res.ok) throw new Error('Failed to delete watchlist');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to delete watchlist');
+    }
     return res.json();
   },
 
@@ -71,7 +77,10 @@ export const dashboardService = {
       headers: getHeaders(),
       body: JSON.stringify(item)
     });
-    if (!res.ok) throw new Error('Failed to add watchlist item');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to add watchlist item');
+    }
     return res.json();
   },
 
