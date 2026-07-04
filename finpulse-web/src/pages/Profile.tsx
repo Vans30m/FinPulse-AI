@@ -74,6 +74,10 @@ export default function Profile() {
     alertsCount: number;
     holdingsCount: number;
     portfolioValue: number;
+    todayProfitLoss: number;
+    todayProfitLossPercent: number;
+    totalReturn: number;
+    totalReturnPercent: number;
   } | null>(null);
 
   useEffect(() => {
@@ -152,7 +156,6 @@ export default function Profile() {
     // Parse currency and market from combined string
     const parts = newCurrency.split('/');
     const currencyStr = parts[0]?.trim() || "INR (₹)";
-    const marketStr = parts.slice(1).join('/')?.trim() || "NSE / BSE";
 
     try {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');

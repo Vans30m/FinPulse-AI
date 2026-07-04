@@ -108,21 +108,24 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-white/[0.06] backdrop-blur-xl dark:!bg-night-950/80 transition-colors duration-300 flex items-center"
     >
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex w-full max-w-none items-center justify-between px-4 sm:px-8">
         
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-3">
           {/* Brand Logo - Navigates Home */}
           <Link to="/" className="flex items-center gap-2 group">
             <img 
               src={DarkLogo} 
               alt="FinPulse Logo" 
-              className="h-7 w-auto object-contain transition-transform duration-300 group-hover:scale-105 block dark:hidden" 
+              className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 block dark:hidden mix-blend-multiply" 
             />
             <img 
               src={LightLogo} 
               alt="FinPulse Logo" 
-              className="h-7 w-auto object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block" 
+              className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block mix-blend-screen" 
             />
+            <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white ml-1">
+              FinPulse<span className="bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">AI</span>
+            </span>
           </Link>
 
           {/* Navigation Items with Jitter-Free Isolated LayoutGroup */}
@@ -181,11 +184,13 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
           {/* Global Search Button */}
           <button 
             onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-            className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
+            className="hidden sm:flex items-center justify-between w-56 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
           >
-            <Search className="h-3.5 w-3.5" />
-            <span>Search</span>
-            <kbd className="ml-2 rounded bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-500 dark:text-slate-400">Ctrl K</kbd>
+            <div className="flex items-center gap-2">
+              <Search className="h-3.5 w-3.5" />
+              <span>Search</span>
+            </div>
+            <kbd className="rounded bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-500 dark:text-slate-400">Ctrl K</kbd>
           </button>
 
           <ThemeToggle />
