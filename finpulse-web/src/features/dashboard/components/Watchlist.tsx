@@ -1,127 +1,95 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Plus, Trash2, FolderPlus, X, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  TrendingUp, TrendingDown, Plus, Trash2, FolderPlus, X, Loader2,
+  Pin, Star, Upload, Download, ArrowUpDown, Bookmark, MessageSquare, RefreshCw
+} from "lucide-react";
 import { getStockSentiment } from "../../../services/marketService";
 import AIRankingCard from "./AIRankingCard";
-
-// ==========================================
-// INTERFACES
-// ==========================================
-interface WatchlistItem {
-  id: string;
-  symbol: string;
-  yahooSymbol?: string;
-  exchange?: string;
-  type?: string;
-  name: string;
-  price: string;
-  change: string; // Changed to string to match your mock data ("1.20", etc.)
-  changePercent: string;
-  isPositive: boolean;
-  sentiment?: "Bullish" | "Bearish" | "Neutral";
-  aiScore?: number;
-  aiReason?: string;
-}
-
-interface WatchlistData {
-  id: string;
-  name: string;
-  items: WatchlistItem[];
-}
-
-const defaultWatchlists: WatchlistData[] = [
-  {
-    id: "list-1",
-    name: "Main Portfolio",
-    items: [
-      { id: "AAPL", symbol: "AAPL", name: "Apple Inc.", price: "$175.43", change: "1.20", changePercent: "+0.68%", isPositive: true },
-      { id: "MSFT", symbol: "MSFT", name: "Microsoft Corp.", price: "$312.10", change: "-2.40", changePercent: "-0.76%", isPositive: false },
-    ],
-  },
-  {
-    id: "list-2",
-    name: "Crypto Watch",
-    items: [
-      { id: "BTCUSD", symbol: "BTC/USD", name: "Bitcoin", price: "$64,230.00", change: "1200.00", changePercent: "+1.90%", isPositive: true },
-    ],
-  },
-];
+import {
+  useWatchlists, useCreateWatchlist, useDeleteWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
+  useReorderWatchlistItems, useUpdateWatchlistItem, useWatchlistAnalytics, useWatchlistNotes,
+  useAddWatchlistNote, useDeleteWatchlistNote, useAddWatchlistTag, useDeleteWatchlistTag
+} from "../../../hooks/useDashboard";
 
 export default function Watchlist() {
+  const navigate = useNavigate();
+  const { data: dbWatchlists = [], refetch } = useWatchlists();
+  const createListMutation = useCreateWatchlist();
+  const deleteListMutation = useDeleteWatchlist();
+  const addItemMutation = useAddWatchlistItem();
+  const removeItemMutation = useRemoveWatchlistItem();
+  const reorderMutation = useReorderWatchlistItems();
+  const updateItemMutation = useUpdateWatchlistItem();
 
-  // ==========================================
-  // STATE MANAGEMENT
-  // ==========================================
-  const [watchlists, setWatchlists] = useState<WatchlistData[]>(defaultWatchlists);
-  const [activeListId, setActiveListId] = useState<string>(defaultWatchlists[0].id);
-
-  const loadAISentiment = async () => {
-    const updatedLists = await Promise.all(
-      watchlists.map(async (list) => {
-        const items = await Promise.all(
-          list.items.map(async (item) => {
-            try {
-              const ai = await getStockSentiment(item.symbol);
-              return {
-                ...item,
-                aiScore: ai.score,
-                aiReason: ai.reason,
-              };
-            } catch {
-              return item;
-            }
-          })
-        );
-
-        return {
-          ...list,
-          items,
-        };
-      })
-    );
-
-    setWatchlists(updatedLists);
-  };
-
-  useEffect(() => {
-    loadAISentiment();
-  }, []);
+  const [activeListId, setActiveListId] = useState<string>("");
+  const [watchlists, setWatchlists] = useState<any[]>([]);
 
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [isAddingAsset, setIsAddingAsset] = useState(false);
-
   const [newAssetSymbol, setNewAssetSymbol] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedAssetInfo, setSelectedAssetInfo] = useState<{
-    symbol: string;
-    yahooSymbol: string;
-    name: string;
-    exchange: string;
-    type: string;
-  } | null>(null);
+  const [selectedAssetInfo, setSelectedAssetInfo] = useState<any>(null);
 
-  // Filter/Sort States
-  let search = "";
-  let changeFilter = "";
-  const [sentimentFilter, setSentimentFilter] = useState<"Bullish" | "Bearish" | "">("");
-  const sortField: string = "name";
-  const sortDirection: string = "asc";
+  const [activeNoteItemId, setActiveNoteItemId] = useState<string | null>(null);
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [newNoteDesc, setNewNoteDesc] = useState("");
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
 
-  const navigate = useNavigate();
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importPreview, setImportPreview] = useState<any[]>([]);
 
-  // ==========================================
-  // DEBOUNCED SEARCH EFFECT
-  // ==========================================
+  const [newTagName, setNewTagName] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [showOnlyPinned, setShowOnlyPinned] = useState(false);
+  const [sortField, setSortField] = useState<string>("position");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  useEffect(() => {
+    if (dbWatchlists.length > 0) {
+      setWatchlists(dbWatchlists);
+      if (!activeListId) {
+        setActiveListId(dbWatchlists[0].id);
+      }
+    }
+  }, [dbWatchlists]);
+
+  const loadAISentiment = async () => {
+    if (watchlists.length === 0) return;
+    const updatedLists = await Promise.all(
+      watchlists.map(async (list) => {
+        const items = await Promise.all(
+          (list.items || []).map(async (item: any) => {
+            try {
+              const ai = await getStockSentiment(item.symbol);
+              return { ...item, aiScore: ai.score, aiReason: ai.reason };
+            } catch { return item; }
+          })
+        );
+        return { ...list, items };
+      })
+    );
+    setWatchlists(updatedLists);
+  };
+
+  useEffect(() => {
+    if (watchlists.length > 0 && !watchlists[0].items?.[0]?.aiScore) {
+      loadAISentiment();
+    }
+  }, [watchlists.length]);
+
   useEffect(() => {
     if (!newAssetSymbol.trim() || !showSuggestions) {
       setSuggestions([]);
       return;
     }
-
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
@@ -130,417 +98,241 @@ export default function Watchlist() {
           const data = await res.json();
           setSuggestions(Array.isArray(data) ? data : []);
         }
-      } catch (error) {
-        console.error("Search fetch failed:", error);
-      } finally {
-        setIsSearching(false);
-      }
+      } catch (error) { console.error("Search fetch failed:", error); }
+      finally { setIsSearching(false); }
     }, 300);
-
     return () => clearTimeout(timer);
   }, [newAssetSymbol, showSuggestions]);
 
-  // ==========================================
-  // HANDLERS
-  // ==========================================
-  const activeWatchlist = watchlists.find((w) => w.id === activeListId) || watchlists[0];
+  const activeWatchlist = useMemo(() => {
+    return watchlists.find((w) => w.id === activeListId) || watchlists[0] || { id: "", name: "Default List", items: [], watchlistTags: [] };
+  }, [watchlists, activeListId]);
+
+  const { data: analytics = {} } = useWatchlistAnalytics(activeWatchlist.id);
+  const { data: activeNotes = [] } = useWatchlistNotes(activeNoteItemId || "");
+  const addNoteMutation = useAddWatchlistNote();
+  const deleteNoteMutation = useDeleteWatchlistNote();
+  const addTagMutation = useAddWatchlistTag();
+  const deleteTagMutation = useDeleteWatchlistTag();
 
   const handleCreateWatchlist = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newListName.trim()) return;
-
-    const newList: WatchlistData = {
-      id: `list-${Date.now()}`,
-      name: newListName.trim(),
-      items: [],
-    };
-
-    setWatchlists([...watchlists, newList]);
-    setActiveListId(newList.id);
-    setNewListName("");
-    setIsCreatingList(false);
+    createListMutation.mutate({ name: newListName.trim() }, {
+      onSuccess: (data) => { setActiveListId(data.id); setNewListName(""); setIsCreatingList(false); }
+    });
   };
 
   const handleAddAsset = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAssetSymbol.trim()) return;
-
-    const assetName = selectedAssetInfo?.name || `${newAssetSymbol.toUpperCase()} (Pending Data)`;
-
-    const mockNewAsset: WatchlistItem = {
-      id: selectedAssetInfo?.yahooSymbol || newAssetSymbol.toUpperCase(),
-      symbol: selectedAssetInfo?.symbol || newAssetSymbol.toUpperCase(),
-      yahooSymbol: selectedAssetInfo?.yahooSymbol || newAssetSymbol.toUpperCase(),
-      exchange: selectedAssetInfo?.exchange || "GLOBAL",
-      type: selectedAssetInfo?.type || "Asset",
-      name: assetName,
-      price: "$0.00",
-      change: "0.00",
-      changePercent: "0.00%",
-      isPositive: true,
-    };
-
-    setWatchlists(
-      watchlists.map((list) => {
-        if (list.id === activeListId) {
-          if (list.items.find((i) => i.symbol === mockNewAsset.symbol)) return list;
-          return { ...list, items: [...list.items, mockNewAsset] };
-        }
-        return list;
-      })
-    );
-
-    setNewAssetSymbol("");
-    setSelectedAssetInfo(null);
-    setIsAddingAsset(false);
+    const symbol = selectedAssetInfo?.symbol || newAssetSymbol.toUpperCase();
+    addItemMutation.mutate({ listId: activeListId, item: { symbol, notes: "Added to watchlist" } }, {
+      onSuccess: () => { setNewAssetSymbol(""); setSelectedAssetInfo(null); setIsAddingAsset(false); }
+    });
   };
 
-  const handleRemoveAsset = (assetId: string) => {
-    setWatchlists(
-      watchlists.map((list) => {
-        if (list.id === activeListId) {
-          return { ...list, items: list.items.filter((item) => item.id !== assetId) };
-        }
-        return list;
-      })
-    );
-  };
-
+  const handleRemoveAsset = (itemId: string) => removeItemMutation.mutate(itemId);
+  const handleToggleFavorite = (itemId: string, currentFav: boolean) => updateItemMutation.mutate({ itemId, data: { favorite: !currentFav } });
+  const handleTogglePin = (itemId: string, currentPin: boolean) => updateItemMutation.mutate({ itemId, data: { pinned: !currentPin } });
   const handleDeleteWatchlist = () => {
-    if (watchlists.length === 1) return;
-    const filteredLists = watchlists.filter((w) => w.id !== activeListId);
-    setWatchlists(filteredLists);
-    setActiveListId(filteredLists[0].id);
+    if (watchlists.length <= 1) return;
+    deleteListMutation.mutate(activeListId, {
+      onSuccess: () => { const next = watchlists.find(w => w.id !== activeListId); if (next) setActiveListId(next.id); }
+    });
   };
 
-  // ==========================================
-  // FILTERING & SORTING LOGIC
-  // ==========================================
-  const filteredData = activeWatchlist.items.filter((item) => {
-    const q = search.toLowerCase();
-    const companyOrSymbol = item.name.toLowerCase().includes(q) || item.symbol.toLowerCase().includes(q);
-    const matchesChange = changeFilter === "" || (changeFilter === "Bullish" && item.isPositive) || (changeFilter === "Bearish" && !item.isPositive);
-    const matchesSentiment = sentimentFilter === "" || (item.sentiment || "Neutral") === sentimentFilter;
-    return companyOrSymbol && matchesChange && matchesSentiment;
-  });
+  const handleAddNote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeNoteItemId || !newNoteTitle.trim() || !newNoteDesc.trim()) return;
+    addNoteMutation.mutate({ itemId: activeNoteItemId, note: { title: newNoteTitle, description: newNoteDesc } }, {
+      onSuccess: () => { setNewNoteTitle(""); setNewNoteDesc(""); }
+    });
+  };
 
-  const sortedData = [...filteredData].sort((a, b) => {
-    let result = 0;
-    switch (sortField) {
-      case "name":
-        result = a.name.localeCompare(b.name);
-        break;
-      case "price":
-        result = parseFloat(a.price.replace(/[^0-9.-]+/g, "")) - parseFloat(b.price.replace(/[^0-9.-]+/g, ""));
-        break;
-      case "change":
-        result = parseFloat(a.change) - parseFloat(b.change);
-        break;
-      case "sentiment":
-        result = (a.sentiment || "Neutral").localeCompare(b.sentiment || "Neutral");
-        break;
-      default:
-        result = 0;
+  const handleAddTag = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTagName.trim() || !activeWatchlist.id) return;
+    addTagMutation.mutate({ id: activeWatchlist.id, name: newTagName.trim() }, { onSuccess: () => setNewTagName("") });
+  };
+
+  const handleImportTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setImportText(text);
+    const parsed = text.split("\n").map((row, idx) => {
+      const parts = row.split(",");
+      return { id: idx, symbol: parts[0]?.trim().toUpperCase(), notes: parts[1]?.trim() || "Imported" };
+    }).filter(p => p.symbol);
+    setImportPreview(parsed);
+  };
+
+  const handleImportSubmit = async () => {
+    for (const preview of importPreview) {
+      await addItemMutation.mutateAsync({ listId: activeListId, item: { symbol: preview.symbol, notes: preview.notes } });
     }
-    return sortDirection === "asc" ? result : -result;
-  });
+    setIsImportOpen(false); setImportText(""); setImportPreview([]);
+  };
 
-  const rankedAssets =
-  [...activeWatchlist.items]
-    .filter(
-      (item) =>
-        item.aiScore !== undefined
-    )
-    .sort(
-      (a, b) =>
-        (b.aiScore || 0) -
-        (a.aiScore || 0)
-    )
-    .slice(0, 5)
-    .map((item) => ({
-      symbol: item.symbol,
-      score: item.aiScore || 0,
-      verdict:
-        item.aiReason ||
-        "No analysis available",
-    }));
+  const handleExportCSV = () => {
+    const items = activeWatchlist.items || [];
+    const headers = "Symbol,Notes,Pinned,Favorite\n";
+    const rows = items.map((i: any) => `${i.symbol},"${i.notes || ''}",${i.pinned},${i.favorite}`).join("\n");
+    const blob = new Blob([headers + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${activeWatchlist.name || 'watchlist'}.csv`; a.click();
+  };
+
+  const moveItem = (fromIdx: number, toIdx: number) => {
+    const items = [...(activeWatchlist.items || [])];
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    const updatedLists = watchlists.map(w => w.id === activeWatchlist.id ? { ...w, items } : w);
+    setWatchlists(updatedLists);
+    reorderMutation.mutate({ id: activeWatchlist.id, itemIds: items.map((i: any) => i.id) });
+  };
+
+  const processedItems = useMemo(() => {
+    const items = [...(activeWatchlist.items || [])];
+    let filtered = items.filter((item: any) => {
+      const q = searchQuery.toLowerCase();
+      return (item.symbol.toLowerCase().includes(q) || (item.name || "").toLowerCase().includes(q)) && (!showOnlyFavorites || item.favorite) && (!showOnlyPinned || item.pinned);
+    });
+    filtered.sort((a: any, b: any) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      let valA = a[sortField], valB = b[sortField];
+      if (sortField === "price" || sortField === "changePercent") {
+        valA = parseFloat(String(a.price || "0").replace(/[^0-9.-]+/g, ""));
+        valB = parseFloat(String(b.price || "0").replace(/[^0-9.-]+/g, ""));
+      }
+      return sortDirection === "asc" ? (valA < valB ? -1 : 1) : (valA > valB ? -1 : 1);
+    });
+    return filtered;
+  }, [activeWatchlist.items, searchQuery, showOnlyFavorites, showOnlyPinned, sortField, sortDirection]);
+
+  const getAvatarColor = (sym: string) => {
+    const colors = ["from-blue-500 to-indigo-600", "from-cyan-500 to-blue-600", "from-emerald-500 to-teal-600", "from-violet-500 to-purple-600", "from-rose-500 to-pink-600"];
+    return colors[sym.charCodeAt(0) % colors.length];
+  };
+
+  const rankedAssets = useMemo(() => {
+    return [...(activeWatchlist.items || [])]
+      .filter((item: any) => item.aiScore !== undefined)
+      .sort((a: any, b: any) => (b.aiScore || 0) - (a.aiScore || 0))
+      .slice(0, 5)
+      .map((item: any) => ({ symbol: item.symbol, score: item.aiScore || 0, verdict: item.aiReason || "No analysis available" }));
+  }, [activeWatchlist.items]);
+
+  const stats = useMemo(() => {
+    const items = activeWatchlist.items || [];
+    let gainers = 0, losers = 0, sumChange = 0;
+    items.forEach((item: any) => {
+      const change = parseFloat(String(item.changePercent || "0").replace(/[^0-9.-]+/g, ""));
+      if (change > 0) gainers++; else if (change < 0) losers++;
+      sumChange += change;
+    });
+    return { total: items.length, gainers, losers, avgChange: `${(sumChange / (items.length || 1)).toFixed(2)}%` };
+  }, [activeWatchlist.items]);
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div
-          onClick={() => setSentimentFilter("")}
-          className={`cursor-pointer rounded-3xl p-5 text-white transition-all
-            ${sentimentFilter === "" ? "bg-gradient-to-br from-blue-600 to-cyan-500 ring-2 ring-blue-300" : "bg-gradient-to-br from-blue-600 to-cyan-500 opacity-80 hover:opacity-100"}`}
-        >
-          <p className="text-sm opacity-80">Total Assets</p>
-          <h2 className="text-3xl font-bold">{activeWatchlist.items.length}</h2>
+        <div className="rounded-3xl p-5 bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-xl">
+          <p className="text-xs opacity-75 uppercase font-bold">Assets</p>
+          <h2 className="text-3xl font-black mt-2">{stats.total}</h2>
         </div>
-
-        <div
-          onClick={() => setSentimentFilter(sentimentFilter === "Bullish" ? "" : "Bullish")}
-          className={`cursor-pointer rounded-3xl backdrop-blur-xl p-5 border transition-all
-            ${sentimentFilter === "Bullish" ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" : "bg-white/70 dark:bg-night-900/70 border-slate-200 dark:border-white/10"}`}
-        >
-          <p className="text-sm text-slate-500">Bullish Signals</p>
-          <h2 className="text-3xl font-bold text-emerald-500">
-            {activeWatchlist.items.filter((i) => i.sentiment === "Bullish").length}
-          </h2>
+        <div className="rounded-3xl p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+          <p className="text-xs text-slate-400 font-bold uppercase">Gainers</p>
+          <h2 className="text-3xl font-black mt-2 text-emerald-500 flex items-center gap-2"><TrendingUp className="h-6 w-6" /> {stats.gainers}</h2>
         </div>
-
-        <div
-          onClick={() => setSentimentFilter(sentimentFilter === "Bearish" ? "" : "Bearish")}
-          className={`cursor-pointer rounded-3xl backdrop-blur-xl p-5 border transition-all
-            ${sentimentFilter === "Bearish" ? "border-rose-500 bg-rose-50 dark:bg-rose-500/10" : "bg-white/70 dark:bg-night-900/70 border-slate-200 dark:border-white/10"}`}
-        >
-          <p className="text-sm text-slate-500">Bearish Signals</p>
-          <h2 className="text-3xl font-bold text-rose-500">
-            {activeWatchlist.items.filter((i) => i.sentiment === "Bearish").length}
-          </h2>
+        <div className="rounded-3xl p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+          <p className="text-xs text-slate-400 font-bold uppercase">Losers</p>
+          <h2 className="text-3xl font-black mt-2 text-rose-500 flex items-center gap-2"><TrendingDown className="h-6 w-6" /> {stats.losers}</h2>
         </div>
-
-        <div className="rounded-3xl bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-5 border border-slate-200 dark:border-white/10">
-          <p className="text-sm text-slate-500">AI Confidence</p>
-          <h2 className="text-3xl font-bold">84%</h2>
+        <div className="rounded-3xl p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+          <p className="text-xs text-slate-400 font-bold uppercase">Avg Return</p>
+          <h2 className="text-3xl font-black mt-2">{stats.avgChange}</h2>
         </div>
       </div>
 
-      {/* WATCHLIST CONTROLS HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-4 rounded-2xl shadow-sm">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {isCreatingList ? (
-            <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2">
-              <input
-                autoFocus
-                type="text"
-                placeholder="List Name..."
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                className="bg-slate-100 dark:bg-night-800 border border-slate-200 dark:border-white/10 px-3 py-2 text-sm rounded-lg outline-none text-slate-900 dark:text-white"
-              />
-              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors">
-                <Plus className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsCreatingList(false)}
-                className="bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-600 dark:text-slate-300 p-2 rounded-lg transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </form>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="flex gap-2 overflow-x-auto">
-                  {watchlists.map((list) => (
-                    <button
-                      key={list.id}
-                      onClick={() => setActiveListId(list.id)}
-                      className={`px-4 py-2 rounded-xl whitespace-nowrap transition-all ${
-                        activeListId === list.id
-                          ? "bg-cyan-500 text-white"
-                          : "bg-slate-100 dark:bg-night-800 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      {list.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsCreatingList(true)}
-                title="Create New Watchlist"
-                className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-400 transition-colors"
-              >
-                <FolderPlus className="h-4 w-4" />
-              </button>
-
-              {watchlists.length > 1 && (
-                <button
-                  onClick={handleDeleteWatchlist}
-                  title="Delete Current Watchlist"
-                  className="p-2.5 rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Right Side: Add Asset Button */}
-        <button
-          onClick={() => setIsAddingAsset(true)}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-900 px-4 py-2.5 rounded-xl text-sm font-bold shadow-md transition-colors"
-        >
-          <Plus className="h-4 w-4" /> Add Symbol
-        </button>
-      </div>
-
-      {/* MAIN TABLE CARD */}
-      <div className="w-full glass-card overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl shadow-xl transition-colors duration-300">
-        <div className="p-5">
-          {sortedData.length > 0 ? (
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 cursor-pointer">
-              {sortedData.map((item, idx) => {
-                const getAvatarColor = (sym: string) => {
-                  const colors = [
-                    "from-blue-500 to-indigo-600 shadow-blue-500/10",
-                    "from-cyan-500 to-blue-600 shadow-cyan-500/10",
-                    "from-emerald-500 to-teal-600 shadow-emerald-500/10",
-                    "from-violet-500 to-purple-600 shadow-violet-500/10",
-                    "from-rose-500 to-pink-600 shadow-rose-500/10"
-                  ];
-                  return colors[sym.charCodeAt(0) % colors.length];
-                };
-
-                return (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: idx * 0.05 }}
-                    onClick={() =>
-                      navigate(`/asset/${item.symbol}`, {
-                        state: { name: item.name }
-                      })
-                    }
-                    className="group rounded-3xl cursor-pointer border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-5 hover:shadow-xl hover:border-blue-500/40 dark:hover:border-cyan-400/40 transition-all hover:-translate-y-1 relative overflow-hidden"
-                  >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/[0.01] dark:bg-cyan-500/[0.01] blur-2xl pointer-events-none rounded-full" />
-                    
-                    {/* Header */}
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarColor(item.symbol)} flex items-center justify-center text-white text-xs font-black uppercase shadow-md shrink-0`}>
-                          {item.symbol.slice(0, 2).replace("/", "").replace("^", "")}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-base text-slate-900 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
-                            {item.symbol}
-                          </h3>
-                          <p className="text-xs font-semibold text-slate-450 dark:text-slate-500 truncate max-w-[130px] mt-0.5">
-                            {item.name}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveAsset(item.id);
-                        }}
-                        className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition-colors shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    {/* Price & Change */}
-                    <div className="mt-6 flex items-baseline justify-between">
-                      <p className="text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
-                        {item.price}
-                      </p>
-                      <div className={`flex items-center gap-1 text-xs font-black ${item.isPositive ? "text-emerald-500" : "text-rose-500"}`}>
-                        {item.isPositive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                        <span>{item.changePercent}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">📈</div>
-              <h3 className="font-bold text-lg">No Assets Added</h3>
-              <p className="text-slate-500">Start tracking your favorite stocks</p>
-            </div>
-          )}
+      <div className="bg-white/70 dark:bg-night-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-5 rounded-3xl shadow-xl flex flex-col gap-5">
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {isCreatingList ? (
+              <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2">
+                <input autoFocus type="text" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="bg-slate-100 dark:bg-night-800 border px-3 py-2 text-sm rounded-xl" />
+                <button type="submit" className="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-bold">Save</button>
+              </form>
+            ) : (
+              <>
+                {watchlists.map((list) => (
+                  <button key={list.id} onClick={() => setActiveListId(list.id)} className={`px-4 py-2 rounded-xl text-sm font-bold ${activeListId === list.id ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-white/5"}`}>{list.name}</button>
+                ))}
+                <button onClick={() => setIsCreatingList(true)} className="p-2.5 rounded-xl bg-blue-50 text-blue-600"><Plus className="h-4 w-4" /></button>
+              </>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setIsImportOpen(true)} className="px-3 py-2 bg-slate-100 rounded-xl text-xs font-bold"><Upload className="h-3.5 w-3.5" /></button>
+            <button onClick={handleExportCSV} className="px-3 py-2 bg-slate-100 rounded-xl text-xs font-bold"><Download className="h-3.5 w-3.5" /></button>
+            <button onClick={() => setIsAddingAsset(true)} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold"><Plus className="h-3.5 w-3.5" /></button>
+          </div>
         </div>
       </div>
 
-      {/* ADD ASSET MODAL */}
-      {isAddingAsset && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm" onClick={() => setIsAddingAsset(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add Symbol to Watchlist</h3>
-              <button onClick={() => setIsAddingAsset(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddAsset} className="space-y-4">
-              <div className="relative">
-                <label className="text-xs font-bold text-slate-500 block mb-1">Search Asset</label>
-                <div className="relative">
-                  <input
-                    autoFocus
-                    type="text"
-                    required
-                    placeholder="e.g. Apple or AAPL"
-                    value={newAssetSymbol}
-                    onChange={(e) => {
-                      setNewAssetSymbol(e.target.value.toUpperCase());
-                      setSelectedAssetInfo(null);
-                      setShowSuggestions(true);
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-3 text-sm rounded-xl outline-none text-slate-900 dark:text-white uppercase pr-10"
-                  />
-                  {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 animate-spin" />}
-                </div>
-
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
-                    {suggestions.map((asset) => (
-                      <div
-                        key={asset.id}
-                        className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 flex justify-between items-center border-b border-slate-50 dark:border-white/5 last:border-0"
-                        onClick={() => {
-                          setNewAssetSymbol(asset.symbol);
-                          setSelectedAssetInfo({
-                            symbol: asset.symbol,
-                            yahooSymbol: asset.yahooSymbol,
-                            name: asset.name,
-                            exchange: asset.exchange,
-                            type: asset.type,
-                          });
-                          setShowSuggestions(false);
-                        }}
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-900 dark:text-white text-sm">{asset.symbol}</span>
-                          <span className="text-xs text-slate-500 line-clamp-1">{asset.name}</span>
-                        </div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded">
-                          {asset.type?.replace("Common ", "")}
-                        </span>
-                      </div>
-                    ))}
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <AnimatePresence>
+          {processedItems.map((item: any, idx: number) => (
+            <motion.div key={item.id} className="group rounded-3xl border border-slate-200 bg-white dark:bg-night-900 p-5 shadow-sm">
+              <div className="flex justify-between items-start gap-3">
+                <div className="flex items-center gap-3" onClick={() => navigate(`/asset/${item.symbol}`)}>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarColor(item.symbol)} flex items-center justify-center text-white text-xs font-black uppercase`}>{item.symbol.slice(0, 2)}</div>
+                  <div>
+                    <h3 className="font-bold text-base">{item.symbol}</h3>
+                    <p className="text-xs text-slate-400">{item.name}</p>
                   </div>
-                )}
-                <p className="text-[10px] text-slate-400 mt-2">
-                  *In a production environment, this will fetch real data from Finnhub/Dhan before adding.
-                </p>
+                </div>
+                <button onClick={() => handleRemoveAsset(item.id)} className="text-slate-400 hover:text-rose-500"><Trash2 className="h-4 w-4" /></button>
               </div>
+              <div className="mt-5 flex items-baseline justify-between">
+                <p className="text-2xl font-black">{item.price}</p>
+                <button onClick={() => { setActiveNoteItemId(item.id); setIsNotesOpen(true); }} className="text-slate-400"><MessageSquare className="h-4 w-4" /></button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
-              <button type="submit" className="w-full rounded-xl bg-blue-600 dark:bg-cyan-500 py-3 text-sm font-bold text-white dark:text-night-900 mt-4 shadow-md hover:scale-[1.02] transition-transform">
-                Add to {activeWatchlist.name}
-              </button>
+      {isNotesOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setIsNotesOpen(false)} />
+          <div className="relative w-full max-w-lg bg-white dark:bg-night-900 p-6 rounded-3xl shadow-2xl">
+            <h3 className="text-lg font-bold mb-4">Notes</h3>
+            <form onSubmit={handleAddNote} className="space-y-4">
+              <input placeholder="Title" value={newNoteTitle} onChange={(e) => setNewNoteTitle(e.target.value)} className="w-full border p-2 rounded-xl" />
+              <textarea placeholder="Description" value={newNoteDesc} onChange={(e) => setNewNoteDesc(e.target.value)} className="w-full border p-2 rounded-xl" />
+              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-xl">Add Note</button>
             </form>
           </div>
         </div>
       )}
 
-      <AIRankingCard
-  assets={rankedAssets}
-/>
+      {isAddingAsset && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setIsAddingAsset(false)} />
+          <div className="relative w-full max-w-md bg-white dark:bg-night-900 p-6 rounded-3xl">
+            <form onSubmit={handleAddAsset}>
+              <input value={newAssetSymbol} onChange={(e) => { setNewAssetSymbol(e.target.value); setShowSuggestions(true) }} className="w-full border p-3 rounded-xl mb-4" placeholder="Search Ticker..." />
+              {showSuggestions && suggestions.map((s) => (
+                <div key={s.id} onClick={() => { setNewAssetSymbol(s.symbol); setSelectedAssetInfo(s); setShowSuggestions(false); }} className="p-2 cursor-pointer">{s.symbol}</div>
+              ))}
+              <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl">Add Symbol</button>
+            </form>
+          </div>
+        </div>
+      )}
 
+      <AIRankingCard assets={rankedAssets} />
     </div>
   );
 }
