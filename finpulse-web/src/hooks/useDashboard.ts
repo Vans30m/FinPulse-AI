@@ -133,8 +133,8 @@ export function useAddWatchlistNote() {
 export function useUpdateWatchlistNote() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ itemId, noteId, note }: { itemId: string; noteId: string; note: any }) =>
-      dashboardService.updateWatchlistItemNote(noteId, note),
+    mutationFn: (args: { itemId: string; noteId: string; note: any }) =>
+      dashboardService.updateWatchlistItemNote(args.noteId, args.note),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['watchlist-notes', variables.itemId] });
       toast.success('Note updated');
@@ -145,8 +145,8 @@ export function useUpdateWatchlistNote() {
 export function useDeleteWatchlistNote() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ itemId, noteId }: { itemId: string; noteId: string }) =>
-      dashboardService.deleteWatchlistItemNote(noteId),
+    mutationFn: (args: { itemId: string; noteId: string }) =>
+      dashboardService.deleteWatchlistItemNote(args.noteId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['watchlist-notes', variables.itemId] });
       toast.success('Note deleted');
@@ -178,8 +178,8 @@ export function useAddWatchlistTag() {
 export function useDeleteWatchlistTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, tagId }: { id: string; tagId: string }) =>
-      dashboardService.deleteWatchlistTag(tagId),
+    mutationFn: (args: { id: string; tagId: string }) =>
+      dashboardService.deleteWatchlistTag(args.tagId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['watchlist-tags', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['watchlists'] });

@@ -18,10 +18,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Markets from "./pages/Markets";
 import News from './pages/News';
-import Profile from "./profile/pages/Profile";
-import EditProfile from "./profile/pages/EditProfile";
-import SecurityPage from "./profile/pages/Security";
-import PreferencesPage from "./profile/pages/Preferences";
+import Profile from "./pages/Profile";
 import AssetChartModal from "./components/charts/AssetChartModal";
 import { useChart } from "./context/ChartContext";
 import AIMarketSentiment from "./features/dashboard/components/AIMarketSentiment";
@@ -344,7 +341,7 @@ export default function App() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <EditProfile />
+                  <Profile />
                 </motion.div>
               }
             />
@@ -358,7 +355,7 @@ export default function App() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <SecurityPage />
+                  <Profile />
                 </motion.div>
               }
             />
@@ -372,7 +369,7 @@ export default function App() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <PreferencesPage />
+                  <Profile />
                 </motion.div>
               }
             />

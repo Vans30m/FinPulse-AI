@@ -2,26 +2,21 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  TrendingUp, TrendingDown, Plus, Trash2, FolderPlus, X, Loader2,
-  Pin, Star, Upload, Download, ArrowUpDown, Bookmark, MessageSquare, RefreshCw
+  TrendingUp, TrendingDown, Plus, Trash2,
+  Download, MessageSquare
 } from "lucide-react";
-import { getStockSentiment } from "../../../services/marketService";
-import AIRankingCard from "./AIRankingCard";
 import {
-  useWatchlists, useCreateWatchlist, useDeleteWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
-  useReorderWatchlistItems, useUpdateWatchlistItem, useWatchlistAnalytics, useWatchlistNotes,
-  useAddWatchlistNote, useDeleteWatchlistNote, useAddWatchlistTag, useDeleteWatchlistTag
+  useWatchlists, useCreateWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
+  useAddWatchlistNote
 } from "../../../hooks/useDashboard";
+import AIRankingCard from "./AIRankingCard";
 
 export default function Watchlist() {
   const navigate = useNavigate();
-  const { data: dbWatchlists = [], refetch } = useWatchlists();
+  const { data: dbWatchlists = [] } = useWatchlists();
   const createListMutation = useCreateWatchlist();
-  const deleteListMutation = useDeleteWatchlist();
   const addItemMutation = useAddWatchlistItem();
   const removeItemMutation = useRemoveWatchlistItem();
-  const reorderMutation = useReorderWatchlistItems();
-  const updateItemMutation = useUpdateWatchlistItem();
 
   const [activeListId, setActiveListId] = useState<string>("");
   const [watchlists, setWatchlists] = useState<any[]>([]);
@@ -31,7 +26,6 @@ export default function Watchlist() {
   const [isAddingAsset, setIsAddingAsset] = useState(false);
   const [newAssetSymbol, setNewAssetSymbol] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedAssetInfo, setSelectedAssetInfo] = useState<any>(null);
 
@@ -40,17 +34,11 @@ export default function Watchlist() {
   const [newNoteDesc, setNewNoteDesc] = useState("");
   const [isNotesOpen, setIsNotesOpen] = useState(false);
 
-  const [isImportOpen, setIsImportOpen] = useState(false);
-  const [importText, setImportText] = useState("");
-  const [importPreview, setImportPreview] = useState<any[]>([]);
-
-  const [newTagName, setNewTagName] = useState("");
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [showOnlyPinned, setShowOnlyPinned] = useState(false);
-  const [sortField, setSortField] = useState<string>("position");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const searchQuery = "";
+  const showOnlyFavorites = false;
+  const showOnlyPinned = false;
+  const sortField: string = "position";
+  const sortDirection = "asc";
 
   useEffect(() => {
     if (dbWatchlists.length > 0) {
@@ -59,61 +47,40 @@ export default function Watchlist() {
         setActiveListId(dbWatchlists[0].id);
       }
     }
-  }, [dbWatchlists]);
-
-  const loadAISentiment = async () => {
-    if (watchlists.length === 0) return;
-    const updatedLists = await Promise.all(
-      watchlists.map(async (list) => {
-        const items = await Promise.all(
-          (list.items || []).map(async (item: any) => {
-            try {
-              const ai = await getStockSentiment(item.symbol);
-              return { ...item, aiScore: ai.score, aiReason: ai.reason };
-            } catch { return item; }
-          })
-        );
-        return { ...list, items };
-      })
-    );
-    setWatchlists(updatedLists);
-  };
+  }, [dbWatchlists, activeListId]);
 
   useEffect(() => {
-    if (watchlists.length > 0 && !watchlists[0].items?.[0]?.aiScore) {
-      loadAISentiment();
-    }
-  }, [watchlists.length]);
-
-  useEffect(() => {
-    if (!newAssetSymbol.trim() || !showSuggestions) {
+    const term = newAssetSymbol.trim();
+    if (!term) {
       setSuggestions([]);
       return;
     }
     const timer = setTimeout(async () => {
-      setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(newAssetSymbol)}`);
+        const res = await fetch(`http://localhost:3000/api/screeners/search?q=${term}`);
         if (res.ok) {
           const data = await res.json();
-          setSuggestions(Array.isArray(data) ? data : []);
+          setSuggestions(data);
         }
-      } catch (error) { console.error("Search fetch failed:", error); }
-      finally { setIsSearching(false); }
+      } catch (err) {
+        console.error("Search failed:", err);
+      }
     }, 300);
     return () => clearTimeout(timer);
-  }, [newAssetSymbol, showSuggestions]);
+  }, [newAssetSymbol]);
+
+  useEffect(() => {
+    if (!showSuggestions) return;
+    const handleClick = () => setShowSuggestions(false);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [showSuggestions]);
 
   const activeWatchlist = useMemo(() => {
     return watchlists.find((w) => w.id === activeListId) || watchlists[0] || { id: "", name: "Default List", items: [], watchlistTags: [] };
   }, [watchlists, activeListId]);
 
-  const { data: analytics = {} } = useWatchlistAnalytics(activeWatchlist.id);
-  const { data: activeNotes = [] } = useWatchlistNotes(activeNoteItemId || "");
   const addNoteMutation = useAddWatchlistNote();
-  const deleteNoteMutation = useDeleteWatchlistNote();
-  const addTagMutation = useAddWatchlistTag();
-  const deleteTagMutation = useDeleteWatchlistTag();
 
   const handleCreateWatchlist = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,14 +100,6 @@ export default function Watchlist() {
   };
 
   const handleRemoveAsset = (itemId: string) => removeItemMutation.mutate(itemId);
-  const handleToggleFavorite = (itemId: string, currentFav: boolean) => updateItemMutation.mutate({ itemId, data: { favorite: !currentFav } });
-  const handleTogglePin = (itemId: string, currentPin: boolean) => updateItemMutation.mutate({ itemId, data: { pinned: !currentPin } });
-  const handleDeleteWatchlist = () => {
-    if (watchlists.length <= 1) return;
-    deleteListMutation.mutate(activeListId, {
-      onSuccess: () => { const next = watchlists.find(w => w.id !== activeListId); if (next) setActiveListId(next.id); }
-    });
-  };
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,29 +109,6 @@ export default function Watchlist() {
     });
   };
 
-  const handleAddTag = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTagName.trim() || !activeWatchlist.id) return;
-    addTagMutation.mutate({ id: activeWatchlist.id, name: newTagName.trim() }, { onSuccess: () => setNewTagName("") });
-  };
-
-  const handleImportTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value;
-    setImportText(text);
-    const parsed = text.split("\n").map((row, idx) => {
-      const parts = row.split(",");
-      return { id: idx, symbol: parts[0]?.trim().toUpperCase(), notes: parts[1]?.trim() || "Imported" };
-    }).filter(p => p.symbol);
-    setImportPreview(parsed);
-  };
-
-  const handleImportSubmit = async () => {
-    for (const preview of importPreview) {
-      await addItemMutation.mutateAsync({ listId: activeListId, item: { symbol: preview.symbol, notes: preview.notes } });
-    }
-    setIsImportOpen(false); setImportText(""); setImportPreview([]);
-  };
-
   const handleExportCSV = () => {
     const items = activeWatchlist.items || [];
     const headers = "Symbol,Notes,Pinned,Favorite\n";
@@ -180,15 +116,6 @@ export default function Watchlist() {
     const blob = new Blob([headers + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `${activeWatchlist.name || 'watchlist'}.csv`; a.click();
-  };
-
-  const moveItem = (fromIdx: number, toIdx: number) => {
-    const items = [...(activeWatchlist.items || [])];
-    const [moved] = items.splice(fromIdx, 1);
-    items.splice(toIdx, 0, moved);
-    const updatedLists = watchlists.map(w => w.id === activeWatchlist.id ? { ...w, items } : w);
-    setWatchlists(updatedLists);
-    reorderMutation.mutate({ id: activeWatchlist.id, itemIds: items.map((i: any) => i.id) });
   };
 
   const processedItems = useMemo(() => {
@@ -273,7 +200,6 @@ export default function Watchlist() {
             )}
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setIsImportOpen(true)} className="px-3 py-2 bg-slate-100 rounded-xl text-xs font-bold"><Upload className="h-3.5 w-3.5" /></button>
             <button onClick={handleExportCSV} className="px-3 py-2 bg-slate-100 rounded-xl text-xs font-bold"><Download className="h-3.5 w-3.5" /></button>
             <button onClick={() => setIsAddingAsset(true)} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold"><Plus className="h-3.5 w-3.5" /></button>
           </div>
@@ -282,7 +208,7 @@ export default function Watchlist() {
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
         <AnimatePresence>
-          {processedItems.map((item: any, idx: number) => (
+          {processedItems.map((item: any) => (
             <motion.div key={item.id} className="group rounded-3xl border border-slate-200 bg-white dark:bg-night-900 p-5 shadow-sm">
               <div className="flex justify-between items-start gap-3">
                 <div className="flex items-center gap-3" onClick={() => navigate(`/asset/${item.symbol}`)}>
