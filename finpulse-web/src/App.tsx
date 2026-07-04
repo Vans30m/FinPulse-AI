@@ -18,7 +18,10 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Markets from "./pages/Markets";
 import News from './pages/News';
-import Profile from "./pages/Profile";
+import Profile from "./profile/pages/Profile";
+import EditProfile from "./profile/pages/EditProfile";
+import SecurityPage from "./profile/pages/Security";
+import PreferencesPage from "./profile/pages/Preferences";
 import AssetChartModal from "./components/charts/AssetChartModal";
 import { useChart } from "./context/ChartContext";
 import AIMarketSentiment from "./features/dashboard/components/AIMarketSentiment";
@@ -328,6 +331,48 @@ export default function App() {
                   transition={{ duration: 0.2 }}
                 >
                   <Profile />
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/profile/edit"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <EditProfile />
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/profile/security"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <SecurityPage />
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/profile/preferences"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <PreferencesPage />
                 </motion.div>
               }
             />
