@@ -80,6 +80,28 @@ const INITIAL_SECTIONS: MarketSection[] = [
   }
 ];
 
+const getHoldingColorClass = (marketId: string, ticker: string) => {
+  const mid = (marketId || '').toLowerCase();
+  const tick = (ticker || '').toUpperCase();
+  
+  if (mid === 'domestic' || tick.endsWith('.NS') || tick.endsWith('.BO')) {
+    return { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/50 dark:border-blue-900/50' };
+  }
+  if (mid === 'us') {
+    return { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-450', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
+  }
+  if (mid === 'crypto' || tick.endsWith('-USD') || tick.endsWith('/USD')) {
+    return { bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200/50 dark:border-orange-900/50' };
+  }
+  if (mid === 'metals' || tick === 'GC=F' || tick === 'SI=F' || tick === 'PL=F') {
+    return { bg: 'bg-yellow-50 dark:bg-yellow-950/40', text: 'text-yellow-600 dark:text-yellow-500', border: 'border-yellow-200/50 dark:border-yellow-900/50' };
+  }
+  if (mid === 'other') {
+    return { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200/50 dark:border-purple-900/50' };
+  }
+  return { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
+};
+
 export default function PortfolioDashboard() {
   const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
   const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
@@ -461,12 +483,7 @@ export default function PortfolioDashboard() {
           const totalGain = marketValue - costBasis;
           const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
           
-          let colorClass = { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
-          if (h.marketId === 'us') {
-            colorClass = { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-450', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
-          } else if (h.marketId === 'crypto') {
-            colorClass = { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200/50 dark:border-amber-900/50' };
-          }
+          const colorClass = getHoldingColorClass(h.marketId, h.ticker);
 
           return {
             ...h,
@@ -896,40 +913,6 @@ export default function PortfolioDashboard() {
           )}
         </div>
       </div>
-
-      {/* Market Tab Selector at Dashboard Level */}
-      <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner w-fit select-none">
-        {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveMarket(tab)}
-            className={`px-4 py-2 rounded-xl capitalize transition-all duration-300 whitespace-nowrap ${activeMarket === tab
-                ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5 font-extrabold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-          >
-            {tab === 'all' ? 'All Assets (Consolidated USD)' : tab === 'domestic' ? '🇮🇳 Domestic (INR)' : tab === 'us' ? '🇺🇸 US Market' : tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Currency Split Info Banner */}
-      {activeMarket === 'all' && (
-        <div className="bg-[#121a2a]/35 border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-medium text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span>Unified Global View: domestic INR holdings are converted to USD (1 USD = {usdToInrRate.toFixed(4)} INR) to calculate consolidated totals.</span>
-          </div>
-          <div className="flex items-center gap-3.5 flex-wrap">
-            <span className="font-bold text-slate-350">Asset Segment Splits:</span>
-            <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🇮🇳 Domestic: <strong className="text-white">₹{portfolioSplits.inrVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>
-            {portfolioSplits.usdVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🇺🇸 US Market: <strong className="text-white">${portfolioSplits.usdVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
-            {portfolioSplits.cryptoVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🪙 Crypto: <strong className="text-white">${portfolioSplits.cryptoVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
-            {portfolioSplits.otherVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🌍 Other Markets: <strong className="text-white">${portfolioSplits.otherVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
-          </div>
-        </div>
-      )}
-
       {/* Aggregate Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-panel p-6 flex items-center gap-4 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
@@ -982,6 +965,39 @@ export default function PortfolioDashboard() {
       <PortfolioPerformanceChart
         data={performanceData}
       />
+
+      {/* Market Tab Selector at Dashboard Level */}
+      <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner w-fit select-none mt-8 mb-4">
+        {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveMarket(tab)}
+            className={`px-4 py-2 rounded-xl capitalize transition-all duration-300 whitespace-nowrap ${activeMarket === tab
+                ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5 font-extrabold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+          >
+            {tab === 'all' ? 'All Assets (Consolidated USD)' : tab === 'domestic' ? '🇮🇳 Domestic (INR)' : tab === 'us' ? '🇺🇸 US Market' : tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Currency Split Info Banner */}
+      {activeMarket === 'all' && (
+        <div className="bg-[#121a2a]/35 border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-medium text-slate-400 mb-6">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span>Unified Global View: domestic INR holdings are converted to USD (1 USD = {usdToInrRate.toFixed(4)} INR) to calculate consolidated totals.</span>
+          </div>
+          <div className="flex items-center gap-3.5 flex-wrap">
+            <span className="font-bold text-slate-350">Asset Segment Splits:</span>
+            <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🇮🇳 Domestic: <strong className="text-white">₹{portfolioSplits.inrVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>
+            {portfolioSplits.usdVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🇺🇸 US Market: <strong className="text-white">${portfolioSplits.usdVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+            {portfolioSplits.cryptoVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🪙 Crypto: <strong className="text-white">${portfolioSplits.cryptoVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+            {portfolioSplits.otherVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🌍 Other Markets: <strong className="text-white">${portfolioSplits.otherVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+          </div>
+        </div>
+      )}
 
       {/* 2. Unified Holdings Card (Full-width Section below main chart) */}
       <div className="glass-panel overflow-hidden shadow-lg transition-all duration-300">

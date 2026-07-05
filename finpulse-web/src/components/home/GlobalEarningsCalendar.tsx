@@ -99,12 +99,12 @@ const EarningsCard = memo(function EarningsCard({
       className="glass-card flex flex-col justify-between p-5 cursor-pointer relative overflow-hidden group hover:border-blue-400/40 dark:hover:border-cyan-500/30 hover:shadow-lg dark:hover:shadow-glow transition-all duration-300 h-full"
     >
       <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-500" />
-      
+
       <div>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <StockLogo symbol={earning.symbol} name={earning.name} className="h-11 w-11" imgSizeClass="w-8 h-8" />
-            
+
             <div className="flex flex-col">
               <span className="font-mono text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
                 {earning.symbol}
@@ -363,8 +363,8 @@ const CountryTabs = memo(function CountryTabs({
               onClick={() => onChange(country.id)}
               className={`
                 relative flex items-center gap-2 px-5 py-2.5 rounded-xl font-display text-sm font-semibold transition-all duration-300 select-none z-10
-                ${isActive 
-                  ? 'text-white dark:text-cyan-400' 
+                ${isActive
+                  ? 'text-white dark:text-cyan-400'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'}
               `}
             >

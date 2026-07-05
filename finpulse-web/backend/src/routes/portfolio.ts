@@ -46,6 +46,28 @@ async function getOrCreateDefaultUser(req?: any) {
   return user;
 }
 
+const getHoldingColorClass = (marketId: string, ticker: string) => {
+  const mid = (marketId || '').toLowerCase();
+  const tick = (ticker || '').toUpperCase();
+  
+  if (mid === 'domestic' || tick.endsWith('.NS') || tick.endsWith('.BO')) {
+    return { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/50 dark:border-blue-900/50' };
+  }
+  if (mid === 'us') {
+    return { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-450', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
+  }
+  if (mid === 'crypto' || tick.endsWith('-USD') || tick.endsWith('/USD')) {
+    return { bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200/50 dark:border-orange-900/50' };
+  }
+  if (mid === 'metals' || tick === 'GC=F' || tick === 'SI=F' || tick === 'PL=F') {
+    return { bg: 'bg-yellow-50 dark:bg-yellow-950/40', text: 'text-yellow-600 dark:text-yellow-500', border: 'border-yellow-200/50 dark:border-yellow-900/50' };
+  }
+  if (mid === 'other') {
+    return { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200/50 dark:border-purple-900/50' };
+  }
+  return { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
+};
+
 // GET /api/portfolio/holdings - returns calculated holdings sections
 portfolioRoutes.get('/holdings', async (req, res) => {
   try {
@@ -66,12 +88,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
         const totalGain = marketValue - costBasis;
         const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
 
-        let colorClass = { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
-        if (h.marketId === 'us') {
-          colorClass = { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-450', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
-        } else if (h.marketId === 'crypto') {
-          colorClass = { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200/50 dark:border-amber-900/50' };
-        }
+        const colorClass = getHoldingColorClass(h.marketId, h.ticker);
 
         return {
           id: h.id,
@@ -97,7 +114,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
           marketValue: h.shares * h.avgCost,
           totalGain: 0,
           gainPercent: 0,
-          colorClass: { bg: 'bg-slate-50 dark:bg-white/5', text: 'text-slate-600 dark:text-slate-400', border: 'border-white/5' },
+          colorClass: getHoldingColorClass(h.marketId, h.ticker),
           sector: 'Technology'
         };
       }

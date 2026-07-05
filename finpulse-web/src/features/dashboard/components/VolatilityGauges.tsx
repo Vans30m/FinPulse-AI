@@ -3,24 +3,55 @@ import { getFundamentals } from "../../../services/marketService";
 
 export default function VolatilityGauges() {
     const [vix, setVix] = useState({ value: "13.42", status: "Low", color: "text-emerald-500" });
+    const [liquidity, setLiquidity] = useState({ value: "Normal", status: "Stable", color: "text-blue-500" });
+    const [stress, setStress] = useState({ value: "0.18", status: "Minimal", color: "text-emerald-500" });
 
     useEffect(() => {
         async function fetchVix() {
             try {
                 const fundamentals = await getFundamentals("^VIX");
-                const value = fundamentals.price.toFixed(2);
-                let status = "Low";
-                let color = "text-emerald-500";
-
-                if (fundamentals.price > 25) {
-                    status = "High";
-                    color = "text-rose-500";
-                } else if (fundamentals.price > 15) {
-                    status = "Moderate";
-                    color = "text-amber-500";
+                const price = fundamentals.price;
+                const value = price.toFixed(2);
+                
+                // 1. VIX indicator details
+                let vixStatus = "Low";
+                let vixColor = "text-emerald-500";
+                if (price > 25) {
+                    vixStatus = "High";
+                    vixColor = "text-rose-500";
+                } else if (price > 15) {
+                    vixStatus = "Moderate";
+                    vixColor = "text-amber-500";
                 }
+                setVix({ value, status: vixStatus, color: vixColor });
 
-                setVix({ value, status, color });
+                // 2. Compute Market Liquidity dynamically using VIX
+                let liqValue = "Normal";
+                let liqStatus = "Stable";
+                let liqColor = "text-blue-500";
+                if (price > 28) {
+                    liqValue = "Low";
+                    liqStatus = "Tight";
+                    liqColor = "text-rose-500";
+                } else if (price < 14) {
+                    liqValue = "High";
+                    liqStatus = "Liquid";
+                    liqColor = "text-emerald-500";
+                }
+                setLiquidity({ value: liqValue, status: liqStatus, color: liqColor });
+
+                // 3. Compute Systemic Stress dynamically using VIX
+                const stressVal = Number((price / 80).toFixed(2));
+                let stressStatus = "Minimal";
+                let stressColor = "text-emerald-500";
+                if (stressVal > 0.40) {
+                    stressStatus = "High";
+                    stressColor = "text-rose-500";
+                } else if (stressVal > 0.22) {
+                    stressStatus = "Moderate";
+                    stressColor = "text-amber-500";
+                }
+                setStress({ value: stressVal.toFixed(2), status: stressStatus, color: stressColor });
             } catch (err) {
                 console.error("Failed to fetch VIX from Yahoo Finance:", err);
             }
@@ -33,8 +64,8 @@ export default function VolatilityGauges() {
 
     const gauges = [
         { name: "VIX (Volatility)", value: vix.value, status: vix.status, color: vix.color },
-        { name: "Market Liquidity", value: "Normal", status: "Stable", color: "text-blue-500" },
-        { name: "Systemic Stress", value: "0.18", status: "Minimal", color: "text-emerald-500" }
+        { name: "Market Liquidity", value: liquidity.value, status: liquidity.status, color: liquidity.color },
+        { name: "Systemic Stress", value: stress.value, status: stress.status, color: stress.color }
     ];
 
     return (
