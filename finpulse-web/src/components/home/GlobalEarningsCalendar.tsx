@@ -3,6 +3,7 @@ import { useUpcomingEarnings } from '../../hooks/useUpcomingEarnings';
 import type { UpcomingEarning } from '../../types/earnings';
 import { Sparkles, TrendingUp, TrendingDown, Calendar, ChevronLeft, ChevronRight, AlertCircle, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { StockLogo } from '../../utils/logo';
 
 // Lazy load modal
 const CompanyEarningsModal = lazy(() => import('./CompanyEarningsModal'));
@@ -23,56 +24,40 @@ function CountdownBadge({ earningsDate }: { earningsDate: string | null }) {
   localToday.setHours(0, 0, 0, 0);
 
   const targetDate = new Date(earningsDate);
-  targetDate.setHours(0, 0, 0, 0);
-
   const diffTime = targetDate.getTime() - localToday.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) {
     return (
-      <span className="inline-flex items-center rounded-md bg-rose-100 dark:bg-rose-500/15 px-2.5 py-0.5 text-xs font-extrabold text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 uppercase tracking-wide animate-pulse">
-        Today 🚨
+      <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-500 border border-emerald-500/20 uppercase tracking-wide animate-pulse">
+        Today
       </span>
     );
-  }
-
-  if (diffDays === 1) {
+  } else if (diffDays === 1) {
     return (
-      <span className="inline-flex items-center rounded-md bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-extrabold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 uppercase tracking-wide">
-        Tomorrow 🌅
+      <span className="inline-flex items-center rounded-md bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-500 border border-amber-500/20 uppercase tracking-wide">
+        Tomorrow
       </span>
     );
-  }
-
-  if (diffDays < 0) {
+  } else if (diffDays < 0) {
     return (
-      <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-night-800 px-2.5 py-0.5 text-xs font-bold text-slate-400 dark:text-slate-600 border border-slate-200/30 dark:border-white/5 uppercase tracking-wide">
-        Past
+      <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-night-800 px-2.5 py-0.5 text-xs font-bold text-slate-400 dark:text-slate-600 border border-slate-200/40 dark:border-white/5 uppercase tracking-wide">
+        Passed
       </span>
     );
-  }
-
-  if (diffDays <= 7) {
+  } else if (diffDays <= 7) {
     return (
-      <span className="inline-flex items-center rounded-md bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-extrabold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 uppercase tracking-wide">
+      <span className="inline-flex items-center rounded-md bg-blue-500/10 px-2.5 py-0.5 text-xs font-bold text-blue-500 border border-blue-500/20 uppercase tracking-wide">
         {diffDays} Days
       </span>
     );
-  }
-
-  if (diffDays <= 14) {
+  } else {
     return (
-      <span className="inline-flex items-center rounded-md bg-blue-100 dark:bg-blue-500/15 px-2.5 py-0.5 text-xs font-extrabold text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 uppercase tracking-wide">
-        1 Week
+      <span className="inline-flex items-center rounded-md bg-indigo-500/10 px-2.5 py-0.5 text-xs font-bold text-indigo-500 border border-indigo-500/20 uppercase tracking-wide">
+        1 Week+
       </span>
     );
   }
-
-  return (
-    <span className="inline-flex items-center rounded-md bg-violet-100 dark:bg-violet-500/15 px-2.5 py-0.5 text-xs font-bold text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-500/30 uppercase tracking-wide">
-      Upcoming
-    </span>
-  );
 }
 
 // ----------------------------------------------------
@@ -104,7 +89,7 @@ const EarningsCard = memo(function EarningsCard({
     });
   };
 
-  const firstLetter = earning.name ? earning.name.charAt(0) : earning.symbol.charAt(0);
+
 
   return (
     <motion.div
@@ -118,21 +103,7 @@ const EarningsCard = memo(function EarningsCard({
       <div>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-slate-50 dark:bg-night-800 border border-slate-200/40 dark:border-white/5 flex items-center justify-center overflow-hidden shrink-0 relative">
-              <img
-                src={earning.logo}
-                alt={earning.name}
-                className="w-8 h-8 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                  const sibling = (e.target as HTMLElement).nextElementSibling;
-                  if (sibling) (sibling as HTMLElement).classList.remove('hidden');
-                }}
-              />
-              <span className="absolute inset-0 items-center justify-center font-bold text-md bg-gradient-to-tr from-blue-600 to-indigo-600 dark:from-cyan-500/10 dark:to-cyan-400/20 text-white dark:text-cyan-400 select-none uppercase hidden">
-                {firstLetter}
-              </span>
-            </div>
+            <StockLogo symbol={earning.symbol} name={earning.name} className="h-11 w-11" imgSizeClass="w-8 h-8" />
             
             <div className="flex flex-col">
               <span className="font-mono text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">

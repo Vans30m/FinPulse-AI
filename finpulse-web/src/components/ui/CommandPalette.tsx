@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, X, Building2, Coins, PieChart, TrendingUp, Loader2, History } from 'lucide-react';
+import { Search, X, Coins, PieChart, TrendingUp, Loader2, History } from 'lucide-react';
 import { useChart } from "../../context/ChartContext";
+import { StockLogo } from '../../utils/logo';
 
 interface SearchResult {
   symbol: string;
@@ -134,13 +135,22 @@ export default function CommandPalette() {
   if (!isOpen) return null;
 
   // Helper function to assign icons based on Finnhub's asset types
-  const renderIcon = (type: string) => {
+  const renderIcon = (type: string, symbol: string, name: string) => {
     const t = type?.toLowerCase() || '';
-    if (t.includes('crypto')) return <Coins className="h-4 w-4 text-amber-500" />;
-    if (t.includes('currency') || t.includes('fx') || t.includes('forex')) return <Coins className="h-4 w-4 text-emerald-500" />;
-    if (t.includes('stock') || t.includes('equity')) return <Building2 className="h-4 w-4 text-blue-500" />;
-    if (t.includes('etp') || t.includes('etf') || t.includes('fund') || t.includes('future') || t.includes('commodity')) return <PieChart className="h-4 w-4 text-purple-500" />;
-    return <TrendingUp className="h-4 w-4 text-slate-500" />;
+    if (t.includes('stock') || t.includes('equity')) {
+      return <StockLogo symbol={symbol} name={name} className="h-10 w-10" imgSizeClass="w-6 h-6" />;
+    }
+
+    let iconElement = <TrendingUp className="h-4 w-4 text-slate-500" />;
+    if (t.includes('crypto')) iconElement = <Coins className="h-4 w-4 text-amber-500" />;
+    else if (t.includes('currency') || t.includes('fx') || t.includes('forex')) iconElement = <Coins className="h-4 w-4 text-emerald-500" />;
+    else if (t.includes('etp') || t.includes('etf') || t.includes('fund') || t.includes('future') || t.includes('commodity')) iconElement = <PieChart className="h-4 w-4 text-purple-500" />;
+
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 shadow-sm">
+        {iconElement}
+      </div>
+    );
   };
 
 
@@ -237,8 +247,8 @@ export default function CommandPalette() {
                       onClick={() => handleSelect(item)}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 shadow-sm group-hover:scale-105 transition-transform">
-                          {renderIcon(item.type)}
+                        <div className="group-hover:scale-105 transition-transform">
+                          {renderIcon(item.type, item.symbol, item.name)}
                         </div>
                         <div>
                           <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
@@ -283,8 +293,8 @@ export default function CommandPalette() {
                     onClick={() => handleSelect(item)}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 shadow-sm group-hover:scale-105 transition-transform">
-                        {renderIcon(item.type)}
+                      <div className="group-hover:scale-105 transition-transform">
+                        {renderIcon(item.type, item.symbol, item.name)}
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">

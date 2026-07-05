@@ -145,7 +145,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       const easeOutCubic = 1 - Math.pow(1 - progress, 3);
       setAnimatedSentimentScore(Math.floor(easeOutCubic * sentimentScore));
 
@@ -505,7 +505,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                     <div className="text-right border-l border-slate-900 pl-4">
                       <span className="text-[9px] text-slate-500 uppercase tracking-wider block">Avg Price Target</span>
                       <span className="text-base font-black text-white tracking-tight block mt-0.5">
-                        {analyst?.targetPrice 
+                        {analyst?.targetPrice
                           ? new Intl.NumberFormat("en-US", { style: "currency", currency: meta?.currency || "USD" }).format(analyst.targetPrice)
                           : new Intl.NumberFormat("en-US", { style: "currency", currency: meta?.currency || "USD" }).format(4450.00)}
                       </span>
@@ -525,11 +525,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         <button
                           key={tab}
                           onClick={() => setActiveTab(tab as TabType)}
-                          className={`w-full px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
-                            activeTab === tab
+                          className={`w-full px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${activeTab === tab
                               ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner"
                               : "text-slate-400 hover:text-white hover:bg-slate-900/40"
-                          }`}
+                            }`}
                         >
                           {tab}
                         </button>
@@ -736,11 +735,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           <button
                             key={m}
                             onClick={() => setMetricFilter(m)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                              metricFilter === m
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${metricFilter === m
                                 ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_0_10px_rgba(79,157,255,0.3)]"
                                 : "text-slate-400 hover:text-white"
-                            }`}
+                              }`}
                           >
                             {m}
                           </button>
@@ -753,11 +751,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           <button
                             key={y}
                             onClick={() => setYearFilter(y)}
-                            className={`px-2.5 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                              yearFilter === y
+                            className={`px-2.5 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${yearFilter === y
                                 ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_0_10px_rgba(79,157,255,0.3)]"
                                 : "text-slate-400 hover:text-white"
-                            }`}
+                              }`}
                           >
                             {y}
                           </button>
@@ -793,7 +790,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   // Construct mock download file matching filter details
                                   const textContent = `FinPulse Report\nTicker: ${symbol}\nPeriod: ${periodFilter}\nMetric: ${metricFilter}\nYear: ${yearFilter}\nExport Date: ${new Date().toLocaleDateString()}\n`;
                                   const element = document.createElement("a");
-                                  const file = new Blob([textContent], {type: 'text/plain'});
+                                  const file = new Blob([textContent], { type: 'text/plain' });
                                   element.href = URL.createObjectURL(file);
                                   element.download = `${symbol}_financial_report_${periodFilter.toLowerCase()}.${format === "CSV" ? "csv" : format === "Excel" ? "xlsx" : "pdf"}`;
                                   document.body.appendChild(element);
@@ -883,7 +880,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         {(metricFilter === "All" || metricFilter === "Revenue" || metricFilter === "EPS") && (
                           <div className="bg-[#121a2a]/45 backdrop-blur-md border border-slate-900 rounded-3xl p-6 shadow-2xl relative overflow-hidden group hover:translate-y-[-2px] transition-all duration-300">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                            
+
                             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-900 pb-4 mb-5">
                               <div>
                                 <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Financial Results Snapshot</span>
@@ -1030,8 +1027,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                 <AreaChart data={allQuarters.slice().reverse()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                   <defs>
                                     <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#4F9DFF" stopOpacity={0.2}/>
-                                      <stop offset="95%" stopColor="#4F9DFF" stopOpacity={0}/>
+                                      <stop offset="5%" stopColor="#4F9DFF" stopOpacity={0.2} />
+                                      <stop offset="95%" stopColor="#4F9DFF" stopOpacity={0} />
                                     </linearGradient>
                                   </defs>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#050711" />
@@ -1174,31 +1171,31 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             <table className="w-full text-left border-collapse text-xs">
                               <thead>
                                 <tr className="border-b border-slate-900 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider select-none">
-                                  <th 
+                                  <th
                                     className="py-2.5 px-3 cursor-pointer hover:text-white transition-colors"
                                     onClick={() => { setSortField("quarter"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}
                                   >
                                     Period {sortField === "quarter" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
                                   </th>
-                                  <th 
+                                  <th
                                     className="py-2.5 px-3 cursor-pointer hover:text-white transition-colors"
                                     onClick={() => { setSortField("revenue"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}
                                   >
                                     Revenue {sortField === "revenue" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
                                   </th>
-                                  <th 
+                                  <th
                                     className="py-2.5 px-3 cursor-pointer hover:text-white transition-colors"
                                     onClick={() => { setSortField("revGrowth"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}
                                   >
                                     Rev Growth {sortField === "revGrowth" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
                                   </th>
-                                  <th 
+                                  <th
                                     className="py-2.5 px-3 cursor-pointer hover:text-white transition-colors"
                                     onClick={() => { setSortField("eps"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}
                                   >
                                     EPS {sortField === "eps" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
                                   </th>
-                                  <th 
+                                  <th
                                     className="py-2.5 px-3 cursor-pointer hover:text-white transition-colors"
                                     onClick={() => { setSortField("surprise"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}
                                   >
@@ -1284,16 +1281,16 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           <div className="flex justify-between items-center mt-4 text-xs text-slate-400 border-t border-slate-900/60 pt-4 select-none">
                             <span>Page {currentPage} of {totalPages || 1}</span>
                             <div className="flex gap-2">
-                              <button 
-                                disabled={currentPage === 1} 
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
+                              <button
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 className="px-3 py-1.5 rounded-lg bg-[#050711] disabled:opacity-40 border border-slate-900 hover:bg-[#0c0f20] transition-colors"
                               >
                                 Prev
                               </button>
-                              <button 
-                                disabled={currentPage >= totalPages} 
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+                              <button
+                                disabled={currentPage >= totalPages}
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                 className="px-3 py-1.5 rounded-lg bg-[#050711] disabled:opacity-40 border border-slate-900 hover:bg-[#0c0f20] transition-colors"
                               >
                                 Next

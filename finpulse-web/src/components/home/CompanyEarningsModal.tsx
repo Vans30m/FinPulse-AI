@@ -1,6 +1,7 @@
 import type { UpcomingEarning } from '../../types/earnings';
 import { X, Globe, Calendar, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { StockLogo } from '../../utils/logo';
 
 interface Props {
   earning: UpcomingEarning | null;
@@ -28,7 +29,7 @@ export default function CompanyEarningsModal({ earning, onClose }: Props) {
     });
   };
 
-  const firstLetter = earning.name ? earning.name.charAt(0) : earning.symbol.charAt(0);
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -60,21 +61,7 @@ export default function CompanyEarningsModal({ earning, onClose }: Props) {
         {/* Modal Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-5">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-night-800 border border-slate-200/40 dark:border-white/5 flex items-center justify-center overflow-hidden shrink-0 relative">
-              <img
-                src={earning.logo}
-                alt={earning.name}
-                className="w-10 h-10 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                  const sibling = (e.target as HTMLElement).nextElementSibling;
-                  if (sibling) (sibling as HTMLElement).classList.remove('hidden');
-                }}
-              />
-              <span className="absolute inset-0 items-center justify-center font-bold text-xl bg-gradient-to-tr from-blue-600 to-indigo-600 dark:from-cyan-500/10 dark:to-cyan-400/20 text-white dark:text-cyan-400 select-none uppercase hidden">
-                {firstLetter}
-              </span>
-            </div>
+            <StockLogo symbol={earning.symbol} name={earning.name} className="h-14 w-14" imgSizeClass="w-10 h-10" />
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">

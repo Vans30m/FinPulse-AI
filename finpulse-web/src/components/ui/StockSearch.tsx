@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, Pin, History } from 'lucide-react';
 import { searchAssets } from "../../services/marketService";
+import { StockLogo } from '../../utils/logo';
 
 interface StockResult {
   symbol: string;
@@ -397,9 +398,7 @@ export default function StockSearch({
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
                             {/* Logo avatar */}
-                            <div className={`h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br ${getLetterAvatarColor(item.symbol)} text-white text-xs font-black uppercase shadow-sm`}>
-                              {item.symbol.slice(0, 2).replace("^", "")}
-                            </div>
+                            <StockLogo symbol={item.symbol} name={item.name} className="h-8 w-8" imgSizeClass="w-5 h-5" />
                             <div className="flex flex-col truncate">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
