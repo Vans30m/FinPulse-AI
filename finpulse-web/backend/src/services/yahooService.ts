@@ -27,7 +27,7 @@ export async function getAssetsHistoricalGrowth(
 ) {
   try {
     const principal = initialInvestment || 10000;
-    
+
     // Set up standard 5-Year intervals
     const endDate = new Date();
     const startDate = new Date();
@@ -77,7 +77,7 @@ export async function getAssetsHistoricalGrowth(
     });
 
     // Chronological order formatting alignment
-    const sortedGrowthData = Object.values(dateMap).sort((a: any, b: any) => 
+    const sortedGrowthData = Object.values(dateMap).sort((a: any, b: any) =>
       a.date.localeCompare(b.date)
     );
 
@@ -93,7 +93,7 @@ export async function getAssetsHistoricalGrowth(
 
       const firstPrice = firstEntry.adjClose || firstEntry.close || 1;
       const lastPrice = lastEntry.adjClose || lastEntry.close || 0;
-      
+
       const totalReturnPercent = ((lastPrice - firstPrice) / firstPrice) * 100;
       const finalPortfolioValue = principal * (lastPrice / firstPrice);
 
@@ -128,14 +128,21 @@ export async function getYahooCandles(
   try {
     const rangeMsMap: Record<string, number> = {
       "1d": 1 * 24 * 60 * 60 * 1000,
+      "2d": 2 * 24 * 60 * 60 * 1000,
       "5d": 5 * 24 * 60 * 60 * 1000,
       "7d": 7 * 24 * 60 * 60 * 1000,
+      "10d": 10 * 24 * 60 * 60 * 1000,
+      "15d": 15 * 24 * 60 * 60 * 1000,
       "30d": 30 * 24 * 60 * 60 * 1000,
       "60d": 60 * 24 * 60 * 60 * 1000,
+      "90d": 90 * 24 * 60 * 60 * 1000,
       "6mo": 180 * 24 * 60 * 60 * 1000,
       "1y": 365 * 24 * 60 * 60 * 1000,
       "2y": 2 * 365 * 24 * 60 * 60 * 1000,
+      "3y": 3 * 365 * 24 * 60 * 60 * 1000,
       "5y": 5 * 365 * 24 * 60 * 60 * 1000,
+      "7y": 7 * 365 * 24 * 60 * 60 * 1000,
+      "10y": 10 * 365 * 24 * 60 * 60 * 1000,
       "max": 20 * 365 * 24 * 60 * 60 * 1000,
     };
 
@@ -174,7 +181,7 @@ export async function getTechnicalIndicators(
         {
           period1: new Date(
             Date.now() -
-              365 * 24 * 60 * 60 * 1000
+            365 * 24 * 60 * 60 * 1000
           ),
           period2: new Date(),
           interval: "1d",
@@ -574,7 +581,7 @@ export async function getGlobalMarketQuote(
       dayLow: quote.regularMarketDayLow,
       yearHigh: quote.fiftyTwoWeekHigh,
       yearLow: quote.fiftyTwoWeekLow,
-      
+
       // Extra fields
       marketCap: quote.marketCap,
       circulatingSupply: quote.circulatingSupply,
@@ -597,17 +604,17 @@ export async function getAllGlobalMarkets() {
   try {
     const symbols = GLOBAL_INDICES.map(m => m.symbol);
     const quotes = await yahooFinance.quote(symbols);
-    
+
     const quoteMap = new Map(quotes.map(q => [q.symbol, q]));
-    
+
     const results = GLOBAL_INDICES.map((market) => {
       const quote = quoteMap.get(market.symbol);
       if (!quote || !quote.regularMarketPrice) return null;
-      
+
       const bid = quote.bid;
       const ask = quote.ask;
       const spread = (bid && ask) ? parseFloat((ask - bid).toFixed(5)) : undefined;
-      
+
       return {
         symbol: market.symbol,
         name: market.name,
@@ -621,7 +628,7 @@ export async function getAllGlobalMarkets() {
         dayLow: quote.regularMarketDayLow,
         yearHigh: quote.fiftyTwoWeekHigh,
         yearLow: quote.fiftyTwoWeekLow,
-        
+
         // Extra fields
         marketCap: quote.marketCap,
         circulatingSupply: quote.circulatingSupply,
@@ -635,7 +642,7 @@ export async function getAllGlobalMarkets() {
         dividendYield: quote.dividendYield,
       };
     });
-    
+
     return results.filter(Boolean);
   } catch (err) {
     console.error("Failed to batch fetch all global markets:", err);
@@ -671,11 +678,11 @@ export async function getMarketHistory(
       {
         period1: new Date(
           Date.now() -
-            days *
-              24 *
-              60 *
-              60 *
-              1000
+          days *
+          24 *
+          60 *
+          60 *
+          1000
         ),
         period2: new Date(),
         interval: "1d",
@@ -737,7 +744,7 @@ export async function getDomesticScreener(
   if (cached) {
     return cached;
   }
-  
+
   const quotes =
     await Promise.all(
       DOMESTIC_INDICES.map(
@@ -824,7 +831,7 @@ export async function getUpcomingEarnings(symbol: string) {
 
     const companyName = price.longName || price.shortName || symbol;
     const changePercent = price.regularMarketChangePercent ? price.regularMarketChangePercent * 100 : 0;
-    
+
     let logo = `https://assets.financialmodelingprep.com/imgs/symbol/${symbol}.png`;
     if (profile.website) {
       const domain = profile.website.replace(/https?:\/\/(www\.)?/, "").split("/")[0];
@@ -863,7 +870,7 @@ export async function getUpcomingEarnings(symbol: string) {
 
 export async function getUpcomingEarningsForMarket(market: string) {
   const normalizedMarket = market.toLowerCase().replace(/\s+/g, "");
-  
+
   // 1. Check cache first
   const cacheKey = `earnings-calendar-${normalizedMarket}`;
   const cachedData = earningsCache.get(cacheKey);
@@ -1175,7 +1182,7 @@ export async function getHistoricalChart(symbol: string, range: string, interval
       range: range,
       interval: interval,
     };
-    
+
     // Explicit type cast to bypass strict version-mismatched overload checks
     const result = await yahooFinance.chart(symbol, queryOptions as any);
     return result;
