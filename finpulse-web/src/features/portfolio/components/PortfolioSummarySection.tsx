@@ -62,8 +62,8 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, index) => (
             <div key={index} className="rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-5 animate-pulse">
               <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-white/5 mb-4" />
               <div className="h-3 w-32 rounded-full bg-slate-200 dark:bg-white/5 mb-3" />
@@ -73,7 +73,7 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {metrics.map((metric, index) => {
             const Icon = SUMMARY_ICON_MAP[metric.iconKey];
 

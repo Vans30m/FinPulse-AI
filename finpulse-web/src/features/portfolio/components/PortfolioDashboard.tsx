@@ -81,13 +81,7 @@ export default function PortfolioDashboard() {
   const [watchlistItems, setWatchlistItems] = useState<any[]>([]);
   const [portfolioEvents, setPortfolioEvents] = useState<any[]>([]);
   const [advisorData, setAdvisorData] = useState<any>(null);
-  const performanceData = [
-    { month: "Jan", value: 100000 },
-    { month: "Feb", value: 104000 },
-    { month: "Mar", value: 111000 },
-    { month: "Apr", value: 108000 },
-    { month: "May", value: 118000 }
-  ];
+  const [performanceData, setPerformanceData] = useState<{ month: string; value: number }[]>([]);
 
   const [activeMarket, setActiveMarket] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -152,19 +146,6 @@ export default function PortfolioDashboard() {
       type: asset.type,
     });
 
-    const sym = (asset.symbol || "").toUpperCase();
-    if (sym.endsWith(".NS") || sym.endsWith(".BO")) {
-      setMarketId("domestic");
-    } else if (sym === "GC=F" || sym === "SI=F" || sym === "PL=F") {
-      setMarketId("metals");
-    } else if (sym.includes("-USD") || sym.includes("-BTC")) {
-      setMarketId("crypto");
-    } else if (asset.exchange === "HKG" || asset.exchange === "TPE" || asset.exchange === "JPX" || asset.exchange === "OSA") {
-      setMarketId("other");
-    } else {
-      setMarketId("us");
-    }
-
     setAssetSearch(
       `${asset.name} (${asset.symbol})`
     );
@@ -176,13 +157,17 @@ export default function PortfolioDashboard() {
     try {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
       const userId = storedUser.id;
-      const headers = userId ? { 'X-User-Id': userId } : undefined;
+      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+      const headers: any = {};
+      if (userId) headers['X-User-Id'] = userId;
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const [holdingsRes, advisorRes, eventsRes, watchlistRes] = await Promise.all([
+      const [holdingsRes, advisorRes, eventsRes, watchlistRes, cagrRes] = await Promise.all([
         fetch('http://localhost:3000/api/portfolio/holdings', { headers }),
         fetch('http://localhost:3000/api/portfolio/advisor', { headers }),
         fetch('http://localhost:3000/api/portfolio/events', { headers }),
-        fetch('http://localhost:3000/api/portfolio/watchlist', { headers })
+        fetch('http://localhost:3000/api/portfolio/watchlist', { headers }),
+        fetch('http://localhost:3000/api/portfolio/rolling-cagr', { headers })
       ]);
 
       if (holdingsRes.ok) {
@@ -207,6 +192,24 @@ export default function PortfolioDashboard() {
       if (watchlistRes.ok) {
         const data = await watchlistRes.json();
         setWatchlistItems(data || []);
+      }
+      if (cagrRes.ok) {
+        const cagrData = await cagrRes.json();
+        if (cagrData.portfolioValues) {
+          const mapped = cagrData.portfolioValues.map((pv: any) => {
+            const parts = pv.month.split('-');
+            const year = parts[0]?.slice(2) || '';
+            const monthIndex = parseInt(parts[1] || '1') - 1;
+            const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIndex];
+            return {
+              month: `${monthName} '${year}`,
+              value: pv.value
+            };
+          });
+          setPerformanceData(mapped);
+        } else {
+          setPerformanceData([]);
+        }
       }
     } catch (err) {
       console.error("Error loading portfolio data:", err);
@@ -257,6 +260,34 @@ export default function PortfolioDashboard() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to persist transaction");
+    }
+  };
+
+  const handleDeleteHolding = async (id: string, name: string) => {
+    const confirmed = window.confirm(`Are you sure you want to remove ${name} from your portfolio?`);
+    if (!confirmed) return;
+
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+
+      const res = await fetch(`http://localhost:3000/api/portfolio/holdings/${id}`, {
+        method: 'DELETE',
+        headers: {
+          ...(userId ? { 'X-User-Id': userId } : {})
+        }
+      });
+
+      if (res.ok) {
+        toast.success(`Successfully removed ${name}`);
+        loadPortfolioData();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.error || "Failed to remove asset");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove asset");
     }
   };
 
@@ -373,36 +404,6 @@ export default function PortfolioDashboard() {
       trendLabel: overallReturnPercent >= 0 ? "Positive" : "Negative",
       isPositive: overallReturnPercent >= 0,
       iconKey: "return",
-    },
-    {
-      id: "available-cash",
-      title: "Available Cash",
-      value: availableCash,
-      format: "currency",
-      helperText: "Liquidity buffer currently available for new positions.",
-      trendLabel: "Liquidity buffer",
-      isPositive: true,
-      iconKey: "cash",
-    },
-    {
-      id: "buying-power",
-      title: "Buying Power",
-      value: buyingPower,
-      format: "currency",
-      helperText: "Estimated deployable capital with margin support.",
-      trendLabel: "Deployment room",
-      isPositive: true,
-      iconKey: "power",
-    },
-    {
-      id: "margin-used",
-      title: "Margin Used",
-      value: marginUsed,
-      format: "currency",
-      helperText: "Current margin utilization across leveraged exposure.",
-      trendLabel: "Utilization watch",
-      isPositive: marginUsed < availableCash,
-      iconKey: "margin",
     },
   ];
 
@@ -780,10 +781,10 @@ export default function PortfolioDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-              {filteredHoldings.map((asset) => {
+              {filteredHoldings.map((asset, index) => {
                 const posCurrency = asset.sectionId === 'domestic' ? '₹' : '$';
                 return (
-                  <tr key={asset.ticker} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle">
+                  <tr key={asset.id || `${asset.ticker}-${index}`} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle">
                     <td className="py-4 px-4">
                       <div className="flex flex-col gap-1 justify-center">
                         <div className="flex items-center gap-2.5">
@@ -823,22 +824,32 @@ export default function PortfolioDashboard() {
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center align-middle">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openChart({
-                            symbol: asset.ticker,
-                            yahooSymbol: asset.yahooSymbol || asset.ticker,
-                            name: asset.name,
-                            exchange: asset.exchange || "GLOBAL",
-                            type: asset.type || "Asset",
-                          })
-                        }
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-cyan-400 hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-xs font-bold transition-all"
-                      >
-                        <BarChart3 className="h-3.5 w-3.5" />
-                        Chart
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openChart({
+                              symbol: asset.ticker,
+                              yahooSymbol: asset.yahooSymbol || asset.ticker,
+                              name: asset.name,
+                              exchange: asset.exchange || "GLOBAL",
+                              type: asset.type || "Asset",
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-cyan-400 hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-xs font-bold transition-all"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5" />
+                          Chart
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteHolding(asset.id, asset.name)}
+                          className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
+                          title="Remove asset from portfolio"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -932,18 +943,29 @@ export default function PortfolioDashboard() {
 
             <form onSubmit={handleAddAsset} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1.5">Asset Category</label>
-                <select
-                  value={marketId}
-                  onChange={e => setMarketId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors"
-                >
-                  <option value="domestic" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Domestic Stock</option>
-                  <option value="us" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">US Stock</option>
-                  <option value="other" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Other Market</option>
-                  <option value="crypto" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Crypto</option>
-                  <option value="metals" className="bg-white dark:bg-night-900 text-slate-900 dark:text-white font-medium">Precious Metals</option>
-                </select>
+                <label className="text-xs font-bold text-slate-500 block mb-2">Asset Category</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {[
+                    { value: "domestic", label: "Domestic" },
+                    { value: "us", label: "US Stock" },
+                    { value: "crypto", label: "Crypto" },
+                    { value: "metals", label: "Metals" },
+                    { value: "other", label: "Other" }
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setMarketId(opt.value)}
+                      className={`py-2.5 px-3 text-xs font-extrabold rounded-xl border transition-all ${
+                        marketId === opt.value
+                          ? "bg-blue-600 dark:bg-cyan-500 border-blue-600 dark:border-cyan-500 text-white dark:text-night-900 shadow-md shadow-blue-500/10"
+                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="relative">

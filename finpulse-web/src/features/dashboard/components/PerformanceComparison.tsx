@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LineChart as LineChartIcon,
   TrendingUp,
@@ -29,386 +30,191 @@ import AiPerformanceCoachSection from "./performance/AiPerformanceCoachSection";
 import BenchmarkRadarSection from "./performance/BenchmarkRadarSection";
 
 export default function PerformanceComparison() {
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [holdings, setHoldings] = useState<any[]>([]);
+  const [cagrData, setCagrData] = useState<any>(null);
   const [timeframe, setTimeframe] = useState<"1D" | "5D" | "1M" | "3M" | "6M" | "1Y" | "MAX">("1M");
   const [selectedBenchmark, setSelectedBenchmark] = useState<string>("S&P 500");
 
-  // Benchmarks list for comparative analysis
   const benchmarksList = ["NIFTY 50", "SENSEX", "NASDAQ", "S&P 500", "Gold", "Bitcoin"];
 
-  const handleRefresh = () => {
+  const loadPerformanceData = async () => {
     setLoading(true);
-    setTimeout(() => setLoading(false), 900);
-  };
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+      const headers: any = {};
+      if (userId) headers['X-User-Id'] = userId;
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  // 1. Unified Dataset generating realistic performance indexes based on selected timeframe
-  const growthTimelineData = useMemo(() => {
-    const pointsCount = timeframe === "1D" ? 24 : timeframe === "5D" ? 5 : timeframe === "1M" ? 30 : timeframe === "3M" ? 90 : 120;
-    const baseVal = 10000;
-    const data = [];
-    
-    let currentPort = baseVal;
-    let currentBench = baseVal;
+      const [holdingsRes, cagrRes] = await Promise.all([
+        fetch('http://localhost:3000/api/portfolio/holdings', { headers }),
+        fetch('http://localhost:3000/api/portfolio/rolling-cagr', { headers })
+      ]);
 
-    for (let i = 0; i < pointsCount; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - (pointsCount - i));
-      const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      
-      const portRand = (Math.random() - 0.47) * 2; // slight positive bias
-      const benchRand = (Math.random() - 0.49) * 2; // market benchmark bias
-      
-      currentPort = currentPort * (1 + portRand / 100);
-      currentBench = currentBench * (1 + benchRand / 100);
-
-      data.push({
-        name: dateStr,
-        Portfolio: parseFloat(currentPort.toFixed(2)),
-        Benchmark: parseFloat(currentBench.toFixed(2)),
-        Difference: parseFloat((currentPort - currentBench).toFixed(2))
-      });
+      if (holdingsRes.ok) {
+        const data = await holdingsRes.json();
+        const allHoldings = (data.sections || []).flatMap((s: any) => s.holdings || []);
+        setHoldings(allHoldings);
+      }
+      if (cagrRes.ok) {
+        const data = await cagrRes.json();
+        setCagrData(data);
+      }
+    } catch (err) {
+      console.error("Failed to load performance data:", err);
+    } finally {
+      setLoading(false);
     }
-    return data;
-  }, [timeframe]);
-
-  // Rolling returns database
-  const rollingReturns = [
-    { period: "Today", val: "+0.84%", delta: 0.84, positive: true, sparkline: [10, 15, 8, 12, 19, 14, 22] },
-    { period: "1 Week", val: "+2.15%", delta: 2.15, positive: true, sparkline: [5, 12, 18, 10, 15, 20, 25] },
-    { period: "1 Month", val: "+8.92%", delta: 8.92, positive: true, sparkline: [20, 22, 19, 24, 28, 26, 34] },
-    { period: "3 Months", val: "+14.65%", delta: 14.65, positive: true, sparkline: [30, 28, 35, 42, 38, 45, 52] },
-    { period: "6 Months", val: "+22.40%", delta: 22.40, positive: true, sparkline: [40, 44, 42, 50, 48, 55, 62] },
-    { period: "1 Year", val: "+28.18%", delta: 28.18, positive: true, sparkline: [50, 55, 58, 62, 60, 68, 75] },
-    { period: "YTD", val: "+24.12%", delta: 24.12, positive: true, sparkline: [45, 48, 52, 58, 55, 62, 70] },
-    { period: "MAX", val: "+156.40%", delta: 156.4, positive: true, sparkline: [10, 25, 45, 75, 95, 120, 156] }
-  ];
-
-  // Contributors lists
-  const contributors = [
-    { symbol: "AAPL", name: "Apple Inc", profit: 1450.20, return: "+12.4%", trend: [100, 105, 102, 108, 112] },
-    { symbol: "NVDA", name: "NVIDIA Corp", profit: 3240.85, return: "+24.8%", trend: [200, 215, 230, 224, 248] },
-    { symbol: "MSFT", name: "Microsoft Corp", profit: 1120.40, return: "+9.1%", trend: [300, 305, 302, 308, 309] }
-  ];
-
-  const losses = [
-    { symbol: "TSLA", name: "Tesla Inc", loss: -840.20, return: "-6.2%", trend: [180, 175, 178, 172, 168] },
-    { symbol: "NFLX", name: "Netflix Inc", loss: -320.10, return: "-2.4%", trend: [450, 445, 442, 438, 435] }
-  ];
-
-  // Sector breakdown contribution margins
-  const sectorAllocations = [
-    { name: "Technology", val: 42.5, count: 4250, color: "#3b82f6" },
-    { name: "Finance", val: 18.2, count: 1820, color: "#10b981" },
-    { name: "Healthcare", val: 12.4, count: 1240, color: "#a855f7" },
-    { name: "Energy", val: 9.8, count: 980, color: "#f59e42" },
-    { name: "Crypto", val: 8.5, count: 850, color: "#ec4899" },
-    { name: "Cash Ledger", val: 8.6, count: 860, color: "#64748b" }
-  ];
-
-  const exportToCSV = (isExcel: boolean = false) => {
-    const fileExt = isExcel ? "csv" : "csv";
-    let csvContent = "\uFEFF"; // UTF-8 BOM
-    
-    // Title & Metadata
-    csvContent += "FinPulse Portfolio Performance Analytics Report\n";
-    csvContent += `Export Date,${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
-    csvContent += `Timeframe,${timeframe}\n\n`;
-    
-    // Hero metrics
-    csvContent += "SUMMARY METRICS\n";
-    csvContent += "Metric,Value,Description\n";
-    csvContent += "Portfolio Yield Return,+28.61%,Lifetime aggregated alpha return\n";
-    csvContent += "Today's Profit / Loss,+$145.20,+0.84% single day change\n";
-    csvContent += "Total Net Profit Margin,+$8412.90,Realized + unrealized ledger delta\n";
-    csvContent += "Capital Valuation Ledger,$48610.00,Total asset portfolio valuation\n";
-    csvContent += "AI Rating Score,88/100,Grade A solvency alignment rating\n\n";
-    
-    // Sector Allocation
-    csvContent += "SECTOR ALLOCATIONS\n";
-    csvContent += "Sector,Allocation %,Count ($)\n";
-    sectorAllocations.forEach(item => {
-      csvContent += `"${item.name}",${item.val}%,$${item.count}\n`;
-    });
-    csvContent += "\n";
-    
-    // Contributors
-    csvContent += "TOP ALPHA CONTRIBUTORS\n";
-    csvContent += "Symbol,Name,Return,Profit ($)\n";
-    contributors.forEach(item => {
-      csvContent += `"${item.symbol}","${item.name}",${item.return},+$${item.profit.toFixed(2)}\n`;
-    });
-    csvContent += "\n";
-
-    // Underperformers
-    csvContent += "BIGGEST BETA UNDERPERFORMERS\n";
-    csvContent += "Symbol,Name,Return,Loss ($)\n";
-    losses.forEach(item => {
-      csvContent += `"${item.symbol}","${item.name}",${item.return},-$${Math.abs(item.loss).toFixed(2)}\n`;
-    });
-    csvContent += "\n";
-    
-    // Rolling Returns
-    csvContent += "INTERVAL ROLLING RETURNS LEDGER\n";
-    csvContent += "Period,Return %\n";
-    rollingReturns.forEach(item => {
-      csvContent += `"${item.period}",${item.val}\n`;
-    });
-    
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `finpulse_portfolio_report_${timeframe.toLowerCase()}.${fileExt}`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
-  const exportToPDF = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
+  useEffect(() => {
+    loadPerformanceData();
+  }, []);
 
-    const sectorRows = sectorAllocations
-      .map(item => `
-        <tr>
-          <td>${item.name}</td>
-          <td align="right">${item.val}%</td>
-          <td align="right">$${item.count.toLocaleString()}</td>
-        </tr>
-      `)
-      .join("");
-
-    const contributorRows = contributors
-      .map(item => `
-        <tr>
-          <td><strong>${item.symbol}</strong> - ${item.name}</td>
-          <td align="right" style="color: #10b981;">${item.return}</td>
-          <td align="right" style="color: #10b981;">+$${item.profit.toFixed(2)}</td>
-        </tr>
-      `)
-      .join("");
-
-    const lossRows = losses
-      .map(item => `
-        <tr>
-          <td><strong>${item.symbol}</strong> - ${item.name}</td>
-          <td align="right" style="color: #ef4444;">${item.return}</td>
-          <td align="right" style="color: #ef4444;">-$${Math.abs(item.loss).toFixed(2)}</td>
-        </tr>
-      `)
-      .join("");
-
-    const rollingRows = rollingReturns
-      .map(item => `
-        <tr>
-          <td>${item.period}</td>
-          <td align="right" style="color: #10b981;">${item.val}</td>
-        </tr>
-      `)
-      .join("");
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>FinPulse Performance Analytics Report</title>
-          <style>
-            body {
-              font-family: 'Inter', system-ui, -apple-system, sans-serif;
-              color: #0f172a;
-              background-color: #ffffff;
-              margin: 40px;
-              line-height: 1.5;
-            }
-            .header {
-              border-bottom: 2px solid #e2e8f0;
-              padding-bottom: 20px;
-              margin-bottom: 30px;
-            }
-            .title {
-              font-size: 24px;
-              font-weight: 800;
-              text-transform: uppercase;
-              letter-spacing: -0.5px;
-              margin: 0;
-            }
-            .subtitle {
-              font-size: 12px;
-              color: #64748b;
-              margin-top: 5px;
-            }
-            .grid-hero {
-              display: grid;
-              grid-template-columns: repeat(5, 1fr);
-              gap: 15px;
-              margin-bottom: 30px;
-            }
-            .card {
-              border: 1px solid #e2e8f0;
-              border-radius: 12px;
-              padding: 15px;
-              background-color: #f8fafc;
-            }
-            .card-label {
-              font-size: 9px;
-              text-transform: uppercase;
-              color: #64748b;
-              font-weight: 700;
-            }
-            .card-value {
-              font-size: 18px;
-              font-weight: 800;
-              margin-top: 5px;
-            }
-            .section-title {
-              font-size: 14px;
-              font-weight: 800;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-              margin-top: 30px;
-              margin-bottom: 15px;
-              color: #1e3a8a;
-              border-bottom: 1px solid #e2e8f0;
-              padding-bottom: 5px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 20px;
-            }
-            th {
-              background-color: #f1f5f9;
-              font-size: 10px;
-              font-weight: 700;
-              text-transform: uppercase;
-              color: #475569;
-              padding: 8px 12px;
-              border: 1px solid #cbd5e1;
-            }
-            td {
-              padding: 8px 12px;
-              font-size: 11px;
-              border: 1px solid #e2e8f0;
-            }
-            .row-split {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 30px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1 class="title">FinPulse Analytics Center</h1>
-            <div class="subtitle">Performance & Solvency Portfolio Report | Generated on ${new Date().toLocaleDateString()} | Timeframe: ${timeframe}</div>
-          </div>
-
-          <div class="grid-hero">
-            <div class="card">
-              <div class="card-label">Portfolio Yield Return</div>
-              <div class="card-value" style="color: #10b981;">+28.61%</div>
-            </div>
-            <div class="card">
-              <div class="card-label">Today's Profit / Loss</div>
-              <div class="card-value" style="color: #10b981;">+$145.20</div>
-            </div>
-            <div class="card">
-              <div class="card-label">Total Net Profit Margin</div>
-              <div class="card-value" style="color: #1e3a8a;">+$8,412.90</div>
-            </div>
-            <div class="card">
-              <div class="card-label">Capital Valuation Ledger</div>
-              <div class="card-value">$48,610.00</div>
-            </div>
-            <div class="card">
-              <div class="card-label">AI overall Score</div>
-              <div class="card-value" style="color: #7c3aed;">88/100</div>
-            </div>
-          </div>
-
-          <div class="row-split">
-            <div>
-              <div class="section-title">Sector Allocation Breakdown</div>
-              <table>
-                <thead>
-                  <tr>
-                    <th align="left">Sector</th>
-                    <th align="right">Allocation %</th>
-                    <th align="right">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${sectorRows}
-                </tbody>
-              </table>
-            </div>
-
-            <div>
-              <div class="section-title">Interval Rolling Returns Ledger</div>
-              <table>
-                <thead>
-                  <tr>
-                    <th align="left">Interval</th>
-                    <th align="right">Return %</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rollingRows}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="row-split">
-            <div>
-              <div class="section-title">Top Alpha Contributors</div>
-              <table>
-                <thead>
-                  <tr>
-                    <th align="left">Asset Symbol</th>
-                    <th align="right">Return</th>
-                    <th align="right">Profit Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${contributorRows}
-                </tbody>
-              </table>
-            </div>
-
-            <div>
-              <div class="section-title">Biggest Beta Underperformers</div>
-              <table>
-                <thead>
-                  <tr>
-                    <th align="left">Asset Symbol</th>
-                    <th align="right">Return</th>
-                    <th align="right">Loss Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${lossRows}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <script>
-            window.onload = function() {
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+  const handleRefresh = () => {
+    loadPerformanceData();
   };
 
+  // Dynamic calculations based on real portfolio holdings
+  const portfolioStats = useMemo(() => {
+    let totalValuation = 0;
+    let totalCost = 0;
+    let totalGain = 0;
 
+    holdings.forEach(h => {
+      const value = h.marketValue || (h.shares * h.currentPrice) || 0;
+      const cost = h.shares * h.avgCost;
+      totalValuation += value;
+      totalCost += cost;
+      totalGain += (h.totalGain || (value - cost));
+    });
 
+    const yieldReturn = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
 
+    return {
+      totalValuation,
+      totalCost,
+      totalGain,
+      yieldReturn
+    };
+  }, [holdings]);
+
+  // Sector allocation contribution margins calculated dynamically
+  const sectorAllocations = useMemo(() => {
+    if (holdings.length === 0) return [];
+    const sectorsMap: Record<string, number> = {};
+    let totalValue = 0;
+
+    holdings.forEach(h => {
+      const val = h.marketValue || (h.shares * h.currentPrice) || 0;
+      sectorsMap[h.sector || "Other"] = (sectorsMap[h.sector || "Other"] || 0) + val;
+      totalValue += val;
+    });
+
+    const colors = ["#3b82f6", "#10b981", "#a855f7", "#f59e42", "#ec4899", "#64748b"];
+    return Object.entries(sectorsMap).map(([name, count], index) => ({
+      name,
+      count: parseFloat(count.toFixed(2)),
+      val: parseFloat((totalValue > 0 ? (count / totalValue) * 100 : 0).toFixed(1)),
+      color: colors[index % colors.length]
+    }));
+  }, [holdings]);
+
+  // Top gainers (alpha contributors)
+  const contributors = useMemo(() => {
+    return holdings
+      .filter(h => h.totalGain > 0)
+      .sort((a, b) => b.totalGain - a.totalGain)
+      .map(h => ({
+        symbol: h.ticker,
+        name: h.name,
+        profit: h.totalGain,
+        return: `${h.gainPercent >= 0 ? "+" : ""}${h.gainPercent.toFixed(2)}%`
+      }));
+  }, [holdings]);
+
+  // Underperformers (losses)
+  const losses = useMemo(() => {
+    return holdings
+      .filter(h => h.totalGain < 0)
+      .sort((a, b) => a.totalGain - b.totalGain)
+      .map(h => ({
+        symbol: h.ticker,
+        name: h.name,
+        loss: h.totalGain,
+        return: `${h.gainPercent.toFixed(2)}%`
+      }));
+  }, [holdings]);
+
+  // Build timeline data using the actual CAGR / portfolio values history
+  const growthTimelineData = useMemo(() => {
+    if (!cagrData || !cagrData.portfolioValues || cagrData.portfolioValues.length === 0) {
+      return [];
+    }
+    return cagrData.portfolioValues.map((pv: any, index: number) => {
+      const parts = pv.month.split('-');
+      const monthIndex = parseInt(parts[1] || '1') - 1;
+      const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIndex];
+      const year = parts[0]?.slice(2) || '';
+      
+      // Calculate a simple simulated benchmark path starting at the same initial portfolio value
+      const initialVal = cagrData.portfolioValues[0]?.value || 1000;
+      const daysElapsed = index + 1;
+      const simulatedBenchmark = initialVal * Math.pow(1 + 0.08 / 12, daysElapsed);
+
+      return {
+        name: `${monthName} '${year}`,
+        Portfolio: parseFloat(pv.value.toFixed(2)),
+        Benchmark: parseFloat(simulatedBenchmark.toFixed(2))
+      };
+    });
+  }, [cagrData]);
+
+  if (loading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <Activity className="h-8 w-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
+
+  // Render Premium Fallback/Zero State when Portfolio is Empty (Removing mock data completely)
+  if (holdings.length === 0) {
+    return (
+      <div className="space-y-8 text-slate-100 font-sans selection:bg-blue-500/25 selection:text-white">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-white tracking-tight uppercase">Performance Analytics Center</h2>
+            <p className="text-xs text-slate-400 font-medium">Deep-dive metric matrices, alpha models, and solvency indicators.</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center justify-center text-center p-16 bg-[#121a2a]/45 border border-slate-900 rounded-3xl space-y-6">
+          <div className="h-16 w-16 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+            <Activity className="h-8 w-8 text-blue-405" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-white">Solvency & Performance Metrics Locked</h3>
+            <p className="text-sm text-slate-400 max-w-md animate-pulse">
+              No assets or transactions found. Please add holdings or transaction logs in the **Portfolio** tab to unlock real-time performance tracking.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/portfolio")}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-600/10"
+          >
+            Go to Portfolio Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 text-slate-105 font-sans selection:bg-blue-500/25 selection:text-white">
+    <div className="space-y-8 text-slate-100 font-sans selection:bg-blue-500/25 selection:text-white">
       {/* HEADER SECTION WITH REFRESH TRIGGER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -418,27 +224,25 @@ export default function PerformanceComparison() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all"
           >
-            <Activity className={`h-4.5 w-4.5 \${loading ? "animate-spin" : ""}`} />
-            {loading ? "Re-calculating..." : "Recalculate Solvency"}
+            <Activity className="h-4.5 w-4.5" />
+            Recalculate Metrics
           </button>
         </div>
       </div>
 
       {/* ==================== 1. HERO PERFORMANCE SUMMARY ==================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: "Portfolio Yield Return", val: "+28.61%", desc: "Lifetime aggregated alpha return", positive: true, grad: "from-cyan-600/10 to-blue-500/10" },
-          { label: "Today's Profit / Loss", val: "+$145.20", desc: "+0.84% single day change", positive: true, grad: "from-emerald-600/10 to-teal-500/10" },
-          { label: "Total Net Profit Margin", val: "+$8,412.90", desc: "Realized + unrealized ledger delta", positive: true, grad: "from-indigo-600/10 to-purple-500/10" },
-          { label: "Capital Valuation Ledger", val: "$48,610.00", desc: "Total asset portfolio valuation", positive: true, grad: "from-blue-600/10 to-indigo-500/10" },
-          { label: "AI overall Rating Score", val: "88/100", desc: "Grade A solvency alignment rating", positive: true, grad: "from-purple-600/10 to-pink-500/10" }
+          { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Aggregate return yield", grad: "from-cyan-600/10 to-blue-500/10" },
+          { label: "Total Profit / Loss", val: `${portfolioStats.totalGain >= 0 ? "+" : ""}$${portfolioStats.totalGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Unrealized ledger delta", grad: "from-emerald-600/10 to-teal-500/10" },
+          { label: "Capital Valuation Ledger", val: `$${portfolioStats.totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Total asset valuation", grad: "from-blue-600/10 to-indigo-500/10" },
+          { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active ledger size", grad: "from-purple-600/10 to-pink-500/10" }
         ].map((card, i) => (
           <div
             key={i}
-            className={`bg-[#121a2a]/45 backdrop-blur-md border border-slate-900 rounded-3xl p-5 shadow-lg bg-gradient-to-br \${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
+            className={`bg-[#121a2a]/45 backdrop-blur-md border border-slate-900 rounded-3xl p-5 shadow-lg bg-gradient-to-br ${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
           >
             <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">{card.label}</span>
             <h3 className="text-2xl font-black text-white tracking-tight mt-2">{card.val}</h3>
@@ -449,7 +253,6 @@ export default function PerformanceComparison() {
 
       {/* ==================== 2. PERFORMANCE CHART & BENCHMARK COMPARISON ==================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main TV Line Chart Container */}
         <div className="lg:col-span-2 bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-3 mb-4">
             <div className="flex items-center gap-2">
@@ -457,13 +260,12 @@ export default function PerformanceComparison() {
               <span className="text-xs font-black uppercase tracking-wider text-slate-400">Yield Comparison Timeline</span>
             </div>
 
-            {/* Timeframe selector chips */}
             <div className="flex bg-[#050711] p-1 rounded-xl border border-slate-900">
-              {["1D", "5D", "1M", "3M", "6M", "1Y", "MAX"].map((tf) => (
+              {["1M", "3M", "6M", "1Y", "MAX"].map((tf) => (
                 <button
                   key={tf}
                   onClick={() => setTimeframe(tf as any)}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all \${
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                     timeframe === tf
                       ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
                       : "text-slate-400 hover:text-white"
@@ -476,30 +278,35 @@ export default function PerformanceComparison() {
           </div>
 
           <div className="h-72 w-full mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={growthTimelineData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorPort" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4F9DFF" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="#4F9DFF" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorBench" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#050711" />
-                <XAxis dataKey="name" stroke="#555" fontSize={10} tickLine={false} />
-                <YAxis stroke="#555" fontSize={10} tickLine={false} domain={["auto", "auto"]} />
-                <ChartTooltip contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px" }} />
-                <Area type="monotone" dataKey="Portfolio" stroke="#4F9DFF" strokeWidth={3} fillOpacity={1} fill="url(#colorPort)" />
-                <Area type="monotone" dataKey="Benchmark" stroke="#f59e42" strokeWidth={2} fillOpacity={1} fill="url(#colorBench)" strokeDasharray="5 5" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {growthTimelineData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-slate-500 text-xs font-bold">
+                Not enough history. Keep holdings active to build historical charts.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={growthTimelineData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorPort" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4F9DFF" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#4F9DFF" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorBench" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e42" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#f59e42" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#050711" />
+                  <XAxis dataKey="name" stroke="#555" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#555" fontSize={10} tickLine={false} domain={["auto", "auto"]} />
+                  <ChartTooltip contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px", color: "#fff" }} />
+                  <Area type="monotone" dataKey="Portfolio" stroke="#4F9DFF" strokeWidth={3} fillOpacity={1} fill="url(#colorPort)" />
+                  <Area type="monotone" dataKey="Benchmark" stroke="#f59e42" strokeWidth={2} fillOpacity={1} fill="url(#colorBench)" strokeDasharray="5 5" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
-        {/* 3. Benchmark Selector & Comparison Cards */}
         <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
@@ -515,7 +322,7 @@ export default function PerformanceComparison() {
                 <button
                   key={bench}
                   onClick={() => setSelectedBenchmark(bench)}
-                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase border transition-all \${
+                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${
                     selectedBenchmark === bench
                       ? "bg-blue-600/10 text-blue-400 border-blue-500/20 shadow-inner"
                       : "bg-[#050711]/40 text-slate-400 border-slate-900/60 hover:text-white"
@@ -529,128 +336,34 @@ export default function PerformanceComparison() {
             <div className="space-y-3.5">
               <div className="flex justify-between items-center py-2.5 border-b border-slate-900/60">
                 <span className="text-xs text-slate-400 font-medium">Your Portfolio Return</span>
-                <span className="text-sm font-black text-emerald-400 font-mono">+28.61%</span>
+                <span className="text-sm font-black text-emerald-400 font-mono">{portfolioStats.yieldReturn >= 0 ? "+" : ""}{portfolioStats.yieldReturn.toFixed(2)}%</span>
               </div>
               <div className="flex justify-between items-center py-2.5 border-b border-slate-900/60">
-                <span className="text-xs text-slate-400 font-medium">{selectedBenchmark} Index Yield</span>
-                <span className="text-sm font-black text-slate-200 font-mono">+19.45%</span>
+                <span className="text-xs text-slate-400 font-medium">{selectedBenchmark} Target Yield</span>
+                <span className="text-sm font-black text-slate-200 font-mono">+12.50%</span>
               </div>
               <div className="flex justify-between items-center py-2.5 border-b border-slate-900/60">
                 <span className="text-xs text-slate-400 font-medium">Yield Margin Difference</span>
-                <span className="text-sm font-black text-blue-400 font-mono">+9.16%</span>
+                <span className="text-sm font-black text-blue-400 font-mono">
+                  {(portfolioStats.yieldReturn - 12.50) >= 0 ? "+" : ""}{(portfolioStats.yieldReturn - 12.50).toFixed(2)}%
+                </span>
               </div>
             </div>
           </div>
 
           <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 mt-6 text-center">
             <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">Outperformance Target</span>
-            <p className="text-sm font-black text-white mt-1">Portfolio beats {selectedBenchmark} index by +9.16%</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ==================== 4. AI PERFORMANCE SUMMARY ==================== */}
-      <div className="bg-[#121a2a]/45 backdrop-blur-md border border-slate-900 rounded-3xl p-6 shadow-md relative overflow-hidden group hover:translate-y-[-2px] transition-all duration-300">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="flex items-center gap-2 border-b border-slate-900 pb-3.5 mb-5">
-          <Award size={16} className="text-purple-400 animate-pulse" />
-          <span className="text-xs font-black uppercase tracking-wider text-slate-400">AI Performance Analyst Summary Verdict</span>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-[#050711]/60 border border-slate-900 rounded-2xl p-4">
-                <span className="text-[9px] text-emerald-400 font-extrabold uppercase tracking-wider">Key Solvency Strengths</span>
-                <ul className="text-xs text-slate-300 mt-2 space-y-1.5 list-disc pl-4 font-semibold">
-                  <li>Strong asset allocation matching technical volatility standards.</li>
-                  <li>Overperforming index benchmarks across the last 12-month sequence.</li>
-                </ul>
-              </div>
-
-              <div className="bg-[#050711]/60 border border-slate-900 rounded-2xl p-4">
-                <span className="text-[9px] text-amber-500 font-extrabold uppercase tracking-wider">Potential Volatility Weaknesses</span>
-                <ul className="text-xs text-slate-300 mt-2 space-y-1.5 list-disc pl-4 font-semibold">
-                  <li>Slight concentration in tech sector growth equity tickers.</li>
-                  <li>Historical drawdowns match beta fluctuations above normal bounds.</li>
-                </ul>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              **AI Analyst Summary:** The portfolio shows strong alpha generation (+28.61% lifetime return) outperforming the S&P 500 benchmark. We recommend maintaining the current asset weights while allocating subsequent cash buffers into low-beta dividend engines.
+            <p className="text-sm font-black text-white mt-1">
+              {portfolioStats.yieldReturn >= 12.50 
+                ? `Portfolio beats ${selectedBenchmark} index by +${(portfolioStats.yieldReturn - 12.50).toFixed(2)}%`
+                : `Portfolio trails ${selectedBenchmark} index by ${(12.50 - portfolioStats.yieldReturn).toFixed(2)}%`}
             </p>
           </div>
-
-          <div className="bg-purple-500/5 border border-purple-500/10 rounded-2xl p-4 flex flex-col justify-between items-center text-center">
-            <div>
-              <span className="text-[10px] text-purple-400 font-black uppercase tracking-widest">AI Consensus</span>
-              <h4 className="text-xl font-black text-white mt-1.5">Grade A (HOLD)</h4>
-            </div>
-            <div className="mt-4">
-              <span className="text-[9px] text-slate-500 uppercase block">Model Confidence</span>
-              <span className="text-sm font-black text-purple-400 font-mono mt-0.5 block">94% Score</span>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* ==================== 5. RISK DASHBOARD & 6. ATTRIBUTION ==================== */}
+      {/* ==================== 3. CONTRIBUTORS & UNDERPERFORMERS ==================== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Risk Metrics Gauges */}
-        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-          <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-            <ShieldAlert size={15} className="text-rose-400" />
-            <span className="text-xs font-black uppercase tracking-wider text-slate-400">solvency & Risk Metrics Dashboard</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { name: "Sharpe Ratio", val: "2.14", status: "Excellent", color: "text-emerald-400" },
-              { name: "Beta Coefficient", val: "1.12", status: "Above Index", color: "text-amber-400" },
-              { name: "Sortino Ratio", val: "2.84", status: "Excellent", color: "text-emerald-400" },
-              { name: "Max Drawdown", val: "-12.45%", status: "Stable", color: "text-emerald-400" },
-              { name: "Treynor Ratio", val: "0.22", status: "Good", color: "text-emerald-400" },
-              { name: "Standard Deviation", val: "14.20%", status: "Medium", color: "text-amber-400" },
-              { name: "Tracking Error", val: "3.45%", status: "Low Margin", color: "text-emerald-400" },
-              { name: "Jensen's Alpha", val: "8.12%", status: "Superior", color: "text-emerald-400" }
-            ].map((r, idx) => (
-              <div key={idx} className="bg-[#050711] border border-slate-900 rounded-2xl p-3">
-                <span className="text-[9px] text-slate-500 font-extrabold uppercase">{r.name}</span>
-                <p className="text-sm font-black text-white mt-1.5 font-mono">{r.val}</p>
-                <span className={`text-[9px] font-black mt-1 block uppercase \${r.color}`}>{r.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Sector Attribution Progress Lines */}
-        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-          <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-            <PieIcon size={15} className="text-cyan-400" />
-            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Sector allocation Contribution margin</span>
-          </div>
-
-          <div className="space-y-4">
-            {sectorAllocations.map((sector, i) => (
-              <div key={i} className="space-y-1">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-350 font-extrabold">{sector.name}</span>
-                  <span className="font-mono text-slate-200 font-bold">{sector.val}% (\${sector.count.toLocaleString()})</span>
-                </div>
-                <div className="w-full h-1.5 bg-[#050711] rounded-full overflow-hidden border border-slate-900/40">
-                  <div className="h-full rounded-full" style={{ width: `\${sector.val}%`, backgroundColor: sector.color }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ==================== 7. CONTRIBUTORS & 8. LOSSES ==================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Contributors */}
         <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
           <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
             <TrendingUp size={15} className="text-emerald-400" />
@@ -658,269 +371,83 @@ export default function PerformanceComparison() {
           </div>
 
           <div className="space-y-3">
-            {contributors.map((c, i) => (
-              <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
-                <div>
-                  <span className="text-xs font-black text-white">{c.symbol}</span>
-                  <span className="text-[10px] text-slate-500 block">{c.name}</span>
+            {contributors.length === 0 ? (
+              <div className="text-slate-500 text-xs py-4 font-bold text-center">No profitable assets currently.</div>
+            ) : (
+              contributors.map((c, i) => (
+                <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
+                  <div>
+                    <span className="text-xs font-black text-white">{c.symbol}</span>
+                    <span className="text-[10px] text-slate-500 block">{c.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-emerald-400 font-mono">{c.return}</span>
+                    <span className="text-[10px] text-slate-400 block font-mono">+${c.profit.toFixed(2)} Profit</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-black text-emerald-400 font-mono">+{c.return}</span>
-                  <span className="text-[10px] text-slate-400 block font-mono">+\${c.profit.toFixed(2)} Profit</span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
-        {/* Biggest Losses */}
-        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-              <TrendingDown size={15} className="text-rose-400" />
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">Biggest Beta Underperformers</span>
-            </div>
+        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
+          <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
+            <TrendingDown size={15} className="text-rose-400" />
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Biggest Beta Underperformers</span>
+          </div>
 
-            <div className="space-y-3">
-              {losses.map((l, i) => (
+          <div className="space-y-3">
+            {losses.length === 0 ? (
+              <div className="text-slate-500 text-xs py-4 font-bold text-center">No negative assets currently.</div>
+            ) : (
+              losses.map((l, i) => (
                 <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
                   <div>
                     <span className="text-xs font-black text-white">{l.symbol}</span>
                     <span className="text-[10px] text-slate-500 block">{l.name}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-black text-rose-500 font-mono">{l.return}</span>
-                    <span className="text-[10px] text-slate-400 block font-mono">-\${Math.abs(l.loss).toFixed(2)} P/L</span>
+                    <span className="text-xs font-black text-rose-505 font-mono">{l.return}</span>
+                    <span className="text-[10px] text-slate-400 block font-mono">-${Math.abs(l.loss).toFixed(2)} Loss</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="bg-[#050711] border border-slate-900/60 p-3 rounded-2xl mt-4 text-[11px] text-slate-400 leading-snug">
-            <span className="text-purple-400 font-bold uppercase block mb-1">AI Recommendation</span>
-            Hedge high-beta volatility flags on TSLA using protective cash assets.
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {/* ==================== 8A. AI PERFORMANCE COACH ==================== */}
+      {/* ==================== 4. SECTOR ALLOCATION CONTRIBUTION ==================== */}
+      <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
+        <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
+          <PieIcon size={15} className="text-cyan-400" />
+          <span className="text-xs font-black uppercase tracking-wider text-slate-400">Sector Allocation Contribution Margin</span>
+        </div>
+
+        <div className="space-y-4">
+          {sectorAllocations.length === 0 ? (
+            <div className="text-slate-500 text-xs py-4 font-bold text-center">No sector allocation data available.</div>
+          ) : (
+            sectorAllocations.map((sector, i) => (
+              <div key={i} className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-300 font-extrabold">{sector.name}</span>
+                  <span className="font-mono text-slate-200 font-bold">{sector.val}% (${sector.count.toLocaleString()})</span>
+                </div>
+                <div className="w-full h-1.5 bg-[#050711] rounded-full overflow-hidden border border-slate-900/40">
+                  <div className="h-full rounded-full" style={{ width: `${sector.val}%`, backgroundColor: sector.color }}></div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ==================== 5. SUBSECTIONS ==================== */}
       <AiPerformanceCoachSection />
-
-      {/* ==================== 8B. BENCHMARK RADAR ==================== */}
       <BenchmarkRadarSection />
-
-      {/* ==================== 9. ROLLING RETURNS ==================== */}
-      <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-        <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-          <Layers size={14} className="text-blue-400" />
-          <span className="text-xs font-black uppercase tracking-wider text-slate-400">Interval Rolling Returns Ledger</span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-          {rollingReturns.map((r, i) => (
-            <div key={i} className="bg-[#050711] border border-slate-900 rounded-2xl p-4 flex flex-col justify-between h-28">
-              <div>
-                <span className="text-[9px] text-slate-500 font-extrabold uppercase block">{r.period}</span>
-                <p className="text-sm font-black text-emerald-400 font-mono mt-1">{r.val}</p>
-              </div>
-              <div className="h-6 w-full opacity-60">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={r.sparkline.map((v, idx) => ({ idx, val: v }))}>
-                    <Area type="monotone" dataKey="val" stroke="#10b981" fill="#10b98110" strokeWidth={1.5} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ==================== 10. WIN RATE & 11. DIVERSIFICATION SCORE ==================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Win Rate Stats */}
-        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-          <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-            <Coins size={15} className="text-emerald-400" />
-            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Position Win-Rate Matrix</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { label: "Winning Positions", val: "18 Assets", desc: "Gainers in holdings list" },
-              { label: "Losing Positions", val: "6 Assets", desc: "Underperforming positions" },
-              { label: "Average Gain Value", val: "+$324.50", desc: "Mean profitable yield delta" },
-              { label: "Average Loss Value", val: "-$145.20", desc: "Mean drawdown loss delta" },
-              { label: "Profit Factor", val: "2.24x", desc: "solvency yield correlation" },
-              { label: "Recovery Factor", val: "3.12x", desc: "Drawdown recovery rate score" }
-            ].map((stat, i) => (
-              <div key={i} className="bg-[#050711] border border-slate-900 rounded-2xl p-4">
-                <span className="text-[9px] text-slate-500 font-extrabold uppercase">{stat.label}</span>
-                <p className="text-sm font-black text-white mt-1.5 font-mono">{stat.val}</p>
-                <span className="text-[9px] text-slate-400 block mt-1">{stat.desc}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Diversification Score card */}
-        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-              <PieIcon size={15} className="text-indigo-400" />
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">Portfolio Diversification Matrix</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-[#050711]/60 border border-slate-900 rounded-2xl mb-4">
-              <div>
-                <span className="text-[10px] text-slate-500 font-extrabold uppercase">Calculated Score</span>
-                <h4 className="text-xl font-black text-emerald-400 mt-1">Excellent (84/100)</h4>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] text-slate-500 font-extrabold uppercase">Model Alignment</span>
-                <p className="text-xs text-slate-200 mt-1 font-semibold">Broad Market Balanced</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              **AI comment:** Allocation is well diversified across major equity sectors, crypto reserves, and commodities. Slight adjustments to increase sovereign cash bonds could decrease portfolio correlation during market cycles.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-5 gap-2 border-t border-slate-900 pt-4 mt-6 text-center text-[10px] font-mono font-bold text-slate-400">
-            <div><span>Stocks</span><p className="text-white mt-1 font-black">68%</p></div>
-            <div><span>Crypto</span><p className="text-white mt-1 font-black">12%</p></div>
-            <div><span>Forex</span><p className="text-white mt-1 font-black">8%</p></div>
-            <div><span>Commod</span><p className="text-white mt-1 font-black">7%</p></div>
-            <div><span>Cash</span><p className="text-white mt-1 font-black">5%</p></div>
-          </div>
-        </div>
-      </div>
-
-      {/* ==================== 12. PERFORMANCE CALENDAR HEATMAP ==================== */}
       <PerformanceHeatmap />
-
-      {/* ==================== 12A. ROLLING CAGR ==================== */}
       <RollingCagrSection />
-
-      {/* ==================== 13. GOALS & 14. FORECAST ==================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Goal Tracking */}
-        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-              <Target size={15} className="text-cyan-400" />
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">Financial Goal Vector Progress</span>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center text-xs mb-1.5">
-                  <span className="text-slate-400 font-medium">Goal Amount: $100,000</span>
-                  <span className="font-mono text-emerald-405 font-bold">48.6% Met</span>
-                </div>
-                <div className="w-full h-2 bg-[#050711] rounded-full overflow-hidden border border-slate-900/60">
-                  <div className="h-full bg-blue-500 rounded-full" style={{ width: "48.6%" }}></div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mt-4 text-xs font-mono">
-                <div><span className="text-slate-500 font-sans block">Remaining Balance</span><p className="font-black text-white mt-1">$51,390.00</p></div>
-                <div><span className="text-slate-500 font-sans block">Est. Completion Horizon</span><p className="font-black text-white mt-1">2.4 Years</p></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* AI Forecast */}
-        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-2xl pointer-events-none rounded-full"></div>
-          <div>
-            <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-              <Compass size={15} className="text-indigo-400" />
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">AI Predictive Growth Forecast</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-slate-500 block">Expected 12M Yield</span>
-                <p className="text-sm font-black text-emerald-400 font-mono mt-1">+14.20% Est.</p>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Horizon Trend</span>
-                <p className="text-sm font-black text-white mt-1">Moderate Bullish Vector</p>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Model Confidence Score</span>
-                <p className="text-sm font-black text-indigo-400 font-mono mt-1">82% Confidence</p>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Risk Classifier</span>
-                <p className="text-sm font-black text-amber-500 mt-1">Moderate Risk</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-900 pt-4 mt-6 text-[10px] text-slate-500 leading-snug italic font-medium flex items-center gap-1">
-            <Info size={11} className="text-indigo-400 shrink-0" />
-            <span>AI Forecast Model. NOT financial investment advice.</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ==================== 15. BREAKDOWN ==================== */}
-      <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-        <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-          <Layers size={14} className="text-blue-400" />
-          <span className="text-xs font-black uppercase tracking-wider text-slate-400">Income Stream Ledger breakdown</span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {[
-            { label: "Capital Gain Yield", val: "$6,240.50", desc: "+21.2% Gain margin", color: "border-blue-500/20" },
-            { label: "Dividend Payouts", val: "$1,120.40", desc: "+3.8% yield return", color: "border-emerald-500/20" },
-            { label: "Interest Earned", val: "$450.20", desc: "Yield cash margins", color: "border-indigo-500/20" },
-            { label: "Currency Differentials", val: "$345.10", desc: "FX conversion delta", color: "border-cyan-500/20" },
-            { label: "Other Income Payouts", val: "$256.70", desc: "Rebates + minor items", color: "border-purple-500/20" },
-            { label: "Total Net Profit Margin", val: "$8,412.90", desc: "Aggregated profit delta", color: "border-emerald-500/30 bg-emerald-500/5 text-emerald-400 font-bold" }
-          ].map((card, i) => (
-            <div key={i} className={`bg-[#050711]/60 border rounded-2xl p-4 \${card.color}`}>
-              <span className="text-[9px] text-slate-500 font-extrabold uppercase block">{card.label}</span>
-              <p className="text-sm font-black mt-2 font-mono">{card.val}</p>
-              <span className="text-[9px] text-slate-400 block mt-1">{card.desc}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ==================== 16. EXPORT & SHARE ==================== */}
-      <div className="flex items-center justify-between p-4 bg-[#121a2a]/45 border border-slate-900 rounded-3xl shadow-md">
-        <div className="flex items-center gap-2">
-          <Download size={14} className="text-blue-400" />
-          <span className="text-xs font-black uppercase tracking-wider text-slate-400 font-sans">Report Export Engine</span>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => exportToCSV(false)}
-            className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors"
-          >
-            Export CSV
-          </button>
-          <button
-            onClick={() => exportToCSV(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors"
-          >
-            Export Excel
-          </button>
-          <button
-            onClick={exportToPDF}
-            className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors"
-          >
-            Export PDF
-          </button>
-        </div>
-      </div>
-
     </div>
   );
 }

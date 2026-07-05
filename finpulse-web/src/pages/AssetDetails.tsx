@@ -26,6 +26,25 @@ function resolveSymbolType(symbol: string): "Stock" | "Index" | "Crypto" | "Fore
   return "Stock";
 }
 
+function resolveExchangeLocation(symbol: string, assetType: string, stateExchange?: string): string {
+  if (stateExchange) return stateExchange;
+  if (assetType === "Crypto") return "BINANCE";
+  if (assetType === "Forex") return "FOREX";
+  if (assetType === "Commodities") return "COMMODITIES";
+  if (assetType === "Index") {
+    const upper = symbol.toUpperCase();
+    if (upper.endsWith(".NS") || upper.endsWith(".BO") || upper.startsWith("^CNX") || upper.startsWith("^NSE") || upper.startsWith("^BSESN")) {
+      return "Domestic";
+    }
+    const usIndices = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^NDX", "^VIX"];
+    if (usIndices.includes(upper)) {
+      return "US";
+    }
+    return "GLOBAL";
+  }
+  return "GLOBAL";
+}
+
 export default function AssetDetails() {
   const { symbol = "AAPL" } = useParams();
   const navigate = useNavigate();
@@ -37,7 +56,7 @@ export default function AssetDetails() {
     location.state?.name || symbol
   );
   
-  const assetExchange = location.state?.exchange || (assetType === "Crypto" ? "BINANCE" : "GLOBAL");
+  const assetExchange = resolveExchangeLocation(symbol, assetType, location.state?.exchange);
 
   const tabsMap: Record<string, string[]> = {
     Stock: ["overview", "chart", "financials", "technicals", "ai_analysis"],
