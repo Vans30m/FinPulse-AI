@@ -10,6 +10,8 @@ import PortfolioPerformanceChart from "./PortfolioPerformanceChart";
 import { useChart } from "../../../context/ChartContext";
 import toast from 'react-hot-toast';
 import { getFundamentals } from '../../../services/marketService';
+import PaperTradingOrderModal from './PaperTradingOrderModal';
+import PaperTradingLedger, { type VirtualTransaction } from './PaperTradingLedger';
 
 interface Holding {
   id?: string;
@@ -85,6 +87,22 @@ export default function PortfolioDashboard() {
   const [portfolioEvents, setPortfolioEvents] = useState<any[]>([]);
   const [advisorData, setAdvisorData] = useState<any>(null);
   const [performanceData, setPerformanceData] = useState<{ month: string; value: number }[]>([]);
+
+  // Paper Trading Sandbox States
+  const [isSandboxMode, setIsSandboxMode] = useState<boolean>(false);
+  const [isSandboxOpen, setIsSandboxOpen] = useState<boolean>(false);
+  const [virtualBalance, setVirtualBalance] = useState<number>(() => {
+    const val = localStorage.getItem('finpulse_virtual_balance');
+    return val ? parseFloat(val) : 100000;
+  });
+  const [virtualHoldings, setVirtualHoldings] = useState<any[]>(() => {
+    const val = localStorage.getItem('finpulse_virtual_holdings');
+    return val ? JSON.parse(val) : [];
+  });
+  const [virtualTransactions, setVirtualTransactions] = useState<any[]>(() => {
+    const val = localStorage.getItem('finpulse_virtual_transactions');
+    return val ? JSON.parse(val) : [];
+  });
 
   const [activeMarket, setActiveMarket] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -277,9 +295,86 @@ export default function PortfolioDashboard() {
     }
   };
 
+  const handleExecutePaperTrade = (trade: {
+    type: 'BUY' | 'SELL';
+    symbol: string;
+    name: string;
+    shares: number;
+    price: number;
+    marketId: string;
+  }) => {
+    const isDomestic = trade.symbol.endsWith('.NS') || trade.symbol.endsWith('.BO');
+    const priceInUSD = isDomestic ? trade.price / usdToInrRate : trade.price;
+    const tradeValueUSD = trade.shares * priceInUSD;
+
+    let nextBalance = virtualBalance;
+    const nextHoldings = [...virtualHoldings];
+
+    if (trade.type === 'BUY') {
+      nextBalance -= tradeValueUSD;
+      const existing = nextHoldings.find(h => h.ticker.toUpperCase() === trade.symbol.toUpperCase());
+      if (existing) {
+        const prevCost = existing.shares * existing.avgCost;
+        const newCost = trade.shares * trade.price;
+        existing.shares += trade.shares;
+        existing.avgCost = (prevCost + newCost) / existing.shares;
+      } else {
+        nextHoldings.push({
+          ticker: trade.symbol,
+          name: trade.name,
+          shares: trade.shares,
+          avgCost: trade.price,
+          marketId: trade.marketId
+        });
+      }
+      toast.success(`Successfully bought ${trade.shares} shares of ${trade.symbol}`);
+    } else {
+      nextBalance += tradeValueUSD;
+      const existing = nextHoldings.find(h => h.ticker.toUpperCase() === trade.symbol.toUpperCase());
+      if (existing) {
+        existing.shares -= trade.shares;
+        if (existing.shares <= 0.0001) {
+          const idx = nextHoldings.indexOf(existing);
+          nextHoldings.splice(idx, 1);
+        }
+      }
+      toast.success(`Successfully sold ${trade.shares} shares of ${trade.symbol}`);
+    }
+
+    const newTx = {
+      id: Math.random().toString(36).substring(2, 9),
+      timestamp: new Date().toISOString(),
+      type: trade.type,
+      symbol: trade.symbol,
+      name: trade.name,
+      shares: trade.shares,
+      price: trade.price,
+      totalValue: trade.shares * trade.price
+    };
+
+    const nextTxs = [...virtualTransactions, newTx];
+    setVirtualBalance(nextBalance);
+    setVirtualHoldings(nextHoldings);
+    setVirtualTransactions(nextTxs);
+
+    localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
+    localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+    localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
+    
+    setIsSandboxOpen(false);
+  };
+
   const handleDeleteHolding = async (id: string, name: string) => {
     const confirmed = window.confirm(`Are you sure you want to remove ${name} from your portfolio?`);
     if (!confirmed) return;
+
+    if (isSandboxMode) {
+      const nextHoldings = virtualHoldings.filter(h => (h.id || h.ticker) !== id);
+      setVirtualHoldings(nextHoldings);
+      localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+      toast.success(`Removed virtual asset ${name}`);
+      return;
+    }
 
     try {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
@@ -328,24 +423,72 @@ export default function PortfolioDashboard() {
     let cryptoVal = 0;
     let otherVal = 0;
 
-    sections.forEach(sec => {
-      sec.holdings.forEach(h => {
-        if (sec.id === 'domestic') {
-          inrVal += h.marketValue;
-        } else if (sec.id === 'us') {
-          usdVal += h.marketValue;
-        } else if (sec.id === 'crypto') {
-          cryptoVal += h.marketValue;
-        } else {
-          otherVal += h.marketValue;
-        }
-      });
+    const targetSecs = isSandboxMode ? virtualHoldings.map(h => ({
+      marketId: h.marketId,
+      marketValue: h.shares * h.avgCost // Cost basis or lookup
+    })) : sections.flatMap(s => s.holdings.map(h => ({ marketId: s.id, marketValue: h.marketValue })));
+
+    targetSecs.forEach(h => {
+      if (h.marketId === 'domestic') {
+        inrVal += h.marketValue;
+      } else if (h.marketId === 'us') {
+        usdVal += h.marketValue;
+      } else if (h.marketId === 'crypto') {
+        cryptoVal += h.marketValue;
+      } else {
+        otherVal += h.marketValue;
+      }
     });
 
     return { inrVal, usdVal, cryptoVal, otherVal };
-  }, [sections]);
+  }, [sections, virtualHoldings, isSandboxMode]);
 
-  const totalNetValue = sections
+  // Group values by native currency / segment for virtual holdings
+  const virtualSections = useMemo(() => {
+    return INITIAL_SECTIONS.map(initial => {
+      const holdingsForSection = virtualHoldings
+        .filter(h => h.marketId === initial.id)
+        .map(h => {
+          // Look up real-time price from loaded database sections
+          let livePrice = h.avgCost;
+          const realSec = sections.find(s => s.id === h.marketId);
+          const realHold = realSec?.holdings.find(rh => rh.ticker.toUpperCase() === h.ticker.toUpperCase());
+          if (realHold) {
+            livePrice = realHold.currentPrice;
+          }
+          const marketValue = h.shares * livePrice;
+          const costBasis = h.shares * h.avgCost;
+          const totalGain = marketValue - costBasis;
+          const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
+          
+          let colorClass = { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
+          if (h.marketId === 'us') {
+            colorClass = { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-450', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
+          } else if (h.marketId === 'crypto') {
+            colorClass = { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200/50 dark:border-amber-900/50' };
+          }
+
+          return {
+            ...h,
+            id: h.id || h.ticker,
+            currentPrice: livePrice,
+            marketValue,
+            totalGain,
+            gainPercent,
+            colorClass,
+            sector: h.marketId === 'crypto' ? 'Crypto' : 'Technology'
+          };
+        });
+      return {
+        ...initial,
+        holdings: holdingsForSection
+      };
+    });
+  }, [virtualHoldings, sections]);
+
+  const currentSections = isSandboxMode ? virtualSections : sections;
+
+  const totalHoldingsValue = currentSections
     .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
     .reduce((sum, sec) => {
       return sum + sec.holdings.reduce((s, h) => {
@@ -356,7 +499,15 @@ export default function PortfolioDashboard() {
       }, 0);
     }, 0);
 
-  const totalGain = sections
+  const cashBalanceInCurrency = activeMarket === 'domestic'
+    ? virtualBalance * usdToInrRate
+    : (activeMarket === 'all' ? virtualBalance : (activeMarket === 'us' ? virtualBalance : 0));
+
+  const totalNetValue = isSandboxMode
+    ? cashBalanceInCurrency + totalHoldingsValue
+    : totalHoldingsValue;
+
+  const totalGain = currentSections
     .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
     .reduce((sum, sec) => {
       return sum + sec.holdings.reduce((s, h) => {
@@ -367,10 +518,9 @@ export default function PortfolioDashboard() {
       }, 0);
     }, 0);
 
-  const totalInvestedAmount = Math.max(
-    totalNetValue - totalGain,
-    0
-  );
+  const totalInvestedAmount = isSandboxMode
+    ? Math.max(totalHoldingsValue - totalGain, 0)
+    : Math.max(totalNetValue - totalGain, 0);
 
   const todayProfitLoss = Math.round(
     totalNetValue * 0.0065 * (totalGain >= 0 ? 1 : -1)
@@ -406,7 +556,7 @@ export default function PortfolioDashboard() {
     {
       id: "current-value",
       title: "Current Portfolio Value",
-      value: totalNetValue,
+      value: isSandboxMode ? totalHoldingsValue : totalNetValue,
       format: "currency",
       helperText: "Live market value of the full portfolio snapshot.",
       trendLabel: "Market value",
@@ -445,7 +595,7 @@ export default function PortfolioDashboard() {
     },
   ];
 
-  const allocationData = sections
+  const allocationData = currentSections
     .map((section) => ({
       name: section.title,
       value: section.holdings.reduce((sum, h) => {
@@ -464,7 +614,7 @@ export default function PortfolioDashboard() {
       ? [...allocationData].sort((a, b) => b.value - a.value)[0]
       : null;
 
-  const filteredHoldings = sections
+  const filteredHoldings = currentSections
     .filter((section) => activeMarket === 'all' || activeMarket === section.id)
     .flatMap((section) =>
       section.holdings.map(h => ({
@@ -660,14 +810,25 @@ export default function PortfolioDashboard() {
   return (
     <div className="space-y-8 w-full max-w-7xl mx-auto px-1 relative">
 
-      {/* HEADER & AGGREGATES */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-slate-100 dark:border-slate-800/80 pb-6">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-            Asset Portfolio
-          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+              {isSandboxMode ? '🎮 Paper Sandbox' : 'Asset Portfolio'}
+            </h1>
+            <button
+              onClick={() => setIsSandboxMode(!isSandboxMode)}
+              className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border transition-all ${
+                isSandboxMode
+                  ? 'bg-purple-600/10 text-purple-400 border-purple-500/20 shadow-inner'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5 shadow-sm'
+              }`}
+            >
+              {isSandboxMode ? 'Switch to Tracker' : 'Try Paper Trading'}
+            </button>
+          </div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
-            Global allocation breakdown with modular tracking.
+            {isSandboxMode ? 'Test strategies in real-time with $100k virtual cash balance.' : 'Global allocation breakdown with modular tracking.'}
           </p>
         </div>
         <div className="flex items-center gap-3.5 w-full sm:w-auto flex-wrap relative">
@@ -718,12 +879,21 @@ export default function PortfolioDashboard() {
             )}
           </div>
 
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-650 dark:from-cyan-500 dark:to-blue-600 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-cyan-400 dark:hover:to-blue-500 px-5 py-2.5 text-xs font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 dark:hover:shadow-cyan-400/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 w-full sm:w-auto"
-          >
-            <Plus className="h-3.5 w-3.5 stroke-[3]" /> Add Asset Position
-          </button>
+          {isSandboxMode ? (
+            <button
+              onClick={() => setIsSandboxOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-650 dark:from-purple-500 dark:to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 w-full sm:w-auto"
+            >
+              <Plus className="h-3.5 w-3.5 stroke-[3]" /> Place Paper Trade
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-650 dark:from-cyan-500 dark:to-blue-600 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-cyan-400 dark:hover:to-blue-500 px-5 py-2.5 text-xs font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 dark:hover:shadow-cyan-400/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 w-full sm:w-auto"
+            >
+              <Plus className="h-3.5 w-3.5 stroke-[3]" /> Add Asset Position
+            </button>
+          )}
         </div>
       </div>
 
@@ -791,8 +961,14 @@ export default function PortfolioDashboard() {
             <Globe className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Asset Classes</p>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">5 Unique Hubs</h3>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              {isSandboxMode ? "Available Cash" : "Asset Classes"}
+            </p>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+              {isSandboxMode 
+                ? `${displayCurrency}${cashBalanceInCurrency.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                : "5 Unique Hubs"}
+            </h3>
           </div>
         </div>
       </div>
@@ -1104,6 +1280,23 @@ export default function PortfolioDashboard() {
           </div>
         </div>
       )}
+
+      {isSandboxMode && (
+        <PaperTradingLedger
+          transactions={virtualTransactions}
+          activeCurrency={displayCurrency}
+        />
+      )}
+
+      <PaperTradingOrderModal
+        isOpen={isSandboxOpen}
+        onClose={() => setIsSandboxOpen(false)}
+        virtualBalance={virtualBalance}
+        activeCurrency={displayCurrency}
+        usdToInrRate={usdToInrRate}
+        currentHoldings={virtualHoldings}
+        onExecuteTrade={handleExecutePaperTrade}
+      />
 
     </div>
   );
