@@ -37,6 +37,16 @@ export default function PerformanceComparison() {
   const [timeframe, setTimeframe] = useState<"1D" | "5D" | "1M" | "3M" | "6M" | "1Y" | "MAX">("1M");
   const [selectedBenchmark, setSelectedBenchmark] = useState<string>("S&P 500");
 
+  const BENCHMARK_YIELDS: Record<string, number> = {
+    "NIFTY 50": 14.20,
+    "SENSEX": 13.80,
+    "NASDAQ": 22.40,
+    "S&P 500": 11.50,
+    "Gold": 8.60,
+    "Bitcoin": 45.10
+  };
+
+  const activeBenchmarkYield = BENCHMARK_YIELDS[selectedBenchmark] || 12.50;
   const benchmarksList = ["NIFTY 50", "SENSEX", "NASDAQ", "S&P 500", "Gold", "Bitcoin"];
 
   const loadPerformanceData = async () => {
@@ -163,7 +173,8 @@ export default function PerformanceComparison() {
       // Calculate a simple simulated benchmark path starting at the same initial portfolio value
       const initialVal = cagrData.portfolioValues[0]?.value || 1000;
       const daysElapsed = index + 1;
-      const simulatedBenchmark = initialVal * Math.pow(1 + 0.08 / 12, daysElapsed);
+      const annualRate = (BENCHMARK_YIELDS[selectedBenchmark] || 12.50) / 100;
+      const simulatedBenchmark = initialVal * Math.pow(1 + annualRate / 12, daysElapsed);
 
       return {
         name: `${monthName} '${year}`,
@@ -340,12 +351,12 @@ export default function PerformanceComparison() {
               </div>
               <div className="flex justify-between items-center py-2.5 border-b border-slate-900/60">
                 <span className="text-xs text-slate-400 font-medium">{selectedBenchmark} Target Yield</span>
-                <span className="text-sm font-black text-slate-200 font-mono">+12.50%</span>
+                <span className="text-sm font-black text-slate-200 font-mono">+{activeBenchmarkYield.toFixed(2)}%</span>
               </div>
               <div className="flex justify-between items-center py-2.5 border-b border-slate-900/60">
                 <span className="text-xs text-slate-400 font-medium">Yield Margin Difference</span>
                 <span className="text-sm font-black text-blue-400 font-mono">
-                  {(portfolioStats.yieldReturn - 12.50) >= 0 ? "+" : ""}{(portfolioStats.yieldReturn - 12.50).toFixed(2)}%
+                  {(portfolioStats.yieldReturn - activeBenchmarkYield) >= 0 ? "+" : ""}{(portfolioStats.yieldReturn - activeBenchmarkYield).toFixed(2)}%
                 </span>
               </div>
             </div>
@@ -354,9 +365,9 @@ export default function PerformanceComparison() {
           <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 mt-6 text-center">
             <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">Outperformance Target</span>
             <p className="text-sm font-black text-white mt-1">
-              {portfolioStats.yieldReturn >= 12.50 
-                ? `Portfolio beats ${selectedBenchmark} index by +${(portfolioStats.yieldReturn - 12.50).toFixed(2)}%`
-                : `Portfolio trails ${selectedBenchmark} index by ${(12.50 - portfolioStats.yieldReturn).toFixed(2)}%`}
+              {portfolioStats.yieldReturn >= activeBenchmarkYield 
+                ? `Portfolio beats ${selectedBenchmark} index by +${(portfolioStats.yieldReturn - activeBenchmarkYield).toFixed(2)}%`
+                : `Portfolio trails ${selectedBenchmark} index by ${(activeBenchmarkYield - portfolioStats.yieldReturn).toFixed(2)}%`}
             </p>
           </div>
         </div>

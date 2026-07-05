@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { BarChart3 } from "lucide-react";
 import PortfolioAllocationChart from "./PortfolioAllocationChart";
@@ -9,8 +9,10 @@ import AIPortfolioAdvisorSection from "./AIPortfolioAdvisorSection";
 import PortfolioPerformanceChart from "./PortfolioPerformanceChart";
 import { useChart } from "../../../context/ChartContext";
 import toast from 'react-hot-toast';
+import { getFundamentals } from '../../../services/marketService';
 
 interface Holding {
+  id?: string;
   ticker: string;
   yahooSymbol?: string;
   exchange?: string;
@@ -78,6 +80,7 @@ const INITIAL_SECTIONS: MarketSection[] = [
 
 export default function PortfolioDashboard() {
   const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
+  const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
   const [watchlistItems, setWatchlistItems] = useState<any[]>([]);
   const [portfolioEvents, setPortfolioEvents] = useState<any[]>([]);
   const [advisorData, setAdvisorData] = useState<any>(null);
@@ -217,6 +220,17 @@ export default function PortfolioDashboard() {
   };
 
   useEffect(() => {
+    const fetchRate = async () => {
+      try {
+        const data = await getFundamentals('USDINR=X');
+        if (data && data.price) {
+          setUsdToInrRate(data.price);
+        }
+      } catch (err) {
+        console.error("Failed to fetch USDINR exchange rate, using fallback 83.45:", err);
+      }
+    };
+    fetchRate();
     loadPortfolioData();
   }, []);
 
@@ -293,19 +307,43 @@ export default function PortfolioDashboard() {
 
   const getHoldingValueInUSD = (h: Holding, sectionId: string) => {
     if (sectionId === 'domestic') {
-      return h.marketValue / 83;
+      return h.marketValue / usdToInrRate;
     }
     return h.marketValue;
   };
 
   const getHoldingGainInUSD = (h: Holding, sectionId: string) => {
     if (sectionId === 'domestic') {
-      return h.totalGain / 83;
+      return h.totalGain / usdToInrRate;
     }
     return h.totalGain;
   };
 
   const displayCurrency = activeMarket === 'domestic' ? '₹' : '$';
+
+  // Group values by native currency / segment
+  const portfolioSplits = useMemo(() => {
+    let inrVal = 0;
+    let usdVal = 0;
+    let cryptoVal = 0;
+    let otherVal = 0;
+
+    sections.forEach(sec => {
+      sec.holdings.forEach(h => {
+        if (sec.id === 'domestic') {
+          inrVal += h.marketValue;
+        } else if (sec.id === 'us') {
+          usdVal += h.marketValue;
+        } else if (sec.id === 'crypto') {
+          cryptoVal += h.marketValue;
+        } else {
+          otherVal += h.marketValue;
+        }
+      });
+    });
+
+    return { inrVal, usdVal, cryptoVal, otherVal };
+  }, [sections]);
 
   const totalNetValue = sections
     .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
@@ -411,7 +449,7 @@ export default function PortfolioDashboard() {
     .map((section) => ({
       name: section.title,
       value: section.holdings.reduce((sum, h) => {
-        return sum + (section.id === 'domestic' ? h.marketValue / 83 : h.marketValue);
+        return sum + (section.id === 'domestic' ? h.marketValue / usdToInrRate : h.marketValue);
       }, 0),
     }))
     .filter((x) => x.value > 0);
@@ -689,6 +727,39 @@ export default function PortfolioDashboard() {
         </div>
       </div>
 
+      {/* Market Tab Selector at Dashboard Level */}
+      <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner w-fit select-none">
+        {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveMarket(tab)}
+            className={`px-4 py-2 rounded-xl capitalize transition-all duration-300 whitespace-nowrap ${activeMarket === tab
+                ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5 font-extrabold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+          >
+            {tab === 'all' ? 'All Assets (Consolidated USD)' : tab === 'domestic' ? '🇮🇳 Domestic (INR)' : tab === 'us' ? '🇺🇸 US Market' : tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Currency Split Info Banner */}
+      {activeMarket === 'all' && (
+        <div className="bg-[#121a2a]/35 border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-medium text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span>Unified Global View: domestic INR holdings are converted to USD (1 USD = {usdToInrRate.toFixed(4)} INR) to calculate consolidated totals.</span>
+          </div>
+          <div className="flex items-center gap-3.5 flex-wrap">
+            <span className="font-bold text-slate-350">Asset Segment Splits:</span>
+            <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🇮🇳 Domestic: <strong className="text-white">₹{portfolioSplits.inrVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>
+            {portfolioSplits.usdVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🇺🇸 US Market: <strong className="text-white">${portfolioSplits.usdVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+            {portfolioSplits.cryptoVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🪙 Crypto: <strong className="text-white">${portfolioSplits.cryptoVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+            {portfolioSplits.otherVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🌍 Other Markets: <strong className="text-white">${portfolioSplits.otherVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+          </div>
+        </div>
+      )}
+
       {/* Aggregate Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-panel p-6 flex items-center gap-4 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
@@ -744,23 +815,7 @@ export default function PortfolioDashboard() {
             <p className="text-xs text-slate-400 dark:text-slate-500">Live holdings index list across active categories.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            {/* Market Tab Selector */}
-            <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner">
-              {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveMarket(tab)}
-                  className={`px-3 py-1.5 rounded-lg capitalize transition-all duration-300 whitespace-nowrap ${activeMarket === tab
-                      ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                >
-                  {tab === 'all' ? 'All Assets' : tab === 'us' ? 'US' : tab}
-                </button>
-              ))}
-            </div>
-
+          <div className="flex items-center gap-2">
             <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-cyan-400">
               {filteredHoldings.length} Positions
             </span>

@@ -5,7 +5,7 @@ import {
   Sliders, Star, Search, Bookmark, Download, ChevronRight, ChevronDown, X, Globe,
   Activity, TrendingUp, Briefcase, Coins, ShieldAlert, Award, RefreshCw, Layers, Check, Sparkles, Filter, Pin
 } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import StockSearch from '../components/ui/StockSearch';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
@@ -475,15 +475,6 @@ export default function StockScreener() {
 
   return (
     <div className="min-h-screen bg-[#060812] text-slate-100 flex flex-col antialiased font-sans relative">
-      <Toaster 
-        toastOptions={{
-          style: {
-            background: '#121a2d',
-            color: '#fff',
-            border: '1px solid #1e293b'
-          }
-        }} 
-      />
 
       {/* Sticky Header Controls */}
       <header className="border-b border-slate-900 bg-[#090d1a]/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
@@ -846,7 +837,7 @@ export default function StockScreener() {
                         </td>
                       </tr>
                     ) : (
-                      paginatedStocks.map((stock) => {
+                      filteredStocks.map((stock) => {
                         const isWatched = watchlist.includes(stock.ticker);
                         const isCompared = compareSymbols.includes(stock.ticker);
                         const isChartExpanded = expandedStockChart?.symbol === stock.ticker;
@@ -1063,25 +1054,9 @@ export default function StockScreener() {
                 </table>
               </div>
 
-              {/* Pagination controls */}
+              {/* Total matches count */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-900 text-xs text-slate-500 font-mono">
-                <span>Page {currentPage} of {totalPages} ({filteredStocks.length} total matches)</span>
-                <div className="flex gap-2">
-                  <button 
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    className="px-3 py-1.5 bg-[#090d1a] border border-slate-900 hover:bg-[#121a2d] hover:text-white rounded-lg disabled:opacity-40 disabled:hover:bg-[#090d1a] disabled:hover:text-slate-500 transition-colors"
-                  >
-                    Prev
-                  </button>
-                  <button 
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    className="px-3 py-1.5 bg-[#090d1a] border border-slate-900 hover:bg-[#121a2d] hover:text-white rounded-lg disabled:opacity-40 disabled:hover:bg-[#090d1a] disabled:hover:text-slate-500 transition-colors"
-                  >
-                    Next
-                  </button>
-                </div>
+                <span>{filteredStocks.length} total matches loaded</span>
               </div>
             </>
           ) : (
