@@ -25,6 +25,44 @@ import {
 } from "../../utils/indicators";
 import { X } from "lucide-react";
 
+const findClosestData = (data: { time: number; value: any }[] | undefined, targetTime: number) => {
+  if (!data || data.length === 0) return null;
+  let closest = data[0];
+  let minDiff = Math.abs(closest.time - targetTime);
+  for (let i = 1; i < data.length; i++) {
+    const diff = Math.abs(data[i].time - targetTime);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = data[i];
+    }
+  }
+  if (minDiff <= 604800) {
+    return closest;
+  }
+  return null;
+};
+
+const getCurrencyFromSymbol = (sym: string): string => {
+  if (!sym) return "USD";
+  const upper = sym.toUpperCase();
+  if (upper.endsWith(".NS") || upper.endsWith(".BO") || upper.startsWith("^CNX") || upper.startsWith("^NSE") || upper.startsWith("^BSESN")) {
+    return "INR";
+  }
+  if (upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".MI") || upper.endsWith(".MC")) {
+    return "EUR";
+  }
+  if (upper.endsWith(".L")) {
+    return "GBP";
+  }
+  if (upper.endsWith(".TO")) {
+    return "CAD";
+  }
+  if (upper.endsWith(".AX")) {
+    return "AUD";
+  }
+  return "USD";
+};
+
 interface Props {
   symbol?: string;
   timeframe?: string;
@@ -237,14 +275,15 @@ export default function CandlestickChart({
 
   // Fetch FX rates when main fundamentals currency updates
   useEffect(() => {
-    if (!fundamentals?.currency || fundamentals.currency === "USD") {
+    const currency = fundamentals?.currency || getCurrencyFromSymbol(symbol);
+    if (!currency || currency === "USD") {
       setMainFxRate(1);
       return;
     }
     let active = true;
     async function fetchMainFx() {
       try {
-        const res = await getFundamentals(`USD${fundamentals.currency}=X`);
+        const res = await getFundamentals(`USD${currency}=X`);
         if (active && res && res.price) {
           setMainFxRate(res.price);
         }
@@ -254,18 +293,19 @@ export default function CandlestickChart({
     }
     fetchMainFx();
     return () => { active = false; };
-  }, [fundamentals?.currency]);
+  }, [fundamentals?.currency, symbol]);
 
   // Fetch FX rates when compared fundamentals currency updates
   useEffect(() => {
-    if (!compareFundamentals?.currency || compareFundamentals.currency === "USD") {
+    const currency = compareFundamentals?.currency || getCurrencyFromSymbol(compareSymbol);
+    if (!currency || currency === "USD") {
       setCompareFxRate(1);
       return;
     }
     let active = true;
     async function fetchCompareFx() {
       try {
-        const res = await getFundamentals(`USD${compareFundamentals.currency}=X`);
+        const res = await getFundamentals(`USD${currency}=X`);
         if (active && res && res.price) {
           setCompareFxRate(res.price);
         }
@@ -275,108 +315,87 @@ export default function CandlestickChart({
     }
     fetchCompareFx();
     return () => { active = false; };
-  }, [compareFundamentals?.currency]);
+  }, [compareFundamentals?.currency, compareSymbol]);
 
   const displayCandles = useMemo(() => {
-    if (!compareSymbol || mainFxRate === 1) return candles;
-    return candles.map(c => ({
-      ...c,
-      open: c.open / mainFxRate,
-      high: c.high / mainFxRate,
-      low: c.low / mainFxRate,
-      close: c.close / mainFxRate,
-    }));
-  }, [candles, compareSymbol, mainFxRate]);
+    return candles;
+  }, [candles]);
 
   const displayCompareCandles = useMemo(() => {
-    if (compareFxRate === 1) return compareCandles;
+    if (!compareSymbol) return compareCandles;
+    const conversionFactor = mainFxRate / compareFxRate;
+    if (conversionFactor === 1) return compareCandles;
     return compareCandles.map(c => ({
       ...c,
-      open: c.open / compareFxRate,
-      high: c.high / compareFxRate,
-      low: c.low / compareFxRate,
-      close: c.close / compareFxRate,
+      open: c.open * conversionFactor,
+      high: c.high * conversionFactor,
+      low: c.low * conversionFactor,
+      close: c.close * conversionFactor,
     }));
-  }, [compareCandles, compareFxRate]);
+  }, [compareCandles, compareSymbol, mainFxRate, compareFxRate]);
 
   const displayFundamentals = useMemo(() => {
-    if (!fundamentals) return null;
-    if (!compareSymbol || mainFxRate === 1) return fundamentals;
-    return {
-      ...fundamentals,
-      price: fundamentals.price / mainFxRate,
-      open: fundamentals.open ? fundamentals.open / mainFxRate : undefined,
-      dayHigh: fundamentals.dayHigh ? fundamentals.dayHigh / mainFxRate : undefined,
-      dayLow: fundamentals.dayLow ? fundamentals.dayLow / mainFxRate : undefined,
-    };
-  }, [fundamentals, compareSymbol, mainFxRate]);
+    return fundamentals;
+  }, [fundamentals]);
 
   const displayMetrics = useMemo(() => {
-    if (!metrics) return null;
-    if (!compareSymbol || mainFxRate === 1) return metrics;
-    return {
-      ...metrics,
-      currentPrice: metrics.currentPrice / mainFxRate,
-      previousClose: metrics.previousClose / mainFxRate,
-      dayHigh: metrics.dayHigh / mainFxRate,
-      dayLow: metrics.dayLow / mainFxRate,
-    };
-  }, [metrics, compareSymbol, mainFxRate]);
+    return metrics;
+  }, [metrics]);
 
-  // Recalculate indicators dynamically when displayCandles/displayCompareCandles update (reactive to USD conversion)
-  useEffect(() => {
-    if (displayCandles && displayCandles.length > 0) {
-      indicatorDataRef.current = {
-        ema20: calculateEMA(displayCandles, 20),
-        ema50: calculateEMA(displayCandles, 50),
-        ema200: calculateEMA(displayCandles, 200),
-        sma: calculateSMA(displayCandles, 20),
-        vwap: calculateVWAP(displayCandles),
-        bb: calculateBollingerBands(displayCandles, 20, 2),
-        rsi: calculateRSI(displayCandles, 14),
-        macd: calculateMACD(displayCandles),
-        stoch: calculateStochastic(displayCandles),
-        atr: calculateATR(displayCandles)
-      };
-    } else {
-      indicatorDataRef.current = {};
-    }
+  const displayCompareFundamentals = useMemo(() => {
+    if (!compareFundamentals) return null;
+    const conversionFactor = mainFxRate / compareFxRate;
+    if (conversionFactor === 1) return compareFundamentals;
+    return {
+      ...compareFundamentals,
+      price: compareFundamentals.price * conversionFactor,
+      open: compareFundamentals.open ? compareFundamentals.open * conversionFactor : undefined,
+      previousClose: compareFundamentals.previousClose ? compareFundamentals.previousClose * conversionFactor : undefined,
+      dayHigh: compareFundamentals.dayHigh ? compareFundamentals.dayHigh * conversionFactor : undefined,
+      dayLow: compareFundamentals.dayLow ? compareFundamentals.dayLow * conversionFactor : undefined,
+    };
+  }, [compareFundamentals, mainFxRate, compareFxRate]);
+
+  const indicatorData = useMemo(() => {
+    if (!displayCandles || displayCandles.length === 0) return {};
+    return {
+      ema20: calculateEMA(displayCandles, 20),
+      ema50: calculateEMA(displayCandles, 50),
+      ema200: calculateEMA(displayCandles, 200),
+      sma: calculateSMA(displayCandles, 20),
+      vwap: calculateVWAP(displayCandles),
+      bb: calculateBollingerBands(displayCandles, 20, 2),
+      rsi: calculateRSI(displayCandles, 14),
+      macd: calculateMACD(displayCandles),
+      stoch: calculateStochastic(displayCandles),
+      atr: calculateATR(displayCandles)
+    };
   }, [displayCandles]);
 
-  useEffect(() => {
-    if (displayCompareCandles && displayCompareCandles.length > 0) {
-      compareIndicatorDataRef.current = {
-        ema20: calculateEMA(displayCompareCandles, 20),
-        ema50: calculateEMA(displayCompareCandles, 50),
-        ema200: calculateEMA(displayCompareCandles, 200),
-        sma: calculateSMA(displayCompareCandles, 20),
-        vwap: calculateVWAP(displayCompareCandles),
-        bb: calculateBollingerBands(displayCompareCandles, 20, 2),
-      };
-    } else {
-      compareIndicatorDataRef.current = {};
-    }
+  const compareIndicatorData = useMemo(() => {
+    if (!displayCompareCandles || displayCompareCandles.length === 0) return {};
+    return {
+      ema20: calculateEMA(displayCompareCandles, 20),
+      ema50: calculateEMA(displayCompareCandles, 50),
+      ema200: calculateEMA(displayCompareCandles, 200),
+      sma: calculateSMA(displayCompareCandles, 20),
+      vwap: calculateVWAP(displayCompareCandles),
+      bb: calculateBollingerBands(displayCompareCandles, 20, 2),
+    };
   }, [displayCompareCandles]);
+
+  useEffect(() => {
+    indicatorDataRef.current = indicatorData;
+  }, [indicatorData]);
+
+  useEffect(() => {
+    compareIndicatorDataRef.current = compareIndicatorData;
+  }, [compareIndicatorData]);
 
   useEffect(() => {
     compareSymbolRef.current = compareSymbol;
     onCompareChange?.(compareSymbol);
   }, [compareSymbol, onCompareChange]);
-
-  useEffect(() => {
-    if (compareCandles && compareCandles.length > 0) {
-      compareIndicatorDataRef.current = {
-        ema20: calculateEMA(compareCandles, 20),
-        ema50: calculateEMA(compareCandles, 50),
-        ema200: calculateEMA(compareCandles, 200),
-        sma: calculateSMA(compareCandles, 20),
-        vwap: calculateVWAP(compareCandles),
-        bb: calculateBollingerBands(compareCandles, 20, 2),
-      };
-    } else {
-      compareIndicatorDataRef.current = {};
-    }
-  }, [compareCandles]);
 
   const toggleOverlay = useCallback((overlay: string) => {
     setActiveOverlays(prev =>
@@ -440,9 +459,10 @@ export default function CandlestickChart({
 
   // Load Compare candles & fundamentals
   useEffect(() => {
+    setCompareCandles([]);
+    setCompareFundamentals(null);
+
     if (!compareSymbol || !symbol) {
-      setCompareCandles([]);
-      setCompareFundamentals(null);
       return;
     }
     async function loadCompareData() {
@@ -643,7 +663,7 @@ export default function CandlestickChart({
 
       // Track comparison series crosshair hover data
       if (compareSymbolRef.current && displayCompareCandles && displayCompareCandles.length > 0) {
-        const compCandle = displayCompareCandles.find(c => c.time === time);
+        const compCandle = findClosestData(displayCompareCandles, time as number);
         if (compCandle) {
           setHoveredCompareCandle(compCandle);
         } else {
@@ -660,7 +680,10 @@ export default function CandlestickChart({
 
         if (time) {
           let price = 0;
-          if (pane === "RSI" && indicatorDataRef.current.rsi) {
+          if (pane === "Comparison" && displayCompareCandles && displayCompareCandles.length > 0) {
+            const compCandle = findClosestData(displayCompareCandles, time as number);
+            price = compCandle ? compCandle.close : 0;
+          } else if (pane === "RSI" && indicatorDataRef.current.rsi) {
             price = indicatorDataRef.current.rsi.find(d => d.time === time)?.value ?? 50;
           } else if (pane === "MACD" && indicatorDataRef.current.macd) {
             price = indicatorDataRef.current.macd.find(d => d.time === time)?.macd ?? 0;
@@ -879,53 +902,22 @@ export default function CandlestickChart({
       overlaySeriesRef.current[key] = [lineSeries];
     };
 
-    const addCompareLineOverlay = (key: string, lineData: { time: number; value: number }[], color: string, style?: any) => {
-      if (!lineData.length) return;
-      const lineSeries = chart.addLineSeries({
-        color,
-        lineWidth: 1.5,
-        lineStyle: style ?? LineStyle.Dashed,
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-      lineSeries.setData(lineData as any);
-      if (!overlaySeriesRef.current[key]) {
-        overlaySeriesRef.current[key] = [];
-      }
-      overlaySeriesRef.current[key].push(lineSeries);
-    };
-
     // Draw indicators overlays if standard candle chart
     if (candleSeries) {
       if (activeOverlays.includes("EMA 20") && indicatorDataRef.current.ema20) {
-        addLineOverlay("EMA 20", indicatorDataRef.current.ema20, "#34d399");
-        if (compareSymbol && compareIndicatorDataRef.current.ema20) {
-          addCompareLineOverlay("EMA 20", compareIndicatorDataRef.current.ema20, "#60a5fa");
-        }
+        addLineOverlay("EMA 20", indicatorDataRef.current.ema20, "#38bdf8");
       }
       if (activeOverlays.includes("EMA 50") && indicatorDataRef.current.ema50) {
         addLineOverlay("EMA 50", indicatorDataRef.current.ema50, "#10b981");
-        if (compareSymbol && compareIndicatorDataRef.current.ema50) {
-          addCompareLineOverlay("EMA 50", compareIndicatorDataRef.current.ema50, "#3b82f6");
-        }
       }
       if (activeOverlays.includes("EMA 200") && indicatorDataRef.current.ema200) {
-        addLineOverlay("EMA 200", indicatorDataRef.current.ema200, "#059669");
-        if (compareSymbol && compareIndicatorDataRef.current.ema200) {
-          addCompareLineOverlay("EMA 200", compareIndicatorDataRef.current.ema200, "#2563eb");
-        }
+        addLineOverlay("EMA 200", indicatorDataRef.current.ema200, "#f43f5e");
       }
       if (activeOverlays.includes("SMA") && indicatorDataRef.current.sma) {
-        addLineOverlay("SMA", indicatorDataRef.current.sma, "#047857");
-        if (compareSymbol && compareIndicatorDataRef.current.sma) {
-          addCompareLineOverlay("SMA", compareIndicatorDataRef.current.sma, "#1d4ed8");
-        }
+        addLineOverlay("SMA", indicatorDataRef.current.sma, "#a855f7");
       }
       if (activeOverlays.includes("VWAP") && indicatorDataRef.current.vwap) {
-        addLineOverlay("VWAP", indicatorDataRef.current.vwap, "#065f46");
-        if (compareSymbol && compareIndicatorDataRef.current.vwap) {
-          addCompareLineOverlay("VWAP", compareIndicatorDataRef.current.vwap, "#1e3a8a");
-        }
+        addLineOverlay("VWAP", indicatorDataRef.current.vwap, "#eab308");
       }
       if (activeOverlays.includes("Bollinger Bands") && indicatorDataRef.current.bb) {
         const bbData = indicatorDataRef.current.bb;
@@ -934,21 +926,21 @@ export default function CandlestickChart({
         const lowerData = bbData.map(d => ({ time: d.time, value: d.lower }));
 
         const basisSeries = chart.addLineSeries({
-          color: "#047857",
+          color: "#f97316",
           lineWidth: 1,
           lineStyle: LineStyle.Dashed,
           priceLineVisible: false,
           lastValueVisible: false,
         });
         const upperSeries = chart.addLineSeries({
-          color: "#10b981",
+          color: "#fdba74",
           lineWidth: settings.lineThickness || 2,
           lineStyle: LineStyle.Solid,
           priceLineVisible: false,
           lastValueVisible: false,
         });
         const lowerSeries = chart.addLineSeries({
-          color: "#10b981",
+          color: "#fdba74",
           lineWidth: settings.lineThickness || 2,
           lineStyle: LineStyle.Solid,
           priceLineVisible: false,
@@ -959,40 +951,6 @@ export default function CandlestickChart({
         lowerSeries.setData(lowerData);
 
         overlaySeriesRef.current["Bollinger Bands"] = [basisSeries, upperSeries, lowerSeries];
-
-        if (compareSymbol && compareIndicatorDataRef.current.bb) {
-          const compBbData = compareIndicatorDataRef.current.bb;
-          const compBasisData = compBbData.map(d => ({ time: d.time, value: d.middle }));
-          const compUpperData = compBbData.map(d => ({ time: d.time, value: d.upper }));
-          const compLowerData = compBbData.map(d => ({ time: d.time, value: d.lower }));
-
-          const compBasisSeries = chart.addLineSeries({
-            color: "#1d4ed8",
-            lineWidth: 1,
-            lineStyle: LineStyle.Dotted,
-            priceLineVisible: false,
-            lastValueVisible: false,
-          });
-          const compUpperSeries = chart.addLineSeries({
-            color: "#3b82f6",
-            lineWidth: 1.5,
-            lineStyle: LineStyle.Dashed,
-            priceLineVisible: false,
-            lastValueVisible: false,
-          });
-          const compLowerSeries = chart.addLineSeries({
-            color: "#3b82f6",
-            lineWidth: 1.5,
-            lineStyle: LineStyle.Dashed,
-            priceLineVisible: false,
-            lastValueVisible: false,
-          });
-          compBasisSeries.setData(compBasisData);
-          compUpperSeries.setData(compUpperData);
-          compLowerSeries.setData(compLowerData);
-
-          overlaySeriesRef.current["Bollinger Bands"].push(compBasisSeries, compUpperSeries, compLowerSeries);
-        }
       }
     }
 
@@ -1118,10 +1076,9 @@ export default function CandlestickChart({
         },
         timeScale: {
           visible: false,
-          borderVisible: false,
         },
-        handleScroll: false,
-        handleScale: false,
+        handleScroll: isMini ? false : { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: true },
+        handleScale: isMini ? false : { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
       });
 
       subChartsRef.current[pane] = paneChart;
@@ -1129,17 +1086,51 @@ export default function CandlestickChart({
       // Render respective series
       if (pane === "Comparison") {
         const compareCandleSeries = paneChart.addCandlestickSeries({
-          upColor: "#3b82f6",
-          downColor: "#1e293b",
+          upColor: "#ffffff",
+          downColor: "#3b82f6",
           borderVisible: true,
-          borderUpColor: "#3b82f6",
+          borderUpColor: "#ffffff",
           borderDownColor: "#3b82f6",
-          wickUpColor: "#3b82f6",
+          wickUpColor: "#ffffff",
           wickDownColor: "#3b82f6",
           priceLineVisible: false,
           lastValueVisible: true,
         });
         compareCandleSeries.setData(displayCompareCandles as any);
+
+        const addCompareIndicatorLine = (lineData: { time: number; value: number }[], color: string, style?: any) => {
+          if (!lineData || !lineData.length) return;
+          const lineSeries = paneChart.addLineSeries({
+            color,
+            lineWidth: settings.lineThickness || 2,
+            lineStyle: style ?? LineStyle.Solid,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          });
+          lineSeries.setData(lineData as any);
+        };
+
+        if (activeOverlays.includes("EMA 20") && compareIndicatorData.ema20) {
+          addCompareIndicatorLine(compareIndicatorData.ema20, "#38bdf8");
+        }
+        if (activeOverlays.includes("EMA 50") && compareIndicatorData.ema50) {
+          addCompareIndicatorLine(compareIndicatorData.ema50, "#10b981");
+        }
+        if (activeOverlays.includes("EMA 200") && compareIndicatorData.ema200) {
+          addCompareIndicatorLine(compareIndicatorData.ema200, "#f43f5e");
+        }
+        if (activeOverlays.includes("SMA") && compareIndicatorData.sma) {
+          addCompareIndicatorLine(compareIndicatorData.sma, "#a855f7");
+        }
+        if (activeOverlays.includes("VWAP") && compareIndicatorData.vwap) {
+          addCompareIndicatorLine(compareIndicatorData.vwap, "#eab308");
+        }
+        if (activeOverlays.includes("Bollinger Bands") && compareIndicatorData.bb) {
+          const bbData = compareIndicatorData.bb;
+          addCompareIndicatorLine(bbData.map(d => ({ time: d.time, value: d.middle })), "#f97316", LineStyle.Dashed);
+          addCompareIndicatorLine(bbData.map(d => ({ time: d.time, value: d.upper })), "#fdba74");
+          addCompareIndicatorLine(bbData.map(d => ({ time: d.time, value: d.lower })), "#fdba74");
+        }
       } else if (pane === "RSI" && indicatorDataRef.current.rsi) {
         const rsiSeries = paneChart.addLineSeries({
           color: "#8b5cf6",
@@ -1278,12 +1269,19 @@ export default function CandlestickChart({
         setHoveredTime(time as number | null);
 
         if (time) {
-          const mainCandle = candles.find(c => c.time === time);
+          const mainCandle = findClosestData(candles, time as number);
           if (mainCandle && candleSeriesRef.current) {
             mainChart.setCrosshairPosition(mainCandle.close, time, candleSeriesRef.current);
+            setHoveredCandle(mainCandle);
+          }
+          if (compareSymbolRef.current && displayCompareCandles && displayCompareCandles.length > 0) {
+            const compCandle = findClosestData(displayCompareCandles, time as number);
+            setHoveredCompareCandle(compCandle);
           }
         } else {
           mainChart.clearCrosshairPosition();
+          setHoveredCandle(null);
+          setHoveredCompareCandle(null);
         }
 
         // Sync other sub-charts
@@ -1295,7 +1293,7 @@ export default function CandlestickChart({
           if (time) {
             let otherPrice = 0;
             if (otherPane === "Comparison" && displayCompareCandles.length > 0) {
-              const compCandle = displayCompareCandles.find(d => d.time === time);
+              const compCandle = findClosestData(displayCompareCandles, time as number);
               otherPrice = compCandle ? compCandle.close : 0;
             } else if (otherPane === "RSI" && indicatorDataRef.current.rsi) {
               otherPrice = indicatorDataRef.current.rsi.find(d => d.time === time)?.value ?? 50;
@@ -1354,7 +1352,7 @@ export default function CandlestickChart({
       });
       subChartsRef.current = {};
     };
-  }, [activePanes, candles, loading, settings.gridVisible, settings.lineThickness, compareSymbol, displayCompareCandles]);
+  }, [activePanes, candles, loading, settings.gridVisible, settings.lineThickness, compareSymbol, displayCompareCandles, activeOverlays, compareIndicatorData]);
 
   const zoomIn = useCallback(() => {
     const range = chartRef.current?.timeScale().getVisibleLogicalRange();
@@ -1389,8 +1387,8 @@ export default function CandlestickChart({
     <div
       ref={chartWrapperRef}
       className={`w-full flex flex-col select-none ${isFullscreen
-          ? "bg-slate-900 dark:bg-night-950 p-6 overflow-y-auto fixed inset-0 z-[99] h-full w-full"
-          : "space-y-4"
+        ? "bg-slate-900 dark:bg-night-950 p-6 overflow-y-auto fixed inset-0 z-[99] h-full w-full"
+        : "space-y-4"
         }`}
     >
       {hasSymbol && !onMetaLoaded && (
@@ -1451,6 +1449,7 @@ export default function CandlestickChart({
             compareSymbol={compareSymbol}
             hoveredCompareCandle={hoveredCompareCandle}
             compareCandles={displayCompareCandles}
+            compareFundamentals={displayCompareFundamentals}
           />
         )}
 
@@ -1466,22 +1465,22 @@ export default function CandlestickChart({
 
                 let valStr = "N/A";
                 if (ov === "EMA 20" && indicatorDataRef.current.ema20) {
-                  const item = indicatorDataRef.current.ema20.find(d => d.time === time);
+                  const item = findClosestData(indicatorDataRef.current.ema20, time);
                   if (item) valStr = item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 } else if (ov === "EMA 50" && indicatorDataRef.current.ema50) {
-                  const item = indicatorDataRef.current.ema50.find(d => d.time === time);
+                  const item = findClosestData(indicatorDataRef.current.ema50, time);
                   if (item) valStr = item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 } else if (ov === "EMA 200" && indicatorDataRef.current.ema200) {
-                  const item = indicatorDataRef.current.ema200.find(d => d.time === time);
+                  const item = findClosestData(indicatorDataRef.current.ema200, time);
                   if (item) valStr = item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 } else if (ov === "SMA" && indicatorDataRef.current.sma) {
-                  const item = indicatorDataRef.current.sma.find(d => d.time === time);
+                  const item = findClosestData(indicatorDataRef.current.sma, time);
                   if (item) valStr = item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 } else if (ov === "VWAP" && indicatorDataRef.current.vwap) {
-                  const item = indicatorDataRef.current.vwap.find(d => d.time === time);
+                  const item = findClosestData(indicatorDataRef.current.vwap, time);
                   if (item) valStr = item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 } else if (ov === "Bollinger Bands" && indicatorDataRef.current.bb) {
-                  const item = indicatorDataRef.current.bb.find(d => d.time === time);
+                  const item = findClosestData(indicatorDataRef.current.bb, time);
                   if (item) valStr = `Basis:${item.middle.toFixed(2)} Upper:${item.upper.toFixed(2)} Lower:${item.lower.toFixed(2)}`;
                 }
 
@@ -1490,17 +1489,17 @@ export default function CandlestickChart({
                   let compVal: number | string | null = null;
                   const timeData = compareIndicatorDataRef.current;
                   if (ov === "EMA 20" && timeData.ema20) {
-                    compVal = timeData.ema20.find(d => d.time === time)?.value ?? null;
+                    compVal = findClosestData(timeData.ema20, time)?.value ?? null;
                   } else if (ov === "EMA 50" && timeData.ema50) {
-                    compVal = timeData.ema50.find(d => d.time === time)?.value ?? null;
+                    compVal = findClosestData(timeData.ema50, time)?.value ?? null;
                   } else if (ov === "EMA 200" && timeData.ema200) {
-                    compVal = timeData.ema200.find(d => d.time === time)?.value ?? null;
+                    compVal = findClosestData(timeData.ema200, time)?.value ?? null;
                   } else if (ov === "SMA" && timeData.sma) {
-                    compVal = timeData.sma.find(d => d.time === time)?.value ?? null;
+                    compVal = findClosestData(timeData.sma, time)?.value ?? null;
                   } else if (ov === "VWAP" && timeData.vwap) {
-                    compVal = timeData.vwap.find(d => d.time === time)?.value ?? null;
+                    compVal = findClosestData(timeData.vwap, time)?.value ?? null;
                   } else if (ov === "Bollinger Bands" && timeData.bb) {
-                    const item = timeData.bb.find(d => d.time === time);
+                    const item = findClosestData(timeData.bb, time);
                     if (item) compVal = `Basis:${item.middle.toFixed(2)} Upper:${item.upper.toFixed(2)} Lower:${item.lower.toFixed(2)}`;
                   }
 
@@ -1511,12 +1510,12 @@ export default function CandlestickChart({
                   }
                 }
 
-                let colorClass = "text-blue-500";
+                let colorClass = "text-sky-500";
                 if (ov === "EMA 50") colorClass = "text-emerald-500";
                 if (ov === "EMA 200") colorClass = "text-rose-500";
                 if (ov === "SMA") colorClass = "text-purple-500";
-                if (ov === "VWAP") colorClass = "text-amber-500";
-                if (ov === "Bollinger Bands") colorClass = "text-indigo-500";
+                if (ov === "VWAP") colorClass = "text-yellow-500";
+                if (ov === "Bollinger Bands") colorClass = "text-orange-500";
 
                 return (
                   <div key={ov} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200/40 dark:border-white/5 shadow-sm text-[11px]">
@@ -1549,27 +1548,28 @@ export default function CandlestickChart({
       </div>
 
       {/* Synced Indicator Panes */}
-      {compareSymbol && displayCompareCandles.length > 0 && (
-        <div className="relative w-full border border-slate-100 dark:border-white/5 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.01] p-2 mt-2">
-          <div className="absolute top-2 left-3 z-20 flex items-center justify-between w-[95%] pointer-events-none">
-            <span className="text-[10px] font-black tracking-wider uppercase font-mono text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-800 shadow-sm">
-              Comparison: {compareSymbol}
-            </span>
-            <button
-              onClick={() => setCompareSymbol("")}
-              className="text-slate-400 hover:text-rose-500 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors pointer-events-auto shadow-sm"
-              title="Close comparison"
-            >
-              <X size={10} className="stroke-[3]" />
-            </button>
-          </div>
-          <div
-            id="pane-container-Comparison"
-            className="w-full cursor-crosshair"
-            style={{ height: "200px" }}
-          />
+      <div
+        className={`relative w-full border border-slate-100 dark:border-white/5 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.01] p-2 mt-2 ${!compareSymbol || displayCompareCandles.length === 0 ? "hidden" : ""
+          }`}
+      >
+        <div className="absolute top-2 left-3 z-20 flex items-center justify-between w-[95%] pointer-events-none">
+          <span className="text-[10px] font-black tracking-wider uppercase font-mono text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-800 shadow-sm">
+            Comparison: {compareSymbol}
+          </span>
+          <button
+            onClick={() => setCompareSymbol("")}
+            className="text-slate-400 hover:text-rose-500 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors pointer-events-auto shadow-sm"
+            title="Close comparison"
+          >
+            <X size={10} className="stroke-[3]" />
+          </button>
         </div>
-      )}
+        <div
+          id="pane-container-Comparison"
+          className="w-full cursor-crosshair"
+          style={{ height: "200px" }}
+        />
+      </div>
 
       {!loading && hasSymbol && activePanes.map(pane => (
         <div key={pane} className="relative w-full border border-slate-100 dark:border-white/5 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.01] p-2">

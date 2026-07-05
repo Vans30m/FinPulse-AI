@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/layout/header';
 import Footer from './components/layout/footer';
 import AlertsTimeline from './features/dashboard/components/AlertsTimeline';
@@ -53,6 +53,11 @@ import Security from "./pages/Security";
 
 export default function App() {
   const location = useLocation();
+
+  // Scroll to top on navigation/page change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('finpulse_token'));
 

@@ -29,7 +29,44 @@ watchlistsRouter.get('/', protect, async (req, res) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(lists);
+
+    const populatedLists = await Promise.all(
+      lists.map(async (list) => {
+        const populatedItems = await Promise.all(
+          list.items.map(async (item) => {
+            try {
+              const q = await yahooFinance.quote(item.symbol);
+              const changePercent = q.regularMarketChangePercent !== undefined 
+                ? `${q.regularMarketChangePercent >= 0 ? "+" : ""}${q.regularMarketChangePercent.toFixed(2)}%`
+                : "0.00%";
+              const price = q.regularMarketPrice !== undefined
+                ? `${q.currency === "INR" ? "₹" : "$"}${q.regularMarketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : "N/A";
+              return {
+                ...item,
+                price,
+                changePercent,
+                name: q.longName || q.shortName || item.symbol
+              };
+            } catch (err) {
+              console.error(`Failed to fetch live quote for ${item.symbol}:`, err);
+              return {
+                ...item,
+                price: "N/A",
+                changePercent: "0.00%",
+                name: item.symbol
+              };
+            }
+          })
+        );
+        return {
+          ...list,
+          items: populatedItems
+        };
+      })
+    );
+
+    res.json(populatedLists);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -8,6 +8,7 @@ interface PriceInfoBarProps {
   compareSymbol?: string;
   hoveredCompareCandle?: any | null;
   compareCandles?: any[];
+  compareFundamentals?: FundamentalData | null;
 }
 
 export const PriceInfoBar: React.FC<PriceInfoBarProps> = ({
@@ -17,6 +18,7 @@ export const PriceInfoBar: React.FC<PriceInfoBarProps> = ({
   compareSymbol,
   hoveredCompareCandle,
   compareCandles,
+  compareFundamentals,
 }) => {
   if (!fundamentals || !metrics) {
     return (
@@ -56,7 +58,7 @@ export const PriceInfoBar: React.FC<PriceInfoBarProps> = ({
     <div className="flex flex-col gap-2 mb-4">
       {/* Row 1: Main Asset Details */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 py-2 px-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-white/5 font-mono text-xs">
-        <span className="font-extrabold text-blue-500 uppercase">{fundamentals.symbol || "MAIN"}</span>
+        <span className="font-extrabold text-blue-500 uppercase">{fundamentals.name || fundamentals.symbol || "Asset"}</span>
         
         <div className="flex items-center gap-1.5">
           <span className="font-bold text-slate-400 dark:text-slate-500 select-none">O:</span>
@@ -105,7 +107,7 @@ export const PriceInfoBar: React.FC<PriceInfoBarProps> = ({
       {/* Row 2: Compared Asset Details */}
       {compareSymbol && latestCompare && (
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 py-2 px-3 bg-blue-500/5 dark:bg-blue-500/10 rounded-xl border border-blue-200/40 dark:border-blue-500/20 font-mono text-xs animate-in slide-in-from-top-1 duration-150">
-          <span className="font-extrabold text-blue-500 uppercase">{compareSymbol} (COMPARED)</span>
+          <span className="font-extrabold text-blue-500 uppercase">{compareFundamentals?.name || compareSymbol}</span>
           
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-slate-400 dark:text-slate-500 select-none">O:</span>
@@ -113,15 +115,31 @@ export const PriceInfoBar: React.FC<PriceInfoBarProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-slate-400 dark:text-slate-500 select-none">H:</span>
-            <span className="font-extrabold text-blue-500">{compHigh != null ? formatPrice(compHigh) : "N/A"}</span>
+            <span className="font-extrabold text-emerald-500">{compHigh != null ? formatPrice(compHigh) : "N/A"}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-slate-400 dark:text-slate-500 select-none">L:</span>
-            <span className="font-extrabold text-white">{compLow != null ? formatPrice(compLow) : "N/A"}</span>
+            <span className="font-extrabold text-rose-500">{compLow != null ? formatPrice(compLow) : "N/A"}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-slate-400 dark:text-slate-500 select-none">C:</span>
             <span className="font-extrabold text-slate-700 dark:text-slate-300">{compClose != null ? formatPrice(compClose) : "N/A"}</span>
+          </div>
+
+          {/* Session reference anchors for compared asset */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-l border-slate-200 dark:border-white/10 pl-4 ml-auto">
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Prev Close:</span>
+              <span className="font-extrabold text-slate-500 dark:text-slate-400">{formatPrice(compareFundamentals?.previousClose)}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Day H:</span>
+              <span className="font-extrabold text-emerald-500/80">{formatPrice(compareFundamentals?.dayHigh)}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Day L:</span>
+              <span className="font-extrabold text-rose-500/80">{formatPrice(compareFundamentals?.dayLow)}</span>
+            </div>
           </div>
         </div>
       )}

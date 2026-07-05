@@ -48,7 +48,6 @@ def ask_finpulse(user_query):
 
 if __name__ == "__main__":
     prompt = "How much did NVIDIA make in their data center business?"
-    print(f"User Question: {prompt}\n")
-    
+    print(f"User Question: {prompt}\n")    
     answer = ask_finpulse(prompt)
     print(f"FinPulse AI Response:\n{answer}")

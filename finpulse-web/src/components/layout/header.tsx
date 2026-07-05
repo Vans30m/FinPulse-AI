@@ -110,8 +110,8 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     >
       <div className="mx-auto flex w-full max-w-none items-center justify-between px-4 sm:px-8">
         
-        <div className="flex items-center gap-3">
-          {/* Brand Logo - Navigates Home */}
+        {/* Left Column: Logo */}
+        <div className="flex items-center">
           <Link to="/" className="flex items-center gap-2 group">
             <img 
               src={DarkLogo} 
@@ -127,11 +127,13 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
               FinPulse<span className="bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">AI</span>
             </span>
           </Link>
+        </div>
 
-          {/* Navigation Items with Jitter-Free Isolated LayoutGroup */}
+        {/* Middle Column: Centered Navigation */}
+        <div className="hidden md:flex flex-1 justify-center max-w-2xl mx-auto px-4">
           <LayoutGroup id="navbar">
             <nav 
-              className="hidden md:flex items-center gap-1 relative"
+              className="flex items-center gap-1 relative"
               onMouseLeave={() => setHoveredTab(null)}
             >
               {navItems.map((item) => {
@@ -326,6 +328,33 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                     >
                       <UserCircle className="h-4 w-4" />
                       <span>My Profile</span>
+                    </Link>
+
+                    <Link
+                      to="/profile/edit"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                    >
+                      <UserCircle className="h-4 w-4" />
+                      <span>Edit Profile</span>
+                    </Link>
+
+                    <Link
+                      to="/profile/preferences"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                    >
+                      <UserCircle className="h-4 w-4" />
+                      <span>Preferences</span>
+                    </Link>
+
+                    <Link
+                      to="/profile/security"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                    >
+                      <UserCircle className="h-4 w-4" />
+                      <span>Security Settings</span>
                     </Link>
 
                     <button

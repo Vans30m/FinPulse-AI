@@ -1,12 +1,33 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { yahooFinance } from '../index.js';
+import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 const portfolioRoutes = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 
 // Helper to fetch/create default user
 async function getOrCreateDefaultUser(req?: any) {
+  // Try to decode JWT from Authorization header
+  const authHeader = req?.headers?.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1] || '';
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      if (decoded && decoded.id) {
+        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+        if (user) return user;
+      }
+    } catch {
+      const decoded = jwt.decode(token) as any;
+      if (decoded && decoded.id) {
+        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+        if (user) return user;
+      }
+    }
+  }
+
   const userId = req?.headers?.['x-user-id'];
   if (userId) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -44,7 +65,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
         const costBasis = h.shares * h.avgCost;
         const totalGain = marketValue - costBasis;
         const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
-        
+
         let colorClass = { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
         if (h.marketId === 'us') {
           colorClass = { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-450', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
@@ -112,6 +133,26 @@ portfolioRoutes.post('/holdings', async (req, res) => {
       }
     });
     res.json(newHolding);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/portfolio/holdings/:id - deletes a holding
+portfolioRoutes.delete('/holdings/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await getOrCreateDefaultUser(req);
+    const holding = await prisma.holding.findFirst({
+      where: { id, userId: user.id }
+    });
+    if (!holding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
+    await prisma.holding.delete({
+      where: { id }
+    });
+    res.json({ success: true, message: 'Holding deleted successfully' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -189,14 +230,32 @@ portfolioRoutes.get('/events', async (req, res) => {
   try {
     const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
-    
+
     const events = await Promise.all(holdings.map(async (h) => {
       try {
         const quote = await yahooFinance.quote(h.ticker);
-        const earningsDate = quote.earningsTimestamp 
-          ? new Date(quote.earningsTimestamp * 1000).toLocaleDateString()
-          : 'Q3 Earnings Announcement';
-          
+        let earningsDate = 'Q3 Earnings Announcement';
+        if (quote.earningsTimestamp) {
+          const raw = quote.earningsTimestamp;
+          const tz = quote.exchangeTimezoneName || 'UTC';
+          const tzShort = quote.exchangeTimezoneShortName || '';
+
+          const dateObj = raw instanceof Date ? raw : (Number(raw) > 99999999999 ? new Date(Number(raw)) : new Date(Number(raw) * 1000));
+
+          const dateStr = dateObj.toLocaleDateString(undefined, {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            timeZone: tz
+          });
+          const timeStr = dateObj.toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: tz
+          });
+          earningsDate = `${dateStr} at ${timeStr} ${tzShort}`.trim();
+        }
+
         return {
           id: h.id,
           company: h.name,
@@ -224,14 +283,20 @@ portfolioRoutes.get('/events', async (req, res) => {
 portfolioRoutes.get('/watchlist', async (req, res) => {
   try {
     const user = await getOrCreateDefaultUser(req);
-    // Fetch user's first watchlist from DB
-    const list = await prisma.watchlist.findFirst({
+    // Fetch all watchlists for the user to get a complete overview of monitored assets
+    const watchlists = await prisma.watchlist.findMany({
       where: { userId: user.id },
       include: { items: true }
     });
-    
-    const symbols = list ? list.items.map((item) => item.symbol) : [];
-    
+
+    const symbolSet = new Set<string>();
+    watchlists.forEach(list => {
+      list.items.forEach(item => {
+        symbolSet.add(item.symbol);
+      });
+    });
+    const symbols = Array.from(symbolSet);
+
     const enriched = await Promise.all(symbols.map(async (symbol) => {
       try {
         const quote = await yahooFinance.quote(symbol);
@@ -279,7 +344,7 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
 
     const endDate = new Date();
     const startDate = new Date();
-    
+
     let years = 1;
     if (timeframe === '3Y') years = 3;
     else if (timeframe === '5Y') years = 5;
@@ -361,7 +426,7 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
       { id: "since-inception", label: "Since Inception CAGR", value: Math.round(last.portfolio * 1.2 * 100) / 100, previous: Math.round(mid.portfolio * 1.2 * 100) / 100, sparkline: series.slice(-10).map((p) => Math.round(p.portfolio * 1.2 * 100) / 100) }
     ];
 
-    res.json({ series, kpis });
+    res.json({ series, kpis, portfolioValues });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -628,7 +693,7 @@ portfolioRoutes.get('/heatmap', async (req, res) => {
           contribution: parseFloat((portfolioReturn * -0.2).toFixed(2))
         },
         assetsResponsible: holdings.map(h => h.ticker),
-        aiSummary: portfolioReturn >= 0 
+        aiSummary: portfolioReturn >= 0
           ? "Broad equity rally boosted active allocations."
           : "Benchmark consolidations pulled down heavy tech names."
       };
@@ -709,7 +774,7 @@ portfolioRoutes.get('/analysis', async (req, res) => {
     const mean = (arr: number[]) => arr.reduce((sum, val) => sum + val, 0) / Math.max(arr.length, 1);
     const pMean = mean(pReturns);
     const pAnnReturn = pMean * 12;
-    
+
     const pVar = pReturns.reduce((sum, val) => sum + Math.pow(val - pMean, 2), 0) / Math.max(pReturns.length - 1, 1);
     const pStd = Math.sqrt(pVar);
     const pVol = pStd * Math.sqrt(12);

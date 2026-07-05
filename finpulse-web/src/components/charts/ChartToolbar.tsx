@@ -337,10 +337,10 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
                         setCompareInput("");
                         setShowCompare(false);
                       }}
-                      className="w-full text-left px-2 py-1 rounded hover:bg-slate-50 dark:hover:bg-slate-850 flex justify-between items-center text-[11px] font-bold"
+                      className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 flex justify-between items-center text-[11px] font-bold transition-colors"
                     >
                       <span className="text-slate-900 dark:text-white">{asset.symbol}</span>
-                      <span className="text-[9px] text-slate-400 truncate max-w-[120px]">{asset.name}</span>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate max-w-[120px]">{asset.name}</span>
                     </button>
                   ))}
                 </div>

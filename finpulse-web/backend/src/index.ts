@@ -36,6 +36,15 @@ import authRoutes from "./routes/auth.js";
 export const yahooFinance = new YahooFinance();
 const app = express();
 const prisma = new PrismaClient();
+
+// Clean up any default seeded mock assets on startup
+prisma.holding.deleteMany({
+  where: {
+    ticker: { in: ['RELIANCE.NS', 'NVDA', 'BTC-USD'] }
+  }
+}).then(() => console.log('Mock holdings cleaned up successfully!'))
+  .catch(err => console.error('Failed to clean mock holdings:', err));
+
 const rssParser = new Parser();
 const PORT = process.env.PORT || 5000;
 
