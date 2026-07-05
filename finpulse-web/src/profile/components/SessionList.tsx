@@ -49,7 +49,7 @@ export default function SessionList({ sessions, onRevoke, onRevokeAllOthers }: S
                 <p className="text-xs text-slate-450 dark:text-slate-500 flex items-center gap-1.5 mt-0.5">
                   <Globe className="h-3 w-3" /> {session.ipAddress}
                   <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                  Logged in: {new Date(session.createdAt).toLocaleDateString()}
+                  Logged in: {new Date(session.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                 </p>
               </div>
             </div>

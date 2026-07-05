@@ -90,7 +90,7 @@ async function logSession(userId: string, req: AuthenticatedRequest) {
 profileRoutes.get('/', protect, async (req, res) => {
   try {
     const user = await getOrCreateUser(req);
-    
+
     // Update lastLogin on fetch to simulate login audit if not set recently
     if (!user.lastLogin || Date.now() - user.lastLogin.getTime() > 60000) {
       await prisma.user.update({
@@ -321,7 +321,7 @@ profileRoutes.delete('/sessions', protect, async (req, res) => {
 profileRoutes.delete('/', protect, async (req, res) => {
   try {
     const user = await getOrCreateUser(req);
-    
+
     // Soft Delete: mark as deleted
     await prisma.user.update({
       where: { id: user.id },

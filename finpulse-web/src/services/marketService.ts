@@ -21,13 +21,17 @@ export interface FundamentalData {
 
 // Helper mapping object conforming exactly to TradingView / Yahoo parameters mappings
 export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }> = {
-  "1m":   { range: "1d",   interval: "1m" },
-  "5m":   { range: "5d",   interval: "5m" },
-  "15m":  { range: "5d",   interval: "15m" },
-  "30m":  { range: "5d",   interval: "30m" },
-  "1H":   { range: "7d",   interval: "1h" },
-  "4H":   { range: "30d",  interval: "1h" }, // Yahoo lacks a native 4h interval; 1h handles this smoothly
+  "1m":   { range: "7d",   interval: "1m" },
+  "5m":   { range: "30d",  interval: "5m" },
+  "15m":  { range: "30d",  interval: "15m" },
+  "30m":  { range: "30d",  interval: "30m" },
+  "1h":   { range: "30d",  interval: "1h" },
+  "1H":   { range: "30d",  interval: "1h" },
+  "4h":   { range: "60d",  interval: "1h" }, 
+  "4H":   { range: "60d",  interval: "1h" }, 
+  "1d":   { range: "6mo",  interval: "1d" },
   "1D":   { range: "6mo",  interval: "1d" },
+  "1w":   { range: "1y",   interval: "1wk" },
   "1W":   { range: "1y",   interval: "1wk" },
   "1M":   { range: "5y",   interval: "1mo" },
   "3M":   { range: "1y",   interval: "1mo" },

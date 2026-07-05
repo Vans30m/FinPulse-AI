@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, X, Building2, Coins, PieChart, TrendingUp, Loader2 } from 'lucide-react';
+import { Search, X, Building2, Coins, PieChart, TrendingUp, Loader2, History } from 'lucide-react';
 import { useChart } from "../../context/ChartContext";
 
 interface SearchResult {
@@ -17,6 +17,55 @@ export default function CommandPalette() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
+
+  // Local Storage recent searches
+  const [recentSearches, setRecentSearches] = useState<SearchResult[]>(() => {
+    try {
+      const saved = localStorage.getItem("finpulse-recent-searches");
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed.filter(item => item && item.symbol && item.name) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem("finpulse-recent-searches", JSON.stringify(recentSearches));
+  }, [recentSearches]);
+
+  // Load recent searches when palette opens
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const saved = localStorage.getItem("finpulse-recent-searches");
+        const parsed = saved ? JSON.parse(saved) : [];
+        if (Array.isArray(parsed)) {
+          setRecentSearches(parsed.filter(item => item && item.symbol && item.name));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [isOpen]);
+
+  const handleSelect = (item: SearchResult) => {
+    setRecentSearches(prev => {
+      const filtered = prev.filter(r => r.symbol !== item.symbol);
+      return [item, ...filtered].slice(0, 5); // Keep top 5
+    });
+
+    openChart({
+      symbol: item.symbol,
+      yahooSymbol: item.yahooSymbol,
+      name: item.name,
+      exchange: item.exchange,
+      type: item.type,
+    });
+
+    setIsOpen(false);
+    setQuery('');
+  };
 
   const tabs = ['All', 'Stocks', 'Crypto', 'Currencies', 'Commodities'];
 
@@ -62,6 +111,26 @@ export default function CommandPalette() {
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
 
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+
+  const filteredResults = results
+    .filter((item) => item && item.symbol && item.name)
+    .filter((item) => {
+      if (activeTab === 'All') return true;
+      const t = item.type?.toLowerCase() || '';
+      if (activeTab === 'Crypto' && t.includes('crypto')) return true;
+      if (activeTab === 'Stocks' && (t.includes('stock') || t.includes('equity'))) return true;
+      if (activeTab === 'Currencies' && (t.includes('currency') || t.includes('fx') || t.includes('forex'))) return true;
+      if (activeTab === 'Commodities' && (t.includes('future') || t.includes('commodity') || t.includes('metal'))) return true;
+      return false;
+    });
+
+  const navItems = query ? filteredResults : recentSearches;
+
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [query, isOpen]);
+
   if (!isOpen) return null;
 
   // Helper function to assign icons based on Finnhub's asset types
@@ -74,15 +143,23 @@ export default function CommandPalette() {
     return <TrendingUp className="h-4 w-4 text-slate-500" />;
   };
 
-  const filteredResults = results.filter((item) => {
-    if (activeTab === 'All') return true;
-    const t = item.type?.toLowerCase() || '';
-    if (activeTab === 'Crypto' && t.includes('crypto')) return true;
-    if (activeTab === 'Stocks' && (t.includes('stock') || t.includes('equity'))) return true;
-    if (activeTab === 'Currencies' && (t.includes('currency') || t.includes('fx') || t.includes('forex'))) return true;
-    if (activeTab === 'Commodities' && (t.includes('future') || t.includes('commodity') || t.includes('metal'))) return true;
-    return false;
-  });
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (navItems.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev + 1) % navItems.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev - 1 + navItems.length) % navItems.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < navItems.length) {
+        handleSelect(navItems[selectedIndex]);
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh] px-4 sm:px-0">
@@ -105,6 +182,7 @@ export default function CommandPalette() {
             placeholder="Search global stocks, ETFs, or symbols..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleInputKeyDown}
             className="flex-1 bg-transparent px-4 py-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none"
           />
           {isLoading && <Loader2 className="h-4 w-4 text-blue-500 animate-spin mr-3" />}
@@ -135,44 +213,88 @@ export default function CommandPalette() {
         {/* Search Results Area */}
         <div className="max-h-[50vh] overflow-y-auto p-2 custom-scrollbar">
           {!query ? (
-            <div className="py-14 text-center text-sm text-slate-500">
-              Start typing to search global markets.
-            </div>
+            recentSearches.length > 0 ? (
+              <div className="space-y-1">
+                <div className="px-4 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-white/[0.01] flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <History className="h-3.5 w-3.5" /> Recent Searches
+                  </span>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setRecentSearches([]); }} 
+                    className="text-[9px] hover:text-red-500 transition-colors uppercase font-bold"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                {recentSearches.map((item, idx) => {
+                  const isHighlighted = selectedIndex === idx;
+                  return (
+                    <button
+                      key={`recent-${item.symbol}-${idx}`}
+                      className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors group ${
+                        isHighlighted ? "bg-slate-50 dark:bg-white/10" : "hover:bg-slate-50 dark:hover:bg-white/5"
+                      }`}
+                      onClick={() => handleSelect(item)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 shadow-sm group-hover:scale-105 transition-transform">
+                          {renderIcon(item.type)}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                            {item.symbol}
+                          </h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {item.name}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] uppercase text-slate-400 font-medium tracking-wider">
+                          {item.type.replace('Common ', '').toLowerCase()}
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          {item.exchange}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-14 text-center text-sm text-slate-500">
+                Start typing to search global markets.
+              </div>
+            )
           ) : filteredResults.length === 0 && !isLoading ? (
             <div className="py-14 text-center text-sm text-slate-500">
               No {activeTab !== 'All' ? activeTab.toLowerCase() : ''} results found for "{query}".
             </div>
           ) : (
             <div className="space-y-1">
-              {filteredResults.map((item) => (
-                <button
-                  key={`${item.symbol}-${item.exchange}`}
-                  className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5 group"
-                  onClick={() => {
-                    openChart({
-                      symbol: item.symbol,
-                      yahooSymbol: item.yahooSymbol,
-                      name: item.name,
-                      exchange: item.exchange,
-                      type: item.type,
-                    });
-
-                    setIsOpen(false);
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 shadow-sm group-hover:scale-105 transition-transform">
-                      {renderIcon(item.type)}
+              {filteredResults.map((item, idx) => {
+                const isHighlighted = selectedIndex === idx;
+                return (
+                  <button
+                    key={`${item.symbol}-${item.exchange}`}
+                    className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors group ${
+                      isHighlighted ? "bg-slate-50 dark:bg-white/10" : "hover:bg-slate-50 dark:hover:bg-white/5"
+                    }`}
+                    onClick={() => handleSelect(item)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 shadow-sm group-hover:scale-105 transition-transform">
+                        {renderIcon(item.type)}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                          {item.symbol}
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {item.name}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
-                        {item.symbol}
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {item.name}
-                      </p>
-                    </div>
-                  </div>
 
                   {/* Asset Class Badge - TradingView Style */}
                   <div className="flex items-center gap-3">
@@ -192,7 +314,7 @@ export default function CommandPalette() {
                     </span>
                   </div>
                 </button>
-              ))}
+              );})}
             </div>
           )}
         </div>

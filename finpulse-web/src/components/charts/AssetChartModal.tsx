@@ -130,6 +130,33 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [showDownloadDropdown, setShowDownloadDropdown] = useState<boolean>(false);
 
+  const sentimentScore = useMemo(() => newsSentiment?.score || 72, [newsSentiment]);
+  const [animatedSentimentScore, setAnimatedSentimentScore] = useState(0);
+
+  useEffect(() => {
+    if (!open) {
+      setAnimatedSentimentScore(0);
+      return;
+    }
+    let startTime: number | null = null;
+    const duration = 1200; // 1.2 seconds
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+      setAnimatedSentimentScore(Math.floor(easeOutCubic * sentimentScore));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [sentimentScore, open]);
+
   const symbol = useMemo(() => asset?.yahooSymbol || asset?.symbol || "", [asset]);
   const currentAssetPrice = useMemo(() => asset?.price || analyst?.currentPrice || 4078.70, [asset, analyst]);
 
@@ -404,31 +431,67 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
               {/* Right Side Sidebar Analytics */}
               <div className="space-y-4">
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg">
-                  <div className="flex items-center justify-between border-b border-slate-900/60 pb-2 mb-3">
-                    <span className="text-xs font-bold text-slate-300 tracking-wide">Market Sentiment</span>
-                  </div>
-                  <div className="relative flex flex-col items-center justify-center pt-2 pb-2">
-                    <svg className="w-40 h-22" viewBox="0 0 100 55">
-                      <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#1e293b" strokeWidth="7" strokeLinecap="round" />
-                      <motion.path
-                        d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="url(#sideSentimentGradient)" strokeWidth="8" strokeLinecap="round" strokeDasharray="126"
-                        initial={{ strokeDashoffset: 126 }}
-                        animate={{ strokeDashoffset: 126 - (126 * (newsSentiment?.score || 72)) / 100 }}
-                        transition={{ duration: 1.2, ease: "easeOut" }}
-                      />
-                      <defs>
-                        <linearGradient id="sideSentimentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#ef4444" /><stop offset="50%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#10b981" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="absolute top-[34px] text-center">
-                      <span className="textxl font-black text-white block tracking-tight">{newsSentiment?.score || 72}</span>
+                {(() => {
+                  const sentimentAngleRad = Math.PI - (Math.PI * (animatedSentimentScore / 100));
+                  const sentimentIndicatorX = 50 + 40 * Math.cos(sentimentAngleRad);
+                  const sentimentIndicatorY = 50 - 40 * Math.sin(sentimentAngleRad);
+
+                  // Extend the path slightly to overlap the dot and remove any linecap rendering gap
+                  const pathScore = Math.min(100, animatedSentimentScore + 1.5);
+                  const pathAngleRad = Math.PI - (Math.PI * (pathScore / 100));
+                  const pathX = 50 + 40 * Math.cos(pathAngleRad);
+                  const pathY = 50 - 40 * Math.sin(pathAngleRad);
+
+                  const getSentimentDetails = (val: number) => {
+                    if (val <= 25) return { label: "Strong Bearish Bias", color: "text-rose-500" };
+                    if (val <= 45) return { label: "Bearish Bias", color: "text-orange-500" };
+                    if (val <= 55) return { label: "Neutral Bias", color: "text-amber-550" };
+                    if (val <= 75) return { label: "Bullish Bias", color: "text-emerald-455" };
+                    return { label: "Strong Bullish Bias", color: "text-teal-400" };
+                  };
+                  const sentimentDetails = getSentimentDetails(animatedSentimentScore);
+
+                  return (
+                    <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg">
+                      <div className="flex items-center justify-between border-b border-slate-900/60 pb-2 mb-3">
+                        <span className="text-xs font-bold text-slate-300 tracking-wide">Market Sentiment</span>
+                      </div>
+                      <div className="relative flex flex-col items-center justify-center pt-2 pb-2">
+                        <svg className="w-40 h-22" viewBox="0 0 100 55">
+                          <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#1e293b" strokeWidth="7" strokeLinecap="round" />
+                          <path
+                            d={`M 10 50 A 40 40 0 0 1 ${pathX} ${pathY}`}
+                            fill="none"
+                            stroke="url(#sideSentimentGradient)"
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                          />
+                          {/* Glowing Pointer Dot */}
+                          <circle
+                            cx={sentimentIndicatorX}
+                            cy={sentimentIndicatorY}
+                            r="3"
+                            fill="#ffffff"
+                            className="filter drop-shadow-[0_0_3px_rgba(255,255,255,0.9)]"
+                          />
+                          <defs>
+                            <linearGradient id="sideSentimentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#ef4444" />
+                              <stop offset="50%" stopColor="#f59e0b" />
+                              <stop offset="100%" stopColor="#10b981" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        <div className="absolute top-[48px] text-center">
+                          <span className="text-xl font-black text-white block tracking-tight">{animatedSentimentScore}</span>
+                        </div>
+                        <span className={`text-[11px] font-black mt-2 uppercase tracking-wide transition-colors duration-500 ${sentimentDetails.color}`}>
+                          {sentimentDetails.label}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-[11px] font-black text-emerald-400 mt-2 uppercase tracking-wide">Strong Bullish Bias</span>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg">
                   <div className="flex items-center justify-between border-b border-slate-900/60 pb-2 mb-3">

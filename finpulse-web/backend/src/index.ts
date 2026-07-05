@@ -124,6 +124,7 @@ app.get("/api/search", async (req, res) => {
 
     const results =
       yahooResults.quotes
+        ?.filter((item: any) => item && item.symbol && (item.shortname || item.longname))
         ?.slice(0, 20)
         .map((item: any) => ({
           symbol: item.symbol,

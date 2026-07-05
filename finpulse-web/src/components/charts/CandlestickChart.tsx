@@ -69,6 +69,16 @@ export default function CandlestickChart({
     localStorage.setItem("finpulse_chart_timeframe", tf);
   };
 
+  const convertToIstTimestamp = useCallback((dateStr: string): number => {
+    const utcSeconds = Math.floor(new Date(dateStr).getTime() / 1000);
+    const intradayTimeframes = ["1m", "5m", "15m", "30m", "1h", "1H", "4h", "4H"];
+    if (intradayTimeframes.includes(currentTimeframe)) {
+      const istOffsetSeconds = 5.5 * 3600; // 19800 seconds (5.5 hours) for IST
+      return utcSeconds + istOffsetSeconds;
+    }
+    return utcSeconds;
+  }, [currentTimeframe]);
+
   // 2. Persistent Indicators in LocalStorage
   const [activeOverlays, setActiveOverlays] = useState<string[]>(() => {
     try {
@@ -448,7 +458,7 @@ export default function CandlestickChart({
           const mapped = res.quotes
             .filter((q: any) => q && q.date && q.open != null && q.high != null && q.low != null && q.close != null)
             .map((q: any) => ({
-              time: Math.floor(new Date(q.date).getTime() / 1000) as any,
+              time: convertToIstTimestamp(q.date),
               open: Number(q.open),
               high: Number(q.high),
               low: Number(q.low),
@@ -749,7 +759,7 @@ export default function CandlestickChart({
         const mappedCandles = data.quotes
           .filter((q: any) => q && q.date && q.open != null && q.high != null && q.low != null && q.close != null)
           .map((q: any) => ({
-            time: Math.floor(new Date(q.date).getTime() / 1000) as any,
+            time: convertToIstTimestamp(q.date),
             open: Number(q.open),
             high: Number(q.high),
             low: Number(q.low),
