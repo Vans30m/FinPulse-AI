@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, Fragment } from "react";
+import { useEffect, useState, useMemo, Fragment, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -105,6 +105,8 @@ interface NewsSentiment {
 type TabType = "overview" | "financials" | "technicals" | "news" | "events";
 
 export default function AssetChartModal({ open, onClose, asset }: Props) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const tabContentRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [timeframe, setTimeframe] = useState("1Y");
   const [fundamentals, setFundamentals] = useState<Fundamentals | null>(null);
@@ -395,7 +397,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
           </div>
 
           {/* ==================== WORKSPACE INTERFACE ==================== */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6 space-y-6">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6 space-y-6">
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
 
@@ -524,7 +526,16 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       return (
                         <button
                           key={tab}
-                          onClick={() => setActiveTab(tab as TabType)}
+                          onClick={() => {
+                            setActiveTab(tab as TabType);
+                            setTimeout(() => {
+                              if (tab === "overview") {
+                                scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+                              } else {
+                                tabContentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }
+                            }, 80);
+                          }}
                           className={`w-full px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${activeTab === tab
                               ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner"
                               : "text-slate-400 hover:text-white hover:bg-slate-900/40"
@@ -541,7 +552,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
             </div>
 
             {/* ==================== SUB-TAB METRIC ARRAYS ==================== */}
-            <AnimatePresence mode="wait">
+            <div ref={tabContentRef}>
+              <AnimatePresence mode="wait">
               {activeTab === "financials" && (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} className="space-y-6">
                   <div className="flex items-center gap-2 pl-1 border-b border-slate-900 pb-2">
@@ -1304,11 +1316,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                 </motion.div>
               )}
             </AnimatePresence>
-
           </div>
-
-        </motion.div>
-      </div>
-    </AnimatePresence>
+        </div>
+      </motion.div>
+    </div>
+  </AnimatePresence>
   );
 }
