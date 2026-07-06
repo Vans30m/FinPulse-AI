@@ -107,7 +107,6 @@ export default function PortfolioDashboard() {
   const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
   const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
   const [watchlistItems, setWatchlistItems] = useState<any[]>([]);
-  const [portfolioEvents, setPortfolioEvents] = useState<any[]>([]);
   const [advisorData, setAdvisorData] = useState<any>(null);
   const [performanceData, setPerformanceData] = useState<{ month: string; value: number }[]>([]);
   const [liveQuotes, setLiveQuotes] = useState<Record<string, { price: number; change: number }>>({});
@@ -207,21 +206,44 @@ export default function PortfolioDashboard() {
       if (userId) headers['X-User-Id'] = userId;
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const vHoldings = JSON.parse(localStorage.getItem('finpulse_virtual_holdings') || '[]');
-      const virtualTickers = vHoldings.map((h: any) => h.ticker).join(',');
-      const holdingsUrl = virtualTickers 
-        ? `http://localhost:3000/api/portfolio/holdings?virtualTickers=${encodeURIComponent(virtualTickers)}`
-        : 'http://localhost:3000/api/portfolio/holdings';
+      // Check session cache for advisor data
+      const cachedAdvisor = sessionStorage.getItem("portfolioAdvisor");
+      if (cachedAdvisor) {
+        try {
+          setAdvisorData(JSON.parse(cachedAdvisor));
+        } catch (e) {
+          console.warn("Failed parsing cached portfolioAdvisor:", e);
+        }
+      }
 
-      const [holdingsRes, advisorRes, eventsRes, watchlistRes, cagrRes] = await Promise.all([
-        fetch(holdingsUrl, { headers }),
-        fetch('http://localhost:3000/api/portfolio/advisor', { headers }),
-        fetch('http://localhost:3000/api/portfolio/events', { headers }),
+      const promises: Promise<any>[] = [
+        fetch('http://localhost:3000/api/portfolio/holdings', { headers }),
         fetch('http://localhost:3000/api/portfolio/watchlist', { headers }),
         fetch('http://localhost:3000/api/portfolio/rolling-cagr', { headers })
-      ]);
+      ];
 
-      if (holdingsRes.ok) {
+      // Fetch advisor dynamically only if not present in session cache
+      let advisorPromiseIdx = -1;
+      if (!cachedAdvisor) {
+        advisorPromiseIdx = promises.length;
+        promises.push(fetch('http://localhost:3000/api/ai/portfolio-advisor', { headers }));
+      }
+
+      const responses = await Promise.all(promises);
+      const holdingsRes = responses[0];
+      const watchlistRes = responses[1];
+      const cagrRes = responses[2];
+
+      if (advisorPromiseIdx !== -1) {
+        const advisorRes = responses[advisorPromiseIdx];
+        if (advisorRes && advisorRes.ok) {
+          const data = await advisorRes.json();
+          sessionStorage.setItem("portfolioAdvisor", JSON.stringify(data));
+          setAdvisorData(data);
+        }
+      }
+
+      if (holdingsRes && holdingsRes.ok) {
         const data = await holdingsRes.json();
         const mapped = INITIAL_SECTIONS.map(initial => {
           const found = data.sections?.find((s: any) => s.id === initial.id);
@@ -235,15 +257,7 @@ export default function PortfolioDashboard() {
           setLiveQuotes(data.liveQuotes);
         }
       }
-      if (advisorRes.ok) {
-        const data = await advisorRes.json();
-        setAdvisorData(data);
-      }
-      if (eventsRes.ok) {
-        const data = await eventsRes.json();
-        setPortfolioEvents(data || []);
-      }
-      if (watchlistRes.ok) {
+      if (watchlistRes && watchlistRes.ok) {
         const data = await watchlistRes.json();
         setWatchlistItems(data || []);
       }
@@ -1145,9 +1159,7 @@ export default function PortfolioDashboard() {
           items={watchlistItems}
         />
 
-        <UpcomingEventsSection
-          events={portfolioEvents}
-        />
+        <UpcomingEventsSection />
 
         {advisorData ? (
           <AIPortfolioAdvisorSection

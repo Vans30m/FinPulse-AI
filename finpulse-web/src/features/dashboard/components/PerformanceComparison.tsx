@@ -5,15 +5,12 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  ShieldAlert,
   PieChart as PieIcon,
-  Download,
-  Compass,
-  Coins,
-  Award,
-  Target,
-  Info,
-  Layers
+  Layers,
+  Search,
+  ArrowUpDown,
+  AlertCircle,
+  CheckCircle as CheckCircle2
 } from "lucide-react";
 import {
   AreaChart,
@@ -22,32 +19,55 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as ChartTooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Brush,
+  Legend
 } from "recharts";
 import PerformanceHeatmap from "./performance/PerformanceHeatmap";
 import RollingCagrSection from "./performance/RollingCagrSection";
 import AiPerformanceCoachSection from "./performance/AiPerformanceCoachSection";
 import BenchmarkRadarSection from "./performance/BenchmarkRadarSection";
+import { getFundamentals } from "../../../services/marketService";
 
 export default function PerformanceComparison() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [holdings, setHoldings] = useState<any[]>([]);
-  const [cagrData, setCagrData] = useState<any>(null);
-  const [timeframe, setTimeframe] = useState<"1D" | "5D" | "1M" | "3M" | "6M" | "1Y" | "MAX">("1M");
-  const [selectedBenchmark, setSelectedBenchmark] = useState<string>("S&P 500");
+  const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
 
-  const BENCHMARK_YIELDS: Record<string, number> = {
-    "NIFTY 50": 14.20,
-    "SENSEX": 13.80,
-    "NASDAQ": 22.40,
-    "S&P 500": 11.50,
-    "Gold": 8.60,
-    "Bitcoin": 45.10
-  };
+  // New Benchmark Comparison states
+  const [benchmarkTicker, setBenchmarkTicker] = useState<string>("^GSPC");
+  const [benchmarkTimeframe, setBenchmarkTimeframe] = useState<string>("1M");
+  const [comparisonLoading, setComparisonLoading] = useState<boolean>(true);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
+  const [comparisonData, setComparisonData] = useState<{ series: any[], stats: any, constituents: any[] } | null>(null);
 
-  const activeBenchmarkYield = BENCHMARK_YIELDS[selectedBenchmark] || 12.50;
-  const benchmarksList = ["NIFTY 50", "SENSEX", "NASDAQ", "S&P 500", "Gold", "Bitcoin"];
+  // Constituents table search/sort states
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [constituentLimit, setConstituentLimit] = useState<string>("all");
+  const [sortField, setSortField] = useState<string>("weight");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const BENCHMARK_OPTIONS = [
+    { name: "NIFTY 50", symbol: "^NSEI" },
+    { name: "SENSEX", symbol: "^BSESN" },
+    { name: "NASDAQ Composite", symbol: "^IXIC" },
+    { name: "S&P 500", symbol: "^GSPC" },
+    { name: "Dow Jones", symbol: "^DJI" },
+    { name: "Russell 2000", symbol: "^RUT" },
+    { name: "EURO STOXX 50", symbol: "^STOXX50E" },
+    { name: "FTSE 100", symbol: "^FTSE" },
+    { name: "DAX", symbol: "^GDAXI" },
+    { name: "CAC 40", symbol: "^FCHI" },
+    { name: "Nikkei 225", symbol: "^N225" },
+    { name: "Hang Seng", symbol: "^HSI" },
+    { name: "Taiwan Weighted", symbol: "^TWII" },
+    { name: "KOSPI", symbol: "^KS11" },
+    { name: "Gold", symbol: "GC=F" },
+    { name: "Silver", symbol: "SI=F" },
+    { name: "Bitcoin", symbol: "BTC-USD" },
+    { name: "Ethereum", symbol: "ETH-USD" }
+  ];
 
   const loadPerformanceData = async () => {
     setLoading(true);
@@ -59,19 +79,12 @@ export default function PerformanceComparison() {
       if (userId) headers['X-User-Id'] = userId;
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const [holdingsRes, cagrRes] = await Promise.all([
-        fetch('http://localhost:3000/api/portfolio/holdings', { headers }),
-        fetch('http://localhost:3000/api/portfolio/rolling-cagr', { headers })
-      ]);
+      const holdingsRes = await fetch('http://localhost:3000/api/portfolio/holdings', { headers });
 
       if (holdingsRes.ok) {
         const data = await holdingsRes.json();
         const allHoldings = (data.sections || []).flatMap((s: any) => s.holdings || []);
         setHoldings(allHoldings);
-      }
-      if (cagrRes.ok) {
-        const data = await cagrRes.json();
-        setCagrData(data);
       }
     } catch (err) {
       console.error("Failed to load performance data:", err);
@@ -81,13 +94,51 @@ export default function PerformanceComparison() {
   };
 
   useEffect(() => {
+    const fetchRate = async () => {
+      try {
+        const data = await getFundamentals('USDINR=X');
+        if (data && data.price) {
+          setUsdToInrRate(data.price);
+        }
+      } catch (err) {
+        console.error("Failed to fetch USDINR exchange rate:", err);
+      }
+    };
+    fetchRate();
     loadPerformanceData();
   }, []);
 
-  const handleRefresh = () => {
-    loadPerformanceData();
+  const fetchBenchmarkComparison = async () => {
+    setComparisonLoading(true);
+    setComparisonError(null);
+    try {
+      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+      const headers: any = {};
+      if (userId) headers['X-User-Id'] = userId;
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`http://localhost:3000/api/portfolio/benchmark-comparison?symbol=${encodeURIComponent(benchmarkTicker)}&timeframe=${benchmarkTimeframe}`, { headers });
+      if (!res.ok) throw new Error("Unable to load benchmark data");
+      const data = await res.json();
+      setComparisonData(data);
+    } catch (err: any) {
+      console.error(err);
+      setComparisonError(err.message || "Failed to load benchmark comparison");
+    } finally {
+      setComparisonLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchBenchmarkComparison();
+  }, [benchmarkTicker, benchmarkTimeframe]);
+
+  const handleRefresh = () => {
+    loadPerformanceData();
+    fetchBenchmarkComparison();
+  };
   // Dynamic calculations based on real portfolio holdings
   const portfolioStats = useMemo(() => {
     let totalValuation = 0;
@@ -95,11 +146,19 @@ export default function PerformanceComparison() {
     let totalGain = 0;
 
     holdings.forEach(h => {
-      const value = h.marketValue || (h.shares * h.currentPrice) || 0;
-      const cost = h.shares * h.avgCost;
+      let value = h.marketValue || (h.shares * h.currentPrice) || 0;
+      let cost = h.shares * h.avgCost;
+      let gain = h.totalGain || (value - cost);
+
+      if (h.marketId === 'domestic') {
+        value = value / usdToInrRate;
+        cost = cost / usdToInrRate;
+        gain = gain / usdToInrRate;
+      }
+
       totalValuation += value;
       totalCost += cost;
-      totalGain += (h.totalGain || (value - cost));
+      totalGain += gain;
     });
 
     const yieldReturn = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
@@ -110,9 +169,7 @@ export default function PerformanceComparison() {
       totalGain,
       yieldReturn
     };
-  }, [holdings]);
-
-  // Sector allocation contribution margins calculated dynamically
+  }, [holdings, usdToInrRate]);
   const sectorAllocations = useMemo(() => {
     if (holdings.length === 0) return [];
     const sectorsMap: Record<string, number> = {};
@@ -159,30 +216,39 @@ export default function PerformanceComparison() {
       }));
   }, [holdings]);
 
-  // Build timeline data using the actual CAGR / portfolio values history
-  const growthTimelineData = useMemo(() => {
-    if (!cagrData || !cagrData.portfolioValues || cagrData.portfolioValues.length === 0) {
-      return [];
-    }
-    return cagrData.portfolioValues.map((pv: any, index: number) => {
-      const parts = pv.month.split('-');
-      const monthIndex = parseInt(parts[1] || '1') - 1;
-      const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIndex];
-      const year = parts[0]?.slice(2) || '';
-      
-      // Calculate a simple simulated benchmark path starting at the same initial portfolio value
-      const initialVal = cagrData.portfolioValues[0]?.value || 1000;
-      const daysElapsed = index + 1;
-      const annualRate = (BENCHMARK_YIELDS[selectedBenchmark] || 12.50) / 100;
-      const simulatedBenchmark = initialVal * Math.pow(1 + annualRate / 12, daysElapsed);
+  const sortedAndFilteredConstituents = useMemo(() => {
+    if (!comparisonData || !comparisonData.constituents) return [];
+    let list = [...comparisonData.constituents];
 
-      return {
-        name: `${monthName} '${year}`,
-        Portfolio: parseFloat(pv.value.toFixed(2)),
-        Benchmark: parseFloat(simulatedBenchmark.toFixed(2))
-      };
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q));
+    }
+
+    // Sort order
+    list.sort((a, b) => {
+      let valA = a[sortField];
+      let valB = b[sortField];
+
+      if (valA === null || valA === undefined) return 1;
+      if (valB === null || valB === undefined) return -1;
+
+      if (typeof valA === 'string') {
+        return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      } else {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
     });
-  }, [cagrData]);
+
+    // Limit elements
+    if (constituentLimit !== 'all') {
+      const limitVal = parseInt(constituentLimit);
+      list = list.slice(0, limitVal);
+    }
+
+    return list;
+  }, [comparisonData, searchQuery, constituentLimit, sortField, sortDirection]);
 
   if (loading) {
     return (
@@ -261,118 +327,326 @@ export default function PerformanceComparison() {
           </div>
         ))}
       </div>
-
       {/* ==================== 2. PERFORMANCE CHART & BENCHMARK COMPARISON ==================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-3 mb-4">
-            <div className="flex items-center gap-2">
-              <LineChartIcon size={16} className="text-blue-400" />
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">Yield Comparison Timeline</span>
-            </div>
-
-            <div className="flex bg-[#050711] p-1 rounded-xl border border-slate-900">
-              {["1M", "3M", "6M", "1Y", "MAX"].map((tf) => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeframe(tf as any)}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                    timeframe === tf
-                      ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {tf}
-                </button>
-              ))}
-            </div>
+      <div className="space-y-6">
+        {comparisonLoading ? (
+          <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-8 shadow-md text-center flex flex-col items-center justify-center space-y-4 min-h-[300px]">
+            <Activity className="h-8 w-8 text-blue-500 animate-spin" />
+            <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">Loading Benchmark Performance...</p>
           </div>
-
-          <div className="h-72 w-full mt-2">
-            {growthTimelineData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-slate-500 text-xs font-bold">
-                Not enough history. Keep holdings active to build historical charts.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={growthTimelineData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorPort" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4F9DFF" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#4F9DFF" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorBench" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e42" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#f59e42" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#050711" />
-                  <XAxis dataKey="name" stroke="#555" fontSize={10} tickLine={false} />
-                  <YAxis stroke="#555" fontSize={10} tickLine={false} domain={["auto", "auto"]} />
-                  <ChartTooltip contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px", color: "#fff" }} />
-                  <Area type="monotone" dataKey="Portfolio" stroke="#4F9DFF" strokeWidth={3} fillOpacity={1} fill="url(#colorPort)" />
-                  <Area type="monotone" dataKey="Benchmark" stroke="#f59e42" strokeWidth={2} fillOpacity={1} fill="url(#colorBench)" strokeDasharray="5 5" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+        ) : comparisonError ? (
+          <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-8 shadow-md text-center flex flex-col items-center justify-center space-y-4 min-h-[300px]">
+            <AlertCircle className="h-8 w-8 text-rose-500" />
+            <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">Unable to load benchmark.</p>
+            <button
+              onClick={fetchBenchmarkComparison}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+            >
+              Retry
+            </button>
           </div>
-        </div>
-
-        <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">Benchmark Index Target</span>
-              <div className="flex items-center gap-1 bg-[#050711] px-2.5 py-1 rounded-xl border border-slate-900 text-xs">
-                <span className="text-[10px] text-slate-500 font-bold uppercase mr-1">Active:</span>
-                <span className="text-white font-extrabold">{selectedBenchmark}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 mb-6">
-              {benchmarksList.map((bench) => (
-                <button
-                  key={bench}
-                  onClick={() => setSelectedBenchmark(bench)}
-                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${
-                    selectedBenchmark === bench
-                      ? "bg-blue-600/10 text-blue-400 border-blue-500/20 shadow-inner"
-                      : "bg-[#050711]/40 text-slate-400 border-slate-900/60 hover:text-white"
-                  }`}
-                >
-                  {bench}
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-3.5">
-              <div className="flex justify-between items-center py-2.5 border-b border-slate-900/60">
-                <span className="text-xs text-slate-400 font-medium">Your Portfolio Return</span>
-                <span className="text-sm font-black text-emerald-400 font-mono">{portfolioStats.yieldReturn >= 0 ? "+" : ""}{portfolioStats.yieldReturn.toFixed(2)}%</span>
-              </div>
-              <div className="flex justify-between items-center py-2.5 border-b border-slate-900/60">
-                <span className="text-xs text-slate-400 font-medium">{selectedBenchmark} Target Yield</span>
-                <span className="text-sm font-black text-slate-200 font-mono">+{activeBenchmarkYield.toFixed(2)}%</span>
-              </div>
-              <div className="flex justify-between items-center py-2.5 border-b border-slate-900/60">
-                <span className="text-xs text-slate-400 font-medium">Yield Margin Difference</span>
-                <span className="text-sm font-black text-blue-400 font-mono">
-                  {(portfolioStats.yieldReturn - activeBenchmarkYield) >= 0 ? "+" : ""}{(portfolioStats.yieldReturn - activeBenchmarkYield).toFixed(2)}%
+        ) : (
+          <>
+            {/* Performance Summary Banner */}
+            {comparisonData?.stats && (
+              <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${
+                comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
+                  ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400"
+                  : "bg-rose-500/5 border-rose-500/10 text-rose-400"
+              }`}>
+                {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
+                  <CheckCircle2 className="h-5 w-5 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                )}
+                <span className="text-sm font-black uppercase tracking-wide">
+                  {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
+                    ? `Portfolio outperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by +${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
+                    : `Portfolio underperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by ${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
+                  }
                 </span>
               </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Chart Block */}
+              <div className="lg:col-span-2 bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <LineChartIcon size={16} className="text-blue-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">Cumulative Return Comparison</span>
+                  </div>
+
+                  <div className="flex bg-[#050711] p-1 rounded-xl border border-slate-900">
+                    {["1D", "3M", "6M", "1Y", "5Y"].map((tf) => (
+                      <button
+                        key={tf}
+                        onClick={() => setBenchmarkTimeframe(tf)}
+                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                          benchmarkTimeframe === tf
+                            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-4 flex flex-wrap gap-1.5">
+                  {BENCHMARK_OPTIONS.map((bench) => (
+                    <button
+                      key={bench.symbol}
+                      onClick={() => setBenchmarkTicker(bench.symbol)}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border transition-all ${
+                        benchmarkTicker === bench.symbol
+                          ? "bg-blue-600/10 text-blue-400 border-blue-500/20 shadow-inner"
+                          : "bg-[#050711]/40 text-slate-400 border-slate-900/60 hover:text-white"
+                      }`}
+                    >
+                      {bench.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="h-72 w-full mt-2">
+                  {(!comparisonData || comparisonData.series.length === 0) ? (
+                    <div className="h-full flex items-center justify-center text-slate-500 text-xs font-bold">
+                      Not enough historical data available.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={comparisonData.series} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorPort" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorBench" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f59e42" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#f59e42" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#050711" />
+                        <XAxis dataKey="date" stroke="#555" fontSize={9} tickLine={false} tickFormatter={(val) => {
+                          try {
+                            const d = new Date(val);
+                            if (benchmarkTimeframe === "1D" || benchmarkTimeframe === "5D") {
+                              return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            }
+                            return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                          } catch {
+                            return val;
+                          }
+                        }} />
+                        <YAxis stroke="#555" fontSize={9} tickLine={false} domain={["auto", "auto"]} tickFormatter={(val) => `${val}%`} />
+                        <ChartTooltip
+                          contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px", color: "#fff" }}
+                          formatter={(value: any, name: any) => {
+                            const labelName = name === "portfolioReturn" ? "Portfolio Return" : `${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} Return`;
+                            return [`${value}%`, labelName];
+                          }}
+                        />
+                        <Legend verticalAlign="top" height={36} iconType="circle" />
+                        <Area type="monotone" name="portfolioReturn" dataKey="portfolioReturn" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorPort)" dot={false} activeDot={{ r: 6 }} />
+                        <Area type="monotone" name="benchmarkReturn" dataKey="benchmarkReturn" stroke="#f59e42" strokeWidth={2} fillOpacity={1} fill="url(#colorBench)" strokeDasharray="5 5" dot={false} activeDot={{ r: 4 }} />
+                        <Brush dataKey="date" height={20} stroke="#1e293b" fill="#0f172a" tickFormatter={() => ""} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Statistics & Target Ledger Panel */}
+              <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">Benchmark comparison statistics</span>
+                    <div className="flex items-center gap-1 bg-[#050711] px-2.5 py-1 rounded-xl border border-slate-900 text-xs">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase mr-1">Active:</span>
+                      <span className="text-white font-extrabold">{BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name}</span>
+                    </div>
+                  </div>
+
+                  {comparisonData?.stats && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-[#050711]/60 border border-slate-900 rounded-xl p-3">
+                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Portfolio Return</span>
+                          <span className="text-sm font-black text-emerald-400 font-mono block mt-1">{comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%</span>
+                        </div>
+                        <div className="bg-[#050711]/60 border border-slate-900 rounded-xl p-3">
+                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Benchmark Return</span>
+                          <span className="text-sm font-black text-slate-200 font-mono block mt-1">{comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 border-t border-slate-900/60 pt-3">
+                        {[
+                          { label: "Alpha (Excess Return)", value: `${comparisonData.stats.alpha >= 0 ? "+" : ""}${comparisonData.stats.alpha}` },
+                          { label: "Beta (Systemic Risk)", value: comparisonData.stats.beta },
+                          { label: "Correlation", value: comparisonData.stats.correlation },
+                          { label: "Sharpe Ratio", value: comparisonData.stats.sharpeRatio },
+                          { label: "Information Ratio", value: comparisonData.stats.informationRatio },
+                          { label: "Tracking Error", value: `${comparisonData.stats.trackingError}%` },
+                          { label: "Max Drawdown", value: `${comparisonData.stats.maxDrawdown}%` },
+                          { label: "Portfolio Volatility", value: `${comparisonData.stats.volatility}%` }
+                        ].map((stat, idx) => (
+                          <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-900/60 text-xs">
+                            <span className="text-slate-400 font-medium">{stat.label}</span>
+                            <span className="font-mono font-black text-white">{stat.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 mt-6 text-center">
-            <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">Outperformance Target</span>
-            <p className="text-sm font-black text-white mt-1">
-              {portfolioStats.yieldReturn >= activeBenchmarkYield 
-                ? `Portfolio beats ${selectedBenchmark} index by +${(portfolioStats.yieldReturn - activeBenchmarkYield).toFixed(2)}%`
-                : `Portfolio trails ${selectedBenchmark} index by ${(activeBenchmarkYield - portfolioStats.yieldReturn).toFixed(2)}%`}
-            </p>
-          </div>
-        </div>
+            {/* Constituents Section */}
+            {comparisonData?.constituents && (
+              <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-4">
+                  <div>
+                    <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                      <Layers className="h-4.5 w-4.5 text-blue-400" />
+                      Benchmark constituents & weights
+                    </h4>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Real-time Yahoo Finance constituent quotes and comparative returns.</p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Search Bar */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search constituents..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8 pr-4 py-1.5 bg-[#050711] border border-slate-900 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-44"
+                      />
+                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+                    </div>
+
+                    {/* Limit Filters */}
+                    <div className="flex bg-[#050711] p-1 rounded-xl border border-slate-900 text-[10px] font-black uppercase text-slate-400">
+                      {[
+                        { label: "Top 10", val: "10" },
+                        { label: "Top 25", val: "25" },
+                        { label: "Top 50", val: "50" },
+                        { label: "All", val: "all" }
+                      ].map((lim) => (
+                        <button
+                          key={lim.val}
+                          onClick={() => setConstituentLimit(lim.val)}
+                          className={`px-2.5 py-1 rounded-lg transition-all ${
+                            constituentLimit === lim.val ? "bg-blue-600/10 text-blue-400" : "hover:text-white"
+                          }`}
+                        >
+                          {lim.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-950 text-slate-400 font-bold uppercase tracking-wider text-[10px] hover:bg-transparent">
+                        <th className="py-3 px-2">Constituent Company</th>
+                        <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                          setSortField("weight");
+                          setSortDirection(prev => prev === "desc" ? "asc" : "desc");
+                        }}>
+                          Weight <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
+                        </th>
+                        <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                          setSortField("price");
+                          setSortDirection(prev => prev === "desc" ? "asc" : "desc");
+                        }}>
+                          Current Price <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
+                        </th>
+                        <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                          setSortField("timeframeReturn");
+                          setSortDirection(prev => prev === "desc" ? "asc" : "desc");
+                        }}>
+                          {benchmarkTimeframe} Return % <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
+                        </th>
+                        <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                          setSortField("dailyChange");
+                          setSortDirection(prev => prev === "desc" ? "asc" : "desc");
+                        }}>
+                          Daily Change % <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
+                        </th>
+                        <th className="py-3 px-2">Sector</th>
+                        <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                          setSortField("marketCap");
+                          setSortDirection(prev => prev === "desc" ? "asc" : "desc");
+                        }}>
+                          Market Cap <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedAndFilteredConstituents.map((con, idx) => (
+                        <tr key={idx} className="border-b border-slate-900 hover:bg-[#050711]/40 transition-colors group relative">
+                          <td className="py-3.5 px-2 flex items-center gap-2.5">
+                            {con.logo ? (
+                              <img src={con.logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="w-6 h-6 rounded-lg bg-slate-900 border border-slate-800 p-0.5 object-contain" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] text-blue-400 font-bold font-mono">
+                                {con.symbol.slice(0, 2)}
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-extrabold text-white block">{con.name}</span>
+                              <span className="font-mono text-[9px] text-slate-500 uppercase">{con.symbol}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-2 font-mono font-bold text-slate-200">
+                            {con.weight ? `${con.weight}%` : "—"}
+                          </td>
+                          <td className="py-3.5 px-2 font-mono font-bold text-slate-200">
+                            {con.price ? `$${con.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
+                          </td>
+                          <td className={`py-3.5 px-2 font-mono font-bold ${con.timeframeReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            {con.timeframeReturn >= 0 ? "+" : ""}{con.timeframeReturn}%
+                          </td>
+                          <td className={`py-3.5 px-2 font-mono font-bold ${con.dailyChange >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            {con.dailyChange >= 0 ? "+" : ""}{con.dailyChange?.toFixed(2)}%
+                          </td>
+                          <td className="py-3.5 px-2 text-slate-400 font-medium">
+                            {con.sector}
+                          </td>
+                          <td className="py-3.5 px-2 font-mono font-medium text-slate-400">
+                            {con.marketCap ? `$${(con.marketCap / 1e9).toFixed(2)}B` : "—"}
+                          </td>
+
+                          {/* Hover Tooltip card details */}
+                          <div className="absolute left-1/4 bottom-full mb-2 hidden group-hover:block bg-[#050711]/95 border border-slate-900 p-3.5 rounded-2xl shadow-2xl z-50 min-w-[200px] pointer-events-none backdrop-blur-md">
+                            <span className="block text-[9px] font-black uppercase tracking-wider text-blue-400 border-b border-slate-900 pb-1 mb-2">{con.name} metrics</span>
+                            <div className="space-y-1.5 text-[10px]">
+                              <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Sector:</span><span className="text-slate-300 font-semibold">{con.sector}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Industry:</span><span className="text-slate-300 font-semibold">{con.industry}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">PE Ratio:</span><span className="text-slate-300 font-mono font-semibold">{con.pe ? con.pe.toFixed(2) : "—"}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Dividend Yield:</span><span className="text-slate-300 font-mono font-semibold">{con.dividendYield ? `${(con.dividendYield * 100).toFixed(2)}%` : "—"}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W High:</span><span className="text-emerald-450 font-mono font-semibold">${con.fiftyTwoWeekHigh?.toFixed(2)}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W Low:</span><span className="text-rose-450 font-mono font-semibold">${con.fiftyTwoWeekLow?.toFixed(2)}</span></div>
+                            </div>
+                          </div>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
-
       {/* ==================== 3. CONTRIBUTORS & UNDERPERFORMERS ==================== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">

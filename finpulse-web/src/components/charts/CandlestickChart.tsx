@@ -25,7 +25,7 @@ import {
 } from "../../utils/indicators";
 import { X } from "lucide-react";
 
-const findClosestData = (data: { time: number; value: any }[] | undefined, targetTime: number) => {
+const findClosestData = (data: any[] | undefined, targetTime: number): any => {
   if (!data || data.length === 0) return null;
   let closest = data[0];
   let minDiff = Math.abs(closest.time - targetTime);
