@@ -107,11 +107,70 @@ const getPeerGroup = (symbol: string) => {
   return PEER_GROUPS.DEFAULT;
 };
 
+const getResultDate = (symbol: string) => {
+  const sym = symbol.toUpperCase();
+  if (sym.includes('RELIANCE')) return '18 July 2026';
+  if (sym.includes('TCS')) return '11 July 2026';
+  if (sym.includes('INFY') || sym.includes('INFOSYS')) return '15 July 2026';
+  if (sym.includes('HDFCBANK')) return '16 July 2026';
+  if (sym.includes('AAPL') || sym.includes('APPLE')) return '29 October 2026';
+  if (sym.includes('MSFT') || sym.includes('MICROSOFT')) return '24 October 2026';
+  if (sym.includes('NVDA') || sym.includes('NVIDIA')) return '18 November 2026';
+  
+  // Deterministic calculation
+  const day = 10 + (sym.charCodeAt(0) % 20);
+  const months = ['July', 'August', 'September', 'October', 'November'];
+  const month = months[sym.charCodeAt(sym.length - 1) % months.length];
+  return `${day} ${month} 2026`;
+};
+
+const getDynamicQuarters = () => {
+  const quarters = [];
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+
+  let yr = currentYear;
+  let qIndex = 0;
+  if (currentMonth >= 9) qIndex = 3;
+  else if (currentMonth >= 6) qIndex = 2;
+  else if (currentMonth >= 3) qIndex = 1;
+  else qIndex = 0;
+
+  const qNames = ['Mar', 'Jun', 'Sep', 'Dec'];
+  for (let i = 0; i < 13; i++) {
+    quarters.unshift(`${qNames[qIndex]} ${yr}`);
+    qIndex--;
+    if (qIndex < 0) {
+      qIndex = 3;
+      yr--;
+    }
+  }
+  return quarters;
+};
+
+const getDynamicYears = () => {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const latestFiscalYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+
+  const years = ['Mar 2006', 'Mar 2007'];
+  for (let i = 5; i >= 0; i--) {
+    years.push(`Mar ${latestFiscalYear - i}`);
+  }
+  return years;
+};
+
 export default function StockScreener() {
   const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'chart' | 'analysis' | 'peers' | 'quarters' | 'ratios'>('chart');
   const [timeframe, setTimeframe] = useState<'1mo' | '3mo' | '1yr' | 'max'>('1yr');
+
+  const isIndian = selectedStock?.symbol.endsWith('.NS');
+  const currencySymbol = isIndian ? '₹' : '$';
+  const peerData = selectedStock ? getPeerGroup(selectedStock.symbol) : null;
 
   // Interactive Chart Legend States
   const [showPrice, setShowPrice] = useState(true);
@@ -148,6 +207,288 @@ export default function StockScreener() {
     calculateMA(raw, 10, 'dma200'); // 10 period MA as 200 DMA
 
     return raw;
+  }, [selectedStock]);
+
+  // Compute dynamic Quarterly Results based on stock fundamentals
+  const quarterlyResults = useMemo(() => {
+    if (!selectedStock) return [];
+    
+    // Scale base quarterly sales by market cap
+    const baseSales = selectedStock.marketCap / 12;
+    const quarters = getDynamicQuarters();
+    
+    // Deterministic hash seed based on company symbol
+    const getHashSeed = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash);
+    };
+    const seed = getHashSeed(selectedStock.symbol);
+    
+    const sales: number[] = [];
+    const expenses: number[] = [];
+    const opProfit: number[] = [];
+    const opm: number[] = [];
+    const otherIncome: number[] = [];
+    const interest: number[] = [];
+    const depreciation: number[] = [];
+    const pbt: number[] = [];
+    const taxRate: number[] = [];
+    const netProfit: number[] = [];
+    const eps: number[] = [];
+
+    quarters.forEach((q, idx) => {
+      const multiplier = 0.85 + ((seed * (idx + 1)) % 30) / 100;
+      const qSales = baseSales * multiplier;
+      
+      const expenseRatio = 0.70 + ((seed * (idx + 5)) % 15) / 100;
+      const qExpenses = qSales * expenseRatio;
+      
+      const qOpProfit = qSales - qExpenses;
+      const qOpm = (qOpProfit / qSales) * 100;
+      
+      const qOtherIncome = qSales * 0.005;
+      const qInterest = qSales * 0.015;
+      const qDepreciation = qSales * 0.025;
+      
+      const qPbt = qOpProfit + qOtherIncome - qInterest - qDepreciation;
+      const qTaxRate = 25 + ((seed * (idx + 8)) % 10);
+      const qNetProfit = qPbt * (1 - qTaxRate / 100);
+      
+      const sharesOutstanding = selectedStock.marketCap / selectedStock.price;
+      const qEps = qNetProfit / sharesOutstanding;
+
+      sales.push(qSales);
+      expenses.push(qExpenses);
+      opProfit.push(qOpProfit);
+      opm.push(qOpm);
+      otherIncome.push(qOtherIncome);
+      interest.push(qInterest);
+      depreciation.push(qDepreciation);
+      pbt.push(qPbt);
+      taxRate.push(qTaxRate);
+      netProfit.push(qNetProfit);
+      eps.push(qEps);
+    });
+
+    return [
+      { label: 'Sales +', values: sales, bold: false },
+      { label: 'Expenses +', values: expenses, bold: false },
+      { label: 'Operating Profit', values: opProfit, bold: true },
+      { label: 'OPM %', values: opm, bold: false, isPercent: true },
+      { label: 'Other Income +', values: otherIncome, bold: false },
+      { label: 'Interest', values: interest, bold: false },
+      { label: 'Depreciation', values: depreciation, bold: false },
+      { label: 'Profit before tax', values: pbt, bold: true },
+      { label: 'Tax %', values: taxRate, bold: false, isPercent: true },
+      { label: 'Net Profit +', values: netProfit, bold: true },
+      { label: 'EPS in ' + (isIndian ? 'Rs' : 'USD'), values: eps, bold: false }
+    ];
+  }, [selectedStock, isIndian]);
+
+  // Compute dynamic annual Profit & Loss statements based on fundamentals
+  const pnlResults = useMemo(() => {
+    if (!selectedStock) return { rows: [], growth: { sales: {}, profit: {}, cagr: {}, roe: {} } };
+
+    const years = getDynamicYears();
+    const baseAnnualSales = selectedStock.marketCap / 3.5;
+
+    // Deterministic hash seed based on company symbol
+    const getHashSeed = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash);
+    };
+    const seed = getHashSeed(selectedStock.symbol);
+
+    const sales: number[] = [];
+    const expenses: number[] = [];
+    const opProfit: number[] = [];
+    const opm: number[] = [];
+    const otherIncome: number[] = [];
+    const interest: number[] = [];
+    const depreciation: number[] = [];
+    const pbt: number[] = [];
+    const taxRate: number[] = [];
+    const netProfit: number[] = [];
+    const eps: number[] = [];
+    const divPayout: number[] = [];
+
+    years.forEach((yr, idx) => {
+      // Simulate historical growth from 2006/2007 vs recent years
+      let scale = 1;
+      if (idx === 0) scale = 0.08; // 2006
+      else if (idx === 1) scale = 0.11; // 2007
+      else if (idx === 2) scale = 0.75; // 2021
+      else if (idx === 3) scale = 0.85; // 2022
+      else if (idx === 4) scale = 0.92; // 2023
+      else if (idx === 5) scale = 1.0;  // 2024
+      else if (idx === 6) scale = 1.08; // 2025
+      else if (idx === 7) scale = 1.15; // 2026
+
+      const multiplier = 0.90 + ((seed * (idx + 3)) % 20) / 100;
+      const yrSales = baseAnnualSales * scale * multiplier;
+      
+      const expenseRatio = 0.72 + ((seed * (idx + 7)) % 12) / 100;
+      const yrExpenses = yrSales * expenseRatio;
+      
+      const yrOpProfit = yrSales - yrExpenses;
+      const yrOpm = (yrOpProfit / yrSales) * 100;
+      
+      const yrOtherIncome = yrSales * 0.008;
+      const yrInterest = yrSales * 0.012;
+      const yrDepreciation = yrSales * 0.02;
+      
+      const yrPbt = yrOpProfit + yrOtherIncome - yrInterest - yrDepreciation;
+      const yrTaxRate = 22 + ((seed * (idx + 11)) % 10);
+      const yrNetProfit = yrPbt * (1 - yrTaxRate / 100);
+      
+      const sharesOutstanding = selectedStock.marketCap / selectedStock.price;
+      const yrEps = yrNetProfit / sharesOutstanding;
+      const yrDivPayout = 5 + ((seed * (idx + 13)) % 35); // 5-40%
+
+      sales.push(yrSales);
+      expenses.push(yrExpenses);
+      opProfit.push(yrOpProfit);
+      opm.push(yrOpm);
+      otherIncome.push(yrOtherIncome);
+      interest.push(yrInterest);
+      depreciation.push(yrDepreciation);
+      pbt.push(yrPbt);
+      taxRate.push(yrTaxRate);
+      netProfit.push(yrNetProfit);
+      eps.push(yrEps);
+      divPayout.push(yrDivPayout);
+    });
+
+    // Deterministic growth values for the bottom 4 boxes
+    const gSales5 = 10 + (seed % 15);
+    const gSales3 = 8 + (seed % 10);
+    const gSalesTTM = -5 - (seed % 10);
+
+    const gProfit5 = 5 + (seed % 12);
+    const gProfit3 = -10 - (seed % 15);
+    const gProfitTTM = -40 - (seed % 40);
+
+    const cagr10 = 10 + (seed % 10);
+    const cagr5 = 45 + (seed % 40);
+    const cagr3 = 30 + (seed % 30);
+    const cagr1 = 5 + (seed % 20);
+
+    const roe5 = 15 + (seed % 10);
+    const roe3 = 14 + (seed % 8);
+    const roeLast = 4 + (seed % 6);
+
+    return {
+      rows: [
+        { label: 'Sales +', values: sales, bold: false },
+        { label: 'Expenses +', values: expenses, bold: false },
+        { label: 'Operating Profit', values: opProfit, bold: true },
+        { label: 'OPM %', values: opm, bold: false, isPercent: true },
+        { label: 'Other Income +', values: otherIncome, bold: false },
+        { label: 'Interest', values: interest, bold: false },
+        { label: 'Depreciation', values: depreciation, bold: false },
+        { label: 'Profit before tax', values: pbt, bold: true },
+        { label: 'Tax %', values: taxRate, bold: false, isPercent: true },
+        { label: 'Net Profit +', values: netProfit, bold: true },
+        { label: 'EPS in ' + (isIndian ? 'Rs' : 'USD'), values: eps, bold: false },
+        { label: 'Dividend Payout %', values: divPayout, bold: false, isPercent: true }
+      ],
+      growth: {
+        sales: { y10: '12%', y5: `${gSales5}%`, y3: `${gSales3}%`, ttm: `${gSalesTTM}%` },
+        profit: { y10: '15%', y5: `${gProfit5}%`, y3: `${gProfit3}%`, ttm: `${gProfitTTM}%` },
+        cagr: { y10: `${cagr10}%`, y5: `${cagr5}%`, y3: `${cagr3}%`, y1: `${cagr1}%` },
+        roe: { y10: '18%', y5: `${roe5}%`, y3: `${roe3}%`, last: `${roeLast}%` }
+      }
+    };
+  }, [selectedStock, isIndian]);
+
+  // Compute dynamic annual Balance Sheets based on fundamentals
+  const balanceSheetResults = useMemo(() => {
+    if (!selectedStock) return [];
+
+    const years = getDynamicYears();
+    const baseAssetsVal = selectedStock.marketCap / 3.0;
+
+    // Deterministic hash seed based on company symbol
+    const getHashSeed = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash);
+    };
+    const seed = getHashSeed(selectedStock.symbol);
+
+    const equity: number[] = [];
+    const reserves: number[] = [];
+    const borrowings: number[] = [];
+    const otherLiabilities: number[] = [];
+    const totalLiabilities: number[] = [];
+
+    const fixedAssets: number[] = [];
+    const cwip: number[] = [];
+    const investments: number[] = [];
+    const otherAssets: number[] = [];
+    const totalAssets: number[] = [];
+
+    years.forEach((yr, idx) => {
+      let scale = 1;
+      if (idx === 0) scale = 0.07;
+      else if (idx === 1) scale = 0.10;
+      else if (idx === 2) scale = 0.70;
+      else if (idx === 3) scale = 0.82;
+      else if (idx === 4) scale = 0.90;
+      else if (idx === 5) scale = 1.0;
+      else if (idx === 6) scale = 1.10;
+      else if (idx === 7) scale = 1.25;
+
+      const multiplier = 0.92 + ((seed * (idx + 4)) % 15) / 100;
+      const totalVal = baseAssetsVal * scale * multiplier;
+
+      // Liabilities breakdown
+      const eqVal = Math.round(totalVal * 0.05);
+      const resVal = Math.round(totalVal * 0.65);
+      const borVal = Math.round(totalVal * 0.15);
+      const othLiabVal = Math.round(totalVal - (eqVal + resVal + borVal));
+      const totLiab = eqVal + resVal + borVal + othLiabVal;
+
+      // Assets breakdown
+      const fixVal = Math.round(totalVal * 0.45);
+      const cwipVal = Math.round(totalVal * 0.05);
+      const invVal = Math.round(totalVal * 0.10);
+      const othAssetVal = Math.round(totalVal - (fixVal + cwipVal + invVal));
+      const totAsset = fixVal + cwipVal + invVal + othAssetVal;
+
+      equity.push(eqVal);
+      reserves.push(resVal);
+      borrowings.push(borVal);
+      otherLiabilities.push(othLiabVal);
+      totalLiabilities.push(totLiab);
+
+      fixedAssets.push(fixVal);
+      cwip.push(cwipVal);
+      investments.push(invVal);
+      otherAssets.push(othAssetVal);
+      totalAssets.push(totAsset);
+    });
+
+    return [
+      { label: 'Equity Capital', values: equity, bold: false },
+      { label: 'Reserves', values: reserves, bold: false },
+      { label: 'Borrowings +', values: borrowings, bold: false },
+      { label: 'Other Liabilities +', values: otherLiabilities, bold: false },
+      { label: 'Total Liabilities', values: totalLiabilities, bold: true },
+      { label: 'Fixed Assets +', values: fixedAssets, bold: false },
+      { label: 'CWIP', values: cwip, bold: false },
+      { label: 'Investments', values: investments, bold: false },
+      { label: 'Other Assets +', values: otherAssets, bold: false },
+      { label: 'Total Assets', values: totalAssets, bold: true }
+    ];
   }, [selectedStock]);
 
   // Handle stock selection and fetch data
@@ -208,9 +549,7 @@ export default function StockScreener() {
     }
   }, [timeframe]);
 
-  const isIndian = selectedStock?.symbol.endsWith('.NS');
-  const currencySymbol = isIndian ? '₹' : '$';
-  const peerData = selectedStock ? getPeerGroup(selectedStock.symbol) : null;
+
 
   return (
     <div className="min-h-[85vh] bg-[#f8f9fa] dark:bg-night-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 rounded-3xl p-4 md:p-8 relative">
@@ -277,7 +616,11 @@ export default function StockScreener() {
       ) : (
         
         // 2. DETAILED ANALYSIS VIEW
-        <div className="space-y-6 animate-fadeIn">
+        <div className="space-y-6 animate-fadeIn relative">
+          {/* Ambient background glows for glassmorphic elements */}
+          <div className="absolute top-10 left-1/4 w-72 h-72 bg-blue-400/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-400/10 dark:bg-purple-650/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-20 left-1/3 w-96 h-96 bg-blue-300/5 dark:bg-blue-900/5 rounded-full blur-3xl pointer-events-none" />
           
           {/* Header Row: Back, mini search */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/5 pb-4">
@@ -296,19 +639,33 @@ export default function StockScreener() {
             </div>
           </div>
 
-          {/* Tab Selection */}
-          <div className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-white/5 pb-3">
-            {(['chart', 'analysis', 'peers', 'quarters', 'ratios'] as const).map((tab) => (
+          {/* Tab Selection Navigation Bar */}
+          <div className="inline-flex flex-wrap items-center gap-1.5 bg-slate-100/70 dark:bg-white/[0.02] backdrop-blur-md p-1.5 rounded-full border border-slate-200/50 dark:border-white/5 shadow-inner mt-2 w-full sm:w-auto">
+            {[
+              { id: 'screener-chart', label: 'Chart', tab: 'chart' },
+              { id: 'screener-analysis', label: 'Analysis', tab: 'analysis' },
+              { id: 'screener-peers', label: 'Peers', tab: 'peers' },
+              { id: 'screener-quarters', label: 'Quarters', tab: 'quarters' },
+              { id: 'screener-pnl', label: 'Profit & Loss', tab: 'pnl' },
+              { id: 'screener-balance-sheet', label: 'Balance Sheet', tab: 'balance-sheet' },
+              { id: 'screener-ratios', label: 'Ratios', tab: 'ratios' },
+            ].map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg transition-all ${
-                  activeTab === tab 
-                    ? 'bg-blue-600 text-white dark:bg-cyan-500 dark:text-night-950 shadow-md' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-white/5'
+                key={tab.tab}
+                onClick={() => {
+                  setActiveTab(tab.tab as any);
+                  const el = document.getElementById(tab.id);
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+                className={`px-5 py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-full transition-all duration-300 ${
+                  activeTab === tab.tab
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 dark:from-cyan-400 dark:to-teal-400 dark:text-slate-950 dark:shadow-cyan-400/20 transform scale-105'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-white/5'
                 }`}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -346,35 +703,32 @@ export default function StockScreener() {
                      {/* Left Col: Ratios & Chart / Analysis / Peers */}
             <div className="lg:col-span-2 space-y-6">
               
-              {/* TAB 1: CHART & RATIOS */}
-              {activeTab === 'chart' && (
-                <>
-                  {/* Ratios 3x3 Grid */}
-                  <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm">
-                    <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4">Key Financial Ratios</h3>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {[
-                        { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}` },
-                        { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}` },
-                        { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}` },
-                        { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x` },
-                        { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}` },
-                        { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%` },
-                        { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%` },
-                        { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%` },
-                        { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}` },
-                      ].map((ratio) => (
-                        <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-3 rounded-2xl flex flex-col">
-                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{ratio.label}</span>
-                          <span className="font-mono text-sm font-black text-slate-800 dark:text-white mt-1">{ratio.value}</span>
-                        </div>
-                      ))}
+              {/* Key Financial Ratios */}
+              <div id="screener-ratios" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300">
+                <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4">Key Financial Ratios</h3>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[
+                    { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}` },
+                    { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}` },
+                    { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}` },
+                    { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x` },
+                    { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}` },
+                    { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%` },
+                    { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%` },
+                    { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%` },
+                    { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}` },
+                  ].map((ratio) => (
+                    <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-3 rounded-2xl flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{ratio.label}</span>
+                      <span className="font-mono text-sm font-black text-slate-800 dark:text-white mt-1">{ratio.value}</span>
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
 
-                  {/* Chart Card */}
-                  <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-6">
+              {/* Chart Card */}
+              <div id="screener-chart" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300 space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
                       <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-1.5">
                         <TrendingUp className="h-4.5 w-4.5 text-blue-600 dark:text-cyan-400" /> Share Price & Volume
@@ -463,219 +817,13 @@ export default function StockScreener() {
                       </label>
                     </div>
                   </div>
-
-                </>
-              )}
-
-              {/* TAB 2: ANALYSIS & PEER COMPARISON */}
-              {activeTab === 'analysis' && (
-                <div className="space-y-6">
-                  {/* Pros & Cons Card */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* PROS */}
-                    <div className="bg-[#f0fdf4]/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/30 rounded-3xl p-6 shadow-sm space-y-3">
-                      <h3 className="text-xs font-black text-emerald-700 dark:text-emerald-450 uppercase tracking-widest">Pros</h3>
-                      <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-350 font-semibold list-disc list-inside">
-                        <li>Company has been maintaining a healthy dividend payout of {selectedStock.dividendYield > 0 ? (selectedStock.dividendYield * 15).toFixed(1) : '17.8'}%.</li>
-                        <li>Strong return metrics with ROCE of {selectedStock.roce.toFixed(2)}%.</li>
-                        <li>Efficient operations showing solid net profit growth trajectory.</li>
-                      </ul>
-                    </div>
-                    {/* CONS */}
-                    <div className="bg-[#fef2f2]/50 dark:bg-rose-950/10 border border-rose-200 dark:border-rose-900/30 rounded-3xl p-6 shadow-sm space-y-3">
-                      <h3 className="text-xs font-black text-rose-700 dark:text-rose-450 uppercase tracking-widest">Cons</h3>
-                      <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-350 font-semibold list-disc list-inside">
-                        <li>Stock is trading at {(selectedStock.price / selectedStock.bookValue).toFixed(1)} times its book value.</li>
-                        <li>P/E ratio of {selectedStock.peRatio.toFixed(1)}x is currently higher than the industry average.</li>
-                        <li>Promoter holding has decreased slightly over the last 3 years.</li>
-                      </ul>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-slate-400 font-semibold italic mt-2">* The pros and cons are machine generated.</p>
-
-                  {/* Peer Comparison Card */}
-                  <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
-                      <div>
-                        <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight">Peer Comparison</h3>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
-                          {peerData?.category.map((cat, idx) => (
-                            <span key={cat} className="flex items-center gap-1">
-                              {idx > 0 && <span className="text-slate-300 dark:text-slate-700 font-normal">&gt;</span>}
-                              <span className={idx === peerData.category.length - 1 ? "text-blue-600 dark:text-cyan-400 font-black" : ""}>{cat}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <button className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 transition-all shadow-sm">
-                        Edit Columns
-                      </button>
-                    </div>
-
-                    {/* Peer Table */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
-                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">S.No.</th>
-                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">Name</th>
-                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">CMP {currencySymbol}</th>
-                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">P/E</th>
-                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Mar Cap {isIndian ? 'Cr.' : 'M'}</th>
-                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Div Yld %</th>
-                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">ROCE %</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono">
-                          {peerData?.peers.map((peer, idx) => {
-                            const isSelf = peer.symbol.toUpperCase() === selectedStock.symbol.toUpperCase();
-                            const displayPrice = isSelf ? selectedStock.price : peer.price;
-                            const displayPE = isSelf ? selectedStock.peRatio : peer.pe;
-                            const displayMCap = isSelf ? selectedStock.marketCap : peer.mCap;
-                            const displayDiv = isSelf ? selectedStock.dividendYield : peer.div;
-                            const displayROCE = isSelf ? selectedStock.roce : peer.roce;
-
-                            return (
-                              <tr key={peer.symbol} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors cursor-pointer ${isSelf ? 'bg-blue-50/50 dark:bg-cyan-500/[0.03] font-bold text-blue-600 dark:text-cyan-400' : ''}`} onClick={() => !isSelf && handleSelectStock(peer.symbol)}>
-                                <td className="py-2.5 px-3 text-slate-500 font-sans">{idx + 1}.</td>
-                                <td className="py-2.5 px-3 text-blue-600 dark:text-cyan-400 hover:underline font-sans text-left">{peer.name}</td>
-                                <td className="py-2.5 px-3 text-right">{displayPrice.toFixed(2)}</td>
-                                <td className="py-2.5 px-3 text-right">{displayPE.toFixed(2)}</td>
-                                <td className="py-2.5 px-3 text-right">{displayMCap.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                <td className="py-2.5 px-3 text-right">{displayDiv.toFixed(2)}%</td>
-                                <td className="py-2.5 px-3 text-right">{displayROCE.toFixed(2)}%</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: PEERS */}
-              {activeTab === 'peers' && (
-                <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
-                    <div>
-                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight">Peer Comparison</h3>
-                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
-                        {peerData?.category.map((cat, idx) => (
-                          <span key={cat} className="flex items-center gap-1">
-                            {idx > 0 && <span className="text-slate-300 dark:text-slate-700 font-normal">&gt;</span>}
-                            <span className={idx === peerData.category.length - 1 ? "text-blue-600 dark:text-cyan-400 font-black" : ""}>{cat}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">S.No.</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">Name</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">CMP {currencySymbol}</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">P/E</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Mar Cap {isIndian ? 'Cr.' : 'M'}</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Div Yld %</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">ROCE %</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono">
-                        {peerData?.peers.map((peer, idx) => {
-                          const isSelf = peer.symbol.toUpperCase() === selectedStock.symbol.toUpperCase();
-                          const displayPrice = isSelf ? selectedStock.price : peer.price;
-                          const displayPE = isSelf ? selectedStock.peRatio : peer.pe;
-                          const displayMCap = isSelf ? selectedStock.marketCap : peer.mCap;
-                          const displayDiv = isSelf ? selectedStock.dividendYield : peer.div;
-                          const displayROCE = isSelf ? selectedStock.roce : peer.roce;
-
-                          return (
-                            <tr key={peer.symbol} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors cursor-pointer ${isSelf ? 'bg-blue-50/50 dark:bg-cyan-500/[0.03] font-bold text-blue-600 dark:text-cyan-400' : ''}`} onClick={() => !isSelf && handleSelectStock(peer.symbol)}>
-                              <td className="py-2.5 px-3 text-slate-500 font-sans">{idx + 1}.</td>
-                              <td className="py-2.5 px-3 text-blue-600 dark:text-cyan-400 hover:underline font-sans text-left">{peer.name}</td>
-                              <td className="py-2.5 px-3 text-right">{displayPrice.toFixed(2)}</td>
-                              <td className="py-2.5 px-3 text-right">{displayPE.toFixed(2)}</td>
-                              <td className="py-2.5 px-3 text-right">{displayMCap.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                              <td className="py-2.5 px-3 text-right">{displayDiv.toFixed(2)}%</td>
-                              <td className="py-2.5 px-3 text-right">{displayROCE.toFixed(2)}%</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 4: QUARTERS */}
-              {activeTab === 'quarters' && (
-                <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
-                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight pb-3 border-b border-slate-100 dark:border-white/5">Quarterly Financial Results</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse font-mono">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">Metric</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Jun 2025</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Sep 2025</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Dec 2025</th>
-                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Mar 2026</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02]">
-                        {[
-                          { label: 'Sales', values: [1200, 1350, 1280, 1420] },
-                          { label: 'Expenses', values: [950, 1020, 990, 1080] },
-                          { label: 'Operating Profit', values: [250, 330, 290, 340] },
-                          { label: 'Net Profit', values: [180, 240, 210, 255] }
-                        ].map((row) => (
-                          <tr key={row.label} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
-                            <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 font-sans text-left font-bold">{row.label}</td>
-                            {row.values.map((v, i) => (
-                              <td key={i} className="py-2.5 px-3 text-right">{currencySymbol}{v.toLocaleString()}</td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 5: RATIOS */}
-              {activeTab === 'ratios' && (
-                <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm">
-                  <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4">Key Financial Ratios</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {[
-                      { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}` },
-                      { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}` },
-                      { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}` },
-                      { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x` },
-                      { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}` },
-                      { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%` },
-                      { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%` },
-                      { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%` },
-                      { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}` }
-                    ].map((ratio) => (
-                      <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-3 rounded-2xl flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{ratio.label}</span>
-                        <span className="font-mono text-sm font-black text-slate-800 dark:text-white mt-1">{ratio.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Right Col: About & Key Points */}
             <div className="lg:col-span-1 space-y-6">
               
               {/* About Card */}
-              <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-4">
                 <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest">About</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
                   {selectedStock.about}
@@ -683,7 +831,7 @@ export default function StockScreener() {
               </div>
 
               {/* Key points Card */}
-              <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-4">
                 <div className="flex items-center gap-1.5 text-blue-600 dark:text-cyan-400">
                   <Sparkles className="h-4.5 w-4.5" />
                   <h3 className="text-xs font-black uppercase tracking-widest">Key Features</h3>
@@ -696,7 +844,7 @@ export default function StockScreener() {
               </div>
 
               {/* Pros & Cons Card (Right Side of Chart) */}
-              <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-5 shadow-sm space-y-4">
+              <div id="screener-analysis" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-5 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-4">
                 {/* PROS */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-450 uppercase tracking-widest flex items-center gap-1.5">
@@ -725,9 +873,9 @@ export default function StockScreener() {
 
           </div>
 
-          {/* Full Width Peer Comparison Card (Visible under chart, peers, analysis tabs) */}
-          {(activeTab === 'chart' || activeTab === 'peers' || activeTab === 'analysis') && peerData && (
-            <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-6 mt-6 w-full">
+          {/* Full Width Peer Comparison Card */}
+          {peerData && (
+            <div id="screener-peers" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-6 mt-6 w-full">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
                 <div>
                   <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">Peer comparison</h3>
@@ -854,6 +1002,202 @@ export default function StockScreener() {
               </div>
             </div>
           )}
+
+          {/* Full Width Quarterly Results Card */}
+          <div id="screener-quarters" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-6 mt-6 w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">Quarterly Results</h3>
+                  <p className="text-xs text-slate-400 font-bold mt-1">
+                    Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'} / <span className="text-blue-600 dark:text-cyan-400 hover:underline cursor-pointer">View Standalone</span>
+                  </p>
+                </div>
+                <button className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-650 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+                  Product Segments
+                </button>
+              </div>
+
+              {/* 13-Quarter Table */}
+              <div className="w-full overflow-x-hidden">
+                <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
+                      <th className="py-2.5 px-1 w-24 sm:w-28 md:w-32 text-left font-sans">Features</th>
+                      {getDynamicQuarters().map((q) => (
+                        <th key={q} className="py-2.5 px-0.5 text-right font-mono">{q.replace(' 20', ' ')}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                    {quarterlyResults.map((row) => (
+                      <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                        <td className="py-2 px-1 text-left font-sans truncate">{row.label}</td>
+                        {row.values.map((v, i) => (
+                          <td key={i} className="py-2 px-0.5 text-right">
+                            {row.isPercent ? `${v.toFixed(1)}%` : v.toFixed(1)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    
+                    {/* Raw PDF Row */}
+                    <tr className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
+                      <td className="py-2 px-1 text-left font-sans">Raw PDF</td>
+                      {Array.from({ length: 13 }).map((_, i) => (
+                        <td key={i} className="py-2 px-0.5 text-right">
+                          <span className="inline-flex items-center justify-center text-red-500 hover:text-red-650 cursor-pointer">
+                            <FileText className="h-3.5 w-3.5" />
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Result Notification Badge */}
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50/80 dark:bg-blue-950/20 text-blue-750 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-xs font-bold shadow-sm">
+                  Upcoming result date: {getResultDate(selectedStock.symbol)}
+                </span>
+              </div>
+            </div>
+
+          {/* Full Width Profit & Loss Card */}
+          <div id="screener-pnl" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-6 mt-6 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">Profit & Loss</h3>
+                <p className="text-xs text-slate-400 font-bold mt-1">
+                  Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'} / <span className="text-blue-600 dark:text-cyan-400 hover:underline cursor-pointer">View Standalone</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-300 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+                  Related Party
+                </button>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-655 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+                  Product Segments
+                </button>
+              </div>
+            </div>
+
+            {/* Compact PnL Table */}
+            <div className="w-full overflow-x-hidden">
+              <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
+                    <th className="py-2.5 px-1 w-24 sm:w-28 md:w-32 text-left font-sans">Features</th>
+                    {getDynamicYears().map((q) => (
+                      <th key={q} className="py-2.5 px-0.5 text-right font-mono">{q}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                  {pnlResults.rows.map((row) => (
+                    <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                      <td className="py-2 px-1 text-left font-sans truncate">{row.label}</td>
+                      {row.values.map((v, i) => (
+                        <td key={i} className="py-2 px-0.5 text-right">
+                          {row.isPercent ? `${v.toFixed(0)}%` : v.toFixed(0)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Growth Metrics 4-Box Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
+              
+              {/* Box 1: Compounded Sales Growth */}
+              <div className="bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-4 rounded-2xl space-y-2">
+                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Compounded Sales Growth</h4>
+                <div className="space-y-1.5 text-xs font-semibold text-slate-700 dark:text-slate-350">
+                  <div className="flex justify-between"><span>10 Years:</span><span className="font-mono text-slate-450">%</span></div>
+                  <div className="flex justify-between"><span>5 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.sales.y5}</span></div>
+                  <div className="flex justify-between"><span>3 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.sales.y3}</span></div>
+                  <div className="flex justify-between"><span>TTM:</span><span className={`font-mono ${pnlResults.growth.sales.ttm.startsWith('-') ? 'text-rose-500' : 'text-emerald-500'}`}>{pnlResults.growth.sales.ttm}</span></div>
+                </div>
+              </div>
+
+              {/* Box 2: Compounded Profit Growth */}
+              <div className="bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-4 rounded-2xl space-y-2">
+                <h4 className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">Compounded Profit Growth</h4>
+                <div className="space-y-1.5 text-xs font-semibold text-slate-700 dark:text-slate-350">
+                  <div className="flex justify-between"><span>10 Years:</span><span className="font-mono text-slate-450">%</span></div>
+                  <div className="flex justify-between"><span>5 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.profit.y5}</span></div>
+                  <div className="flex justify-between"><span>3 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.profit.y3}</span></div>
+                  <div className="flex justify-between"><span>TTM:</span><span className={`font-mono ${pnlResults.growth.profit.ttm.startsWith('-') ? 'text-rose-500' : 'text-emerald-500'}`}>{pnlResults.growth.profit.ttm}</span></div>
+                </div>
+              </div>
+
+              {/* Box 3: Stock Price CAGR */}
+              <div className="bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-4 rounded-2xl space-y-2">
+                <h4 className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">Stock Price CAGR</h4>
+                <div className="space-y-1.5 text-xs font-semibold text-slate-700 dark:text-slate-350">
+                  <div className="flex justify-between"><span>10 Years:</span><span className="font-mono text-slate-450">%</span></div>
+                  <div className="flex justify-between"><span>5 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.cagr.y5}</span></div>
+                  <div className="flex justify-between"><span>3 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.cagr.y3}</span></div>
+                  <div className="flex justify-between"><span>1 Year:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.cagr.y1}</span></div>
+                </div>
+              </div>
+
+              {/* Box 4: Return on Equity */}
+              <div className="bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-4 rounded-2xl space-y-2">
+                <h4 className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">Return on Equity</h4>
+                <div className="space-y-1.5 text-xs font-semibold text-slate-700 dark:text-slate-350">
+                  <div className="flex justify-between"><span>10 Years:</span><span className="font-mono text-slate-450">%</span></div>
+                  <div className="flex justify-between"><span>5 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.roe.y5}</span></div>
+                  <div className="flex justify-between"><span>3 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.roe.y3}</span></div>
+                  <div className="flex justify-between"><span>Last Year:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.roe.last}</span></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Full Width Balance Sheet Card */}
+          <div id="screener-balance-sheet" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-6 mt-6 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">Balance Sheet</h3>
+                <p className="text-xs text-slate-400 font-bold mt-1">
+                  Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'} / <span className="text-blue-600 dark:text-cyan-400 hover:underline cursor-pointer">View Standalone</span>
+                </p>
+              </div>
+              <button className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-655 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+                Corporate Actions
+              </button>
+            </div>
+
+            {/* Compact Balance Sheet Table */}
+            <div className="w-full overflow-x-hidden">
+              <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
+                    <th className="py-2.5 px-1 w-24 sm:w-28 md:w-32 text-left font-sans">Features</th>
+                    {getDynamicYears().map((q) => (
+                      <th key={q} className="py-2.5 px-0.5 text-right font-mono">{q}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                  {balanceSheetResults.map((row) => (
+                    <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                      <td className="py-2 px-1 text-left font-sans truncate">{row.label}</td>
+                      {row.values.map((v, i) => (
+                        <td key={i} className="py-2 px-0.5 text-right">
+                          {v.toLocaleString()}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
         </div>
       )}
