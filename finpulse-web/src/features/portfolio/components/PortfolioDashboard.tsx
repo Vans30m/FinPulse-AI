@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { getFundamentals } from '../../../services/marketService';
 import PaperTradingOrderModal from './PaperTradingOrderModal';
 import PaperTradingLedger from './PaperTradingLedger';
+import API_BASE_URL from "../../../config/api";
 
 interface Holding {
   id?: string;
@@ -163,7 +164,7 @@ export default function PortfolioDashboard() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(assetSearch)}`);
+        const res = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(assetSearch)}`);
         if (res.ok) {
           const data = await res.json();
           setAssetSuggestions(data);
@@ -216,16 +217,16 @@ export default function PortfolioDashboard() {
       }
 
       const promises: Promise<any>[] = [
-        fetch('http://localhost:3000/api/portfolio/holdings', { headers }),
-        fetch('http://localhost:3000/api/portfolio/watchlist', { headers }),
-        fetch('http://localhost:3000/api/portfolio/rolling-cagr', { headers })
+        fetch('${API_BASE_URL}/api/portfolio/holdings', { headers }),
+        fetch('${API_BASE_URL}/api/portfolio/watchlist', { headers }),
+        fetch('${API_BASE_URL}/api/portfolio/rolling-cagr', { headers })
       ];
 
       // Fetch advisor dynamically only if not present in session cache
       let advisorPromiseIdx = -1;
       if (!cachedAdvisor) {
         advisorPromiseIdx = promises.length;
-        promises.push(fetch('http://localhost:3000/api/ai/portfolio-advisor', { headers }));
+        promises.push(fetch('${API_BASE_URL}/api/ai/portfolio-advisor', { headers }));
       }
 
       const responses = await Promise.all(promises);
@@ -317,7 +318,7 @@ export default function PortfolioDashboard() {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
       const userId = storedUser.id;
 
-      const res = await fetch('http://localhost:3000/api/portfolio/holdings', {
+      const res = await fetch('${API_BASE_URL}/api/portfolio/holdings', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -434,7 +435,7 @@ export default function PortfolioDashboard() {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
       const userId = storedUser.id;
 
-      const res = await fetch(`http://localhost:3000/api/portfolio/holdings/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/portfolio/holdings/${id}`, {
         method: 'DELETE',
         headers: {
           ...(userId ? { 'X-User-Id': userId } : {})

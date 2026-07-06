@@ -14,6 +14,7 @@ import DarkLogo from '../../assets/Light_Logo.png';
 import { Link, NavLink } from "react-router-dom";
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useChart } from "../../context/ChartContext";
+import API_BASE_URL from "../../config/api";
 
 interface UserAlert {
   id: string;
@@ -51,7 +52,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     if (!isLoggedIn) return;
     const fetchAlerts = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/alerts');
+        const res = await fetch('${API_BASE_URL}/api/alerts');
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {

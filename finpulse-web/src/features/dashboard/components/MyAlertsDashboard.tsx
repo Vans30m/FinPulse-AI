@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bell, AlertTriangle, CheckCircle2, Plus, X, Target, Loader2, Play, Pause, Trash2, Search, ArrowUpDown, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAlerts, useCreateAlert, useDeleteAlert, useUpdateAlert, useToggleAlertStatus, useAlertHistory } from '../../../hooks/useDashboard';
+import API_BASE_URL from "../../../config/api";
 
 export default function MyAlertsDashboard() {
   const { data: myAlerts = [], isLoading } = useAlerts();
@@ -41,7 +42,7 @@ export default function MyAlertsDashboard() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(newTicker)}`);
+        const res = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(newTicker)}`);
         if (res.ok) {
           const data = await res.json();
           setSuggestions(data);

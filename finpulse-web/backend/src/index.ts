@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
@@ -33,25 +33,82 @@ import aiHistoryRouter from "./routes/aiHistory.js";
 import { getUpcomingEarningsForMarket, getAssetEvents } from "./services/yahooService.js";
 import authRoutes from "./routes/auth.js";
 
-
+// ==========================================
+// INITIALISE CORE SERVICES
+// ==========================================
 export const yahooFinance = new YahooFinance();
 const app = express();
 const prisma = new PrismaClient();
-
-// Clean up any default seeded mock assets on startup
-prisma.holding.deleteMany({
-  where: {
-    ticker: { in: ['RELIANCE.NS', 'NVDA', 'BTC-USD'] }
-  }
-}).then(() => console.log('Mock holdings cleaned up successfully!'))
-  .catch(err => console.error('Failed to clean mock holdings:', err));
-
 const rssParser = new Parser();
-const PORT = process.env.PORT || 5000;
 
-// Middleware 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
-app.use(express.json());
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const IS_PRODUCTION = NODE_ENV === 'production';
+
+// ==========================================
+// CORS CONFIGURATION
+// ==========================================
+const ALLOWED_ORIGINS: string[] = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+// Read additional origins from FRONTEND_URL env var (comma-separated)
+if (process.env.FRONTEND_URL) {
+  const envOrigins = process.env.FRONTEND_URL
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  ALLOWED_ORIGINS.push(...envOrigins);
+}
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin "${origin}" is not allowed`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id'],
+};
+
+// ==========================================
+// TRUST PROXY (required for Render / proxied hosts)
+// ==========================================
+app.set('trust proxy', 1);
+
+// ==========================================
+// CORE MIDDLEWARE
+// ==========================================
+app.use(cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions)); // Pre-flight for all routes (Express 5 compatible)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// ==========================================
+// HEALTH ENDPOINTS
+// ==========================================
+app.get('/', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    service: 'FinPulse-AI Backend',
+    version: '1.0.0',
+  });
+});
+
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ==========================================
+// ROUTE REGISTRATION
+// ==========================================
 app.use("/api/charts", chartRoutes);
 app.use("/api/news-sentiment", newsRoutes);
 app.use("/api/market-explanation", marketExplanationRoutes);
@@ -59,30 +116,12 @@ app.use("/api/stock-sentiment", stockSentimentRoutes);
 app.use("/api/technical", technicalRoutes);
 app.use("/api/fundamentals", fundamentalsRoutes);
 app.use("/api/financial-health", financialHealthRoutes);
-app.use(
-  "/api/analyst",
-  analystRoutes
-);
-app.use(
-  "/api/company-news",
-  companyNewsRoutes
-);
-app.use(
-  "/api/ai-score",
-  aiScoreRoutes
-);
-app.use(
-  "/api/ai",
-  marketBriefRoutes
-);
-app.use(
-  "/api/global-markets",
-  globalMarketsRoutes
-);
-app.use(
-  "/api/screener",
-  screenerRoutes
-);
+app.use("/api/analyst", analystRoutes);
+app.use("/api/company-news", companyNewsRoutes);
+app.use("/api/ai-score", aiScoreRoutes);
+app.use("/api/ai", marketBriefRoutes);
+app.use("/api/global-markets", globalMarketsRoutes);
+app.use("/api/screener", screenerRoutes);
 app.use("/api/index-summary", indexSummaryRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/ai-chat", aiHistoryRouter);
@@ -91,48 +130,45 @@ app.use("/api/watchlists", watchlistsRouter);
 app.use("/api/alerts-custom", alertsRouter);
 app.use("/api/recent", recentRouter);
 app.use("/api/saved-screeners", customScreenerRouter);
-app.use("/api/ai-chat", aiHistoryRouter);
 app.use("/api/auth", authRoutes);
+
 // ==========================================
 // 0. GLOBAL EARNINGS CALENDAR ENDPOINT
 // ==========================================
-app.get(["/api/earnings/calendar/:market", "/api/earnings/upcoming/:market"], async (req, res) => {
+app.get(["/api/earnings/calendar/:market", "/api/earnings/upcoming/:market"], async (req: Request, res: Response) => {
   try {
-    const market = String(req.params.market || "");
+    const market = String(req.params['market'] || "");
     const data = await getUpcomingEarningsForMarket(market);
     res.json(data);
   } catch (error: any) {
-    console.error(`Error in GET earnings endpoint for ${req.params.market}:`, error);
+    console.error(`Error in GET earnings endpoint for ${req.params['market']}:`, error);
     res.status(500).json({ error: error.message || "Failed to fetch earnings calendar" });
   }
 });
 
-app.get("/api/events/:symbol", async (req, res) => {
+app.get("/api/events/:symbol", async (req: Request, res: Response) => {
   try {
-    const symbol = String(req.params.symbol || "");
+    const symbol = String(req.params['symbol'] || "");
     const data = await getAssetEvents(symbol);
     res.json(data);
   } catch (error: any) {
-    console.error(`Error in GET events for ${req.params.symbol}:`, error);
+    console.error(`Error in GET events for ${req.params['symbol']}:`, error);
     res.status(500).json({ error: error.message || "Failed to fetch asset events" });
   }
 });
 
 // ==========================================
-// 1. OMNI-SEARCH: FINNHUB + YAHOO FINANCE
+// 1. OMNI-SEARCH: YAHOO FINANCE
 // ==========================================
-app.get("/api/search", async (req, res) => {
+app.get("/api/search", async (req: Request, res: Response) => {
   try {
-    const q = String(
-      req.query.q || ""
-    ).trim();
+    const q = String(req.query['q'] || "").trim();
 
     if (!q) {
       return res.json([]);
     }
 
-    const yahooResults =
-      await yahooFinance.search(q);
+    const yahooResults = await yahooFinance.search(q);
 
     const results =
       yahooResults.quotes
@@ -140,33 +176,15 @@ app.get("/api/search", async (req, res) => {
         ?.slice(0, 20)
         .map((item: any) => ({
           symbol: item.symbol,
-
-          yahooSymbol:
-            item.symbol,
-
-          name:
-            item.shortname ||
-            item.longname ||
-            item.symbol,
-
-          exchange:
-            item.exchDisp ||
-            item.exchange ||
-            "GLOBAL",
-
-          type:
-            item.quoteType ||
-            item.typeDisp ||
-            "Asset",
+          yahooSymbol: item.symbol,
+          name: item.shortname || item.longname || item.symbol,
+          exchange: item.exchDisp || item.exchange || "GLOBAL",
+          type: item.quoteType || item.typeDisp || "Asset",
         })) || [];
 
     res.json(results);
   } catch (error) {
-    console.error(
-      "Yahoo Search Error",
-      error
-    );
-
+    console.error("Yahoo Search Error", error);
     res.status(500).json([]);
   }
 });
@@ -174,15 +192,17 @@ app.get("/api/search", async (req, res) => {
 // ==========================================
 // 1.5. MARKET INDICES ENDPOINT FOR HERO BANNER
 // ==========================================
-app.get('/api/market-indices', async (req, res) => {
+app.get('/api/market-indices', async (_req: Request, res: Response) => {
   try {
     const symbols = ['^GSPC', '^IXIC', '^DJI'];
     const quotes = await yahooFinance.quote(symbols);
     const formatted = quotes.map((q: any) => ({
       symbol: q.symbol,
       name: q.symbol === '^GSPC' ? 'S&P 500' : q.symbol === '^IXIC' ? 'NASDAQ' : 'DOW JONES',
-      price: q.regularMarketPrice ? q.regularMarketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '---',
-      changePercent: q.regularMarketChangePercent !== undefined ? q.regularMarketChangePercent : 0
+      price: q.regularMarketPrice
+        ? q.regularMarketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '---',
+      changePercent: q.regularMarketChangePercent !== undefined ? q.regularMarketChangePercent : 0,
     }));
     res.json(formatted);
   } catch (error) {
@@ -190,7 +210,7 @@ app.get('/api/market-indices', async (req, res) => {
     res.json([
       { symbol: '^GSPC', name: 'S&P 500', price: '5,432.10', changePercent: 0.45 },
       { symbol: '^IXIC', name: 'NASDAQ', price: '18,245.50', changePercent: 0.80 },
-      { symbol: '^DJI', name: 'DOW JONES', price: '39,120.00', changePercent: -0.12 }
+      { symbol: '^DJI', name: 'DOW JONES', price: '39,120.00', changePercent: -0.12 },
     ]);
   }
 });
@@ -198,14 +218,12 @@ app.get('/api/market-indices', async (req, res) => {
 // ==========================================
 // 2. LIVE MARKET NEWS (FINNHUB API)
 // ==========================================
-app.get('/api/news', async (req, res) => {
+app.get('/api/news', async (_req: Request, res: Response) => {
   try {
     const apiKey = process.env.FINNHUB_API_KEY;
     const response = await axios.get(
       `https://finnhub.io/api/v1/news?category=general&token=${apiKey}`
     );
-
-    // Return top 15
     const latestNews = response.data.slice(0, 15);
     res.json(latestNews);
   } catch (error) {
@@ -217,14 +235,14 @@ app.get('/api/news', async (req, res) => {
 // ==========================================
 // 3. GOOGLE NEWS RSS FEED
 // ==========================================
-app.get('/api/news/google', async (req, res) => {
+app.get('/api/news/google', async (_req: Request, res: Response) => {
   try {
-    // using "when:1d" for hyper-recent breaking news to match Finnhub
-    const feed = await rssParser.parseURL('https://news.google.com/rss/search?q=stock+market+finance+economy+when:1d&hl=en-US&gl=US&ceid=US:en');
+    const feed = await rssParser.parseURL(
+      'https://news.google.com/rss/search?q=stock+market+finance+economy+when:1d&hl=en-US&gl=US&ceid=US:en'
+    );
 
     const formattedNews = feed.items.slice(0, 15).map((item, index) => {
       const unixTimestamp = Math.floor(new Date(item.pubDate || Date.now()).getTime() / 1000);
-
       return {
         id: `google-${index}-${unixTimestamp}`,
         headline: item.title,
@@ -232,7 +250,7 @@ app.get('/api/news/google', async (req, res) => {
         datetime: unixTimestamp,
         url: item.link,
         summary: item.contentSnippet || 'Click to read the full story on Google News.',
-        type: 'google'
+        type: 'google',
       };
     });
 
@@ -265,7 +283,7 @@ function getMockEconomicEvents(dateStr: string) {
     { time: "7:15 PM", currency: "USD", impact: "medium", event: "Final Services PMI", actual: "51.4", forecast: "51.4", previous: "51.3" },
     { time: "7:30 PM", currency: "USD", impact: "high", event: "ISM Services PMI", actual: "54.2", forecast: "54.2", previous: "54.5" },
     { time: "8:30 PM", currency: "USD", impact: "medium", event: "FOMC Member Waller Speaks", actual: "", forecast: "", previous: "" },
-    { time: "9:00 PM", currency: "CAD", impact: "low", event: "BOC Business Outlook Survey", actual: "", forecast: "", previous: "" }
+    { time: "9:00 PM", currency: "CAD", impact: "low", event: "BOC Business Outlook Survey", actual: "", forecast: "", previous: "" },
   ];
 
   const hash = dateStr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -285,11 +303,10 @@ function getMockEconomicEvents(dateStr: string) {
   });
 }
 
-app.get('/api/economic-calendar', async (req, res) => {
+app.get('/api/economic-calendar', async (req: Request, res: Response) => {
   try {
-    const dateStr = String(req.query.date || new Date().toISOString().split('T')[0]);
+    const dateStr = String(req.query['date'] || new Date().toISOString().split('T')[0]);
 
-    // Set up range from 00:00:00 to 23:59:59 UTC for the requested date
     const fromDate = `${dateStr}T00:00:00.000Z`;
     const toDate = `${dateStr}T23:59:59.000Z`;
 
@@ -297,12 +314,12 @@ app.get('/api/economic-calendar', async (req, res) => {
     const params = {
       from: fromDate,
       to: toDate,
-      countries: 'US,IN,GB,EU,DE,FR,IT,ES,JP,CA,AU,CH,NZ'
+      countries: 'US,IN,GB,EU,DE,FR,IT,ES,JP,CA,AU,CH,NZ',
     };
 
     const headers = {
       'Origin': 'https://www.tradingview.com',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     };
 
     const response = await axios.get(url, { headers, params });
@@ -313,7 +330,9 @@ app.get('/api/economic-calendar', async (req, res) => {
         if (item.importance === 0) impact = 'medium';
         else if (item.importance === 1) impact = 'high';
 
-        const timeStr = item.date ? new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'All Day';
+        const timeStr = item.date
+          ? new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : 'All Day';
 
         const formatVal = (val: any) => {
           if (val === null || val === undefined) return '';
@@ -328,7 +347,7 @@ app.get('/api/economic-calendar', async (req, res) => {
           actual: formatVal(item.actual),
           forecast: formatVal(item.forecast),
           previous: formatVal(item.previous),
-          date: dateStr
+          date: dateStr,
         };
       });
 
@@ -338,27 +357,67 @@ app.get('/api/economic-calendar', async (req, res) => {
     res.json(getMockEconomicEvents(dateStr));
   } catch (error) {
     console.error("Economic calendar TradingView API error:", error);
-    const dateStr = String(req.query.date || new Date().toISOString().split('T')[0]);
+    const dateStr = String(req.query['date'] || new Date().toISOString().split('T')[0]);
     res.json(getMockEconomicEvents(dateStr));
   }
 });
 
 // ==========================================
-// 5. PRICE ALERTS (POSTGRESQL DB)
+// 5. PRICE ALERTS (stub until DB is used)
 // ==========================================
+app.get("/api/alerts", (_req: Request, res: Response) => {
+  res.json([]);
+});
 
-
-// UNTIL DB is used
-app.get(
-  "/api/alerts",
-  (req, res) => {
-    res.json([]);
-  }
-);
+// ==========================================
+// GLOBAL ERROR HANDLER
+// ==========================================
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[Global Error Handler]', err.message);
+  res.status(500).json({
+    error: IS_PRODUCTION ? 'Internal Server Error' : err.message,
+  });
+});
 
 // ==========================================
 // SERVER START
 // ==========================================
-app.listen(PORT, () => {
-  console.log(`FinPulse-AI Backend is running securely on port ${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`✅ FinPulse-AI Backend running on port ${PORT}`);
+  console.log(`   Environment : ${NODE_ENV}`);
+  console.log(`   Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
 });
+
+// ==========================================
+// MOCK DATA CLEANUP (development only)
+// ==========================================
+if (!IS_PRODUCTION) {
+  prisma.holding.deleteMany({
+    where: {
+      ticker: { in: ['RELIANCE.NS', 'NVDA', 'BTC-USD'] },
+    },
+  })
+    .then(() => console.log('🧹 Mock holdings cleaned up (dev mode)'))
+    .catch((err) => console.error('Failed to clean mock holdings:', err));
+}
+
+// ==========================================
+// GRACEFUL SHUTDOWN
+// ==========================================
+async function shutdown(signal: string) {
+  console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+  server.close(async () => {
+    try {
+      await prisma.$disconnect();
+      console.log('🔌 Prisma disconnected. Goodbye.');
+    } catch (err) {
+      console.error('Error disconnecting Prisma:', err);
+    } finally {
+      process.exit(0);
+    }
+  });
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

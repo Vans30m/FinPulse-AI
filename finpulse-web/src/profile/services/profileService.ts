@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3000/api/profile';
+import API_BASE_URL from "../../config/api";
+const API_URL = `${API_BASE_URL}/api/profile`;
 
 function getHeaders() {
   const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || 'simulated-jwt-token-123456';

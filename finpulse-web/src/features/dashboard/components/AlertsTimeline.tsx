@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Newspaper, Clock, ExternalLink } from 'lucide-react';
+import API_BASE_URL from "../../../config/api";
 
 interface LiveNewsItem {
   id: number | string; // Updated to allow string IDs from Google
@@ -27,8 +28,8 @@ export default function AlertsTimeline({
 
         // Fetch BOTH APIs concurrently for maximum speed
         const [finnhubRes, googleRes] = await Promise.all([
-          fetch('http://localhost:3000/api/news').catch(() => null),
-          fetch('http://localhost:3000/api/news/google').catch(() => null)
+          fetch('${API_BASE_URL}/api/news').catch(() => null),
+          fetch('${API_BASE_URL}/api/news/google').catch(() => null)
         ]);
 
         let combinedNews: LiveNewsItem[] = [];

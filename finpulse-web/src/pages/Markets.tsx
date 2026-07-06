@@ -4,6 +4,7 @@ import MarketHeatmap from "../components/markets/MarketHeatmap";
 import { useNavigate } from "react-router-dom";
 import MarketStatusBar from "../features/dashboard/components/MarketStatusBar";
 import { Search, X } from "lucide-react";
+import API_BASE_URL from "../config/api";
 
 function Sparkline({ data, isPositive }: { data: { value: number }[]; isPositive: boolean }) {
   const gradientId = useMemo(() => `sparkline-grad-${Math.random().toString(36).substring(2, 9)}`, []);
@@ -60,7 +61,7 @@ function MarketCard({ market, navigate }: { market: any; navigate: any }) {
   const isPositive = changePercent >= 0;
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/global-markets/history/${encodeURIComponent(market.symbol)}?range=1mo`)
+    fetch(`${API_BASE_URL}/api/global-markets/history/${encodeURIComponent(market.symbol)}?range=1mo`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

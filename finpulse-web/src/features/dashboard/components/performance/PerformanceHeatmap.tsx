@@ -9,6 +9,7 @@ import HeatmapLegend from "./HeatmapLegend";
 import HeatmapTooltip from "./HeatmapTooltip";
 import HeatmapInsights from "./HeatmapInsights";
 import HeatmapDayModal from "./HeatmapDayModal";
+import API_BASE_URL from "../../../../config/api";
 
 interface CalendarWeek {
   index: number;
@@ -229,7 +230,7 @@ export default function PerformanceHeatmap() {
     const userId = storedUser.id;
     const headers = userId ? { 'X-User-Id': userId } : undefined;
 
-    fetch(`http://localhost:3000/api/portfolio/heatmap?year=${year}`, { headers })
+    fetch(`${API_BASE_URL}/api/portfolio/heatmap?year=${year}`, { headers })
       .then(res => res.json())
       .then(data => {
         setYearlyData(data || []);

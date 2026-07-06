@@ -2,6 +2,7 @@ import { Newspaper, Calendar, Loader2, TrendingUp } from "lucide-react";
 import { useEffect, useState, memo, useMemo } from "react";
 import AlertsTimeline from "../features/dashboard/components/AlertsTimeline";
 import { useChart } from "../context/ChartContext";
+import API_BASE_URL from "../config/api";
 
 interface EconomicEvent {
   time: string;
@@ -35,7 +36,7 @@ function CustomEconomicCalendar() {
     const fetchCalendar = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`http://localhost:3000/api/economic-calendar?date=${selectedDate}`);
+        const res = await fetch(`${API_BASE_URL}/api/economic-calendar?date=${selectedDate}`);
         if (res.ok) {
           const data = await res.json();
           setEvents(data || []);
@@ -160,7 +161,7 @@ export default function News() {
   useEffect(() => {
     const fetchIndices = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/market-indices');
+        const res = await fetch('${API_BASE_URL}/api/market-indices');
         if (res.ok) {
           const data = await res.json();
           setIndices(data);

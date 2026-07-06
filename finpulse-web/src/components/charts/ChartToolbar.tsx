@@ -15,6 +15,7 @@ import {
   Loader2
 } from "lucide-react";
 import TimeframeSelector from "./TimeframeSelector";
+import API_BASE_URL from "../../config/api";
 
 interface ChartToolbarProps {
   onZoomIn: () => void;
@@ -140,7 +141,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(compareInput)}`);
+        const res = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(compareInput)}`);
         if (res.ok) {
           const data = await res.json();
           setSuggestions(Array.isArray(data) ? data : []);

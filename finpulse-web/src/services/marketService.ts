@@ -1,4 +1,4 @@
-export interface FundamentalData {
+import API_BASE_URL from "../config/api";
   symbol?: string;
   name?: string;
   price: number;
@@ -47,7 +47,7 @@ export async function getStockCandles(symbol: string, timeframe: string) {
   const config = TIMEFRAME_MAPPS[timeframe] || { range: "1y", interval: "1d" };
 
   const response = await fetch(
-    `http://localhost:3000/api/charts/${symbol}?range=${config.range}&interval=${config.interval}`
+    `${API_BASE_URL}/api/charts/${symbol}?range=${config.range}&interval=${config.interval}`
   );
 
   if (!response.ok) {
@@ -69,7 +69,7 @@ export async function getBenchmarkHistory(
   signal?: AbortSignal
 ): Promise<{ time: number; close: number }[]> {
   const response = await fetch(
-    `http://localhost:3000/api/charts/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`,
+    `${API_BASE_URL}/api/charts/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`,
     { signal }
   );
 
@@ -93,14 +93,14 @@ export async function getBenchmarkHistory(
 
 // Preserve all previous workspace interfaces untouched
 export async function getFundamentals(symbol: string): Promise<FundamentalData> {
-  const response = await fetch(`http://localhost:3000/api/fundamentals/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/fundamentals/${symbol}`);
   if (!response.ok) throw new Error("Failed to fetch fundamentals");
   return response.json();
 }
 
 export async function searchAssets(query: string) {
   if (!query.trim()) return [];
-  const response = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(query)}`);
+  const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
   if (!response.ok) throw new Error(`Search failed: ${response.status}`);
   return response.json();
 }
@@ -136,13 +136,13 @@ export interface AIMarketDriversData {
 }
 
 export async function getAIMarketBrief(): Promise<AIMarketBriefData> {
-  const response = await fetch("http://localhost:3000/api/ai/market-brief");
+  const response = await fetch("${API_BASE_URL}/api/ai/market-brief");
   if (!response.ok) throw new Error("Failed to fetch AI market brief");
   return response.json();
 }
 
 export async function getAIMarketDrivers(): Promise<AIMarketDriversData> {
-  const response = await fetch("http://localhost:3000/api/ai/market-drivers");
+  const response = await fetch("${API_BASE_URL}/api/ai/market-drivers");
   if (!response.ok) throw new Error("Failed to fetch AI market drivers");
   return response.json();
 }
@@ -155,7 +155,7 @@ export interface AIGlobalMarketPulseData {
 }
 
 export async function getAIGlobalMarketPulse(): Promise<AIGlobalMarketPulseData> {
-  const response = await fetch("http://localhost:3000/api/ai/global-market-pulse");
+  const response = await fetch("${API_BASE_URL}/api/ai/global-market-pulse");
   if (!response.ok) throw new Error("Failed to fetch AI global market pulse");
   return response.json();
 }
@@ -174,7 +174,7 @@ export interface AIFearGreedData {
 }
 
 export async function getAIFearGreed(): Promise<AIFearGreedData> {
-  const response = await fetch("http://localhost:3000/api/ai/fear-greed");
+  const response = await fetch("${API_BASE_URL}/api/ai/fear-greed");
   if (!response.ok) throw new Error("Failed to fetch AI fear and greed index");
   return response.json();
 }
@@ -197,7 +197,7 @@ export interface AIPickOfTheDayData {
 }
 
 export async function getAIPickOfTheDay(): Promise<AIPickOfTheDayData> {
-  const response = await fetch("http://localhost:3000/api/ai/pick-of-the-day");
+  const response = await fetch("${API_BASE_URL}/api/ai/pick-of-the-day");
   if (!response.ok) throw new Error("Failed to fetch AI Pick of the Day");
   return response.json();
 }
@@ -219,97 +219,97 @@ export interface AISectorMomentumData {
 }
 
 export async function getAISectorMomentum(): Promise<AISectorMomentumData> {
-  const response = await fetch("http://localhost:3000/api/ai/sector-momentum");
+  const response = await fetch("${API_BASE_URL}/api/ai/sector-momentum");
   if (!response.ok) throw new Error("Failed to fetch AI sector momentum");
   return response.json();
 }
 
 export async function getAISentiment() {
-  const response = await fetch("http://localhost:3000/api/news-sentiment/sentiment");
+  const response = await fetch("${API_BASE_URL}/api/news-sentiment/sentiment");
   return response.json();
 }
 
 export async function getMarketExplanation() {
-  const response = await fetch("http://localhost:3000/api/market-explanation");
+  const response = await fetch("${API_BASE_URL}/api/market-explanation");
   return response.json();
 }
 
 export async function getStockSentiment(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/stock-sentiment/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/stock-sentiment/${symbol}`);
   return response.json();
 }
 
 export async function getFinancialHealth(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/financial-health/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/financial-health/${symbol}`);
   return response.json();
 }
 
 export async function getTechnicals(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/technical/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/technical/${symbol}`);
   return response.json();
 }
 
 export async function getAnalystConsensus(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/analyst/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/analyst/${symbol}`);
   return response.json();
 }
 
 export async function getCompanyNews(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/company-news/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/company-news/${symbol}`);
   if (!response.ok) throw new Error("Failed to fetch company news");
   return response.json();
 }
 
 export async function getNewsSentiment(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/news-sentiment/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/news-sentiment/${symbol}`);
   if (!response.ok) throw new Error("Failed to fetch news sentiment");
   return response.json();
 }
 
 export async function getAIScore(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/ai-score/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/ai-score/${symbol}`);
   if (!response.ok) throw new Error("Failed to fetch AI score");
   return response.json();
 }
 
 export async function fetchGlobalMarkets() {
-  const response = await fetch("http://localhost:3000/api/global-markets");
+  const response = await fetch("${API_BASE_URL}/api/global-markets");
   return response.json();
 }
 
 export async function getMarketHistory(symbol: string, range: string = "1mo") {
-  const response = await fetch(`http://localhost:3000/api/global-markets/history/${encodeURIComponent(symbol)}?range=${range}`);
+  const response = await fetch(`${API_BASE_URL}/api/global-markets/history/${encodeURIComponent(symbol)}?range=${range}`);
   if (!response.ok) throw new Error("Failed to fetch market history");
   return response.json();
 }
 
 export async function getMarketScreener(market: string, type: string) {
   const endpoint = market === "india" ? `/api/screener/india?type=${type}` : `/api/screener?market=us&type=${type}`;
-  const response = await fetch(`http://localhost:3000${endpoint}`);
+  const response = await fetch(`${API_BASE_URL}${endpoint}`);
   if (!response.ok) throw new Error("Failed to fetch screener");
   return response.json();
 }
 
 export async function getDomesticScreener(type: string) {
-  const response = await fetch(`http://localhost:3000/api/screener/india?type=${type}`);
+  const response = await fetch(`${API_BASE_URL}/api/screener/india?type=${type}`);
   if (!response.ok) throw new Error("Failed to fetch screener");
   return response.json();
 }
 
 export async function getIndexSummary(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/index-summary/${encodeURIComponent(symbol)}`);
+  const response = await fetch(`${API_BASE_URL}/api/index-summary/${encodeURIComponent(symbol)}`);
   if (!response.ok) throw new Error("Failed to fetch index summary");
   return response.json();
 }
 
 export async function getUpcomingEarnings(market: string) {
-  const response = await fetch(`http://localhost:3000/api/earnings/calendar/${encodeURIComponent(market)}`);
+  const response = await fetch(`${API_BASE_URL}/api/earnings/calendar/${encodeURIComponent(market)}`);
   if (!response.ok) throw new Error(`Failed to fetch upcoming earnings: ${response.status}`);
   return response.json();
 }
 
 export async function getAssetEvents(symbol: string) {
-  const response = await fetch(`http://localhost:3000/api/events/${encodeURIComponent(symbol)}`);
+  const response = await fetch(`${API_BASE_URL}/api/events/${encodeURIComponent(symbol)}`);
   if (!response.ok) throw new Error("Failed to fetch asset events");
   return response.json();
 }

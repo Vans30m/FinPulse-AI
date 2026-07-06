@@ -19,6 +19,7 @@ import PreferenceCard from "../components/profile/PreferenceCard";
 import ToggleRow from "../components/profile/ToggleRow";
 import SecurityCard from "../components/profile/SecurityCard";
 import SubscriptionCard from "../components/profile/SubscriptionCard";
+import API_BASE_URL from "../config/api";
 
 export default function Profile() {
   const { user, setUser } = useAppData();
@@ -87,7 +88,7 @@ export default function Profile() {
         const userId = storedUser.id;
         if (!userId) return;
 
-        const res = await fetch(`http://localhost:3000/api/auth/profile-stats/${userId}`);
+        const res = await fetch(`${API_BASE_URL}/api/auth/profile-stats/${userId}`);
         const data = await res.json();
         if (res.ok) {
           setProfileStats(data);
@@ -114,7 +115,7 @@ export default function Profile() {
       const userId = storedUser.id;
       if (!userId) return;
 
-      await fetch('http://localhost:3000/api/auth/save-preferences', {
+      await fetch('${API_BASE_URL}/api/auth/save-preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, preferences: updated })
@@ -132,7 +133,7 @@ export default function Profile() {
       const userId = storedUser.id;
       if (!userId) return;
 
-      await fetch('http://localhost:3000/api/auth/save-preferences', {
+      await fetch('${API_BASE_URL}/api/auth/save-preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, notificationSettings: updated })
@@ -166,7 +167,7 @@ export default function Profile() {
         return;
       }
 
-      const res = await fetch('http://localhost:3000/api/auth/update-profile', {
+      const res = await fetch('${API_BASE_URL}/api/auth/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -184,7 +185,7 @@ export default function Profile() {
         setUser(data.user);
         
         // Refresh profile stats to reflect country and currency changes
-        const statsRes = await fetch(`http://localhost:3000/api/auth/profile-stats/${userId}`);
+        const statsRes = await fetch(`${API_BASE_URL}/api/auth/profile-stats/${userId}`);
         const statsData = await statsRes.json();
         if (statsRes.ok) {
           setProfileStats(statsData);

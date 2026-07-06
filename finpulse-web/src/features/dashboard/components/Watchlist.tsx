@@ -11,6 +11,7 @@ import {
 } from "../../../hooks/useDashboard";
 import AIRankingCard from "./AIRankingCard";
 import toast from "react-hot-toast";
+import API_BASE_URL from "../../../config/api";
 
 export default function Watchlist() {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export default function Watchlist() {
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`http://localhost:3000/api/search?q=${term}`);
+        const res = await fetch(`${API_BASE_URL}/api/search?q=${term}`);
         if (res.ok) {
           const data = await res.json();
           setSuggestions(data);

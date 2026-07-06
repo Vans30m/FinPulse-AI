@@ -10,6 +10,7 @@ import {
   Tooltip as ChartTooltip,
 } from "recharts";
 import {
+import API_BASE_URL from "../../../../config/api";
   Award,
   Sparkles,
   Info,
@@ -38,7 +39,7 @@ export default function BenchmarkRadarSection() {
     const userId = storedUser.id;
     const headers = userId ? { 'X-User-Id': userId } : undefined;
 
-    fetch('http://localhost:3000/api/portfolio/benchmarks', { headers })
+    fetch('${API_BASE_URL}/api/portfolio/benchmarks', { headers })
       .then(res => res.json())
       .then(data => {
         setBenchmarksData(data);

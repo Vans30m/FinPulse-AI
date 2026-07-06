@@ -1,3 +1,4 @@
+import API_BASE_URL from "../config/api";
 // src/services/portfolioService.ts
 
 export interface BenchmarkComparisonResponse {
@@ -44,7 +45,7 @@ export async function getBenchmarkComparison(
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(
-    `http://localhost:3000/api/portfolio/benchmark-comparison?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}`,
+    `${API_BASE_URL}/api/portfolio/benchmark-comparison?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}`,
     { headers, signal }
   );
 

@@ -1,6 +1,7 @@
 import { memo, useMemo, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { 
+import API_BASE_URL from "../../../config/api";
   CalendarClock, ChevronRight, CircleDot, Clock3, Search, SlidersHorizontal, 
   ArrowUpDown, ExternalLink, RefreshCw, X, 
   Info, Sparkles, AlertCircle, Loader2
@@ -75,7 +76,7 @@ function UpcomingEventsSection() {
       if (userId) headers['X-User-Id'] = userId;
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('http://localhost:3000/api/portfolio/events', { headers });
+      const res = await fetch('${API_BASE_URL}/api/portfolio/events', { headers });
       if (res.ok) {
         const data = await res.json();
         setEvents(data || []);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Loader2 } from 'lucide-react';
 import { getFundamentals } from '../../../services/marketService';
+import API_BASE_URL from "../../../config/api";
 
 interface PaperTradingOrderModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export default function PaperTradingOrderModal({
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(assetSearch)}`);
+        const res = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(assetSearch)}`);
         if (res.ok) {
           const data = await res.json();
           setSuggestions(data);

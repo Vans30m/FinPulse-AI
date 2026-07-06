@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, X, Coins, PieChart, TrendingUp, Loader2, History } from 'lucide-react';
 import { useChart } from "../../context/ChartContext";
 import { StockLogo } from '../../utils/logo';
+import API_BASE_URL from "../../config/api";
 
 interface SearchResult {
   symbol: string;
@@ -96,7 +97,7 @@ export default function CommandPalette() {
     const delayDebounceFn = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(query)}`);
+        const res = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
         if (res.ok) {
           const data = await res.json();
           setResults(data);

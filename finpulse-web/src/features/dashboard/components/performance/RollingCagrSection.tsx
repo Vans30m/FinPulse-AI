@@ -14,6 +14,7 @@ import {
 import type { CagrTimeframe, RollingCagrPoint } from "./rollingCagrTypes";
 import RollingCagrKpiCards from "./RollingCagrKpiCards";
 import RollingCagrChart from "./RollingCagrChart";
+import API_BASE_URL from "../../../../config/api";
 
 const timeframeOptions: CagrTimeframe[] = ["1Y", "3Y", "5Y", "10Y", "MAX"];
 
@@ -54,7 +55,7 @@ export default function RollingCagrSection() {
     const userId = storedUser.id;
     const headers = userId ? { 'X-User-Id': userId } : undefined;
 
-    fetch(`http://localhost:3000/api/portfolio/rolling-cagr?timeframe=${timeframe}`, { headers })
+    fetch(`${API_BASE_URL}/api/portfolio/rolling-cagr?timeframe=${timeframe}`, { headers })
       .then(res => res.json())
       .then(data => {
         setCagrData(data);

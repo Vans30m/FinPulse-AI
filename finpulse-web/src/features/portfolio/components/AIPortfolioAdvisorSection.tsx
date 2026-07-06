@@ -22,6 +22,7 @@ import {
   RefreshCcw
 } from "lucide-react";
 import AnimatedNumber from "./AnimatedNumber";
+import API_BASE_URL from "../../../config/api";
 
 interface Props {
   advisor: {
@@ -152,7 +153,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
     const userId = storedUser.id;
     const headers = userId ? { 'X-User-Id': userId } : undefined;
 
-    fetch('http://localhost:3000/api/portfolio/analysis', { headers })
+    fetch('${API_BASE_URL}/api/portfolio/analysis', { headers })
       .then(res => res.json())
       .then(d => {
         setAnalysisData(d);
@@ -753,7 +754,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
               </div>
 
               <div className="space-y-4 text-xs">
-                <p className="text-slate-505 dark:text-slate-400">
+                <p className="text-slate-500 dark:text-slate-400">
                   Our model recommends reallocating capital to capture alpha opportunities and balance your sector exposures.
                 </p>
 
@@ -830,7 +831,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                 <div className="bg-rose-500/5 p-4 rounded-xl border border-rose-500/10 space-y-2">
                   <span className="text-[10px] font-black uppercase text-rose-500 block">Required Action</span>
                   <p className="font-bold text-slate-800 dark:text-white">{advisor.riskAnalysis.suggestedAction}</p>
-                  <p className="text-slate-505 dark:text-slate-400 font-mono leading-relaxed">{advisor.riskAnalysis.reason}</p>
+                  <p className="text-slate-500 dark:text-slate-400 font-mono leading-relaxed">{advisor.riskAnalysis.reason}</p>
                 </div>
 
                 <div className="space-y-2">

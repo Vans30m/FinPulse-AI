@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, LayoutDashboard, LockKeyhole } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAppData } from '../../context/AppDataContext';
+import API_BASE_URL from "../../config/api";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -41,7 +42,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           setEmail(userInfo.email);
           
           // Verify/Register user in PostgreSQL backend via Neon
-          const backendRes = await fetch('http://localhost:3000/api/auth/google-login', {
+          const backendRes = await fetch('${API_BASE_URL}/api/auth/google-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -109,7 +110,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setLoading(true);
     try {
       const endpoint = isRegisterMode ? 'register' : 'login';
-      const res = await fetch(`http://localhost:3000/api/auth/${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name, password })
@@ -148,7 +149,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setLoading(true);
     try {
       const endpoint = isRegisterMode ? 'verify-otp' : 'login-verify-otp';
-      const res = await fetch(`http://localhost:3000/api/auth/${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name, password, code: otpCode })
@@ -180,7 +181,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/auth/forgot-pin', {
+      const res = await fetch('${API_BASE_URL}/api/auth/forgot-pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -216,7 +217,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/auth/reset-pin-with-otp', {
+      const res = await fetch('${API_BASE_URL}/api/auth/reset-pin-with-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: resetOtp, newPin })
@@ -249,7 +250,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/auth/update-profile', {
+      const res = await fetch('${API_BASE_URL}/api/auth/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: profileUserId, name, bio })
@@ -297,7 +298,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       setLoading(true);
       try {
         if (step === 'set-pin') {
-          const res = await fetch('http://localhost:3000/api/auth/set-pin', {
+          const res = await fetch('${API_BASE_URL}/api/auth/set-pin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, pin: val })
@@ -316,7 +317,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             setPin('');
           }
         } else if (step === 'enter-pin') {
-          const res = await fetch('http://localhost:3000/api/auth/verify-pin', {
+          const res = await fetch('${API_BASE_URL}/api/auth/verify-pin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, pin: val })

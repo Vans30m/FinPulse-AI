@@ -21,6 +21,7 @@ import { getBenchmarkComparison } from "../../../services/portfolioService";
 import { processCumulativeData } from "../../../utils/chartUtils";
 import CumulativeReturnChart from "./performance/CumulativeReturnChart";
 import AIPortfolioAdvisorSection from "../../portfolio/components/AIPortfolioAdvisorSection";
+import API_BASE_URL from "../../../config/api";
 
 export default function PerformanceComparison() {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ export default function PerformanceComparison() {
       if (userId) headers['X-User-Id'] = userId;
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const holdingsRes = await fetch('http://localhost:3000/api/portfolio/holdings', { headers });
+      const holdingsRes = await fetch('${API_BASE_URL}/api/portfolio/holdings', { headers });
 
       if (holdingsRes.ok) {
         const data = await holdingsRes.json();
@@ -93,7 +94,7 @@ export default function PerformanceComparison() {
         } catch (e) {}
       }
 
-      fetch('http://localhost:3000/api/ai/portfolio-advisor', { headers })
+      fetch('${API_BASE_URL}/api/ai/portfolio-advisor', { headers })
         .then(res => res.ok ? res.json() : null)
         .then(data => {
           if (data) {
