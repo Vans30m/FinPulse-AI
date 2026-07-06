@@ -21,25 +21,25 @@ export interface FundamentalData {
 
 // Helper mapping object conforming exactly to TradingView / Yahoo parameters mappings
 export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }> = {
-  "1m":   { range: "1d",   interval: "1m" },
-  "5m":   { range: "5d",   interval: "5m" },
-  "15m":  { range: "5d",   interval: "15m" },
-  "30m":  { range: "5d",   interval: "30m" },
-  "1h":   { range: "7d",   interval: "1h" },
-  "1H":   { range: "7d",   interval: "1h" },
-  "4h":   { range: "30d",  interval: "1h" },
-  "4H":   { range: "30d",  interval: "1h" },
-  "1d":   { range: "6mo",  interval: "1d" },
-  "1D":   { range: "6mo",  interval: "1d" },
-  "1w":   { range: "1y",   interval: "1wk" },
-  "1W":   { range: "1y",   interval: "1wk" },
-  "1M":   { range: "5y",   interval: "1mo" },
-  "3M":   { range: "1y",   interval: "1mo" },
-  "6M":   { range: "2y",   interval: "1mo" },
-  "YTD":  { range: "ytd",  interval: "1d" },
-  "1Y":   { range: "1y",   interval: "1d" },
-  "5Y":   { range: "5y",   interval: "1wk" },
-  "MAX":  { range: "max",  interval: "1mo" },
+  "1m": { range: "2d", interval: "1m" },
+  "5m": { range: "10d", interval: "5m" },
+  "15m": { range: "15d", interval: "15m" },
+  "30m": { range: "30d", interval: "30m" },
+  "1h": { range: "30d", interval: "1h" },
+  "1H": { range: "30d", interval: "1h" },
+  "4h": { range: "90d", interval: "1h" },
+  "4H": { range: "90d", interval: "1h" },
+  "1d": { range: "7y", interval: "1d" },
+  "1D": { range: "7y", interval: "1d" },
+  "1w": { range: "3y", interval: "1wk" },
+  "1W": { range: "3y", interval: "1wk" },
+  "1M": { range: "10y", interval: "1mo" },
+  "3M": { range: "3y", interval: "1mo" },
+  "6M": { range: "5y", interval: "1mo" },
+  "YTD": { range: "ytd", interval: "1d" },
+  "1Y": { range: "2y", interval: "1d" },
+  "5Y": { range: "10y", interval: "1wk" },
+  "MAX": { range: "max", interval: "1mo" },
 };
 
 export async function getStockCandles(symbol: string, timeframe: string) {
@@ -68,6 +68,125 @@ export async function searchAssets(query: string) {
   if (!query.trim()) return [];
   const response = await fetch(`http://localhost:3000/api/search?q=${encodeURIComponent(query)}`);
   if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+  return response.json();
+}
+
+export interface AIMarketBriefData {
+  marketMood: "Bullish" | "Neutral" | "Bearish";
+  confidence: number;
+  riskLevel: "Low" | "Medium" | "High";
+  insights: string[];
+  sectorStrength: {
+    sector: string;
+    score: number;
+    reason: string;
+  }[];
+  todayRisk: string;
+  summary: string;
+  generatedAt: string;
+}
+
+export interface AIMarketDriversData {
+  question: string;
+  analysis: string[];
+  macroEvent: {
+    title: string;
+    impact: "High" | "Medium" | "Low";
+    description: string;
+  };
+  bullishFactors: string[];
+  bearishFactors: string[];
+  watchNext: string[];
+  summary: string;
+  generatedAt: string;
+}
+
+export async function getAIMarketBrief(): Promise<AIMarketBriefData> {
+  const response = await fetch("http://localhost:3000/api/ai/market-brief");
+  if (!response.ok) throw new Error("Failed to fetch AI market brief");
+  return response.json();
+}
+
+export async function getAIMarketDrivers(): Promise<AIMarketDriversData> {
+  const response = await fetch("http://localhost:3000/api/ai/market-drivers");
+  if (!response.ok) throw new Error("Failed to fetch AI market drivers");
+  return response.json();
+}
+
+export interface AIGlobalMarketPulseData {
+  sentiment: "Bullish" | "Neutral" | "Bearish";
+  summary: string;
+  insights: string[];
+  generatedAt: string;
+}
+
+export async function getAIGlobalMarketPulse(): Promise<AIGlobalMarketPulseData> {
+  const response = await fetch("http://localhost:3000/api/ai/global-market-pulse");
+  if (!response.ok) throw new Error("Failed to fetch AI global market pulse");
+  return response.json();
+}
+
+export interface AIFearGreedData {
+  score: number;
+  sentiment: string;
+  description: string;
+  investorTakeaways: string[];
+  risk: string;
+  opportunity: string;
+  yesterday: number;
+  lastWeek: number;
+  lastMonth: number;
+  generatedAt: string;
+}
+
+export async function getAIFearGreed(): Promise<AIFearGreedData> {
+  const response = await fetch("http://localhost:3000/api/ai/fear-greed");
+  if (!response.ok) throw new Error("Failed to fetch AI fear and greed index");
+  return response.json();
+}
+
+export interface AIPickOfTheDayData {
+  symbol: string;
+  company: string;
+  recommendation: string;
+  confidence: number;
+  aiScore: number;
+  currentPrice: number;
+  target: number;
+  stopLoss: number;
+  holdingPeriod: string;
+  risk: string;
+  summary: string;
+  bullishReasons: string[];
+  risks: string[];
+  generatedAt: string;
+}
+
+export async function getAIPickOfTheDay(): Promise<AIPickOfTheDayData> {
+  const response = await fetch("http://localhost:3000/api/ai/pick-of-the-day");
+  if (!response.ok) throw new Error("Failed to fetch AI Pick of the Day");
+  return response.json();
+}
+
+export interface AISectorMomentumData {
+  topRally: {
+    sector: string;
+    days: number;
+    momentumScore: number;
+    reason: string;
+  }[];
+  topDecline: {
+    sector: string;
+    days: number;
+    momentumScore: number;
+    reason: string;
+  }[];
+  generatedAt: string;
+}
+
+export async function getAISectorMomentum(): Promise<AISectorMomentumData> {
+  const response = await fetch("http://localhost:3000/api/ai/sector-momentum");
+  if (!response.ok) throw new Error("Failed to fetch AI sector momentum");
   return response.json();
 }
 

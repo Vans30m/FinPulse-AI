@@ -32,6 +32,7 @@ import AIBulletSummary from './features/dashboard/components/AIBulletSummary';
 import AIPickOfTheDay from './features/dashboard/components/AIPickOfTheDay';
 import TrendingSectorStreaks from './features/dashboard/components/TrendingSectorStreaks';
 import VolatilityGauges from './features/dashboard/components/VolatilityGauges';
+import { GlobalMarketClock } from './features/dashboard/components/GlobalMarketClock';
 
 // Stock Screener Page Component Integration
 import StockScreener from './pages/StockScreener';
@@ -201,6 +202,7 @@ export default function App() {
 
                       {/* Right Column (1 col wide on desktop) */}
                       <div className="space-y-6 sm:space-y-8">
+                        <GlobalMarketClock />
                         <FearGreedIndex />
                         <AIPickOfTheDay />
                         <AlertsTimeline />

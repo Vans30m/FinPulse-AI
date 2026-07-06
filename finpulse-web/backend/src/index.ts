@@ -20,7 +20,8 @@ import {
 import {
   aiScoreRoutes,
   analystRoutes,
-  stockSentimentRoutes
+  stockSentimentRoutes,
+  marketBriefRoutes
 } from "./routes/ai.js";
 import portfolioRoutes from "./routes/portfolio.js";
 import profileRoutes from "./routes/profile.js";
@@ -69,6 +70,10 @@ app.use(
 app.use(
   "/api/ai-score",
   aiScoreRoutes
+);
+app.use(
+  "/api/ai",
+  marketBriefRoutes
 );
 app.use(
   "/api/global-markets",

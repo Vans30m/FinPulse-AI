@@ -20,11 +20,10 @@ function TimeframeSelector({ selected, onChange }: TimeframeSelectorProps) {
               key={tf}
               type="button"
               onClick={() => onChange(tf)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wide font-mono transition-all duration-150 ${
-                isActive
-                  ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm scale-[1.02]"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-white/[0.02]"
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wide font-mono transition-all duration-150 ${isActive
+                ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm scale-[1.02]"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-white/[0.02]"
+                }`}
             >
               {tf}
             </button>

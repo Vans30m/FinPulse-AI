@@ -8,7 +8,7 @@ interface LiveNewsItem {
   datetime: number;
   url: string;
   summary: string;
-  type?: 'finnhub' | 'google'; 
+  type?: 'finnhub' | 'google';
 }
 interface AlertsTimelineProps {
   fullPage?: boolean;
@@ -24,13 +24,13 @@ export default function AlertsTimeline({
     const fetchAllNews = async () => {
       try {
         setIsLoading(true);
-        
+
         // Fetch BOTH APIs concurrently for maximum speed
         const [finnhubRes, googleRes] = await Promise.all([
           fetch('http://localhost:3000/api/news').catch(() => null),
           fetch('http://localhost:3000/api/news/google').catch(() => null)
         ]);
-        
+
         let combinedNews: LiveNewsItem[] = [];
 
         // 1. Process Finnhub Data
@@ -38,7 +38,7 @@ export default function AlertsTimeline({
           const finnhubData = await finnhubRes.json();
           if (Array.isArray(finnhubData)) {
             // Tag them so we know where they came from
-            const taggedFinnhub = finnhubData.map(item => ({...item, type: 'finnhub'}));
+            const taggedFinnhub = finnhubData.map(item => ({ ...item, type: 'finnhub' }));
             combinedNews = [...combinedNews, ...taggedFinnhub];
           }
         }
@@ -58,7 +58,7 @@ export default function AlertsTimeline({
           const timeB = Number(b.datetime) || 0;
           return timeB - timeA; // Heaviest/Newest time floats to the top
         });
-        
+
         setLiveNews(combinedNews);
       } catch (error) {
         console.error("Failed to fetch dual news feeds:", error);
@@ -92,7 +92,7 @@ duration-300
 flex
 flex-col
 h-full
-${fullPage ? "min-h-[800px]" : "max-h-[600px]"}
+${fullPage ? "min-h-[800px]" : "max-h-[1075px]"}
 `}>
       {/* HEADER */}
       <div className="border-b border-slate-100 dark:border-white/5 p-5 shrink-0 flex items-center gap-3">
@@ -101,11 +101,11 @@ ${fullPage ? "min-h-[800px]" : "max-h-[600px]"}
         </div>
         <div>
           <h2 className="text-xl font-bold">
-  {fullPage
-    ? "Global Market News Center"
-    : "Live Market News"}
-</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Aggregated from Finnhub & Google News</p>
+            {fullPage
+              ? "Global Market News Center"
+              : "Live Market News"}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Aggregated from Finnhub & Google News</p>
         </div>
       </div>
 
@@ -120,21 +120,20 @@ ${fullPage ? "min-h-[800px]" : "max-h-[600px]"}
             <div className="text-center py-10 text-sm text-slate-500">No recent news available.</div>
           ) : (
             liveNews.map((article) => (
-              <a 
-                key={article.id} 
-                href={article.url} 
-                target="_blank" 
+              <a
+                key={article.id}
+                href={article.url}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="block p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group border border-transparent hover:border-slate-200 dark:hover:border-white/10"
               >
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                        article.type === 'google' 
-                          ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10' 
-                          : 'text-blue-600 dark:text-cyan-400 bg-blue-50 dark:bg-cyan-500/10'
-                      }`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${article.type === 'google'
+                        ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10'
+                        : 'text-blue-600 dark:text-cyan-400 bg-blue-50 dark:bg-cyan-500/10'
+                        }`}>
                         {article.source}
                       </span>
                       <span className="text-xs text-slate-400 flex items-center gap-1">
