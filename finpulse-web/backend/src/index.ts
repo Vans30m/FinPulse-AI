@@ -83,11 +83,9 @@ app.use(
   "/api/screener",
   screenerRoutes
 );
-app.use(
-  "/api/index-summary",
-  indexSummaryRoutes
-);
+app.use("/api/index-summary", indexSummaryRoutes);
 app.use("/api/portfolio", portfolioRoutes);
+app.use("/api/ai-chat", aiHistoryRouter);
 app.use("/api/profile", profileRoutes);
 app.use("/api/watchlists", watchlistsRouter);
 app.use("/api/alerts-custom", alertsRouter);

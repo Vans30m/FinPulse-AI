@@ -96,6 +96,7 @@ function UpcomingEventsSection() {
 
   const getCountdownLabel = (dateStr: string) => {
     const eventDate = new Date(dateStr);
+    if (isNaN(eventDate.getTime())) return "TBD";
     const now = new Date();
     const diffMs = eventDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -128,21 +129,22 @@ function UpcomingEventsSection() {
     const todayStr = now.toISOString().slice(0, 10);
     result = result.filter(e => {
       const eDate = new Date(e.eventDate);
-      const eDateStr = eDate.toISOString().slice(0, 10);
-      const diffMs = eDate.getTime() - now.getTime();
+      const isValid = !isNaN(eDate.getTime());
+      const eDateStr = isValid ? eDate.toISOString().slice(0, 10) : todayStr;
+      const diffMs = isValid ? (eDate.getTime() - now.getTime()) : 0;
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
       if (activeDateFilter === "Upcoming Today") {
-        return eDateStr === todayStr && diffMs >= 0;
+        return isValid && eDateStr === todayStr && diffMs >= 0;
       }
       if (activeDateFilter === "Next 7 Days") {
-        return diffDays >= 0 && diffDays <= 7;
+        return isValid && diffDays >= 0 && diffDays <= 7;
       }
       if (activeDateFilter === "Next 30 Days") {
-        return diffDays >= 0 && diffDays <= 30;
+        return isValid && diffDays >= 0 && diffDays <= 30;
       }
       if (activeDateFilter === "Completed") {
-        return diffMs < 0;
+        return isValid && diffMs < 0;
       }
       return true;
     });
@@ -164,8 +166,10 @@ function UpcomingEventsSection() {
 
     // 6. Sort
     result.sort((a, b) => {
-      const timeA = new Date(a.eventDate).getTime();
-      const timeB = new Date(b.eventDate).getTime();
+      const dateA = new Date(a.eventDate);
+      const dateB = new Date(b.eventDate);
+      const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+      const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
 
       if (sortBy === "upcoming") {
         return timeA - timeB;
@@ -211,6 +215,10 @@ function UpcomingEventsSection() {
 
     processedEvents.forEach(e => {
       const eDate = new Date(e.eventDate);
+      if (isNaN(eDate.getTime())) {
+        groups.thisMonth.push(e);
+        return;
+      }
       const eDateStr = eDate.toISOString().slice(0, 10);
       const diffMs = eDate.getTime() - now.getTime();
       const diffDays = diffMs / (1000 * 60 * 60 * 24);

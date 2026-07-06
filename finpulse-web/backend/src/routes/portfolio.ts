@@ -1302,13 +1302,17 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
     const pReturns: number[] = [];
     const bReturns: number[] = [];
     for (let i = 1; i < series.length; i++) {
-      const prevP = series[i - 1].portfolioReturn;
-      const currP = series[i].portfolioReturn;
-      pReturns.push(prevP > 0 ? (currP - prevP) / prevP : 0);
+      const prev = series[i - 1];
+      const curr = series[i];
+      if (prev && curr) {
+        const prevP = prev.portfolioReturn;
+        const currP = curr.portfolioReturn;
+        pReturns.push(prevP > 0 ? (currP - prevP) / prevP : 0);
 
-      const prevB = series[i - 1].benchmarkReturn;
-      const currB = series[i].benchmarkReturn;
-      bReturns.push(prevB > 0 ? (currB - prevB) / prevB : 0);
+        const prevB = prev.benchmarkReturn;
+        const currB = curr.benchmarkReturn;
+        bReturns.push(prevB > 0 ? (currB - prevB) / prevB : 0);
+      }
     }
 
     const mean = (arr: number[]) => arr.reduce((sum, val) => sum + val, 0) / Math.max(arr.length, 1);
@@ -1332,7 +1336,11 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
     let cov = 0;
     const limit = Math.min(pReturns.length, bReturns.length);
     for (let i = 0; i < limit; i++) {
-      cov += (pReturns[i] - pMean) * (bReturns[i] - bMean);
+      const pVal = pReturns[i];
+      const bVal = bReturns[i];
+      if (pVal !== undefined && bVal !== undefined) {
+        cov += (pVal - pMean) * (bVal - bMean);
+      }
     }
     cov = limit > 1 ? cov / (limit - 1) : 0;
     const beta = bVar > 0 ? cov / bVar : 1.0;
@@ -1364,12 +1372,12 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
       informationRatio: Math.round(informationRatio * 100) / 100,
       maxDrawdown: Math.round(maxDrawdown * 10000) / 100,
       volatility: Math.round(pVol * 10000) / 100,
-      portfolioReturn: Math.round((series[series.length - 1]?.portfolioReturn - 100) * 100) / 100,
-      benchmarkReturn: Math.round((series[series.length - 1]?.benchmarkReturn - 100) * 100) / 100,
+      portfolioReturn: Math.round(((series[series.length - 1]?.portfolioReturn ?? 100) - 100) * 100) / 100,
+      benchmarkReturn: Math.round(((series[series.length - 1]?.benchmarkReturn ?? 100) - 100) * 100) / 100,
     };
 
     // 5. Fetch Constituent quotes from Yahoo in parallel
-    const cons = CONSTITUENTS[symbol] || CONSTITUENTS['^GSPC'];
+    const cons = CONSTITUENTS[symbol] || CONSTITUENTS['^GSPC'] || [];
     const constituentsQuotes = await Promise.all(cons.map(async (c) => {
       try {
         const quote = await yahooFinance.quote(c.symbol);
