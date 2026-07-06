@@ -87,6 +87,7 @@ export default function PortfolioDashboard() {
   const [portfolioEvents, setPortfolioEvents] = useState<any[]>([]);
   const [advisorData, setAdvisorData] = useState<any>(null);
   const [performanceData, setPerformanceData] = useState<{ month: string; value: number }[]>([]);
+  const [liveQuotes, setLiveQuotes] = useState<Record<string, { price: number; change: number }>>({});
 
   // Paper Trading Sandbox States
   const [isSandboxMode, setIsSandboxMode] = useState<boolean>(false);
@@ -183,8 +184,14 @@ export default function PortfolioDashboard() {
       if (userId) headers['X-User-Id'] = userId;
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
+      const vHoldings = JSON.parse(localStorage.getItem('finpulse_virtual_holdings') || '[]');
+      const virtualTickers = vHoldings.map((h: any) => h.ticker).join(',');
+      const holdingsUrl = virtualTickers 
+        ? `http://localhost:3000/api/portfolio/holdings?virtualTickers=${encodeURIComponent(virtualTickers)}`
+        : 'http://localhost:3000/api/portfolio/holdings';
+
       const [holdingsRes, advisorRes, eventsRes, watchlistRes, cagrRes] = await Promise.all([
-        fetch('http://localhost:3000/api/portfolio/holdings', { headers }),
+        fetch(holdingsUrl, { headers }),
         fetch('http://localhost:3000/api/portfolio/advisor', { headers }),
         fetch('http://localhost:3000/api/portfolio/events', { headers }),
         fetch('http://localhost:3000/api/portfolio/watchlist', { headers }),
@@ -201,6 +208,9 @@ export default function PortfolioDashboard() {
           };
         });
         setSections(mapped);
+        if (data.liveQuotes) {
+          setLiveQuotes(data.liveQuotes);
+        }
       }
       if (advisorRes.ok) {
         const data = await advisorRes.json();
@@ -250,7 +260,13 @@ export default function PortfolioDashboard() {
     };
     fetchRate();
     loadPortfolioData();
-  }, []);
+
+    const interval = setInterval(() => {
+      loadPortfolioData();
+    }, 15000); // 15 seconds auto-refresh
+
+    return () => clearInterval(interval);
+  }, [virtualHoldings]);
 
   const handleAddAsset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -449,17 +465,26 @@ export default function PortfolioDashboard() {
       const holdingsForSection = virtualHoldings
         .filter(h => h.marketId === initial.id)
         .map(h => {
-          // Look up real-time price from loaded database sections
+          // Look up real-time price from liveQuotes first, then database sections
           let livePrice = h.avgCost;
-          const realSec = sections.find(s => s.id === h.marketId);
-          const realHold = realSec?.holdings.find(rh => rh.ticker.toUpperCase() === h.ticker.toUpperCase());
-          if (realHold) {
-            livePrice = realHold.currentPrice;
+          let changeVal = 0;
+          const uppercaseTicker = h.ticker.toUpperCase();
+          if (liveQuotes && liveQuotes[uppercaseTicker]) {
+            livePrice = liveQuotes[uppercaseTicker].price;
+            changeVal = liveQuotes[uppercaseTicker].change;
+          } else {
+            const realSec = sections.find(s => s.id === h.marketId);
+            const realHold = realSec?.holdings.find(rh => rh.ticker.toUpperCase() === uppercaseTicker);
+            if (realHold) {
+              livePrice = realHold.currentPrice;
+              changeVal = (realHold as any).dailyGain / realHold.shares;
+            }
           }
           const marketValue = h.shares * livePrice;
           const costBasis = h.shares * h.avgCost;
           const totalGain = marketValue - costBasis;
           const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
+          const dailyGain = h.shares * changeVal;
           
           let colorClass = { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
           if (h.marketId === 'us') {
@@ -475,6 +500,7 @@ export default function PortfolioDashboard() {
             marketValue,
             totalGain,
             gainPercent,
+            dailyGain,
             colorClass,
             sector: h.marketId === 'crypto' ? 'Crypto' : 'Technology'
           };
@@ -484,7 +510,7 @@ export default function PortfolioDashboard() {
         holdings: holdingsForSection
       };
     });
-  }, [virtualHoldings, sections]);
+  }, [virtualHoldings, sections, liveQuotes]);
 
   const currentSections = isSandboxMode ? virtualSections : sections;
 
@@ -522,9 +548,20 @@ export default function PortfolioDashboard() {
     ? Math.max(totalHoldingsValue - totalGain, 0)
     : Math.max(totalNetValue - totalGain, 0);
 
-  const todayProfitLoss = Math.round(
-    totalNetValue * 0.0065 * (totalGain >= 0 ? 1 : -1)
-  );
+  const todayProfitLoss = currentSections
+    .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
+    .reduce((sum, sec) => {
+      return sum + sec.holdings.reduce((s, h: any) => {
+        const val = h.dailyGain || 0;
+        if (activeMarket === 'all') {
+          if (sec.id === 'domestic') {
+            return s + (val / usdToInrRate);
+          }
+          return s + val;
+        }
+        return s + val;
+      }, 0);
+    }, 0);
 
   const overallReturnPercent = totalInvestedAmount > 0
     ? (totalGain / totalInvestedAmount) * 100

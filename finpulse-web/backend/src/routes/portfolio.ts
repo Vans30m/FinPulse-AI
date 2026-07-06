@@ -54,17 +54,25 @@ portfolioRoutes.get('/holdings', async (req, res) => {
       where: { userId: user.id }
     });
 
-    // No seeding defaults
+    const virtualTickersQuery = (req.query.virtualTickers as string) || '';
+    const virtualTickers = virtualTickersQuery ? virtualTickersQuery.split(',').map(t => t.trim().toUpperCase()).filter(Boolean) : [];
+
+    const liveQuotes: Record<string, { price: number; change: number }> = {};
 
     // Query Yahoo Finance for live prices
     const enrichedHoldings = await Promise.all(holdings.map(async (h) => {
       try {
         const quote = await yahooFinance.quote(h.ticker);
         const currentPrice = quote.regularMarketPrice ?? h.avgCost;
+        const change = quote.regularMarketChange ?? 0;
         const marketValue = h.shares * currentPrice;
         const costBasis = h.shares * h.avgCost;
         const totalGain = marketValue - costBasis;
         const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
+        const dailyGain = h.shares * change;
+
+        // Record live quote details
+        liveQuotes[h.ticker.toUpperCase()] = { price: currentPrice, change };
 
         let colorClass = { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
         if (h.marketId === 'us') {
@@ -83,10 +91,12 @@ portfolioRoutes.get('/holdings', async (req, res) => {
           marketValue,
           totalGain,
           gainPercent,
+          dailyGain,
           colorClass,
           sector: h.marketId === 'crypto' ? 'Crypto' : 'Technology'
         };
       } catch (err) {
+        liveQuotes[h.ticker.toUpperCase()] = { price: h.avgCost, change: 0 };
         return {
           id: h.id,
           ticker: h.ticker,
@@ -97,9 +107,25 @@ portfolioRoutes.get('/holdings', async (req, res) => {
           marketValue: h.shares * h.avgCost,
           totalGain: 0,
           gainPercent: 0,
+          dailyGain: 0,
           colorClass: { bg: 'bg-slate-50 dark:bg-white/5', text: 'text-slate-600 dark:text-slate-400', border: 'border-white/5' },
           sector: 'Technology'
         };
+      }
+    }));
+
+    // Fetch live quotes for additional virtual tickers not in holdings
+    const dbTickers = new Set(holdings.map(h => h.ticker.toUpperCase()));
+    const extraTickers = virtualTickers.filter(t => !dbTickers.has(t));
+
+    await Promise.all(extraTickers.map(async (ticker) => {
+      try {
+        const quote = await yahooFinance.quote(ticker);
+        const price = quote.regularMarketPrice ?? 0;
+        const change = quote.regularMarketChange ?? 0;
+        liveQuotes[ticker] = { price, change };
+      } catch (err) {
+        console.error(`Failed to fetch extra ticker quote for ${ticker}:`, err);
       }
     }));
 
@@ -111,7 +137,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
       { id: 'metals', title: 'Precious Metals', region: 'Commodities', holdings: enrichedHoldings.filter(h => holdings.find(db => db.id === h.id)?.marketId === 'metals') }
     ];
 
-    res.json({ sections });
+    res.json({ sections, liveQuotes });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
