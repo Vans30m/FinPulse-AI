@@ -1,4 +1,6 @@
 import API_BASE_URL from "../config/api";
+
+export interface FundamentalData {
   symbol?: string;
   name?: string;
   price: number;
