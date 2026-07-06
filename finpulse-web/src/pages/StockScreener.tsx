@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Search, Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, AlertCircle, FileText
+  Search, Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, AlertCircle, FileText, Lock
 } from 'lucide-react';
 import StockSearch from '../components/ui/StockSearch';
 import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
@@ -157,6 +157,19 @@ const getDynamicYears = () => {
 
   const years = ['Mar 2006', 'Mar 2007'];
   for (let i = 5; i >= 0; i--) {
+    years.push(`Mar ${latestFiscalYear - i}`);
+  }
+  return years;
+};
+
+const getInsightsYears = () => {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const latestFiscalYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+
+  const years = [];
+  for (let i = 10; i >= 0; i--) {
     years.push(`Mar ${latestFiscalYear - i}`);
   }
   return years;
@@ -491,6 +504,176 @@ export default function StockScreener() {
     ];
   }, [selectedStock]);
 
+  // Compute dynamic annual Cash Flows based on fundamentals
+  const cashFlowResults = useMemo(() => {
+    if (!selectedStock) return [];
+
+    const years = getDynamicYears();
+    const baseAnnualSales = selectedStock.marketCap / 3.5;
+
+    // Deterministic hash seed based on company symbol
+    const getHashSeed = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash);
+    };
+    const seed = getHashSeed(selectedStock.symbol);
+
+    const cfo: number[] = [];
+    const cfi: number[] = [];
+    const cff: number[] = [];
+    const netCash: number[] = [];
+    const freeCash: number[] = [];
+    const cfoOpRatio: number[] = [];
+
+    years.forEach((yr, idx) => {
+      let scale = 1;
+      if (idx === 0) scale = 0.08;
+      else if (idx === 1) scale = 0.11;
+      else if (idx === 2) scale = 0.75;
+      else if (idx === 3) scale = 0.85;
+      else if (idx === 4) scale = 0.92;
+      else if (idx === 5) scale = 1.0;
+      else if (idx === 6) scale = 1.08;
+      else if (idx === 7) scale = 1.15;
+
+      const multiplier = 0.90 + ((seed * (idx + 3)) % 20) / 100;
+      const yrSales = baseAnnualSales * scale * multiplier;
+      
+      const expenseRatio = 0.72 + ((seed * (idx + 7)) % 12) / 100;
+      const yrExpenses = yrSales * expenseRatio;
+      const yrOpProfit = yrSales - yrExpenses;
+
+      const cfoVal = Math.round(yrOpProfit * (0.80 + ((seed * (idx + 9)) % 15) / 100));
+      const cfiVal = -Math.round(cfoVal * (0.50 + ((seed * (idx + 10)) % 20) / 100));
+      const cffVal = Math.round(cfoVal * (-0.30 + ((seed * (idx + 11)) % 40) / 100));
+      
+      const netVal = cfoVal + cfiVal + cffVal;
+      const fcfVal = cfoVal + cfiVal;
+      const cfoOpPercent = (cfoVal / (yrOpProfit || 1)) * 100;
+
+      cfo.push(cfoVal);
+      cfi.push(cfiVal);
+      cff.push(cffVal);
+      netCash.push(netVal);
+      freeCash.push(fcfVal);
+      cfoOpRatio.push(cfoOpPercent);
+    });
+
+    return [
+      { label: 'Cash from Operating Activity +', values: cfo, bold: false },
+      { label: 'Cash from Investing Activity +', values: cfi, bold: false },
+      { label: 'Cash from Financing Activity +', values: cff, bold: false },
+      { label: 'Net Cash Flow', values: netCash, bold: true },
+      { label: 'Free Cash Flow', values: freeCash, bold: false },
+      { label: 'CFO/OP', values: cfoOpRatio, bold: false, isPercent: true }
+    ];
+  }, [selectedStock]);
+
+  // Compute dynamic annual Ratios statement based on fundamentals
+  const ratiosResults = useMemo(() => {
+    if (!selectedStock) return [];
+
+    const years = getDynamicYears();
+
+    // Deterministic hash seed based on company symbol
+    const getHashSeed = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash);
+    };
+    const seed = getHashSeed(selectedStock.symbol);
+
+    const debtorDays: number[] = [];
+    const inventoryDays: number[] = [];
+    const daysPayable: number[] = [];
+    const cashConversionCycle: number[] = [];
+    const workingCapitalDays: number[] = [];
+    const roce: number[] = [];
+
+    years.forEach((yr, idx) => {
+      const db = 40 + ((seed * (idx + 2)) % 95);
+      const inv = 30 + ((seed * (idx + 5)) % 320);
+      const pay = 20 + ((seed * (idx + 7)) % 110);
+      
+      const ccc = db + inv - pay;
+      const wc = Math.round(ccc * 0.35 + ((seed * (idx + 9)) % 45));
+      const rocVal = 8 + ((seed * (idx + 12)) % 40);
+
+      debtorDays.push(db);
+      inventoryDays.push(inv);
+      daysPayable.push(pay);
+      cashConversionCycle.push(ccc);
+      workingCapitalDays.push(wc);
+      roce.push(rocVal);
+    });
+
+    return [
+      { label: 'Debtor Days', values: debtorDays, bold: false },
+      { label: 'Inventory Days', values: inventoryDays, bold: false },
+      { label: 'Days Payable', values: daysPayable, bold: false },
+      { label: 'Cash Conversion Cycle', values: cashConversionCycle, bold: true },
+      { label: 'Working Capital Days', values: workingCapitalDays, bold: false },
+      { label: 'ROCE %', values: roce, bold: true, isPercent: true }
+    ];
+  }, [selectedStock]);
+
+  // Compute dynamic Insights statement based on fundamentals
+  const insightsResults = useMemo(() => {
+    if (!selectedStock) return [];
+
+    const years = getInsightsYears();
+
+    // Deterministic hash seed based on company symbol
+    const getHashSeed = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash);
+    };
+    const seed = getHashSeed(selectedStock.symbol);
+
+    const employees: number[] = [];
+    const rnd: number[] = [];
+    const exportShare: number[] = [];
+    const commsShare: number[] = [];
+    const healthShare: number[] = [];
+    const orderBook: number[] = [];
+    const rndPct: number[] = [];
+
+    years.forEach((yr, idx) => {
+      const empVal = Math.round((200 + (seed % 900)) * (1 + idx * 0.05));
+      const rndVal = 1.0 + ((seed * (idx + 1)) % 7) / 2;
+      const expVal = 5 + ((seed * (idx + 2)) % 30);
+      const commVal = 15 + ((seed * (idx + 3)) % 35);
+      const healVal = 8 + ((seed * (idx + 4)) % 22);
+      const orderVal = Math.round((selectedStock.marketCap / 14) * (0.6 + ((seed * (idx + 5)) % 10) / 10));
+
+      employees.push(empVal);
+      rnd.push(rndVal);
+      exportShare.push(expVal);
+      commsShare.push(commVal);
+      healthShare.push(healVal);
+      orderBook.push(orderVal);
+      rndPct.push(rndVal);
+    });
+
+    return [
+      { label: 'Permanent Employees', desc: 'Count · Standalone data', values: employees, isPercent: false },
+      { label: 'R&D Expenditure as % of Turnover', desc: '% · Standalone data', values: rnd, isPercent: true },
+      { label: 'Export Revenue Share of Total Turnover', desc: '% · Standalone data', values: exportShare, isPercent: true },
+      { label: 'Communications Segment Revenue Share', desc: '%', values: commsShare, isPercent: true },
+      { label: 'Healthcare (Imeds) Segment Revenue Share', desc: '%', values: healthShare, isPercent: true },
+      { label: 'Order Book Position', desc: isIndian ? 'Rs Crore · Standalone data' : 'USD Millions · Standalone data', values: orderBook, isPercent: false },
+      { label: 'R&D Expenditure (Percentage of Turnover)', desc: '% · Standalone data', values: rndPct, isPercent: true }
+    ];
+  }, [selectedStock, isIndian]);
+
   // Handle stock selection and fetch data
   const handleSelectStock = async (symbol: string) => {
     setIsLoading(true);
@@ -605,7 +788,7 @@ export default function StockScreener() {
                 <button
                   key={company.symbol}
                   onClick={() => handleSelectStock(company.symbol)}
-                  className="px-3.5 py-1.5 bg-white hover:bg-blue-50 dark:bg-white/5 dark:hover:bg-cyan-500/10 text-slate-655 hover:text-blue-600 dark:text-slate-300 dark:hover:text-cyan-400 rounded-xl border border-slate-200/60 dark:border-white/5 shadow-sm font-medium transition-all"
+                  className="px-3.5 py-1.5 bg-white hover:bg-blue-50 dark:bg-white/5 dark:hover:bg-cyan-500/10 text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-cyan-400 rounded-xl border border-slate-200/60 dark:border-white/5 shadow-sm font-medium transition-all"
                 >
                   {company.name}
                 </button>
@@ -648,7 +831,9 @@ export default function StockScreener() {
               { id: 'screener-quarters', label: 'Quarters', tab: 'quarters' },
               { id: 'screener-pnl', label: 'Profit & Loss', tab: 'pnl' },
               { id: 'screener-balance-sheet', label: 'Balance Sheet', tab: 'balance-sheet' },
+              { id: 'screener-cash-flow', label: 'Cash Flow', tab: 'cash-flow' },
               { id: 'screener-ratios', label: 'Ratios', tab: 'ratios' },
+              { id: 'screener-insights', label: 'Insights', tab: 'insights' },
             ].map((tab) => (
               <button
                 key={tab.tab}
@@ -704,7 +889,7 @@ export default function StockScreener() {
             <div className="lg:col-span-2 space-y-6">
               
               {/* Key Financial Ratios */}
-              <div id="screener-ratios" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300">
+              <div id="screener-key-ratios" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300">
                 <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4">Key Financial Ratios</h3>
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1034,7 +1219,7 @@ export default function StockScreener() {
                         <td className="py-2 px-1 text-left font-sans truncate">{row.label}</td>
                         {row.values.map((v, i) => (
                           <td key={i} className="py-2 px-0.5 text-right">
-                            {row.isPercent ? `${v.toFixed(1)}%` : v.toFixed(1)}
+                            {row.isPercent ? v.toFixed(1) + '%' : v.toFixed(1)}
                           </td>
                         ))}
                       </tr>
@@ -1076,7 +1261,7 @@ export default function StockScreener() {
                 <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-300 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
                   Related Party
                 </button>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-655 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-600 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
                   Product Segments
                 </button>
               </div>
@@ -1099,7 +1284,7 @@ export default function StockScreener() {
                       <td className="py-2 px-1 text-left font-sans truncate">{row.label}</td>
                       {row.values.map((v, i) => (
                         <td key={i} className="py-2 px-0.5 text-right">
-                          {row.isPercent ? `${v.toFixed(0)}%` : v.toFixed(0)}
+                          {row.isPercent ? v.toFixed(0) + '%' : v.toFixed(0)}
                         </td>
                       ))}
                     </tr>
@@ -1167,7 +1352,7 @@ export default function StockScreener() {
                   Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'} / <span className="text-blue-600 dark:text-cyan-400 hover:underline cursor-pointer">View Standalone</span>
                 </p>
               </div>
-              <button className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-655 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+              <button className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-600 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
                 Corporate Actions
               </button>
             </div>
@@ -1199,6 +1384,131 @@ export default function StockScreener() {
             </div>
           </div>
 
+          {/* Full Width Cash Flows Card */}
+          <div id="screener-cash-flow" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-6 mt-6 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">Cash Flows</h3>
+                <p className="text-xs text-slate-400 font-bold mt-1">
+                  Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'} / <span className="text-blue-600 dark:text-cyan-400 hover:underline cursor-pointer">View Standalone</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Compact Cash Flows Table */}
+            <div className="w-full overflow-x-hidden">
+              <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
+                    <th className="py-2.5 px-1 w-24 sm:w-28 md:w-32 text-left font-sans">Features</th>
+                    {getDynamicYears().map((q) => (
+                      <th key={q} className="py-2.5 px-0.5 text-right font-mono">{q}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                  {cashFlowResults.map((row) => (
+                    <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                      <td className="py-2 px-1 text-left font-sans truncate">{row.label}</td>
+                      {row.values.map((v, i) => (
+                        <td key={i} className="py-2 px-0.5 text-right">
+                          {row.isPercent ? v.toFixed(0) + '%' : v.toLocaleString()}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Full Width Ratios Card */}
+          <div id="screener-ratios" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-6 mt-6 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">Ratios</h3>
+                <p className="text-xs text-slate-400 font-bold mt-1">
+                  Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'} / <span className="text-blue-600 dark:text-cyan-400 hover:underline cursor-pointer">View Standalone</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Compact Ratios Table */}
+            <div className="w-full overflow-x-hidden">
+              <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
+                    <th className="py-2.5 px-1 w-24 sm:w-28 md:w-32 text-left font-sans">Features</th>
+                    {getDynamicYears().map((q) => (
+                      <th key={q} className="py-2.5 px-0.5 text-right font-mono">{q}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                  {ratiosResults.map((row) => (
+                    <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                      <td className="py-2 px-1 text-left font-sans truncate">{row.label}</td>
+                      {row.values.map((v, i) => (
+                        <td key={i} className="py-2 px-0.5 text-right">
+                          {row.isPercent ? v.toFixed(0) + '%' : v.toLocaleString()}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+                  {/* Full Width Insights Card */}
+          <div id="screener-insights" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-6 mt-6 w-full relative overflow-hidden">
+            
+            {/* Header Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">Insights</h3>
+                <span className="text-[10px] text-slate-500 font-bold hover:underline cursor-pointer">Flag error</span>
+              </div>
+              
+              {/* Yearly/Quarterly Switcher */}
+              <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 text-[10px] font-black uppercase tracking-wider">
+                <button className="px-3.5 py-1.5 bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm rounded-lg">
+                  Yearly
+                </button>
+                <button className="px-3.5 py-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white">
+                  Quarterly
+                </button>
+              </div>
+            </div>
+
+            {/* Dynamic Table */}
+            <div className="w-full overflow-x-hidden relative">
+              <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
+                    <th className="py-2.5 px-1 w-44 sm:w-52 md:w-60 text-left font-sans">Features</th>
+                    {getInsightsYears().map((q) => (
+                      <th key={q} className="py-2.5 px-0.5 text-right font-mono">{q}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-bold text-slate-900 dark:text-slate-100">
+                  {insightsResults.map((row) => (
+                    <tr key={row.label} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
+                      <td className="py-2.5 px-1 text-left font-sans">
+                        <div className="font-extrabold text-slate-950 dark:text-white truncate">{row.label}</div>
+                        <div className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">{row.desc}</div>
+                      </td>
+                      {row.values.map((v, i) => (
+                        <td key={i} className="py-2.5 px-0.5 text-right">
+                          {row.isPercent ? v.toFixed(2) + '%' : v.toLocaleString()}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
