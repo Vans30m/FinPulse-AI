@@ -172,6 +172,30 @@ app.get("/api/search", async (req, res) => {
 });
 
 // ==========================================
+// 1.5. MARKET INDICES ENDPOINT FOR HERO BANNER
+// ==========================================
+app.get('/api/market-indices', async (req, res) => {
+  try {
+    const symbols = ['^GSPC', '^IXIC', '^DJI'];
+    const quotes = await yahooFinance.quote(symbols);
+    const formatted = quotes.map((q: any) => ({
+      symbol: q.symbol,
+      name: q.symbol === '^GSPC' ? 'S&P 500' : q.symbol === '^IXIC' ? 'NASDAQ' : 'DOW JONES',
+      price: q.regularMarketPrice ? q.regularMarketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '---',
+      changePercent: q.regularMarketChangePercent !== undefined ? q.regularMarketChangePercent : 0
+    }));
+    res.json(formatted);
+  } catch (error) {
+    console.error("Error fetching market indices:", error);
+    res.json([
+      { symbol: '^GSPC', name: 'S&P 500', price: '5,432.10', changePercent: 0.45 },
+      { symbol: '^IXIC', name: 'NASDAQ', price: '18,245.50', changePercent: 0.80 },
+      { symbol: '^DJI', name: 'DOW JONES', price: '39,120.00', changePercent: -0.12 }
+    ]);
+  }
+});
+
+// ==========================================
 // 2. LIVE MARKET NEWS (FINNHUB API)
 // ==========================================
 app.get('/api/news', async (req, res) => {
@@ -180,7 +204,7 @@ app.get('/api/news', async (req, res) => {
     const response = await axios.get(
       `https://finnhub.io/api/v1/news?category=general&token=${apiKey}`
     );
-    
+
     // Return top 15
     const latestNews = response.data.slice(0, 15);
     res.json(latestNews);
@@ -197,15 +221,15 @@ app.get('/api/news/google', async (req, res) => {
   try {
     // using "when:1d" for hyper-recent breaking news to match Finnhub
     const feed = await rssParser.parseURL('https://news.google.com/rss/search?q=stock+market+finance+economy+when:1d&hl=en-US&gl=US&ceid=US:en');
-    
+
     const formattedNews = feed.items.slice(0, 15).map((item, index) => {
       const unixTimestamp = Math.floor(new Date(item.pubDate || Date.now()).getTime() / 1000);
-      
+
       return {
         id: `google-${index}-${unixTimestamp}`,
         headline: item.title,
         source: item.creator || item.source || 'Google News',
-        datetime: unixTimestamp, 
+        datetime: unixTimestamp,
         url: item.link,
         summary: item.contentSnippet || 'Click to read the full story on Google News.',
         type: 'google'
@@ -264,33 +288,33 @@ function getMockEconomicEvents(dateStr: string) {
 app.get('/api/economic-calendar', async (req, res) => {
   try {
     const dateStr = String(req.query.date || new Date().toISOString().split('T')[0]);
-    
+
     // Set up range from 00:00:00 to 23:59:59 UTC for the requested date
     const fromDate = `${dateStr}T00:00:00.000Z`;
     const toDate = `${dateStr}T23:59:59.000Z`;
-    
+
     const url = 'https://economic-calendar.tradingview.com/events';
     const params = {
       from: fromDate,
       to: toDate,
       countries: 'US,IN,GB,EU,DE,FR,IT,ES,JP,CA,AU,CH,NZ'
     };
-    
+
     const headers = {
       'Origin': 'https://www.tradingview.com',
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     };
 
     const response = await axios.get(url, { headers, params });
-    
+
     if (response.data && Array.isArray(response.data.result)) {
       const events = response.data.result.map((item: any) => {
         let impact = 'low';
         if (item.importance === 0) impact = 'medium';
         else if (item.importance === 1) impact = 'high';
-        
+
         const timeStr = item.date ? new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'All Day';
-        
+
         const formatVal = (val: any) => {
           if (val === null || val === undefined) return '';
           return `${val}${item.unit || ''}`;
@@ -307,10 +331,10 @@ app.get('/api/economic-calendar', async (req, res) => {
           date: dateStr
         };
       });
-      
+
       return res.json(events);
     }
-    
+
     res.json(getMockEconomicEvents(dateStr));
   } catch (error) {
     console.error("Economic calendar TradingView API error:", error);
@@ -327,7 +351,7 @@ app.get('/api/economic-calendar', async (req, res) => {
 // UNTIL DB is used
 app.get(
   "/api/alerts",
-  (req,res)=>{
+  (req, res) => {
     res.json([]);
   }
 );
