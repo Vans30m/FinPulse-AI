@@ -1,1245 +1,863 @@
-import React, { useState, useMemo, useEffect, Fragment } from 'react';
-import type { StockRecord, RangeFilter } from '../types/screener';
-import { getFundamentals, getAIScore, getMarketHistory } from '../services/marketService';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Sliders, Star, Search, Bookmark, Download, ChevronRight, ChevronDown, X, Globe,
-  Activity, TrendingUp, Briefcase, Coins, ShieldAlert, Award, RefreshCw, Layers, Check, Sparkles, Filter, Pin
+  Search, Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, AlertCircle, FileText
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import StockSearch from '../components/ui/StockSearch';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { getFundamentals, getMarketHistory, getAIScore } from '../services/marketService';
+import toast from 'react-hot-toast';
 
-// Default list of initial symbols
-const POPULAR_SYMBOLS = [
-  'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'TSLA', 'META', 'BRK-B', 'LLY',
-  'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ICICIBANK.NS', 'SBIN.NS'
-];
-
-interface SavedScreen {
-  id: string;
+interface StockDetails {
+  symbol: string;
   name: string;
-  filters: Record<string, RangeFilter>;
+  price: number;
+  changePercent: number;
+  marketCap: number;
+  peRatio: number;
+  dividendYield: number;
+  roe: number;
+  roce: number;
+  bookValue: number;
+  high52w: number;
+  low52w: number;
+  faceValue: number;
+  about: string;
+  history: { time: string; price: number }[];
 }
 
-// Screener Presets for quick execution
-const SCREENER_PRESETS = [
-  {
-    name: "Undervalued Growth",
-    description: "Low trailing P/E ratios paired with solid double-digit revenue growth",
-    icon: "💎",
-    badge: "Value & Growth",
-    filters: {
-      peRatio: { min: 5, max: 25 },
-      revenueGrowth: { min: 12, max: 200 }
-    }
-  },
-  {
-    name: "AI Quant Buy Radar",
-    description: "Highest scoring opportunities selected by our quantitative engine",
-    icon: "🤖",
-    badge: "AI Conviction",
-    filters: {
-      aiScore: { min: 80, max: 100 }
-    }
-  },
-  {
-    name: "Capital Efficiency Hub",
-    description: "High ROE and high net profit margin champions",
-    icon: "🔥",
-    badge: "High Margin",
-    filters: {
-      roe: { min: 20, max: 150 },
-      netMargin: { min: 15, max: 100 }
-    }
-  },
-  {
-    name: "Robust Health",
-    description: "Extremely low debt structures with solid current ratios",
-    icon: "🛡️",
-    badge: "Balance Sheet",
-    filters: {
-      debtToEquity: { min: 0, max: 0.6 },
-      currentRatio: { min: 1.5, max: 10 }
-    }
-  }
+const SUGGESTED_COMPANIES = [
+  { symbol: 'RELIANCE.NS', name: 'Reliance Industries' },
+  { symbol: 'TCS.NS', name: 'TCS' },
+  { symbol: 'HDFCBANK.NS', name: 'HDFC Bank' },
+  { symbol: 'INFY.NS', name: 'Infosys' },
+  { symbol: 'AAPL', name: 'Apple Inc.' },
+  { symbol: 'NVDA', name: 'NVIDIA' },
+  { symbol: 'TSLA', name: 'Tesla' },
+  { symbol: 'MSFT', name: 'Microsoft' },
 ];
 
-// 50+ Professional Filters Definitions
-const FILTER_METRICS = {
-  Valuation: [
-    { key: 'marketCap', label: 'Market Cap ($M)', min: 0, max: 3000000 },
-    { key: 'peRatio', label: 'Trailing P/E', min: 0, max: 150 },
-    { key: 'forwardPE', label: 'Forward P/E', min: 0, max: 150 },
-    { key: 'pegRatio', label: 'PEG Ratio', min: 0, max: 10 },
-    { key: 'psRatio', label: 'Price/Sales', min: 0, max: 50 },
-    { key: 'pbRatio', label: 'Price/Book', min: 0, max: 100 },
-    { key: 'evEbitda', label: 'EV/EBITDA', min: 0, max: 100 },
-    { key: 'dividendYield', label: 'Dividend Yield (%)', min: 0, max: 15 },
-    { key: 'enterpriseValue', label: 'Enterprise Value ($M)', min: 0, max: 3000000 }
-  ],
-  Profitability: [
-    { key: 'roe', label: 'ROE (%)', min: -50, max: 150 },
-    { key: 'roa', label: 'ROA (%)', min: -30, max: 50 },
-    { key: 'roce', label: 'ROCE (%)', min: -50, max: 150 },
-    { key: 'roi', label: 'ROI (%)', min: -50, max: 150 },
-    { key: 'grossMargin', label: 'Gross Margin (%)', min: 0, max: 100 },
-    { key: 'operatingMargin', label: 'Operating Margin (%)', min: -20, max: 100 },
-    { key: 'netMargin', label: 'Net Margin (%)', min: -20, max: 100 }
-  ],
-  Growth: [
-    { key: 'revenueGrowth', label: 'Revenue Growth YoY (%)', min: -50, max: 200 },
-    { key: 'epsGrowth', label: 'EPS Growth YoY (%)', min: -100, max: 500 },
-    { key: 'profitGrowth', label: 'Profit Growth YoY (%)', min: -100, max: 500 },
-    { key: 'fcfGrowth', label: 'FCF Growth YoY (%)', min: -100, max: 500 },
-    { key: 'cagr', label: '3-Yr CAGR (%)', min: -50, max: 100 }
-  ],
-  FinancialHealth: [
-    { key: 'debtToEquity', label: 'Debt/Equity Ratio', min: 0, max: 5 },
-    { key: 'currentRatio', label: 'Current Ratio', min: 0, max: 10 },
-    { key: 'quickRatio', label: 'Quick Ratio', min: 0, max: 10 },
-    { key: 'interestCoverage', label: 'Interest Coverage', min: -10, max: 100 },
-    { key: 'altmanZScore', label: 'Altman Z-Score', min: -5, max: 15 },
-    { key: 'piotroskiScore', label: 'Piotroski Score', min: 0, max: 9 }
-  ],
-  Technical: [
-    { key: 'rsi', label: 'RSI (14)', min: 0, max: 100 },
-    { key: 'macd', label: 'MACD Histogram', min: -20, max: 20 },
-    { key: 'sma20Dist', label: 'SMA20 Dist (%)', min: -50, max: 50 },
-    { key: 'sma50Dist', label: 'SMA50 Dist (%)', min: -50, max: 50 },
-    { key: 'sma200Dist', label: 'SMA200 Dist (%)', min: -50, max: 100 },
-    { key: 'ema20', label: 'EMA20 Value', min: 0, max: 5000 },
-    { key: 'ema50', label: 'EMA50 Value', min: 0, max: 5000 },
-    { key: 'ema200', label: 'EMA200 Value', min: 0, max: 5000 },
-    { key: 'atr', label: 'ATR', min: 0, max: 50 },
-    { key: 'adx', label: 'ADX', min: 0, max: 100 },
-    { key: 'relativeVolume', label: 'Relative Volume', min: 0, max: 10 },
-    { key: 'beta', label: 'Beta Coeff', min: -2, max: 5 },
-    { key: 'high52WeekDist', label: '52W High Dist (%)', min: -100, max: 0 },
-    { key: 'low52WeekDist', label: '52W Low Dist (%)', min: 0, max: 500 }
-  ],
-  AI: [
-    { key: 'aiScore', label: 'AI Score', min: 0, max: 100 },
-    { key: 'riskScore', label: 'Risk Score', min: 0, max: 100 },
-    { key: 'momentumScore', label: 'Momentum Score', min: 0, max: 100 },
-    { key: 'qualityScore', label: 'Quality Score', min: 0, max: 100 },
-    { key: 'valuationScore', label: 'Valuation Score', min: 0, max: 100 }
-  ],
-  ESG: [
-    { key: 'esgScore', label: 'ESG Risk Rating', min: 0, max: 100 },
-    { key: 'carbonScore', label: 'Carbon Score', min: 0, max: 100 }
-  ]
+const PEER_GROUPS: Record<string, { category: string[]; peers: { name: string; symbol: string; price: number; pe: number; mCap: number; div: number; npQtr: number; qtrProfitVar: number; salesQtr: number; qtrSalesVar: number; roce: number }[] }> = {
+  TECH_US: {
+    category: ['Technology', 'Software', 'Infrastructure'],
+    peers: [
+      { name: 'Apple Inc.', symbol: 'AAPL', price: 189.30, pe: 28.5, mCap: 2950000, div: 0.52, npQtr: 33916, qtrProfitVar: 8.5, salesQtr: 119575, qtrSalesVar: 2.1, roce: 58.2 },
+      { name: 'Microsoft Corp.', symbol: 'MSFT', price: 415.50, pe: 35.2, mCap: 3080000, div: 0.72, npQtr: 21920, qtrProfitVar: 33.1, salesQtr: 62020, qtrSalesVar: 17.6, roce: 28.5 },
+      { name: 'NVIDIA Corp.', symbol: 'NVDA', price: 875.12, pe: 72.4, mCap: 2185000, div: 0.02, npQtr: 12284, qtrProfitVar: 765.0, salesQtr: 22103, qtrSalesVar: 268.0, roce: 65.4 },
+      { name: 'Alphabet Inc.', symbol: 'GOOGL', price: 151.60, pe: 25.4, mCap: 1890000, div: 0.00, npQtr: 20687, qtrProfitVar: 51.8, salesQtr: 86310, qtrSalesVar: 15.4, roce: 22.1 },
+      { name: 'Meta Platforms', symbol: 'META', price: 505.20, pe: 24.1, mCap: 1280000, div: 0.40, npQtr: 14017, qtrProfitVar: 201.0, salesQtr: 40111, qtrSalesVar: 27.3, roce: 30.5 },
+      { name: 'Amazon.com Inc.', symbol: 'AMZN', price: 178.15, pe: 41.8, mCap: 1850000, div: 0.00, npQtr: 10430, qtrProfitVar: 220.0, salesQtr: 169961, qtrSalesVar: 13.9, roce: 18.2 }
+    ]
+  },
+  IT_INDIA: {
+    category: ['Technology', 'IT Services', 'NSE Listed'],
+    peers: [
+      { name: 'TCS', symbol: 'TCS.NS', price: 3850.20, pe: 29.2, mCap: 168000, div: 1.15, npQtr: 12434, qtrProfitVar: 9.2, salesQtr: 61223, qtrSalesVar: 7.9, roce: 45.2 },
+      { name: 'Infosys', symbol: 'INFY.NS', price: 1420.15, pe: 20.5, mCap: 72000, div: 2.10, npQtr: 6212, qtrProfitVar: 3.1, salesQtr: 37923, qtrSalesVar: 1.3, roce: 38.6 },
+      { name: 'Wipro Ltd.', symbol: 'WIPRO.NS', price: 460.50, pe: 18.4, mCap: 24000, div: 0.50, npQtr: 2835, qtrProfitVar: -12.4, salesQtr: 22205, qtrSalesVar: -4.4, roce: 20.1 },
+      { name: 'HCL Technologies', symbol: 'HCLTECH.NS', price: 1350.80, pe: 22.1, mCap: 36000, div: 1.80, npQtr: 4350, qtrProfitVar: 6.2, salesQtr: 28446, qtrSalesVar: 6.5, roce: 28.4 },
+      { name: 'Tech Mahindra', symbol: 'TECHM.NS', price: 1210.40, pe: 24.5, mCap: 11800, div: 2.20, npQtr: 1120, qtrProfitVar: -60.2, salesQtr: 13101, qtrSalesVar: -5.7, roce: 16.5 }
+    ]
+  },
+  BANK_INDIA: {
+    category: ['Financials', 'Banking', 'Private Sector Bank'],
+    peers: [
+      { name: 'HDFC Bank', symbol: 'HDFCBANK.NS', price: 1530.80, pe: 18.2, mCap: 142000, div: 1.25, npQtr: 16840, qtrProfitVar: 33.5, salesQtr: 81920, qtrSalesVar: 26.2, roce: 16.2 },
+      { name: 'ICICI Bank', symbol: 'ICICIBANK.NS', price: 1080.45, pe: 17.5, mCap: 75000, div: 0.90, npQtr: 10270, qtrProfitVar: 23.6, salesQtr: 43550, qtrSalesVar: 18.4, roce: 15.4 },
+      { name: 'SBI', symbol: 'SBIN.NS', price: 780.20, pe: 9.8, mCap: 69000, div: 1.50, npQtr: 14890, qtrProfitVar: -8.1, salesQtr: 112040, qtrSalesVar: 12.1, roce: 12.8 },
+      { name: 'Axis Bank', symbol: 'AXISBANK.NS', price: 1045.30, pe: 13.4, mCap: 32000, div: 0.40, npQtr: 5860, qtrProfitVar: 15.4, salesQtr: 28990, qtrSalesVar: 14.1, roce: 13.1 },
+      { name: 'Kotak Mahindra', symbol: 'KOTAKBANK.NS', price: 1720.50, pe: 20.2, mCap: 34000, div: 0.50, npQtr: 3180, qtrProfitVar: 7.2, salesQtr: 18450, qtrSalesVar: 9.5, roce: 14.8 }
+    ]
+  },
+  CONGLOMERATE_INDIA: {
+    category: ['Conglomerate', 'Energy & Retail', 'BSE Listed'],
+    peers: [
+      { name: 'Reliance Industries', symbol: 'RELIANCE.NS', price: 2910.45, pe: 26.8, mCap: 235000, div: 0.90, npQtr: 18950, qtrProfitVar: 2.5, salesQtr: 228000, qtrSalesVar: 11.2, roce: 9.63 },
+      { name: 'Adani Enterprises', symbol: 'ADANIENT.NS', price: 3120.50, pe: 98.4, mCap: 42000, div: 0.10, npQtr: 1888, qtrProfitVar: 135.0, salesQtr: 26850, qtrSalesVar: 6.8, roce: 11.2 },
+      { name: 'Tata Motors Ltd.', symbol: 'TATAMOTORS.NS', price: 955.40, pe: 16.8, mCap: 38000, div: 0.60, npQtr: 7025, qtrProfitVar: 220.0, salesQtr: 111500, qtrSalesVar: 25.0, roce: 15.4 },
+      { name: 'ONGC', symbol: 'ONGC.NS', price: 272.30, pe: 6.2, mCap: 34000, div: 4.50, npQtr: 10430, qtrProfitVar: 8.5, salesQtr: 165000, qtrSalesVar: -2.3, roce: 14.1 },
+      { name: 'Coal India Ltd.', symbol: 'COALINDIA.NS', price: 440.80, pe: 8.5, mCap: 27000, div: 5.20, npQtr: 9090, qtrProfitVar: 17.2, salesQtr: 36150, qtrSalesVar: 3.1, roce: 42.1 }
+    ]
+  },
+  DEFAULT: {
+    category: ['Industrials', 'Capital Goods', 'Aerospace & Defense'],
+    peers: [
+      { name: 'Bharat Electron', symbol: 'BEL.NS', price: 425.55, pe: 51.32, mCap: 31104.84, div: 0.56, npQtr: 2226.35, qtrProfitVar: 4.62, salesQtr: 10224.43, qtrSalesVar: 11.75, roce: 36.53 },
+      { name: 'Hind.Aeronautics', symbol: 'HAL.NS', price: 4440.60, pe: 32.58, mCap: 297023.17, div: 0.90, npQtr: 4196.04, qtrProfitVar: 5.52, salesQtr: 13942.40, qtrSalesVar: 1.77, roce: 31.96 },
+      { name: 'Bharat Dynamics', symbol: 'BDL.NS', price: 1409.60, pe: 122.82, mCap: 51627.88, div: 0.33, npQtr: 113.18, qtrProfitVar: -58.51, salesQtr: 480.20, qtrSalesVar: -72.98, roce: 13.84 },
+      { name: 'Garden Reach Sh.', symbol: 'GRSE.NS', price: 2765.70, pe: 42.39, mCap: 31701.26, div: 0.50, npQtr: 303.20, qtrProfitVar: 24.14, salesQtr: 2119.21, qtrSalesVar: 29.06, roce: 42.96 },
+      { name: 'Data Patterns', symbol: 'DATAPATTNS.NS', price: 4615.50, pe: 94.40, mCap: 25829.37, div: 0.22, npQtr: 138.38, qtrProfitVar: 21.30, salesQtr: 344.85, qtrSalesVar: -12.96, roce: 23.28 }
+    ]
+  }
 };
 
-// SVG Sparkline component
-function Sparkline({ data, isPositive }: { data: number[]; isPositive: boolean }) {
-  if (!data || data.length === 0) return <span className="text-slate-600">—</span>;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min === 0 ? 1 : max - min;
-  const width = 60;
-  const height = 20;
-  const points = data
-    .map((val, index) => {
-      const x = (index / (data.length - 1)) * width;
-      const y = height - ((val - min) / range) * height;
-      return `${x},${y}`;
-    })
-    .join(' ');
-
-  const strokeColor = isPositive ? '#10B981' : '#EF4444';
-  return (
-    <svg width={width} height={height} className="overflow-visible inline-block">
-      <polyline fill="none" stroke={strokeColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={points} />
-    </svg>
-  );
-}
+const getPeerGroup = (symbol: string) => {
+  const sym = symbol.toUpperCase();
+  if (['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META'].includes(sym)) {
+    return PEER_GROUPS.TECH_US;
+  }
+  if (['TCS.NS', 'INFY.NS', 'WIPRO.NS', 'HCLTECH.NS', 'TECHM.NS'].includes(sym)) {
+    return PEER_GROUPS.IT_INDIA;
+  }
+  if (['HDFCBANK.NS', 'ICICIBANK.NS', 'SBIN.NS', 'AXISBANK.NS', 'KOTAKBANK.NS'].includes(sym)) {
+    return PEER_GROUPS.BANK_INDIA;
+  }
+  if (['RELIANCE.NS', 'ADANIENT.NS', 'TATAMOTORS.NS', 'ONGC.NS', 'COALINDIA.NS'].includes(sym)) {
+    return PEER_GROUPS.CONGLOMERATE_INDIA;
+  }
+  return PEER_GROUPS.DEFAULT;
+};
 
 export default function StockScreener() {
-  const [stocksList, setStocksList] = useState<StockRecord[]>([]);
+  const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'screener' | 'analytics'>('screener');
+  const [activeTab, setActiveTab] = useState<'chart' | 'analysis' | 'peers' | 'quarters' | 'ratios'>('chart');
+  const [timeframe, setTimeframe] = useState<'1mo' | '3mo' | '1yr' | 'max'>('1yr');
 
-  // Multi-symbol compare selection
-  const [compareSymbols, setCompareSymbols] = useState<string[]>([]);
-  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  // Interactive Chart Legend States
+  const [showPrice, setShowPrice] = useState(true);
+  const [showDMA50, setShowDMA50] = useState(false);
+  const [showDMA200, setShowDMA200] = useState(false);
+  const [showVolume, setShowVolume] = useState(true);
 
-  // Active filter state
-  const [activeRanges, setActiveRanges] = useState<Record<string, RangeFilter>>({});
-  const [pinnedFilters, setPinnedFilters] = useState<string[]>(['marketCap', 'peRatio', 'aiScore']);
-  const [sidebarSearch, setSidebarSearch] = useState('');
-  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({
-    Valuation: false, Profitability: true, Growth: true, FinancialHealth: true, Technical: true, AI: false, ESG: true
-  });
+  // Compute DMA50, DMA200, and mock volumes
+  const chartData = useMemo(() => {
+    if (!selectedStock) return [];
+    
+    const raw = selectedStock.history.map((item, idx) => ({
+      time: item.time,
+      price: item.price,
+      volume: Math.floor(1000 + Math.random() * 8000) * 1000 // mock volume in thousands
+    }));
 
-  // Watchlist simulation
-  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'TSLA']);
+    // Calculate MA helper
+    const calculateMA = (data: any[], period: number, key: string) => {
+      for (let i = 0; i < data.length; i++) {
+        if (i < period - 1) {
+          data[i][key] = null;
+        } else {
+          let sum = 0;
+          for (let j = 0; j < period; j++) {
+            sum += data[i - j].price;
+          }
+          data[i][key] = Math.round((sum / period) * 100) / 100;
+        }
+      }
+    };
 
-  // Expanding row for Candlesticks & Timeframe Chart Modal
-  const [expandedStockChart, setExpandedStockChart] = useState<{ symbol: string; timeframe: string } | null>(null);
-  const [activeTimeframeData, setActiveTimeframeData] = useState<{ time: string; price: number }[]>([]);
-  const [isChartLoading, setIsChartLoading] = useState(false);
+    calculateMA(raw, 5, 'dma50'); // 5 period MA as 50 DMA
+    calculateMA(raw, 10, 'dma200'); // 10 period MA as 200 DMA
 
-  // Expanding row for AI Insights summary drawer
-  const [expandedAiInsights, setExpandedAiInsights] = useState<string | null>(null);
+    return raw;
+  }, [selectedStock]);
 
-  // Saved Screens list
-  const [savedScreens, setSavedScreens] = useState<SavedScreen[]>([
-    { id: '1', name: 'High AI Growth Buy', filters: { aiScore: { min: 75, max: 100 }, peRatio: { min: 5, max: 30 } } }
-  ]);
-  const [recentScreens, setRecentScreens] = useState<string[]>(['High AI Growth Buy']);
-
-  // Sorting
-  const [sortBy, setSortBy] = useState<keyof StockRecord>('marketCap');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
-
-  // Helper to fetch details for a single symbol
-  const fetchDetails = async (symbol: string): Promise<StockRecord | null> => {
+  // Handle stock selection and fetch data
+  const handleSelectStock = async (symbol: string) => {
+    setIsLoading(true);
     try {
-      const [fundamentals, aiScore, history] = await Promise.all([
+      const [fundamentals, historyData, aiScore] = await Promise.all([
         getFundamentals(symbol),
-        getAIScore(symbol).catch(() => ({ score: Math.floor(45 + Math.random() * 45) })),
-        getMarketHistory(symbol, "1mo").catch(() => [])
+        getMarketHistory(symbol, timeframe).catch(() => []),
+        getAIScore(symbol).catch(() => ({ score: 70 }))
       ]);
 
-      const sparkline = history.map((h: any) => h.price).filter((p: any) => typeof p === 'number');
+      const history = historyData.map((h: any, idx: number) => ({
+        time: new Date(h.date || Date.now() - (historyData.length - idx) * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        price: h.price
+      })).filter((item: any) => typeof item.price === 'number');
 
-      let aiSignal: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL' = 'HOLD';
-      const score = aiScore.score || 50;
-      if (score >= 80) aiSignal = 'STRONG_BUY';
-      else if (score >= 60) aiSignal = 'BUY';
-      else if (score >= 40) aiSignal = 'HOLD';
-      else if (score >= 20) aiSignal = 'SELL';
-      else aiSignal = 'STRONG_SELL';
+      const isIndian = symbol.endsWith('.NS');
+      const currencySymbol = isIndian ? '₹' : '$';
 
-      // Mock other indicators for remaining 50+ fields realistically so filters don't fail
-      return {
-        ticker: symbol,
+      const details: StockDetails = {
+        symbol: symbol.toUpperCase(),
         name: fundamentals.name || symbol,
-        price: fundamentals.price || 0,
+        price: fundamentals.price || 150,
         changePercent: fundamentals.changePercent || 0,
-        marketCap: fundamentals.marketCap ? (fundamentals.marketCap / 1000000) : Math.floor(10000 + Math.random() * 500000),
-        peRatio: fundamentals.peRatio || Math.floor(10 + Math.random() * 40),
-        forwardPE: fundamentals.peRatio ? Math.floor(fundamentals.peRatio * 0.9) : Math.floor(10 + Math.random() * 35),
-        pegRatio: Math.round((1 + Math.random() * 3) * 10) / 10,
-        psRatio: Math.round((2 + Math.random() * 10) * 10) / 10,
-        pbRatio: Math.round((1 + Math.random() * 15) * 10) / 10,
-        evEbitda: Math.floor(8 + Math.random() * 20),
-        dividendYield: symbol.endsWith('.NS') ? 1.2 : 0.6,
-        roe: Math.floor(10 + Math.random() * 40),
-        roa: Math.floor(3 + Math.random() * 15),
-        roce: Math.floor(12 + Math.random() * 35),
-        roi: Math.floor(8 + Math.random() * 25),
-        grossMargin: Math.floor(30 + Math.random() * 50),
-        operatingMargin: Math.floor(15 + Math.random() * 30),
-        netMargin: Math.floor(10 + Math.random() * 25),
-        revenueGrowth: Math.floor(5 + Math.random() * 35),
-        epsGrowth: Math.floor(8 + Math.random() * 50),
-        debtToEquity: Math.round(Math.random() * 1.5 * 10) / 10,
-        currentRatio: Math.round((1 + Math.random() * 3) * 10) / 10,
-        quickRatio: Math.round((0.8 + Math.random() * 2) * 10) / 10,
-        rsi: Math.floor(30 + Math.random() * 45),
-        beta: Math.round((0.5 + Math.random() * 1.5) * 10) / 10,
-        aiScore: score,
-        aiSignal,
-        sparkline,
-        sector: symbol.endsWith('.NS') ? 'India Equities' : 'Global Equities',
-        exchange: fundamentals.currency || 'USD',
-        riskScore: Math.floor(10 + Math.random() * 70),
-        esgScore: Math.floor(15 + Math.random() * 60)
-      } as any;
+        marketCap: fundamentals.marketCap ? (fundamentals.marketCap / 10000000) : (5000 + Math.random() * 20000), // formatted Cr/M
+        peRatio: fundamentals.peRatio || (15 + Math.random() * 30),
+        dividendYield: isIndian ? 1.25 : 0.65,
+        roe: 14.5 + Math.random() * 10,
+        roce: 16.2 + Math.random() * 12,
+        bookValue: (fundamentals.price || 150) / 4.2,
+        high52w: (fundamentals.price || 150) * 1.25,
+        low52w: (fundamentals.price || 150) * 0.75,
+        faceValue: isIndian ? 10.00 : 1.00,
+        about: `${fundamentals.name || symbol} is a leading enterprise in its sector, engaged in operations, manufacturing, research, development, and marketing of high-technology products and services globally.`,
+        history: history.length > 0 ? history : [
+          { time: 'Jan', price: (fundamentals.price || 150) * 0.9 },
+          { time: 'Mar', price: (fundamentals.price || 150) * 0.95 },
+          { time: 'Jun', price: (fundamentals.price || 150) * 1.05 },
+          { time: 'Sep', price: (fundamentals.price || 150) * 0.98 },
+          { time: 'Dec', price: (fundamentals.price || 150) }
+        ]
+      };
+
+      setSelectedStock(details);
     } catch (error) {
-      console.error(`Error loading stock: ${symbol}`, error);
-      return null;
+      console.error("Error loading stock details:", error);
+      toast.error("Failed to load details for " + symbol);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Initial load
+  // Trigger fetch again if timeframe changes for selected stock
   useEffect(() => {
-    const loadDefaultStocks = async () => {
-      setIsLoading(true);
-      try {
-        const data = await Promise.all(POPULAR_SYMBOLS.map(fetchDetails));
-        setStocksList(data.filter(Boolean) as StockRecord[]);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadDefaultStocks();
-  }, []);
-
-  // Apply Preset Screener
-  const applyPreset = (presetFilters: Record<string, RangeFilter>) => {
-    setActiveRanges({ ...presetFilters });
-    setCurrentPage(1);
-    toast.success("Applied preset filter conditions");
-  };
-
-  // Filter evaluation
-  const filteredStocks = useMemo(() => {
-    return stocksList.filter(stock => {
-      // Metric Ranges
-      for (const [key, range] of Object.entries(activeRanges)) {
-        const val = (stock as any)[key];
-        if (val === null || val === undefined) continue;
-        if (range.min !== null && val < range.min) return false;
-        if (range.max !== null && val > range.max) return false;
-      }
-      return true;
-    }).sort((a, b) => {
-      const valA = (a as any)[sortBy];
-      const valB = (b as any)[sortBy];
-      if (valA === null || valA === undefined) return sortOrder === 'asc' ? -1 : 1;
-      if (valB === null || valB === undefined) return sortOrder === 'asc' ? 1 : -1;
-      return sortOrder === 'asc' ? valA - valB : valB - valA;
-    });
-  }, [stocksList, activeRanges, sortBy, sortOrder]);
-
-  const paginatedStocks = useMemo(() => {
-    const startIdx = (currentPage - 1) * itemsPerPage;
-    return filteredStocks.slice(startIdx, startIdx + itemsPerPage);
-  }, [filteredStocks, currentPage]);
-
-  const totalPages = Math.ceil(filteredStocks.length / itemsPerPage) || 1;
-
-  // Active filters count
-  const activeFiltersCount = Object.keys(activeRanges).length;
-
-  // Analytics Computations
-  const stats = useMemo(() => {
-    if (filteredStocks.length === 0) return { avgScore: 0, avgPE: 0, avgROE: 0, avgCap: 0, bullishPercent: 50 };
-    const totalScore = filteredStocks.reduce((sum, s) => sum + s.aiScore, 0);
-    const totalPE = filteredStocks.reduce((sum, s) => sum + (s.peRatio || 0), 0);
-    const totalROE = filteredStocks.reduce((sum, s) => sum + (s.roe || 0), 0);
-    const totalCap = filteredStocks.reduce((sum, s) => sum + s.marketCap, 0);
-    const bullish = filteredStocks.filter(s => s.aiSignal === 'BUY' || s.aiSignal === 'STRONG_BUY').length;
-    return {
-      avgScore: Math.round(totalScore / filteredStocks.length),
-      avgPE: Math.round(totalPE / filteredStocks.length),
-      avgROE: Math.round(totalROE / filteredStocks.length),
-      avgCap: Math.round(totalCap / filteredStocks.length),
-      bullishPercent: Math.round((bullish / filteredStocks.length) * 100)
-    };
-  }, [filteredStocks]);
-
-  // Expand Chart Handler using Recharts
-  const openTimeframeChart = async (symbol: string) => {
-    if (expandedStockChart?.symbol === symbol) {
-      setExpandedStockChart(null);
-      return;
+    if (selectedStock) {
+      handleSelectStock(selectedStock.symbol);
     }
-    setExpandedStockChart({ symbol, timeframe: '1mo' });
-    setIsChartLoading(true);
-    try {
-      const history = await getMarketHistory(symbol, '1mo');
-      const mapped = history.map((h: any, idx: number) => ({
-        time: new Date(h.date || Date.now() - (30 - idx) * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        price: h.price
-      })).filter((item: any) => typeof item.price === 'number');
-      setActiveTimeframeData(mapped);
-    } catch {
-      setActiveTimeframeData([
-        { time: 'Day 1', price: 100 },
-        { time: 'Day 5', price: 102 },
-        { time: 'Day 10', price: 105 },
-        { time: 'Day 15', price: 103 },
-        { time: 'Day 20', price: 107 },
-        { time: 'Day 25', price: 109 }
-      ]);
-    } finally {
-      setIsChartLoading(false);
-    }
-  };
+  }, [timeframe]);
 
-  const handleTimeframeChange = async (timeframe: string) => {
-    if (!expandedStockChart) return;
-    setExpandedStockChart({ ...expandedStockChart, timeframe });
-    setIsChartLoading(true);
-    try {
-      const history = await getMarketHistory(expandedStockChart.symbol, timeframe);
-      const mapped = history.map((h: any, idx: number) => ({
-        time: new Date(h.date || Date.now() - (60 - idx) * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        price: h.price
-      })).filter((item: any) => typeof item.price === 'number');
-      setActiveTimeframeData(mapped);
-    } catch {
-      setActiveTimeframeData([
-        { time: 'T1', price: 100 },
-        { time: 'T2', price: 103 },
-        { time: 'T3', price: 98 },
-        { time: 'T4', price: 104 },
-        { time: 'T5', price: 106 },
-        { time: 'T6', price: 110 }
-      ]);
-    } finally {
-      setIsChartLoading(false);
-    }
-  };
-
-  // Toggle watchlist helper
-  const toggleWatchlist = (symbol: string) => {
-    if (watchlist.includes(symbol)) {
-      setWatchlist(watchlist.filter(s => s !== symbol));
-      toast.success(`${symbol} removed from Watchlist`);
-    } else {
-      setWatchlist([...watchlist, symbol]);
-      toast.success(`${symbol} added to Watchlist`);
-    }
-  };
-
-  // Compare selection toggles
-  const toggleCompare = (symbol: string) => {
-    if (compareSymbols.includes(symbol)) {
-      setCompareSymbols(compareSymbols.filter(s => s !== symbol));
-    } else {
-      if (compareSymbols.length >= 4) {
-        toast.error("Can compare maximum 4 symbols");
-        return;
-      }
-      setCompareSymbols([...compareSymbols, symbol]);
-    }
-  };
-
-  // Saved Screens actions
-  const saveCurrentScreen = () => {
-    const name = prompt("Enter a name for this custom screen:");
-    if (!name) return;
-    const newScreen = { id: Date.now().toString(), name, filters: { ...activeRanges } };
-    setSavedScreens([...savedScreens, newScreen]);
-    toast.success(`Screen "${name}" saved successfully`);
-  };
-
-  const loadScreen = (screen: SavedScreen) => {
-    setActiveRanges({ ...screen.filters });
-    if (!recentScreens.includes(screen.name)) {
-      setRecentScreens([screen.name, ...recentScreens.slice(0, 2)]);
-    }
-    toast.success(`Loaded screen "${screen.name}"`);
-  };
-
-  // Pin/Unpin helper
-  const togglePin = (key: string) => {
-    if (pinnedFilters.includes(key)) {
-      setPinnedFilters(pinnedFilters.filter(k => k !== key));
-    } else {
-      setPinnedFilters([...pinnedFilters, key]);
-    }
-  };
-
-  const exportCSV = () => {
-    const headers = ['Ticker', 'Name', 'Price', 'Change %', 'Mkt Cap ($M)', 'P/E', 'AI Score', 'AI Signal'];
-    const rows = filteredStocks.map(s => [
-      s.ticker, s.name, s.price, s.changePercent, s.marketCap, s.peRatio ?? 'N/A', s.aiScore, s.aiSignal
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const link = document.createElement('a');
-    link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `FinPulse_Screener_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("CSV exported successfully");
-  };
-
-  // Side-by-side comparison analytics winner metrics finder
-  const getWinner = (metric: string, symbols: string[]) => {
-    let bestSym = "";
-    let bestVal = metric === "peRatio" || metric === "riskScore" || metric === "debtToEquity" ? Infinity : -Infinity;
-
-    symbols.forEach(sym => {
-      const stock = stocksList.find(s => s.ticker === sym);
-      if (!stock) return;
-      const val = (stock as any)[metric];
-      if (val === undefined || val === null) return;
-
-      if (metric === "peRatio" || metric === "riskScore" || metric === "debtToEquity") {
-        if (val < bestVal) {
-          bestVal = val;
-          bestSym = sym;
-        }
-      } else {
-        if (val > bestVal) {
-          bestVal = val;
-          bestSym = sym;
-        }
-      }
-    });
-
-    return bestSym;
-  };
+  const isIndian = selectedStock?.symbol.endsWith('.NS');
+  const currencySymbol = isIndian ? '₹' : '$';
+  const peerData = selectedStock ? getPeerGroup(selectedStock.symbol) : null;
 
   return (
-    <div className="min-h-screen bg-[#060812] text-slate-100 flex flex-col antialiased font-sans relative">
+    <div className="min-h-[85vh] bg-[#f8f9fa] dark:bg-night-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 rounded-3xl p-4 md:p-8 relative">
+      
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/50 dark:bg-night-950/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-3xl">
+          <div className="h-10 w-10 border-4 border-blue-600 dark:border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
 
-      {/* Sticky Header Controls */}
-      <header className="border-b border-slate-900 bg-[#090d1a]/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
-        <div className="flex items-center justify-between w-full xl:w-auto gap-4">
-          <div>
-            <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-cyan-400 animate-pulse" /> FinPulse AI Quant Screener
-            </h1>
-            <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-              Enterprise Dashboard • Live Feeds Sync • Updated: {new Date().toLocaleTimeString()}
+      {/* 1. LANDING SEARCH VIEW */}
+      {!selectedStock ? (
+        <div className="min-h-[70vh] flex flex-col justify-center items-center max-w-2xl mx-auto text-center space-y-8 py-12">
+          {/* Logo & Subtitle */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-slate-800 dark:text-white font-extrabold text-5xl tracking-tight">
+                screener
+              </span>
+              <svg 
+                className="h-10 w-10 text-emerald-500 dark:text-emerald-450" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="3.2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-medium">
+              Stock analysis and screening tool for investors in India & global markets.
             </p>
           </div>
-          
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-500/5 border border-blue-500/10 rounded-full">
-            <Globe className="w-3 h-3 text-cyan-400" />
-            <span className="text-[11px] font-black text-cyan-400 font-mono">{filteredStocks.length} Assets Found</span>
-          </div>
-        </div>
 
-        {/* Action button rows */}
-        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-end">
-          <div className="relative flex items-center w-full sm:w-64 z-50">
+          {/* Search bar wrapper */}
+          <div className="w-full bg-white dark:bg-night-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200/50 dark:border-white/5 p-2">
             <StockSearch 
-              placeholder="Search & load assets..."
-              onSelect={async (asset) => {
-                setIsLoading(true);
-                try {
-                  const details = await fetchDetails(asset.symbol);
-                  if (details) {
-                    setStocksList(prev => {
-                      const filtered = prev.filter(s => s.ticker !== asset.symbol);
-                      return [details, ...filtered];
-                    });
-                    toast.success(`Loaded and selected ${asset.symbol} for screening`);
-                  }
-                } catch (err) {
-                  console.error(err);
-                  toast.error("Failed to load details for asset");
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
+              placeholder="Search for a company"
+              onSelect={(asset) => handleSelectStock(asset.symbol)}
             />
           </div>
 
-          {/* Quick Tabs */}
-          <div className="flex bg-[#0b0f1f] rounded-xl p-1 border border-slate-900">
-            <button 
-              onClick={() => setActiveTab('screener')}
-              className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${activeTab === 'screener' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white'}`}
-            >
-              Screener
-            </button>
-            <button 
-              onClick={() => setActiveTab('analytics')}
-              className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${activeTab === 'analytics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white'}`}
-            >
-              Analytics
-            </button>
-          </div>
-
-          {/* Action Shelf */}
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={saveCurrentScreen}
-              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all text-white"
-            >
-              <Bookmark className="w-3.5 h-3.5" /> Save
-            </button>
-            <button 
-              onClick={() => setActiveRanges({})}
-              className="px-3.5 py-2 border border-slate-800 rounded-xl text-xs font-black uppercase tracking-wider text-slate-400 hover:text-white hover:bg-slate-900 transition-all"
-            >
-              Reset
-            </button>
-            <button 
-              onClick={exportCSV}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 text-white shadow-md hover:shadow-lg transition-all"
-            >
-              <Download className="w-3.5 h-3.5" /> Export
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Preset Row */}
-      <div className="bg-[#090d1a]/30 border-b border-slate-900 px-6 py-4">
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-2.5">Quick Screener Presets</span>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {SCREENER_PRESETS.map((p) => {
-            // Count active keys matched in preset
-            const isActive = Object.keys(p.filters).every(key => activeRanges[key] !== undefined);
-            return (
-              <button
-                key={p.name}
-                onClick={() => applyPreset(p.filters)}
-                className={`p-3.5 rounded-2xl border text-left transition-all flex items-start gap-3 relative overflow-hidden group ${
-                  isActive 
-                    ? 'bg-blue-600/10 border-blue-500/30 shadow-[inset_0_0_15px_rgba(59,130,246,0.15)]' 
-                    : 'bg-[#090d1a] border-slate-900 hover:border-slate-800 hover:bg-slate-900/50'
-                }`}
-              >
-                <span className="text-2xl mt-0.5">{p.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-black uppercase tracking-wide text-slate-200 truncate group-hover:text-blue-400 transition-colors">{p.name}</span>
-                    <span className="text-[9px] font-black bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-wider">{p.badge}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1 leading-normal font-medium">{p.description}</p>
-                </div>
-                {isActive && (
-                  <div className="absolute bottom-1 right-2 flex items-center gap-1 text-blue-400 text-[9px] font-black uppercase">
-                    <Check className="w-2.5 h-2.5" /> Active
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Split Layout */}
-      <div className="flex flex-1 relative overflow-hidden">
-        
-        {/* Left Collapsible Filter Panel */}
-        <aside className="w-80 shrink-0 border-r border-slate-900 bg-[#090d1a]/30 overflow-y-auto hidden lg:block p-5 space-y-6">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-900">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-350 flex items-center gap-1.5">
-              <Sliders className="w-4 h-4 text-cyan-400" /> Filter Criteria
-            </span>
-            <span className="px-2 py-0.5 text-[9px] bg-cyan-500/10 text-cyan-400 rounded-full font-mono font-bold">
-              {activeFiltersCount} Active
-            </span>
-          </div>
-
-          {/* Search inside filter panel */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
-            <input 
-              type="text" 
-              placeholder="Search filter metrics..."
-              value={sidebarSearch}
-              onChange={(e) => setSidebarSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-[#050711] border border-slate-900 rounded-xl text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
-            />
-          </div>
-
-          {/* Pinned / Pinned Metrics shelf */}
-          {pinnedFilters.length > 0 && (
-            <div className="space-y-2 bg-blue-500/5 p-3.5 border border-blue-500/10 rounded-2xl">
-              <div className="flex items-center justify-between text-[10px] uppercase font-black tracking-wider text-blue-400">
-                <span className="flex items-center gap-1"><Pin className="w-3 h-3 rotate-45" /> Pinned Shelf</span>
-              </div>
-              <div className="space-y-3 mt-2">
-                {pinnedFilters.map(key => {
-                  let found: any = null;
-                  Object.values(FILTER_METRICS).forEach(group => {
-                    const item = group.find(i => i.key === key);
-                    if (item) found = item;
-                  });
-                  if (!found) return null;
-                  return (
-                    <div key={key} className="space-y-1">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
-                        <span>{found.label}</span>
-                        <button onClick={() => togglePin(key)} className="text-yellow-400 hover:text-slate-400">★</button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input 
-                          type="number" 
-                          placeholder="Min"
-                          value={activeRanges[key]?.min ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            setActiveRanges({ ...activeRanges, [key]: { ...activeRanges[key], min: val } });
-                          }}
-                          className="w-full bg-[#050711] border border-slate-900 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-300 focus:outline-none focus:border-blue-500"
-                        />
-                        <input 
-                          type="number" 
-                          placeholder="Max"
-                          value={activeRanges[key]?.max ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            setActiveRanges({ ...activeRanges, [key]: { ...activeRanges[key], max: val } });
-                          }}
-                          className="w-full bg-[#050711] border border-slate-900 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-300 focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Collapsible Groups */}
+          {/* Quick links */}
           <div className="space-y-3">
-            {Object.entries(FILTER_METRICS).map(([category, items]) => {
-              const isCollapsed = collapsedCategories[category];
-              const matchingItems = items.filter(item => item.label.toLowerCase().includes(sidebarSearch.toLowerCase()));
-              if (matchingItems.length === 0) return null;
-              
-              return (
-                <div key={category} className="border-b border-slate-900 pb-3">
-                  <button 
-                    onClick={() => setCollapsedCategories({ ...collapsedCategories, [category]: !isCollapsed })}
-                    className="w-full flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-400 py-2 hover:text-white"
-                  >
-                    <span>{category}</span>
-                    {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
-
-                  {!isCollapsed && (
-                    <div className="mt-2 space-y-3.5">
-                      {matchingItems.map(item => {
-                        const isPinned = pinnedFilters.includes(item.key);
-                        return (
-                          <div key={item.key} className="space-y-1">
-                            <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold">
-                              <span>{item.label}</span>
-                              <button onClick={() => togglePin(item.key)} className={`text-[10px] ${isPinned ? 'text-yellow-400' : 'text-slate-650'}`}>
-                                ★
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <input 
-                                type="number" 
-                                placeholder="Min"
-                                value={activeRanges[item.key]?.min ?? ''}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? null : Number(e.target.value);
-                                  setActiveRanges({ ...activeRanges, [item.key]: { ...activeRanges[item.key], min: val } });
-                                }}
-                                className="w-full bg-[#050711] border border-slate-900 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-350 focus:outline-none focus:border-blue-500"
-                              />
-                              <input 
-                                type="number" 
-                                placeholder="Max"
-                                value={activeRanges[item.key]?.max ?? ''}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? null : Number(e.target.value);
-                                  setActiveRanges({ ...activeRanges, [item.key]: { ...activeRanges[item.key], max: val } });
-                                }}
-                                className="w-full bg-[#050711] border border-slate-900 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-355 focus:outline-none focus:border-blue-500"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Load Screens manager shelf */}
-          <div className="space-y-2.5 pt-4 border-t border-slate-900">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Saved Screen Templates</span>
-            <div className="space-y-1.5">
-              {savedScreens.map(screen => (
-                <button 
-                  key={screen.id} 
-                  onClick={() => loadScreen(screen)}
-                  className="w-full text-left text-xs text-cyan-400 hover:text-cyan-300 font-bold truncate block py-1"
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
+              <span className="text-slate-500 dark:text-slate-400 font-semibold">Or analyse:</span>
+              {SUGGESTED_COMPANIES.map((company) => (
+                <button
+                  key={company.symbol}
+                  onClick={() => handleSelectStock(company.symbol)}
+                  className="px-3.5 py-1.5 bg-white hover:bg-blue-50 dark:bg-white/5 dark:hover:bg-cyan-500/10 text-slate-655 hover:text-blue-600 dark:text-slate-300 dark:hover:text-cyan-400 rounded-xl border border-slate-200/60 dark:border-white/5 shadow-sm font-medium transition-all"
                 >
-                  📁 {screen.name}
+                  {company.name}
                 </button>
               ))}
             </div>
           </div>
-        </aside>
-
-        {/* Center Main Viewport */}
-        <main className="flex-1 p-6 overflow-y-auto flex flex-col gap-6 relative">
+        </div>
+      ) : (
+        
+        // 2. DETAILED ANALYSIS VIEW
+        <div className="space-y-6 animate-fadeIn">
           
-          {isLoading && (
-            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-3">
-              <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm font-semibold text-slate-300 font-mono animate-pulse">Synchronizing live Yahoo Finance feeds...</p>
-            </div>
-          )}
+          {/* Header Row: Back, mini search */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/5 pb-4">
+            <button 
+              onClick={() => setSelectedStock(null)}
+              className="flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:hover:text-cyan-400 font-bold text-sm transition-colors"
+            >
+              <ArrowLeft className="h-4.5 w-4.5" /> Back to Search
+            </button>
 
-          {activeTab === 'screener' ? (
-            <>
-              {/* Visual KPI Metrics Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-blue-500 to-cyan-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Stocks Matched</span>
-                  <span className="text-2xl font-black tracking-tight font-mono text-white">{filteredStocks.length}</span>
-                  <span className="text-[9px] text-slate-500 block mt-1">filtered criteria matches</span>
-                </div>
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500 to-teal-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Avg. AI Score</span>
-                  <span className="text-2xl font-black tracking-tight font-mono text-emerald-400">{stats.avgScore}</span>
-                  <span className="text-[9px] text-slate-500 block mt-1">out of 100 maximum</span>
-                </div>
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-indigo-500 to-purple-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Avg Trailing P/E</span>
-                  <span className="text-2xl font-black tracking-tight font-mono text-indigo-400">{stats.avgPE}x</span>
-                  <span className="text-[9px] text-slate-500 block mt-1">average valuation multiple</span>
-                </div>
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 to-orange-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Avg ROE (%)</span>
-                  <span className="text-2xl font-black tracking-tight font-mono text-amber-400">{stats.avgROE}%</span>
-                  <span className="text-[9px] text-slate-500 block mt-1">returns on equity yield</span>
-                </div>
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg relative overflow-hidden col-span-2 lg:col-span-1">
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-cyan-500 to-teal-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Bullish Bias</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xl font-bold font-mono text-cyan-400">{stats.bullishPercent}%</span>
-                    <div className="flex-1 h-1.5 bg-[#050711] rounded-full overflow-hidden">
-                      <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${stats.bullishPercent}%` }} />
+            <div className="w-full md:w-80 bg-white dark:bg-night-900 rounded-xl border border-slate-200 dark:border-white/5 p-1 shadow-sm">
+              <StockSearch 
+                placeholder="Search for another company"
+                onSelect={(asset) => handleSelectStock(asset.symbol)}
+              />
+            </div>
+          </div>
+
+          {/* Tab Selection */}
+          <div className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-white/5 pb-3">
+            {(['chart', 'analysis', 'peers', 'quarters', 'ratios'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg transition-all ${
+                  activeTab === tab 
+                    ? 'bg-blue-600 text-white dark:bg-cyan-500 dark:text-night-950 shadow-md' 
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-white/5'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Company Title Info Section */}
+          <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">{selectedStock.name}</h1>
+                <span className="px-2 py-0.5 bg-blue-100 dark:bg-cyan-500/10 text-blue-700 dark:text-cyan-400 text-[10px] font-black uppercase rounded-md tracking-wider">
+                  {selectedStock.symbol}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="font-mono text-2xl font-black text-slate-900 dark:text-white">{currencySymbol}{selectedStock.price.toFixed(2)}</span>
+                <span className={`font-mono text-sm font-extrabold ${selectedStock.changePercent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-450'}`}>
+                  {selectedStock.changePercent >= 0 ? '+' : ''}{selectedStock.changePercent.toFixed(2)}%
+                </span>
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider ml-1">Live Price</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all shadow-sm">
+                <Download className="h-3.5 w-3.5" /> Export Excel
+              </button>
+              <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950 rounded-xl text-xs font-bold transition-all shadow-md">
+                <Plus className="h-3.5 w-3.5" /> Follow
+              </button>
+            </div>
+          </div>
+
+          {/* Content Layout Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                     {/* Left Col: Ratios & Chart / Analysis / Peers */}
+            <div className="lg:col-span-2 space-y-6">
+              
+              {/* TAB 1: CHART & RATIOS */}
+              {activeTab === 'chart' && (
+                <>
+                  {/* Ratios 3x3 Grid */}
+                  <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+                    <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4">Key Financial Ratios</h3>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {[
+                        { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}` },
+                        { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}` },
+                        { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}` },
+                        { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x` },
+                        { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}` },
+                        { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%` },
+                        { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%` },
+                        { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%` },
+                        { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}` },
+                      ].map((ratio) => (
+                        <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-3 rounded-2xl flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{ratio.label}</span>
+                          <span className="font-mono text-sm font-black text-slate-800 dark:text-white mt-1">{ratio.value}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <span className="text-[9px] text-slate-500 block mt-1">quant recommendations</span>
+
+                  {/* Chart Card */}
+                  <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
+                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-1.5">
+                        <TrendingUp className="h-4.5 w-4.5 text-blue-600 dark:text-cyan-400" /> Share Price & Volume
+                      </h3>
+                      
+                      {/* Timeframe Selectors */}
+                      <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1">
+                        {(['1mo', '3mo', '1yr', 'max'] as const).map((tf) => (
+                          <button
+                            key={tf}
+                            onClick={() => setTimeframe(tf)}
+                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${
+                              timeframe === tf 
+                                ? 'bg-white text-slate-850 dark:bg-white/10 dark:text-white shadow-sm' 
+                                : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                            }`}
+                          >
+                            {tf}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Composed Chart Container */}
+                    <div className="h-72 w-full font-mono text-xs">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" className="dark:stroke-white/5" />
+                          <XAxis dataKey="time" stroke="#888888" tickLine={false} axisLine={false} />
+                          
+                          {/* Left Axis for Volume */}
+                          <YAxis yAxisId="left" stroke="#888888" tickLine={false} axisLine={false} orientation="left" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                          
+                          {/* Right Axis for Price */}
+                          <YAxis yAxisId="right" stroke="#888888" tickLine={false} axisLine={false} orientation="right" domain={['auto', 'auto']} tickFormatter={(v) => `${currencySymbol}${v}`} />
+                          
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: 'rgba(9, 13, 26, 0.95)', 
+                              borderRadius: '16px', 
+                              border: '1px solid rgba(255,255,255,0.1)', 
+                              color: '#fff' 
+                            }} 
+                          />
+
+                          {/* Render Volume Bars */}
+                          {showVolume && (
+                            <Bar yAxisId="left" dataKey="volume" fill="#93c5fd" opacity={0.35} barSize={8} radius={[2, 2, 0, 0]} />
+                          )}
+
+                          {/* Render Price Line */}
+                          {showPrice && (
+                            <Line yAxisId="right" type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2.2} dot={false} name="Price" />
+                          )}
+
+                          {/* Render 50 DMA */}
+                          {showDMA50 && (
+                            <Line yAxisId="right" type="monotone" dataKey="dma50" stroke="#f59e0b" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="50 DMA" />
+                          )}
+
+                          {/* Render 200 DMA */}
+                          {showDMA200 && (
+                            <Line yAxisId="right" type="monotone" dataKey="dma200" stroke="#ef4444" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="200 DMA" />
+                          )}
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Checkboxes Legend Row at the bottom */}
+                    <div className="flex flex-wrap items-center justify-center gap-6 pt-4 border-t border-slate-100 dark:border-white/5 text-xs font-bold text-slate-650 dark:text-slate-350">
+                      <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+                        <input type="checkbox" checked={showPrice} onChange={(e) => setShowPrice(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
+                        <span>Price on {isIndian ? 'NSE' : 'NASDAQ'}</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+                        <input type="checkbox" checked={showDMA50} onChange={(e) => setShowDMA50(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
+                        <span>50 DMA</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+                        <input type="checkbox" checked={showDMA200} onChange={(e) => setShowDMA200(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
+                        <span>200 DMA</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+                        <input type="checkbox" checked={showVolume} onChange={(e) => setShowVolume(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
+                        <span>Volume</span>
+                      </label>
+                    </div>
+                  </div>
+
+                </>
+              )}
+
+              {/* TAB 2: ANALYSIS & PEER COMPARISON */}
+              {activeTab === 'analysis' && (
+                <div className="space-y-6">
+                  {/* Pros & Cons Card */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* PROS */}
+                    <div className="bg-[#f0fdf4]/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/30 rounded-3xl p-6 shadow-sm space-y-3">
+                      <h3 className="text-xs font-black text-emerald-700 dark:text-emerald-450 uppercase tracking-widest">Pros</h3>
+                      <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-350 font-semibold list-disc list-inside">
+                        <li>Company has been maintaining a healthy dividend payout of {selectedStock.dividendYield > 0 ? (selectedStock.dividendYield * 15).toFixed(1) : '17.8'}%.</li>
+                        <li>Strong return metrics with ROCE of {selectedStock.roce.toFixed(2)}%.</li>
+                        <li>Efficient operations showing solid net profit growth trajectory.</li>
+                      </ul>
+                    </div>
+                    {/* CONS */}
+                    <div className="bg-[#fef2f2]/50 dark:bg-rose-950/10 border border-rose-200 dark:border-rose-900/30 rounded-3xl p-6 shadow-sm space-y-3">
+                      <h3 className="text-xs font-black text-rose-700 dark:text-rose-450 uppercase tracking-widest">Cons</h3>
+                      <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-350 font-semibold list-disc list-inside">
+                        <li>Stock is trading at {(selectedStock.price / selectedStock.bookValue).toFixed(1)} times its book value.</li>
+                        <li>P/E ratio of {selectedStock.peRatio.toFixed(1)}x is currently higher than the industry average.</li>
+                        <li>Promoter holding has decreased slightly over the last 3 years.</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-semibold italic mt-2">* The pros and cons are machine generated.</p>
+
+                  {/* Peer Comparison Card */}
+                  <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
+                      <div>
+                        <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight">Peer Comparison</h3>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
+                          {peerData?.category.map((cat, idx) => (
+                            <span key={cat} className="flex items-center gap-1">
+                              {idx > 0 && <span className="text-slate-300 dark:text-slate-700 font-normal">&gt;</span>}
+                              <span className={idx === peerData.category.length - 1 ? "text-blue-600 dark:text-cyan-400 font-black" : ""}>{cat}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <button className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 transition-all shadow-sm">
+                        Edit Columns
+                      </button>
+                    </div>
+
+                    {/* Peer Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">S.No.</th>
+                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">Name</th>
+                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">CMP {currencySymbol}</th>
+                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">P/E</th>
+                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Mar Cap {isIndian ? 'Cr.' : 'M'}</th>
+                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Div Yld %</th>
+                            <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">ROCE %</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono">
+                          {peerData?.peers.map((peer, idx) => {
+                            const isSelf = peer.symbol.toUpperCase() === selectedStock.symbol.toUpperCase();
+                            const displayPrice = isSelf ? selectedStock.price : peer.price;
+                            const displayPE = isSelf ? selectedStock.peRatio : peer.pe;
+                            const displayMCap = isSelf ? selectedStock.marketCap : peer.mCap;
+                            const displayDiv = isSelf ? selectedStock.dividendYield : peer.div;
+                            const displayROCE = isSelf ? selectedStock.roce : peer.roce;
+
+                            return (
+                              <tr key={peer.symbol} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors cursor-pointer ${isSelf ? 'bg-blue-50/50 dark:bg-cyan-500/[0.03] font-bold text-blue-600 dark:text-cyan-400' : ''}`} onClick={() => !isSelf && handleSelectStock(peer.symbol)}>
+                                <td className="py-2.5 px-3 text-slate-500 font-sans">{idx + 1}.</td>
+                                <td className="py-2.5 px-3 text-blue-600 dark:text-cyan-400 hover:underline font-sans text-left">{peer.name}</td>
+                                <td className="py-2.5 px-3 text-right">{displayPrice.toFixed(2)}</td>
+                                <td className="py-2.5 px-3 text-right">{displayPE.toFixed(2)}</td>
+                                <td className="py-2.5 px-3 text-right">{displayMCap.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                <td className="py-2.5 px-3 text-right">{displayDiv.toFixed(2)}%</td>
+                                <td className="py-2.5 px-3 text-right">{displayROCE.toFixed(2)}%</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: PEERS */}
+              {activeTab === 'peers' && (
+                <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight">Peer Comparison</h3>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
+                        {peerData?.category.map((cat, idx) => (
+                          <span key={cat} className="flex items-center gap-1">
+                            {idx > 0 && <span className="text-slate-300 dark:text-slate-700 font-normal">&gt;</span>}
+                            <span className={idx === peerData.category.length - 1 ? "text-blue-600 dark:text-cyan-400 font-black" : ""}>{cat}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">S.No.</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">Name</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">CMP {currencySymbol}</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">P/E</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Mar Cap {isIndian ? 'Cr.' : 'M'}</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Div Yld %</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">ROCE %</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono">
+                        {peerData?.peers.map((peer, idx) => {
+                          const isSelf = peer.symbol.toUpperCase() === selectedStock.symbol.toUpperCase();
+                          const displayPrice = isSelf ? selectedStock.price : peer.price;
+                          const displayPE = isSelf ? selectedStock.peRatio : peer.pe;
+                          const displayMCap = isSelf ? selectedStock.marketCap : peer.mCap;
+                          const displayDiv = isSelf ? selectedStock.dividendYield : peer.div;
+                          const displayROCE = isSelf ? selectedStock.roce : peer.roce;
+
+                          return (
+                            <tr key={peer.symbol} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors cursor-pointer ${isSelf ? 'bg-blue-50/50 dark:bg-cyan-500/[0.03] font-bold text-blue-600 dark:text-cyan-400' : ''}`} onClick={() => !isSelf && handleSelectStock(peer.symbol)}>
+                              <td className="py-2.5 px-3 text-slate-500 font-sans">{idx + 1}.</td>
+                              <td className="py-2.5 px-3 text-blue-600 dark:text-cyan-400 hover:underline font-sans text-left">{peer.name}</td>
+                              <td className="py-2.5 px-3 text-right">{displayPrice.toFixed(2)}</td>
+                              <td className="py-2.5 px-3 text-right">{displayPE.toFixed(2)}</td>
+                              <td className="py-2.5 px-3 text-right">{displayMCap.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                              <td className="py-2.5 px-3 text-right">{displayDiv.toFixed(2)}%</td>
+                              <td className="py-2.5 px-3 text-right">{displayROCE.toFixed(2)}%</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: QUARTERS */}
+              {activeTab === 'quarters' && (
+                <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
+                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight pb-3 border-b border-slate-100 dark:border-white/5">Quarterly Financial Results</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse font-mono">
+                      <thead>
+                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">Metric</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Jun 2025</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Sep 2025</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Dec 2025</th>
+                          <th className="py-2.5 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Mar 2026</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02]">
+                        {[
+                          { label: 'Sales', values: [1200, 1350, 1280, 1420] },
+                          { label: 'Expenses', values: [950, 1020, 990, 1080] },
+                          { label: 'Operating Profit', values: [250, 330, 290, 340] },
+                          { label: 'Net Profit', values: [180, 240, 210, 255] }
+                        ].map((row) => (
+                          <tr key={row.label} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
+                            <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 font-sans text-left font-bold">{row.label}</td>
+                            {row.values.map((v, i) => (
+                              <td key={i} className="py-2.5 px-3 text-right">{currencySymbol}{v.toLocaleString()}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: RATIOS */}
+              {activeTab === 'ratios' && (
+                <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+                  <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4">Key Financial Ratios</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {[
+                      { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}` },
+                      { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}` },
+                      { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}` },
+                      { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x` },
+                      { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}` },
+                      { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%` },
+                      { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%` },
+                      { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%` },
+                      { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}` }
+                    ].map((ratio) => (
+                      <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-3 rounded-2xl flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{ratio.label}</span>
+                        <span className="font-mono text-sm font-black text-slate-800 dark:text-white mt-1">{ratio.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Col: About & Key Points */}
+            <div className="lg:col-span-1 space-y-6">
+              
+              {/* About Card */}
+              <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
+                <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest">About</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                  {selectedStock.about}
+                </p>
+              </div>
+
+              {/* Key points Card */}
+              <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center gap-1.5 text-blue-600 dark:text-cyan-400">
+                  <Sparkles className="h-4.5 w-4.5" />
+                  <h3 className="text-xs font-black uppercase tracking-widest">Key Features</h3>
+                </div>
+                <ul className="space-y-3 text-xs text-slate-500 dark:text-slate-400 font-medium list-disc list-inside">
+                  <li>Strong financial position with a current P/E of {selectedStock.peRatio.toFixed(1)}x.</li>
+                  <li>Efficient capital structure with ROCE of {selectedStock.roce.toFixed(2)}%.</li>
+                  <li>Solid return metrics yielding {selectedStock.roe.toFixed(2)}% on equity.</li>
+                </ul>
+              </div>
+
+              {/* Pros & Cons Card (Right Side of Chart) */}
+              <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-5 shadow-sm space-y-4">
+                {/* PROS */}
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-450 uppercase tracking-widest flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Pros
+                  </h4>
+                  <ul className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium list-disc list-inside pl-1">
+                    <li>Maintain healthy dividend payout.</li>
+                    <li>Efficient capital returns (ROCE of {selectedStock.roce.toFixed(2)}%).</li>
+                    <li>Solid profit growth history.</li>
+                  </ul>
+                </div>
+                {/* CONS */}
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/5">
+                  <h4 className="text-[10px] font-black text-rose-600 dark:text-rose-455 uppercase tracking-widest flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> Cons
+                  </h4>
+                  <ul className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium list-disc list-inside pl-1">
+                    <li>Stock trading high relative to book value ({(selectedStock.price / selectedStock.bookValue).toFixed(1)}x).</li>
+                    <li>P/E ratio of {selectedStock.peRatio.toFixed(1)}x is above average.</li>
+                    <li>Slight decrease in promoter holding.</li>
+                  </ul>
                 </div>
               </div>
 
-              {/* Professional Results Table */}
-              <div className="w-full overflow-x-auto border border-slate-900 rounded-2xl bg-[#090d1a]/60 shadow-lg relative">
-                <table className="w-full text-left border-collapse">
+            </div>
+
+          </div>
+
+          {/* Full Width Peer Comparison Card (Visible under chart, peers, analysis tabs) */}
+          {(activeTab === 'chart' || activeTab === 'peers' || activeTab === 'analysis') && peerData && (
+            <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-6 mt-6 w-full">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">Peer comparison</h3>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {peerData.category.map((cat, idx) => (
+                      <span key={cat} className="flex items-center gap-1">
+                        {idx > 0 && <span className="text-slate-300 dark:text-slate-700 font-normal">&gt;</span>}
+                        <span className={idx === peerData.category.length - 1 ? "text-blue-600 dark:text-cyan-400 font-black" : ""}>{cat}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black uppercase text-blue-650 bg-blue-50 dark:text-cyan-400 dark:bg-cyan-950/20 px-2.5 py-1 rounded-lg">
+                    Part of {isIndian ? 'BSE Industrials' : 'NASDAQ 100'}
+                  </span>
+                  <button className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-xl text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 transition-all shadow-sm">
+                    Edit Columns
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic 11-column Peer Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse min-w-[950px]">
                   <thead>
-                    <tr className="border-b border-slate-900 bg-[#090d1a] text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">
-                      <th className="py-4 px-4 text-center">Watch</th>
-                      <th className="py-4 px-4 cursor-pointer hover:text-white" onClick={() => { setSortBy('ticker'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
-                        Ticker {sortBy === 'ticker' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
-                      </th>
-                      <th className="py-4 px-4">Company</th>
-                      <th className="py-4 px-4 text-right cursor-pointer hover:text-white" onClick={() => { setSortBy('price'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
-                        Price {sortBy === 'price' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
-                      </th>
-                      <th className="py-4 px-4 text-right cursor-pointer hover:text-white" onClick={() => { setSortBy('changePercent'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
-                        Chg % {sortBy === 'changePercent' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
-                      </th>
-                      <th className="py-4 px-4 text-center">Trend</th>
-                      <th className="py-4 px-4 text-right cursor-pointer hover:text-white" onClick={() => { setSortBy('marketCap'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
-                        Mkt Cap {sortBy === 'marketCap' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
-                      </th>
-                      <th className="py-4 px-4 text-right cursor-pointer hover:text-white" onClick={() => { setSortBy('peRatio'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
-                        P/E {sortBy === 'peRatio' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
-                      </th>
-                      <th className="py-4 px-4 text-center">AI Score</th>
-                      <th className="py-4 px-4 text-center">AI Signal</th>
-                      <th className="py-4 px-4 text-center">Compare</th>
-                      <th className="py-4 px-4 text-center">AI Insights</th>
+                    <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider w-12">S.No.</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider">Name</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">CMP {currencySymbol}</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">P/E</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Mar Cap {isIndian ? 'Cr.' : 'M'}</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Div Yld %</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">NP Qtr {isIndian ? 'Cr.' : 'M'}</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Qtr Profit Var %</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Sales Qtr {isIndian ? 'Cr.' : 'M'}</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">Qtr Sales Var %</th>
+                      <th className="py-3 px-3 text-[10px] font-black uppercase text-slate-450 tracking-wider text-right">ROCE %</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-900/60 font-mono text-xs text-slate-300">
-                    {filteredStocks.length === 0 ? (
-                      <tr>
-                        <td colSpan={12} className="py-12 text-center text-slate-500 font-sans italic">
-                          No stocks match the selected filter criteria. Try resetting filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredStocks.map((stock) => {
-                        const isWatched = watchlist.includes(stock.ticker);
-                        const isCompared = compareSymbols.includes(stock.ticker);
-                        const isChartExpanded = expandedStockChart?.symbol === stock.ticker;
-                        const isInsightsExpanded = expandedAiInsights === stock.ticker;
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-300">
+                    {peerData.peers.map((peer, idx) => {
+                      const isSelf = peer.symbol.toUpperCase() === selectedStock.symbol.toUpperCase();
+                      const displayPrice = isSelf ? selectedStock.price : peer.price;
+                      const displayPE = isSelf ? selectedStock.peRatio : peer.pe;
+                      const displayMCap = isSelf ? selectedStock.marketCap : peer.mCap;
+                      const displayDiv = isSelf ? selectedStock.dividendYield : peer.div;
+                      const displayROCE = isSelf ? selectedStock.roce : peer.roce;
 
-                        return (
-                          <Fragment key={stock.ticker}>
-                            <tr className={`hover:bg-[#0b0f1f]/60 transition-colors ${isChartExpanded || isInsightsExpanded ? 'bg-[#0a0e1c]' : ''}`}>
-                              {/* Watchlist toggle */}
-                              <td className="py-3 px-4 text-center">
-                                <button onClick={() => toggleWatchlist(stock.ticker)} className="text-slate-400 hover:text-yellow-400 transition-colors">
-                                  <Star className={`w-4 h-4 ${isWatched ? 'fill-yellow-400 text-yellow-400' : 'text-slate-650'}`} />
-                                </button>
-                              </td>
-
-                              {/* Ticker */}
-                              <td className="py-3 px-4 font-bold text-white flex items-center gap-1.5">
-                                <span className="w-5 h-5 rounded-lg bg-[#121a2d] border border-slate-800 flex items-center justify-center text-[10px] text-cyan-400 font-black">
-                                  {stock.ticker.slice(0,1)}
-                                </span>
-                                {stock.ticker}
-                              </td>
-
-                              {/* Name */}
-                              <td className="py-3 px-4 font-sans max-w-[150px] truncate text-slate-400">
-                                {stock.name}
-                              </td>
-
-                              {/* Price */}
-                              <td className="py-3 px-4 text-right font-bold text-white">
-                                ${stock.price.toFixed(2)}
-                              </td>
-
-                              {/* Change percent */}
-                              <td className={`py-3 px-4 text-right font-bold ${stock.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
-                              </td>
-
-                              {/* Trend Mini sparkline / Expand Chart toggle */}
-                              <td className="py-3 px-4 text-center cursor-pointer select-none" onClick={() => openTimeframeChart(stock.ticker)}>
-                                <div className="flex items-center justify-center gap-1.5 hover:opacity-80 transition-opacity">
-                                  <Sparkline data={stock.sparkline} isPositive={stock.changePercent >= 0} />
-                                  <span className="text-[9px] text-slate-500 font-black">CHART</span>
-                                </div>
-                              </td>
-
-                              {/* Market cap */}
-                              <td className="py-3 px-4 text-right text-slate-200">
-                                {stock.marketCap.toFixed(1)}M
-                              </td>
-
-                              {/* P/E Ratio */}
-                              <td className="py-3 px-4 text-right text-slate-200">
-                                {stock.peRatio !== null ? stock.peRatio.toFixed(1) : '—'}
-                              </td>
-
-                              {/* AI Score */}
-                              <td className="py-3 px-4 text-center">
-                                <span className={`px-2 py-0.5 rounded font-black text-[10px] border ${
-                                  stock.aiScore >= 80 ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                                  stock.aiScore >= 60 ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' :
-                                  'bg-slate-800 text-slate-400 border-slate-700'
-                                }`}>
-                                  {stock.aiScore}
-                                </span>
-                              </td>
-
-                              {/* AI Signal Badge */}
-                              <td className="py-3 px-4 text-center">
-                                <span className={`px-2 py-0.5 rounded-lg font-black text-[9px] font-sans border uppercase tracking-wider ${
-                                  stock.aiSignal.includes('BUY') ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 animate-pulse' :
-                                  stock.aiSignal.includes('SELL') ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' :
-                                  'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                                }`}>
-                                  {stock.aiSignal.replace('_', ' ')}
-                                </span>
-                              </td>
-
-                              {/* Compare selection toggle checkbox */}
-                              <td className="py-3 px-4 text-center">
-                                <input 
-                                  type="checkbox"
-                                  checked={isCompared}
-                                  onChange={() => toggleCompare(stock.ticker)}
-                                  className="w-4 h-4 accent-blue-600 rounded bg-slate-900 border-slate-800 cursor-pointer"
-                                />
-                              </td>
-
-                              {/* Expanded AI Insights toggle */}
-                              <td className="py-3 px-4 text-center">
-                                <button 
-                                  onClick={() => setExpandedAiInsights(isInsightsExpanded ? null : stock.ticker)}
-                                  className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase border transition-all ${
-                                    isInsightsExpanded
-                                      ? 'bg-blue-600 text-white border-blue-500'
-                                      : 'bg-[#121a2d] hover:bg-[#1e293b] text-cyan-400 border-slate-800'
-                                  }`}
-                                >
-                                  {isInsightsExpanded ? 'Hide' : 'Explain'}
-                                </button>
-                              </td>
-                            </tr>
-
-                            {/* Expanded chart row using Recharts */}
-                            {isChartExpanded && (
-                              <tr>
-                                <td colSpan={12} className="bg-[#050711]/90 p-5 border-y border-slate-900">
-                                  <div className="flex flex-col gap-4">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <h4 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
-                                          <Activity className="w-3.5 h-3.5 text-cyan-400" /> Interactive Trend Stream: {stock.ticker}
-                                        </h4>
-                                        <p className="text-[10px] text-slate-500 font-sans mt-0.5">Historical pricing graph retrieved via market telemetry service</p>
-                                      </div>
-                                      
-                                      {/* Timeframe switchers */}
-                                      <div className="flex bg-[#0b0f1f] rounded-lg p-0.5 border border-slate-900">
-                                        {['1mo', '3mo', '1y', '5y'].map(t => (
-                                          <button 
-                                            key={t}
-                                            onClick={() => handleTimeframeChange(t)}
-                                            className={`px-2.5 py-1 text-[9px] font-black uppercase rounded-md transition-all ${expandedStockChart.timeframe === t ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                                          >
-                                            {t}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-
-                                    {isChartLoading ? (
-                                      <div className="h-44 flex items-center justify-center text-xs text-slate-500 italic">
-                                        Loading chart values...
-                                      </div>
-                                    ) : (
-                                      <div className="h-48 w-full pr-4">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                          <AreaChart data={activeTimeframeData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
-                                            <defs>
-                                              <linearGradient id={`screenerChartGrad-${stock.ticker}`} x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
-                                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                                              </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#0f172a" />
-                                            <XAxis dataKey="time" stroke="#475569" fontSize={9} tickLine={false} />
-                                            <YAxis stroke="#475569" fontSize={9} tickLine={false} domain={['auto', 'auto']} />
-                                            <Tooltip 
-                                              contentStyle={{ backgroundColor: '#090d1a', borderColor: '#1e293b', borderRadius: '10px', fontSize: '10px', fontFamily: 'monospace' }}
-                                              labelStyle={{ color: '#94a3b8' }}
-                                            />
-                                            <Area type="monotone" dataKey="price" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill={`url(#screenerChartGrad-${stock.ticker})`} />
-                                          </AreaChart>
-                                        </ResponsiveContainer>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-
-                            {/* Expanded AI Insights row */}
-                            {isInsightsExpanded && (
-                              <tr>
-                                <td colSpan={12} className="bg-[#050711]/90 p-5 border-y border-slate-900">
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="space-y-1.5 border-r border-slate-900 pr-4">
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-cyan-400 block">AI Neural Reasoning Verdict</span>
-                                      <p className="text-xs text-slate-350 leading-relaxed font-sans mt-1">
-                                        {stock.ticker} is identified as an asset with stable high-probability return characteristics. Quantitative factors suggest strong support parameters, robust margins ({stock.operatingMargin}% operating margin), and an optimal trailing P/E multiplier of {stock.peRatio ? `${stock.peRatio.toFixed(1)}x` : 'N/A'}.
-                                      </p>
-                                    </div>
-                                    
-                                    <div className="space-y-1.5 border-r border-slate-900 pr-4">
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 block">Bullish Scoring Metrics</span>
-                                      <ul className="text-xs text-slate-400 space-y-1.5 font-sans mt-2">
-                                        <li className="flex items-center gap-2">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                          Relative Strength Index (RSI) holds strong at {stock.rsi}
-                                        </li>
-                                        <li className="flex items-center gap-2">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                          Double-digit revenue expansion at +{stock.revenueGrowth}% YoY
-                                        </li>
-                                        <li className="flex items-center gap-2">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                          Optimal solvency parameters with D/E of {stock.debtToEquity}
-                                        </li>
-                                      </ul>
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 block">Identified Structural Risks</span>
-                                      <ul className="text-xs text-slate-400 space-y-1.5 font-sans mt-2">
-                                        <li className="flex items-center gap-2">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                                          Premium price targets relative to peer multiples
-                                        </li>
-                                        <li className="flex items-center gap-2">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                                          Minor volatility expansions noted on high ADX readings
-                                        </li>
-                                      </ul>
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
-                        );
-                      })
-                    )}
+                      return (
+                        <tr 
+                          key={peer.symbol} 
+                          className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors cursor-pointer ${
+                            isSelf ? 'bg-blue-50/50 dark:bg-cyan-500/[0.03] font-bold text-blue-600 dark:text-cyan-400' : ''
+                          }`} 
+                          onClick={() => !isSelf && handleSelectStock(peer.symbol)}
+                        >
+                          <td className="py-3 px-3 text-slate-400 font-sans">{idx + 1}.</td>
+                          <td className="py-3 px-3 text-blue-600 dark:text-cyan-400 hover:underline font-sans text-left font-semibold">{peer.name}</td>
+                          <td className="py-3 px-3 text-right">{displayPrice.toFixed(2)}</td>
+                          <td className="py-3 px-3 text-right">{displayPE.toFixed(2)}</td>
+                          <td className="py-3 px-3 text-right">{displayMCap.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                          <td className="py-3 px-3 text-right">{displayDiv.toFixed(2)}%</td>
+                          <td className="py-3 px-3 text-right">{peer.npQtr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                          <td className={`py-3 px-3 text-right ${peer.qtrProfitVar >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {peer.qtrProfitVar >= 0 ? '+' : ''}{peer.qtrProfitVar.toFixed(1)}%
+                          </td>
+                          <td className="py-3 px-3 text-right">{peer.salesQtr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                          <td className={`py-3 px-3 text-right ${peer.qtrSalesVar >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {peer.qtrSalesVar >= 0 ? '+' : ''}{peer.qtrSalesVar.toFixed(1)}%
+                          </td>
+                          <td className="py-3 px-3 text-right">{displayROCE.toFixed(2)}%</td>
+                        </tr>
+                      );
+                    })}
+                    
+                    {/* Median Row */}
+                    <tr className="bg-slate-50/40 dark:bg-white/[0.01] border-t-2 border-slate-200 dark:border-white/10 font-bold text-slate-900 dark:text-white">
+                      <td className="py-3 px-3 font-sans"></td>
+                      <td className="py-3 px-3 font-sans text-left">Median: {peerData.peers.length} Co.</td>
+                      <td className="py-3 px-3 text-right">
+                        {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.price : p.price), 0) / peerData.peers.length).toFixed(2)}
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.peRatio : p.pe), 0) / peerData.peers.length).toFixed(2)}
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.marketCap : p.mCap), 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.dividendYield : p.div), 0) / peerData.peers.length).toFixed(2)}%
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        {(peerData.peers.reduce((acc, p) => acc + p.npQtr, 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
+                      <td className="py-3 px-3 text-right text-emerald-500">
+                        +{(peerData.peers.reduce((acc, p) => acc + p.qtrProfitVar, 0) / peerData.peers.length).toFixed(1)}%
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        {(peerData.peers.reduce((acc, p) => acc + p.salesQtr, 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
+                      <td className="py-3 px-3 text-right text-emerald-500">
+                        +{(peerData.peers.reduce((acc, p) => acc + p.qtrSalesVar, 0) / peerData.peers.length).toFixed(1)}%
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.roce : p.roce), 0) / peerData.peers.length).toFixed(2)}%
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
 
-              {/* Total matches count */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-900 text-xs text-slate-500 font-mono">
-                <span>{filteredStocks.length} total matches loaded</span>
-              </div>
-            </>
-          ) : (
-            /* Analytics Grid charts */
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-5 shadow-lg space-y-4">
-                <div>
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-400 block">Sector Allocation Matrix</span>
-                  <p className="text-[10px] text-slate-500 font-sans mt-0.5">Asset composition divided by target geographic market</p>
-                </div>
-                <div className="space-y-3 font-mono text-xs mt-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-slate-300">Global Equities</span>
-                      <span className="font-bold">{filteredStocks.filter(s => s.sector === 'Global Equities').length} Stocks</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-[#050711] border border-slate-900 rounded-full overflow-hidden">
-                      <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${(filteredStocks.filter(s => s.sector === 'Global Equities').length / (filteredStocks.length || 1)) * 100}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-slate-300">India Equities</span>
-                      <span className="font-bold">{filteredStocks.filter(s => s.sector === 'India Equities').length} Stocks</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-[#050711] border border-slate-900 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${(filteredStocks.filter(s => s.sector === 'India Equities').length / (filteredStocks.length || 1)) * 100}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-5 shadow-lg space-y-4">
-                <div>
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-400 block">AI Score Distribution Spectrum</span>
-                  <p className="text-[10px] text-slate-500 font-sans mt-0.5">Categorization of matching assets by predictive quant score</p>
-                </div>
-                <div className="space-y-3 font-mono text-xs mt-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-slate-355">High Buy (Score 80+)</span>
-                      <span className="font-bold text-emerald-400">{filteredStocks.filter(s => s.aiScore >= 80).length} Assets</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-[#050711] border border-slate-900 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-400 rounded-full" style={{ width: `${(filteredStocks.filter(s => s.aiScore >= 80).length / (filteredStocks.length || 1)) * 100}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-slate-355">Standard Hold (Score 60-79)</span>
-                      <span className="font-bold text-cyan-400">{filteredStocks.filter(s => s.aiScore >= 60 && s.aiScore < 80).length} Assets</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-[#050711] border border-slate-900 rounded-full overflow-hidden">
-                      <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${(filteredStocks.filter(s => s.aiScore >= 60 && s.aiScore < 80).length / (filteredStocks.length || 1)) * 100}%` }} />
-                    </div>
-                  </div>
+              {/* Lower comparison helper input */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-4 border-t border-slate-100 dark:border-white/5">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-450">Detailed Comparison with:</span>
+                <div className="relative max-w-xs w-full">
+                  <input 
+                    type="text" 
+                    placeholder={isIndian ? "eg. Infosys" : "eg. Microsoft"} 
+                    className="w-full px-3.5 py-1.5 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-400 placeholder-slate-400"
+                  />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Comparison Overlay Drawer */}
-          {compareSymbols.length > 0 && (
-            <div className="sticky bottom-0 left-0 w-full bg-[#090d1a]/95 border border-slate-800 p-4 rounded-2xl shadow-2xl backdrop-blur flex flex-col sm:flex-row items-center justify-between gap-4 z-50">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest font-mono">Comparison Queue:</span>
-                <div className="flex flex-wrap gap-2">
-                  {compareSymbols.map(sym => (
-                    <span key={sym} className="px-2.5 py-1 bg-blue-950 border border-blue-900 text-blue-400 text-xs font-black rounded-xl font-mono flex items-center gap-1.5">
-                      {sym}
-                      <button onClick={() => toggleCompare(sym)} className="text-slate-500 hover:text-white font-sans text-xs">×</button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setIsCompareOpen(true)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-blue-500/25 transition-all"
-                >
-                  Launch Side-by-Side Matrix
-                </button>
-                <button 
-                  onClick={() => setCompareSymbols([])}
-                  className="text-xs font-black uppercase tracking-wider text-slate-500 hover:text-white"
-                >
-                  Clear All
-                </button>
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* Compare Modal Overlay */}
-      {isCompareOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-[#070913] border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-y-auto p-6 space-y-6 shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-900 pb-4">
-              <div>
-                <h3 className="text-base font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                  <Layers className="w-4 h-4" /> Professional Side-by-Side Matrix
-                </h3>
-                <p className="text-[10px] text-slate-500 font-sans mt-0.5">Golden highlights indicate the winning stock for each specific parameter</p>
-              </div>
-              <button onClick={() => setIsCompareOpen(false)} className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-900 transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-slate-900 text-slate-500 font-black uppercase text-[10px] tracking-wider bg-[#090d1a]/50">
-                    <th className="py-3 px-4">Metric Comparison</th>
-                    {compareSymbols.map(sym => (
-                      <th key={sym} className="py-3 px-4 font-mono font-bold text-slate-200 text-center">{sym}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-900/60 font-sans text-slate-350">
-                  {/* Row: Company Name */}
-                  <tr className="hover:bg-slate-900/20">
-                    <td className="py-3.5 px-4 font-black uppercase text-[10px] text-slate-500">Company Name</td>
-                    {compareSymbols.map(sym => {
-                      const stock = stocksList.find(s => s.ticker === sym);
-                      return (
-                        <td key={sym} className="py-3.5 px-4 text-center font-bold text-white font-mono text-xs">
-                          {stock?.name || '—'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-
-                  {/* Row: Price */}
-                  {[
-                    { label: "Market Price", key: "price", format: (v: number) => `$${v.toFixed(2)}` },
-                    { label: "Change %", key: "changePercent", format: (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, isChange: true },
-                    { label: "Market Cap ($M)", key: "marketCap", format: (v: number) => `${v.toLocaleString(undefined, { maximumFractionDigits: 1 })}M` },
-                    { label: "Trailing P/E Ratio", key: "peRatio", format: (v: number) => `${v.toFixed(1)}x` },
-                    { label: "Predictive AI Score", key: "aiScore", format: (v: number) => `${v}/100` },
-                    { label: "Corporate Risk Score", key: "riskScore", format: (v: number) => `${v}/100` },
-                    { label: "Debt-to-Equity Ratio", key: "debtToEquity", format: (v: number) => `${v.toFixed(2)}` },
-                    { label: "Current Assets Ratio", key: "currentRatio", format: (v: number) => `${v.toFixed(2)}` },
-                    { label: "Return on Equity (ROE)", key: "roe", format: (v: number) => `${v.toFixed(1)}%` },
-                    { label: "Relative Strength (RSI)", key: "rsi", format: (v: number) => `${v.toFixed(0)}` }
-                  ].map((rowDef) => {
-                    const winnerSym = getWinner(rowDef.key, compareSymbols);
-                    return (
-                      <tr key={rowDef.key} className="hover:bg-slate-900/20">
-                        <td className="py-3 px-4 font-black uppercase text-[10px] text-slate-500">{rowDef.label}</td>
-                        {compareSymbols.map(sym => {
-                          const stock = stocksList.find(s => s.ticker === sym);
-                          if (!stock) return <td key={sym} className="py-3 px-4 text-center font-mono">—</td>;
-                          const rawVal = (stock as any)[rowDef.key];
-                          const formatted = rawVal !== undefined && rawVal !== null ? rowDef.format(rawVal) : '—';
-                          const isWinner = sym === winnerSym && rawVal !== undefined && rawVal !== null;
-
-                          return (
-                            <td key={sym} className={`py-3 px-4 text-center font-mono ${isWinner ? 'text-yellow-400 bg-yellow-500/5 font-extrabold border border-yellow-500/10' : ''}`}>
-                              {rowDef.isChange ? (
-                                <span className={rawVal >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-500 font-bold'}>
-                                  {formatted}
-                                </span>
-                              ) : (
-                                <span>{formatted}</span>
-                              )}
-                              {isWinner && <span className="text-[8px] bg-yellow-500/10 text-yellow-500 px-1 py-0.2 rounded font-sans uppercase font-black ml-1.5">Leader</span>}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       )}
+
     </div>
   );
 }
