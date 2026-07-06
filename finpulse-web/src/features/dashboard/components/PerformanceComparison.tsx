@@ -12,22 +12,15 @@ import {
   AlertCircle,
   CheckCircle as CheckCircle2
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as ChartTooltip,
-  ResponsiveContainer,
-  Brush,
-  Legend
-} from "recharts";
 import PerformanceHeatmap from "./performance/PerformanceHeatmap";
 import RollingCagrSection from "./performance/RollingCagrSection";
 import AiPerformanceCoachSection from "./performance/AiPerformanceCoachSection";
 import BenchmarkRadarSection from "./performance/BenchmarkRadarSection";
 import { getFundamentals } from "../../../services/marketService";
+import { getBenchmarkComparison } from "../../../services/portfolioService";
+import { processCumulativeData } from "../../../utils/chartUtils";
+import CumulativeReturnChart from "./performance/CumulativeReturnChart";
+import AIPortfolioAdvisorSection from "../../portfolio/components/AIPortfolioAdvisorSection";
 
 export default function PerformanceComparison() {
   const navigate = useNavigate();
@@ -41,6 +34,10 @@ export default function PerformanceComparison() {
   const [comparisonLoading, setComparisonLoading] = useState<boolean>(true);
   const [comparisonError, setComparisonError] = useState<string | null>(null);
   const [comparisonData, setComparisonData] = useState<{ series: any[], stats: any, constituents: any[] } | null>(null);
+  
+  // AI Advisor integration state
+  const [advisorData, setAdvisorData] = useState<any>(null);
+  const [advisorLoading, setAdvisorLoading] = useState<boolean>(true);
 
   // Constituents table search/sort states
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -86,6 +83,27 @@ export default function PerformanceComparison() {
         const allHoldings = (data.sections || []).flatMap((s: any) => s.holdings || []);
         setHoldings(allHoldings);
       }
+
+      // Fetch AI Advisor data
+      const cachedAdvisor = sessionStorage.getItem("portfolioAdvisor");
+      if (cachedAdvisor) {
+        try {
+          setAdvisorData(JSON.parse(cachedAdvisor));
+          setAdvisorLoading(false);
+        } catch (e) {}
+      }
+
+      fetch('http://localhost:3000/api/ai/portfolio-advisor', { headers })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
+            sessionStorage.setItem("portfolioAdvisor", JSON.stringify(data));
+            setAdvisorData(data);
+          }
+        })
+        .catch(err => console.error("Advisor load failed:", err))
+        .finally(() => setAdvisorLoading(false));
+
     } catch (err) {
       console.error("Failed to load performance data:", err);
     } finally {
@@ -108,38 +126,49 @@ export default function PerformanceComparison() {
     loadPerformanceData();
   }, []);
 
-  const fetchBenchmarkComparison = async () => {
+  const fetchBenchmarkComparison = async (signal?: AbortSignal) => {
     setComparisonLoading(true);
     setComparisonError(null);
     try {
-      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
-      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
-      const userId = storedUser.id;
-      const headers: any = {};
-      if (userId) headers['X-User-Id'] = userId;
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(`http://localhost:3000/api/portfolio/benchmark-comparison?symbol=${encodeURIComponent(benchmarkTicker)}&timeframe=${benchmarkTimeframe}`, { headers });
-      if (!res.ok) throw new Error("Unable to load benchmark data");
-      const data = await res.json();
+      const data = await getBenchmarkComparison(benchmarkTicker, benchmarkTimeframe, signal);
       setComparisonData(data);
     } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error(err);
       setComparisonError(err.message || "Failed to load benchmark comparison");
     } finally {
-      setComparisonLoading(false);
+      if (!signal?.aborted) {
+        setComparisonLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchBenchmarkComparison();
+    const controller = new AbortController();
+
+    const timer = setTimeout(() => {
+      fetchBenchmarkComparison(controller.signal);
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [benchmarkTicker, benchmarkTimeframe]);
 
   const handleRefresh = () => {
     loadPerformanceData();
     fetchBenchmarkComparison();
   };
-  // Dynamic calculations based on real portfolio holdings
+  // Process cumulative return series using helper utility with memoization
+  const processedSeries = useMemo(() => {
+    if (!comparisonData || !comparisonData.series) return [];
+    return processCumulativeData(comparisonData.series);
+  }, [comparisonData]);
+
+  const activeBenchmarkName = useMemo(() => {
+    return BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name || "Benchmark";
+  }, [benchmarkTicker]);
   const portfolioStats = useMemo(() => {
     let totalValuation = 0;
     let totalCost = 0;
@@ -377,12 +406,12 @@ export default function PerformanceComparison() {
                     <span className="text-xs font-black uppercase tracking-wider text-slate-400">Cumulative Return Comparison</span>
                   </div>
 
-                  <div className="flex bg-[#050711] p-1 rounded-xl border border-slate-900">
-                    {["1D", "3M", "6M", "1Y", "5Y"].map((tf) => (
+                  <div className="flex flex-wrap bg-[#050711] p-1 rounded-xl border border-slate-900 gap-1">
+                    {["1D", "5D", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "MAX"].map((tf) => (
                       <button
                         key={tf}
                         onClick={() => setBenchmarkTimeframe(tf)}
-                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                           benchmarkTimeframe === tf
                             ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
                             : "text-slate-400 hover:text-white"
@@ -410,50 +439,74 @@ export default function PerformanceComparison() {
                   ))}
                 </div>
 
-                <div className="h-72 w-full mt-2">
-                  {(!comparisonData || comparisonData.series.length === 0) ? (
-                    <div className="h-full flex items-center justify-center text-slate-500 text-xs font-bold">
+                {/* Stats Grid Above the Chart */}
+                {comparisonData?.stats && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6 border-b border-slate-900/60 pb-5">
+                    <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Portfolio Return</span>
+                      <span className="text-xs font-black text-emerald-400 font-mono block mt-1">
+                        {comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%
+                      </span>
+                    </div>
+                    <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Benchmark Return</span>
+                      <span className="text-xs font-black text-slate-350 font-mono block mt-1">
+                        {comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%
+                      </span>
+                    </div>
+                    <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Outperformance</span>
+                      <span className={`text-xs font-black font-mono block mt-1 ${
+                        comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? "text-emerald-400" : "text-rose-450"
+                      }`}>
+                        {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn) >= 0 ? "+" : ""}
+                        {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%
+                      </span>
+                    </div>
+                    <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Alpha</span>
+                      <span className="text-xs font-black text-white font-mono block mt-1">
+                        {comparisonData.stats.alpha >= 0 ? "+" : ""}{comparisonData.stats.alpha}
+                      </span>
+                    </div>
+                    <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Beta</span>
+                      <span className="text-xs font-black text-white font-mono block mt-1">
+                        {comparisonData.stats.beta}
+                      </span>
+                    </div>
+                    <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Sharpe Ratio</span>
+                      <span className="text-xs font-black text-white font-mono block mt-1">
+                        {comparisonData.stats.sharpeRatio}
+                      </span>
+                    </div>
+                    <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Volatility</span>
+                      <span className="text-xs font-black text-white font-mono block mt-1">
+                        {comparisonData.stats.volatility}%
+                      </span>
+                    </div>
+                    <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Max Drawdown</span>
+                      <span className="text-xs font-black text-rose-450 font-mono block mt-1">
+                        {comparisonData.stats.maxDrawdown}%
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="w-full mt-2">
+                  {(!comparisonData || processedSeries.length === 0) ? (
+                    <div className="h-[300px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-[#050711]/45 border border-slate-900 rounded-3xl">
                       Not enough historical data available.
                     </div>
                   ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={comparisonData.series} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorPort" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorBench" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#f59e42" stopOpacity={0.1}/>
-                            <stop offset="95%" stopColor="#f59e42" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#050711" />
-                        <XAxis dataKey="date" stroke="#555" fontSize={9} tickLine={false} tickFormatter={(val) => {
-                          try {
-                            const d = new Date(val);
-                            if (benchmarkTimeframe === "1D" || benchmarkTimeframe === "5D") {
-                              return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                            }
-                            return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                          } catch {
-                            return val;
-                          }
-                        }} />
-                        <YAxis stroke="#555" fontSize={9} tickLine={false} domain={["auto", "auto"]} tickFormatter={(val) => `${val}%`} />
-                        <ChartTooltip
-                          contentStyle={{ backgroundColor: "#121a2a", borderColor: "#050711", borderRadius: "10px", fontSize: "11px", color: "#fff" }}
-                          formatter={(value: any, name: any) => {
-                            const labelName = name === "portfolioReturn" ? "Portfolio Return" : `${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} Return`;
-                            return [`${value}%`, labelName];
-                          }}
-                        />
-                        <Legend verticalAlign="top" height={36} iconType="circle" />
-                        <Area type="monotone" name="portfolioReturn" dataKey="portfolioReturn" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorPort)" dot={false} activeDot={{ r: 6 }} />
-                        <Area type="monotone" name="benchmarkReturn" dataKey="benchmarkReturn" stroke="#f59e42" strokeWidth={2} fillOpacity={1} fill="url(#colorBench)" strokeDasharray="5 5" dot={false} activeDot={{ r: 4 }} />
-                        <Brush dataKey="date" height={20} stroke="#1e293b" fill="#0f172a" tickFormatter={() => ""} />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <CumulativeReturnChart
+                      data={processedSeries}
+                      benchmarkName={activeBenchmarkName}
+                      height={320}
+                    />
                   )}
                 </div>
               </div>
@@ -702,34 +755,16 @@ export default function PerformanceComparison() {
         </div>
       </div>
 
-      {/* ==================== 4. SECTOR ALLOCATION CONTRIBUTION ==================== */}
-      <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-        <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-          <PieIcon size={15} className="text-cyan-400" />
-          <span className="text-xs font-black uppercase tracking-wider text-slate-400">Sector Allocation Contribution Margin</span>
+      {/* AI Portfolio Advisor */}
+      {advisorLoading ? (
+        <div className="glass-panel p-8 flex flex-col items-center justify-center min-h-[200px] border border-slate-900 bg-[#121a2a]/45 rounded-3xl">
+          <Activity className="w-8 h-8 animate-spin text-cyan-400" />
+          <p className="text-xs text-slate-400 mt-3 font-mono">Synchronizing advisor insights...</p>
         </div>
+      ) : advisorData ? (
+        <AIPortfolioAdvisorSection advisor={advisorData} />
+      ) : null}
 
-        <div className="space-y-4">
-          {sectorAllocations.length === 0 ? (
-            <div className="text-slate-500 text-xs py-4 font-bold text-center">No sector allocation data available.</div>
-          ) : (
-            sectorAllocations.map((sector, i) => (
-              <div key={i} className="space-y-1">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-300 font-extrabold">{sector.name}</span>
-                  <span className="font-mono text-slate-200 font-bold">{sector.val}% (${sector.count.toLocaleString()})</span>
-                </div>
-                <div className="w-full h-1.5 bg-[#050711] rounded-full overflow-hidden border border-slate-900/40">
-                  <div className="h-full rounded-full" style={{ width: `${sector.val}%`, backgroundColor: sector.color }}></div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* ==================== 5. SUBSECTIONS ==================== */}
-      <AiPerformanceCoachSection />
       <BenchmarkRadarSection />
       <PerformanceHeatmap />
       <RollingCagrSection />

@@ -410,12 +410,15 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
 
     const portfolioValues = allDates.map(month => {
       let value = 0;
+      let invested = 0;
       holdingsHistory.forEach(h => {
         const candle = h.history.find(c => new Date(c.date as any).toISOString().slice(0, 7) === month);
         const price = candle ? (candle.close ?? candle.adjClose ?? h.avgCost) : h.avgCost;
         value += h.shares * price;
+        invested += h.shares * h.avgCost;
       });
-      return { month, value };
+      const profit = value - invested;
+      return { month, value, invested, profit };
     });
 
     const benchmarkHistories: Record<string, any[]> = {};
@@ -1288,7 +1291,17 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
     const initialBenchmarkPrice = bHistory[0]?.close ?? bHistory[0]?.adjClose ?? 1;
 
     const series = portfolioValues.map(pv => {
-      const bCandle = bHistory.find(c => new Date(c.date as any).toISOString() === pv.date);
+      const pvTime = new Date(pv.date).getTime();
+      let bCandle = null;
+      let minDiff = Infinity;
+      bHistory.forEach(c => {
+        const cTime = new Date(c.date as any).getTime();
+        const diff = Math.abs(cTime - pvTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          bCandle = c;
+        }
+      });
       const bPrice = bCandle ? (bCandle.close ?? bCandle.adjClose ?? initialBenchmarkPrice) : initialBenchmarkPrice;
 
       return {

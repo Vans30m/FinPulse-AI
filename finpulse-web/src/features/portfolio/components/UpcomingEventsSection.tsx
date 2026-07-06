@@ -168,8 +168,8 @@ function UpcomingEventsSection() {
     result.sort((a, b) => {
       const dateA = new Date(a.eventDate);
       const dateB = new Date(b.eventDate);
-      const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
-      const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+      const timeA = isNaN(dateA.getTime()) ? Infinity : dateA.getTime();
+      const timeB = isNaN(dateB.getTime()) ? Infinity : dateB.getTime();
 
       if (sortBy === "upcoming") {
         return timeA - timeB;
@@ -216,7 +216,6 @@ function UpcomingEventsSection() {
     processedEvents.forEach(e => {
       const eDate = new Date(e.eventDate);
       if (isNaN(eDate.getTime())) {
-        groups.thisMonth.push(e);
         return;
       }
       const eDateStr = eDate.toISOString().slice(0, 10);

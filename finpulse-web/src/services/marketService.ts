@@ -57,6 +57,40 @@ export async function getStockCandles(symbol: string, timeframe: string) {
   return response.json();
 }
 
+/**
+ * Fetch historical close prices for a benchmark symbol.
+ * Uses the existing /api/charts/:symbol endpoint.
+ * Supports AbortController for request cancellation.
+ */
+export async function getBenchmarkHistory(
+  symbol: string,
+  range: string,
+  interval: string,
+  signal?: AbortSignal
+): Promise<{ time: number; close: number }[]> {
+  const response = await fetch(
+    `http://localhost:3000/api/charts/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`,
+    { signal }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch benchmark history for ${symbol}: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // Normalise the response — backend returns {time, open, high, low, close} or {time, value}
+  const raw: any[] = Array.isArray(data) ? data : (data.candles ?? data.data ?? []);
+
+  return raw
+    .filter((bar: any) => bar && (bar.close !== undefined || bar.value !== undefined))
+    .map((bar: any) => ({
+      time:  typeof bar.time === 'string' ? Math.floor(new Date(bar.time).getTime() / 1000) : Number(bar.time),
+      close: bar.close ?? bar.value ?? 0,
+    }))
+    .filter((bar) => bar.close > 0);
+}
+
 // Preserve all previous workspace interfaces untouched
 export async function getFundamentals(symbol: string): Promise<FundamentalData> {
   const response = await fetch(`http://localhost:3000/api/fundamentals/${symbol}`);

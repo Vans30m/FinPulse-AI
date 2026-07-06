@@ -5,7 +5,6 @@ import PortfolioAllocationChart from "./PortfolioAllocationChart";
 import PortfolioSummarySection, { type PortfolioSummaryMetric } from "./PortfolioSummarySection";
 import WatchlistSnapshotSection from "./WatchlistSnapshotSection";
 import UpcomingEventsSection from "./UpcomingEventsSection";
-import AIPortfolioAdvisorSection from "./AIPortfolioAdvisorSection";
 import PortfolioPerformanceChart from "./PortfolioPerformanceChart";
 import { useChart } from "../../../context/ChartContext";
 import toast from 'react-hot-toast';
@@ -108,7 +107,7 @@ export default function PortfolioDashboard() {
   const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
   const [watchlistItems, setWatchlistItems] = useState<any[]>([]);
   const [advisorData, setAdvisorData] = useState<any>(null);
-  const [performanceData, setPerformanceData] = useState<{ month: string; value: number }[]>([]);
+  const [performanceData, setPerformanceData] = useState<{ month: string; value: number; invested: number; profit: number }[]>([]);
   const [liveQuotes, setLiveQuotes] = useState<Record<string, { price: number; change: number }>>({});
 
   // Paper Trading Sandbox States
@@ -271,7 +270,9 @@ export default function PortfolioDashboard() {
             const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIndex];
             return {
               month: `${monthName} '${year}`,
-              value: pv.value
+              value: pv.value,
+              invested: pv.invested || 0,
+              profit: pv.profit || 0
             };
           });
           setPerformanceData(mapped);
@@ -1006,6 +1007,7 @@ export default function PortfolioDashboard() {
       {/* 1. Performance Chart (Full Page Width) */}
       <PortfolioPerformanceChart
         data={performanceData}
+        currencySymbol={displayCurrency}
       />
 
       {/* Market Tab Selector at Dashboard Level */}
@@ -1161,16 +1163,7 @@ export default function PortfolioDashboard() {
 
         <UpcomingEventsSection />
 
-        {advisorData ? (
-          <AIPortfolioAdvisorSection
-            advisor={advisorData}
-          />
-        ) : (
-          <div className="glass-panel p-6 flex flex-col items-center justify-center min-h-[150px]">
-            <Loader2 className="w-6.5 h-6.5 animate-spin text-cyan-400" />
-            <p className="text-xs text-slate-400 mt-2 font-mono">Synchronizing advisor insights...</p>
-          </div>
-        )}
+
 
       <div className="glass-panel p-6 overflow-hidden shadow-lg transition-all duration-300 relative group">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] via-transparent to-blue-500/[0.04] pointer-events-none" />
