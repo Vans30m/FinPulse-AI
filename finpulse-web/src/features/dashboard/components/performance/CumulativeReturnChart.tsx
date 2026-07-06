@@ -109,7 +109,7 @@ export default function CumulativeReturnChart({
         time: d.time,
         value: d.portfolioReturn,
       }));
-      portSeries.setData(portData);
+      portSeries.setData(portData as any);
       portSeriesRef.current = portSeries;
     }
 
@@ -128,7 +128,7 @@ export default function CumulativeReturnChart({
         time: d.time,
         value: d.benchmarkReturn,
       }));
-      benchSeries.setData(benchData);
+      benchSeries.setData(benchData as any);
       benchSeriesRef.current = benchSeries;
     }
 

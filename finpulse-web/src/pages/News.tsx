@@ -214,7 +214,7 @@ export default function News() {
                   </div>
                 </div>
                 <button
-                  onClick={() => openChart({ symbol: idx.symbol, name: idx.name, exchange: 'INDEX', type: 'INDEX' })}
+                  onClick={() => openChart({ symbol: idx.symbol, yahooSymbol: idx.symbol, name: idx.name, exchange: 'INDEX', type: 'INDEX' })}
                   className="p-1.5 rounded-xl bg-slate-100 hover:bg-blue-600 dark:bg-white/5 dark:hover:bg-cyan-500 hover:text-white dark:hover:text-night-950 text-slate-450 dark:text-slate-400 transition-all duration-200 shadow-sm opacity-60 group-hover/index:opacity-100 shrink-0"
                   title={`Open ${idx.name} Chart`}
                 >

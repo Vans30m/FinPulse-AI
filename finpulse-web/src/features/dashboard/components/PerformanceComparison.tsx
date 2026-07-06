@@ -369,7 +369,7 @@ export default function PerformanceComparison() {
             <AlertCircle className="h-8 w-8 text-rose-500" />
             <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">Unable to load benchmark.</p>
             <button
-              onClick={fetchBenchmarkComparison}
+              onClick={() => fetchBenchmarkComparison()}
               className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
             >
               Retry

@@ -1303,18 +1303,18 @@ export default function StockScreener() {
                   <div className="flex justify-between"><span>10 Years:</span><span className="font-mono text-slate-450">%</span></div>
                   <div className="flex justify-between"><span>5 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.sales.y5}</span></div>
                   <div className="flex justify-between"><span>3 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.sales.y3}</span></div>
-                  <div className="flex justify-between"><span>TTM:</span><span className={`font-mono ${pnlResults.growth.sales.ttm.startsWith('-') ? 'text-rose-500' : 'text-emerald-500'}`}>{pnlResults.growth.sales.ttm}</span></div>
+                  <div className="flex justify-between"><span>TTM:</span><span className={`font-mono ${(pnlResults.growth.sales.ttm || '').startsWith('-') ? 'text-rose-500' : 'text-emerald-500'}`}>{pnlResults.growth.sales.ttm}</span></div>
                 </div>
               </div>
 
               {/* Box 2: Compounded Profit Growth */}
               <div className="bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] p-4 rounded-2xl space-y-2">
-                <h4 className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">Compounded Profit Growth</h4>
+                <h4 className="text-[10px] font-black text-slate-455 dark:text-slate-500 uppercase tracking-widest">Compounded Profit Growth</h4>
                 <div className="space-y-1.5 text-xs font-semibold text-slate-700 dark:text-slate-350">
                   <div className="flex justify-between"><span>10 Years:</span><span className="font-mono text-slate-450">%</span></div>
                   <div className="flex justify-between"><span>5 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.profit.y5}</span></div>
                   <div className="flex justify-between"><span>3 Years:</span><span className="font-mono text-slate-800 dark:text-white">{pnlResults.growth.profit.y3}</span></div>
-                  <div className="flex justify-between"><span>TTM:</span><span className={`font-mono ${pnlResults.growth.profit.ttm.startsWith('-') ? 'text-rose-500' : 'text-emerald-500'}`}>{pnlResults.growth.profit.ttm}</span></div>
+                  <div className="flex justify-between"><span>TTM:</span><span className={`font-mono ${(pnlResults.growth.profit.ttm || '').startsWith('-') ? 'text-rose-500' : 'text-emerald-500'}`}>{pnlResults.growth.profit.ttm}</span></div>
                 </div>
               </div>
 

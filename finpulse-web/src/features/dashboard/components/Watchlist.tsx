@@ -434,7 +434,7 @@ export default function Watchlist() {
                           <div>
                             <h3 className="font-extrabold text-base text-slate-800 dark:text-white flex items-center gap-1.5">
                               {item.symbol}
-                              {item.pinned && <Pin className="h-3 w-3 text-blue-500 fill-blue-500" title="Pinned item" />}
+                              {item.pinned && <span title="Pinned item"><Pin className="h-3 w-3 text-blue-500 fill-blue-500" /></span>}
                             </h3>
                             <p className="text-xs text-slate-400 truncate max-w-[140px]">{item.name || "Stock Asset"}</p>
                           </div>

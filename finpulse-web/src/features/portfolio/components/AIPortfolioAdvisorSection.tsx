@@ -140,7 +140,7 @@ function RecommendationProgress({ label, value, tone }: { label: string; value: 
 }
 
 function AIPortfolioAdvisorSection({ advisor }: Props) {
-  const [activeModal, setActiveModal] = useState<"rebalance" | "report" | null>(null);
+  const [activeModal, setActiveModal] = useState<"rebalance" | "report" | "optimize" | "risk" | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   
   // AI Performance/Analysis integration state
