@@ -40,9 +40,9 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         const userInfo = await userInfoResponse.json();
         if (userInfo.email) {
           setEmail(userInfo.email);
-          
+
           // Verify/Register user in PostgreSQL backend via Neon
-          const backendRes = await fetch('${API_BASE_URL}/api/auth/google-login', {
+          const backendRes = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -181,7 +181,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('${API_BASE_URL}/api/auth/forgot-pin', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/forgot-pin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -217,7 +217,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
     setLoading(true);
     try {
-      const res = await fetch('${API_BASE_URL}/api/auth/reset-pin-with-otp', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/reset-pin-with-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: resetOtp, newPin })
@@ -250,7 +250,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
     setLoading(true);
     try {
-      const res = await fetch('${API_BASE_URL}/api/auth/update-profile', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/update-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: profileUserId, name, bio })
@@ -298,7 +298,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       setLoading(true);
       try {
         if (step === 'set-pin') {
-          const res = await fetch('${API_BASE_URL}/api/auth/set-pin', {
+          const res = await fetch(`${API_BASE_URL}/api/auth/set-pin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, pin: val })
@@ -317,7 +317,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             setPin('');
           }
         } else if (step === 'enter-pin') {
-          const res = await fetch('${API_BASE_URL}/api/auth/verify-pin', {
+          const res = await fetch(`${API_BASE_URL}/api/auth/verify-pin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, pin: val })
@@ -345,14 +345,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     }
   };
 
-  
+
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-slate-900/60 dark:bg-night-950/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
       <div className="relative z-10 flex w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
-        
+
         {/* LEFT PANE: Branding */}
         <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-blue-600 dark:bg-cyan-500 p-12 md:flex">
           <div className="absolute inset-0 z-0 bg-grid opacity-20" />
@@ -376,7 +376,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           </button>
 
           <div className="mx-auto flex h-full max-w-sm flex-col justify-center">
-            
+
             {/* STEP 1: EMAIL & OAUTH */}
             {step === 'email' && (
               <div className="animate-in slide-in-from-right-4 fade-in duration-300">
@@ -392,22 +392,20 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                   <button
                     type="button"
                     onClick={() => { setIsRegisterMode(false); setError(''); }}
-                    className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all ${
-                      !isRegisterMode 
-                        ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400' 
+                    className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all ${!isRegisterMode
+                        ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400'
                         : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                    }`}
+                      }`}
                   >
                     Sign In
                   </button>
                   <button
                     type="button"
                     onClick={() => { setIsRegisterMode(true); setError(''); }}
-                    className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all ${
-                      isRegisterMode 
-                        ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400' 
+                    className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all ${isRegisterMode
+                        ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400'
                         : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                    }`}
+                      }`}
                   >
                     Sign Up
                   </button>
@@ -484,10 +482,10 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 </div>
 
                 {/* Google Sign-in */}
-                <button 
+                <button
                   type="button"
                   disabled={loading}
-                  onClick={() => loginWithGoogle()} 
+                  onClick={() => loginWithGoogle()}
                   className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -507,7 +505,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             {/* STEP 3: OTP VERIFICATION */}
             {step === 'otp-verification' && (
               <div className="animate-in slide-in-from-right-4 fade-in duration-300">
-                <button 
+                <button
                   onClick={() => setStep('email')}
                   className="mb-6 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                 >
@@ -565,7 +563,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             {/* STEP 4: RESET PIN WITH OTP */}
             {step === 'reset-pin' && (
               <div className="animate-in slide-in-from-right-4 fade-in duration-300">
-                <button 
+                <button
                   onClick={() => setStep('enter-pin')}
                   className="mb-6 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                 >
@@ -709,8 +707,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             {/* STEP 2: PIN ENTRY / CREATION */}
             {(step === 'set-pin' || step === 'enter-pin') && (
               <div className="animate-in slide-in-from-right-4 fade-in duration-300">
-                
-                <button 
+
+                <button
                   onClick={() => setStep('email')}
                   className="mb-6 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                 >
@@ -725,8 +723,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                   {step === 'set-pin' ? 'Set up a 6-digit PIN' : 'Enter your PIN'}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-10">
-                  {step === 'set-pin' 
-                    ? 'Create a secure PIN to quickly access your account in the future.' 
+                  {step === 'set-pin'
+                    ? 'Create a secure PIN to quickly access your account in the future.'
                     : `Welcome back, ${email}. Enter your PIN to continue.`}
                 </p>
 
@@ -741,18 +739,17 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     onChange={handlePinChange}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-text z-20"
                   />
-                  
+
                   <div className="flex gap-3 justify-between pointer-events-none">
                     {[...Array(6)].map((_, i) => (
-                      <div 
+                      <div
                         key={i}
-                        className={`flex h-14 w-12 items-center justify-center rounded-xl border-2 text-xl font-bold transition-colors ${
-                          pin.length === i 
-                            ? 'border-blue-600 dark:border-cyan-400 text-slate-900 dark:text-white' 
+                        className={`flex h-14 w-12 items-center justify-center rounded-xl border-2 text-xl font-bold transition-colors ${pin.length === i
+                            ? 'border-blue-600 dark:border-cyan-400 text-slate-900 dark:text-white'
                             : pin.length > i
                               ? 'border-slate-800 dark:border-white bg-slate-800 dark:bg-white text-white dark:text-night-900'
                               : 'border-slate-200 dark:border-white/10 text-slate-900 dark:text-white'
-                        }`}
+                          }`}
                       >
                         {pin.length > i ? '•' : ''}
                       </div>

@@ -138,13 +138,13 @@ export interface AIMarketDriversData {
 }
 
 export async function getAIMarketBrief(): Promise<AIMarketBriefData> {
-  const response = await fetch("${API_BASE_URL}/api/ai/market-brief");
+  const response = await fetch(`${API_BASE_URL}/api/ai/market-brief`);
   if (!response.ok) throw new Error("Failed to fetch AI market brief");
   return response.json();
 }
 
 export async function getAIMarketDrivers(): Promise<AIMarketDriversData> {
-  const response = await fetch("${API_BASE_URL}/api/ai/market-drivers");
+  const response = await fetch(`${API_BASE_URL}/api/ai/market-drivers`);
   if (!response.ok) throw new Error("Failed to fetch AI market drivers");
   return response.json();
 }
@@ -157,7 +157,7 @@ export interface AIGlobalMarketPulseData {
 }
 
 export async function getAIGlobalMarketPulse(): Promise<AIGlobalMarketPulseData> {
-  const response = await fetch("${API_BASE_URL}/api/ai/global-market-pulse");
+  const response = await fetch(`${API_BASE_URL}/api/ai/global-market-pulse`);
   if (!response.ok) throw new Error("Failed to fetch AI global market pulse");
   return response.json();
 }
@@ -176,7 +176,7 @@ export interface AIFearGreedData {
 }
 
 export async function getAIFearGreed(): Promise<AIFearGreedData> {
-  const response = await fetch("${API_BASE_URL}/api/ai/fear-greed");
+  const response = await fetch(`${API_BASE_URL}/api/ai/fear-greed`);
   if (!response.ok) throw new Error("Failed to fetch AI fear and greed index");
   return response.json();
 }
@@ -199,7 +199,7 @@ export interface AIPickOfTheDayData {
 }
 
 export async function getAIPickOfTheDay(): Promise<AIPickOfTheDayData> {
-  const response = await fetch("${API_BASE_URL}/api/ai/pick-of-the-day");
+  const response = await fetch(`${API_BASE_URL}/api/ai/pick-of-the-day`);
   if (!response.ok) throw new Error("Failed to fetch AI Pick of the Day");
   return response.json();
 }
@@ -221,18 +221,18 @@ export interface AISectorMomentumData {
 }
 
 export async function getAISectorMomentum(): Promise<AISectorMomentumData> {
-  const response = await fetch("${API_BASE_URL}/api/ai/sector-momentum");
+  const response = await fetch(`${API_BASE_URL}/api/ai/sector-momentum`);
   if (!response.ok) throw new Error("Failed to fetch AI sector momentum");
   return response.json();
 }
 
 export async function getAISentiment() {
-  const response = await fetch("${API_BASE_URL}/api/news-sentiment/sentiment");
+  const response = await fetch(`${API_BASE_URL}/api/news-sentiment/sentiment`);
   return response.json();
 }
 
 export async function getMarketExplanation() {
-  const response = await fetch("${API_BASE_URL}/api/market-explanation");
+  const response = await fetch(`${API_BASE_URL}/api/market-explanation`);
   return response.json();
 }
 
@@ -275,7 +275,7 @@ export async function getAIScore(symbol: string) {
 }
 
 export async function fetchGlobalMarkets() {
-  const response = await fetch("${API_BASE_URL}/api/global-markets");
+  const response = await fetch(`${API_BASE_URL}/api/global-markets`);
   return response.json();
 }
 

@@ -217,16 +217,16 @@ export default function PortfolioDashboard() {
       }
 
       const promises: Promise<any>[] = [
-        fetch('${API_BASE_URL}/api/portfolio/holdings', { headers }),
-        fetch('${API_BASE_URL}/api/portfolio/watchlist', { headers }),
-        fetch('${API_BASE_URL}/api/portfolio/rolling-cagr', { headers })
+        fetch(`${API_BASE_URL}/api/portfolio/holdings`, { headers }),
+        fetch(`${API_BASE_URL}/api/portfolio/watchlist`, { headers }),
+        fetch(`${API_BASE_URL}/api/portfolio/rolling-cagr`, { headers })
       ];
 
       // Fetch advisor dynamically only if not present in session cache
       let advisorPromiseIdx = -1;
       if (!cachedAdvisor) {
         advisorPromiseIdx = promises.length;
-        promises.push(fetch('${API_BASE_URL}/api/ai/portfolio-advisor', { headers }));
+        promises.push(fetch(`${API_BASE_URL}/api/ai/portfolio-advisor`, { headers }));
       }
 
       const responses = await Promise.all(promises);
@@ -318,7 +318,7 @@ export default function PortfolioDashboard() {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
       const userId = storedUser.id;
 
-      const res = await fetch('${API_BASE_URL}/api/portfolio/holdings', {
+      const res = await fetch(`${API_BASE_URL}/api/portfolio/holdings`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

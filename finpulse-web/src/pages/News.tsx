@@ -161,7 +161,7 @@ export default function News() {
   useEffect(() => {
     const fetchIndices = async () => {
       try {
-        const res = await fetch('${API_BASE_URL}/api/market-indices');
+        const res = await fetch(`${API_BASE_URL}/api/market-indices`);
         if (res.ok) {
           const data = await res.json();
           setIndices(data);

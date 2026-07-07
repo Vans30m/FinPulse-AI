@@ -115,7 +115,7 @@ export default function Profile() {
       const userId = storedUser.id;
       if (!userId) return;
 
-      await fetch('${API_BASE_URL}/api/auth/save-preferences', {
+      await fetch(`${API_BASE_URL}/api/auth/save-preferences`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, preferences: updated })
@@ -133,7 +133,7 @@ export default function Profile() {
       const userId = storedUser.id;
       if (!userId) return;
 
-      await fetch('${API_BASE_URL}/api/auth/save-preferences', {
+      await fetch(`${API_BASE_URL}/api/auth/save-preferences`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, notificationSettings: updated })
@@ -167,7 +167,7 @@ export default function Profile() {
         return;
       }
 
-      const res = await fetch('${API_BASE_URL}/api/auth/update-profile', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/update-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

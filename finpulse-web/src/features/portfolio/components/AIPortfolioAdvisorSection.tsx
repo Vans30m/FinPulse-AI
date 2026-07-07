@@ -153,7 +153,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
     const userId = storedUser.id;
     const headers = userId ? { 'X-User-Id': userId } : undefined;
 
-    fetch('${API_BASE_URL}/api/portfolio/analysis', { headers })
+    fetch(`${API_BASE_URL}/api/portfolio/analysis`, { headers })
       .then(res => res.json())
       .then(d => {
         setAnalysisData(d);

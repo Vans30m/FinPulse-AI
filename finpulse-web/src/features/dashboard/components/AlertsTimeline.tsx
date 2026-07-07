@@ -28,8 +28,8 @@ export default function AlertsTimeline({
 
         // Fetch BOTH APIs concurrently for maximum speed
         const [finnhubRes, googleRes] = await Promise.all([
-          fetch('${API_BASE_URL}/api/news').catch(() => null),
-          fetch('${API_BASE_URL}/api/news/google').catch(() => null)
+          fetch(`${API_BASE_URL}/api/news`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/news/google`).catch(() => null)
         ]);
 
         let combinedNews: LiveNewsItem[] = [];

@@ -49,7 +49,7 @@ export default function AiPerformanceCoachSection() {
     const userId = storedUser.id;
     const headers = userId ? { 'X-User-Id': userId } : undefined;
 
-    fetch('${API_BASE_URL}/api/portfolio/analysis', { headers })
+    fetch(`${API_BASE_URL}/api/portfolio/analysis`, { headers })
       .then(res => res.json())
       .then(d => {
         setData(d);
@@ -112,7 +112,7 @@ export default function AiPerformanceCoachSection() {
               const userId = storedUser.id;
               const headers = userId ? { 'X-User-Id': userId } : undefined;
 
-              fetch('${API_BASE_URL}/api/portfolio/analysis', { headers })
+              fetch(`${API_BASE_URL}/api/portfolio/analysis`, { headers })
                 .then(res => res.json())
                 .then(d => {
                   setData(d);

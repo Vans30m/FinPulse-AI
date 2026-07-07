@@ -39,7 +39,7 @@ export default function BenchmarkRadarSection() {
     const userId = storedUser.id;
     const headers = userId ? { 'X-User-Id': userId } : undefined;
 
-    fetch('${API_BASE_URL}/api/portfolio/benchmarks', { headers })
+    fetch(`${API_BASE_URL}/api/portfolio/benchmarks`, { headers })
       .then(res => res.json())
       .then(data => {
         setBenchmarksData(data);

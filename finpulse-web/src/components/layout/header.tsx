@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAppData } from "../../context/AppDataContext";
 import ThemeToggle from '../ui/ThemeToggle';
-import LightLogo from '../../assets/Dark_Logo.png'; 
+import LightLogo from '../../assets/Dark_Logo.png';
 import DarkLogo from '../../assets/Light_Logo.png';
 import { Link, NavLink } from "react-router-dom";
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
@@ -52,7 +52,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     if (!isLoggedIn) return;
     const fetchAlerts = async () => {
       try {
-        const res = await fetch('${API_BASE_URL}/api/alerts');
+        const res = await fetch(`${API_BASE_URL}/api/alerts`);
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
@@ -100,7 +100,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
   }
 
   return (
-    <motion.header 
+    <motion.header
       animate={{
         height: isScrolled ? "56px" : "64px",
         backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0.95)",
@@ -110,19 +110,19 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
       className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-white/[0.06] backdrop-blur-xl dark:!bg-night-950/80 transition-colors duration-300 flex items-center"
     >
       <div className="mx-auto flex w-full max-w-none items-center justify-between px-4 sm:px-8">
-        
+
         {/* Left Column: Logo */}
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-2 group">
-            <img 
-              src={DarkLogo} 
-              alt="FinPulse Logo" 
-              className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 block dark:hidden mix-blend-multiply" 
+            <img
+              src={DarkLogo}
+              alt="FinPulse Logo"
+              className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 block dark:hidden mix-blend-multiply"
             />
-            <img 
-              src={LightLogo} 
-              alt="FinPulse Logo" 
-              className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block mix-blend-screen" 
+            <img
+              src={LightLogo}
+              alt="FinPulse Logo"
+              className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block mix-blend-screen"
             />
             <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white ml-1">
               FinPulse<span className="bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">AI</span>
@@ -133,13 +133,13 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
         {/* Middle Column: Centered Navigation */}
         <div className="hidden md:flex flex-1 justify-center max-w-2xl mx-auto px-4">
           <LayoutGroup id="navbar">
-            <nav 
+            <nav
               className="flex items-center gap-1 relative"
               onMouseLeave={() => setHoveredTab(null)}
             >
               {navItems.map((item) => {
                 const path = item.id === "pulse" ? "/pulse" : `/${item.id.toLowerCase()}`;
-                
+
                 return (
                   <NavLink
                     key={item.id}
@@ -147,10 +147,9 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                     end={item.id === "pulse"}
                     onMouseEnter={() => setHoveredTab(item.id)}
                     className={({ isActive }) =>
-                      `relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-300 z-10 ${
-                        isActive
-                          ? "text-white dark:text-night-950"
-                          : "text-slate-500 hover:text-slate-900 dark:text-slate-450 dark:hover:text-white"
+                      `relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-300 z-10 ${isActive
+                        ? "text-white dark:text-night-950"
+                        : "text-slate-500 hover:text-slate-900 dark:text-slate-450 dark:hover:text-white"
                       }`
                     }
                   >
@@ -185,7 +184,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
 
         <div className="flex items-center gap-3 sm:gap-4">
           {/* Global Search Button */}
-          <button 
+          <button
             onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
             className="hidden sm:flex items-center justify-between w-56 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
           >
@@ -249,19 +248,17 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                         alerts.map((alert) => (
                           <div
                             key={alert.id}
-                            className={`p-2.5 rounded-xl border text-xs transition-all ${
-                              alert.isTriggered
+                            className={`p-2.5 rounded-xl border text-xs transition-all ${alert.isTriggered
                                 ? "bg-rose-500/5 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-800 dark:text-rose-200"
                                 : "bg-slate-50 dark:bg-white/[0.02] border-slate-100 dark:border-white/5 text-slate-700 dark:text-slate-350"
-                            }`}
+                              }`}
                           >
                             <div className="flex justify-between items-start">
                               <span className="font-extrabold tracking-wide uppercase text-slate-900 dark:text-white">{alert.ticker}</span>
-                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
-                                alert.isTriggered
+                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${alert.isTriggered
                                   ? "bg-rose-500 text-white"
                                   : "bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400"
-                              }`}>
+                                }`}>
                                 {alert.isTriggered ? "Triggered" : "Active"}
                               </span>
                             </div>
@@ -285,7 +282,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
 
           {/* Conditional Rendering: Login / Profile Menu */}
           {!isLoggedIn ? (
-            <button 
+            <button
               onClick={onLoginClick}
               className="hidden sm:flex items-center gap-2 rounded-xl bg-blue-600 dark:bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all duration-350 hover:bg-blue-700 dark:hover:bg-cyan-300 hover:-translate-y-0.5"
             >

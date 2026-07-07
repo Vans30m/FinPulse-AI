@@ -76,7 +76,7 @@ function UpcomingEventsSection() {
       if (userId) headers['X-User-Id'] = userId;
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('${API_BASE_URL}/api/portfolio/events', { headers });
+      const res = await fetch(`${API_BASE_URL}/api/portfolio/events`, { headers });
       if (res.ok) {
         const data = await res.json();
         setEvents(data || []);
