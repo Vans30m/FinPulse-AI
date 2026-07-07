@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Search, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Loader2 } from 'lucide-react';
 import { getFundamentals } from '../../../services/marketService';
 import API_BASE_URL from "../../../config/api";
 

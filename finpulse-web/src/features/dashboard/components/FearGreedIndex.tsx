@@ -134,10 +134,7 @@ export default function FearGreedIndex() {
     return "Extreme Greed";
   };
 
-  // Coordinate computation for pointer dot on arc
-  const angleRad = Math.PI - (Math.PI * (animatedScore / 100));
-  const indicatorX = 50 + 40 * Math.cos(angleRad);
-  const indicatorY = 50 - 40 * Math.sin(angleRad);
+
 
   const pathScoreValue = Math.min(100, animatedScore + 1.5);
   const pathAngleRad = Math.PI - (Math.PI * (pathScoreValue / 100));

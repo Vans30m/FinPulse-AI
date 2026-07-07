@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowUpRight, ArrowDownRight, FileText } from 'lucide-react';
 
 export interface VirtualTransaction {

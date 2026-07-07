@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Plus, Trash2,
-  Download, MessageSquare, Star, Pin, Info, Search, Heart, Sparkles, Filter, X
+  Download, Star, Pin, Info, Search, Sparkles, X
 } from "lucide-react";
 import {
   useWatchlists, useCreateWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
@@ -32,11 +32,11 @@ export default function Watchlist() {
   const [selectedAssetInfo, setSelectedAssetInfo] = useState<any>(null);
 
   // Search and filter states (fully functional now!)
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [showOnlyPinned, setShowOnlyPinned] = useState(false);
-  const [sortField, setSortField] = useState<string>("position");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [searchQuery] = useState("");
+  const [showOnlyFavorites] = useState(false);
+  const [showOnlyPinned] = useState(false);
+  const [sortField] = useState<string>("position");
+  const [sortDirection] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     if (watchlists.length > 0) {

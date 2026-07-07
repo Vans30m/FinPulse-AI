@@ -8,12 +8,10 @@ import {
   TrendingUp,
   Briefcase,
   ExternalLink,
-  Loader2,
   Compass,
   Layers,
   ShieldCheck,
   Coins,
-  Star,
   Calendar,
   ChevronDown,
   Check,
@@ -108,7 +106,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tabContentRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
-  const [timeframe, setTimeframe] = useState("1Y");
+  const [timeframe] = useState("1Y");
   const [fundamentals, setFundamentals] = useState<Fundamentals | null>(null);
   const [financialHealth, setFinancialHealth] = useState<FinancialHealth | null>(null);
   const [technicals, setTechnicals] = useState<Technicals | null>(null);
@@ -116,9 +114,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const [news, setNews] = useState<any[]>([]);
   const [newsSentiment, setNewsSentiment] = useState<NewsSentiment | null>(null);
   const [, setAiScoreMetrics] = useState<AIScore | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [eventsData, setEventsData] = useState<any[]>([]);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [hasComparison, setHasComparison] = useState(false);
   const [meta, setMeta] = useState<any>(null);
 
@@ -162,7 +159,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const symbol = useMemo(() => asset?.yahooSymbol || asset?.symbol || "", [asset]);
   const currentAssetPrice = useMemo(() => asset?.price || analyst?.currentPrice || 4078.70, [asset, analyst]);
 
-  const { assetType, isStock } = useMemo(() => {
+  const { isStock } = useMemo(() => {
     const type = symbol.includes("-USD")
       ? "CryptoCurrency"
       : symbol.includes("=X")

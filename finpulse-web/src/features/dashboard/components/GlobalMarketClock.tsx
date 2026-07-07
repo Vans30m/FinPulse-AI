@@ -1,5 +1,5 @@
 import { useEffect, useState, memo } from "react";
-import { Clock, Globe, ShieldAlert, CheckCircle } from "lucide-react";
+import { Clock, Globe, CheckCircle } from "lucide-react";
 
 interface MarketClock {
   name: string;
@@ -19,7 +19,7 @@ const MARKETS_CONFIG: MarketClock[] = [
 ];
 
 export const GlobalMarketClock = memo(function GlobalMarketClock() {
-  const [ticks, setTicks] = useState<number>(0);
+  const [, setTicks] = useState<number>(0);
 
   useEffect(() => {
     const timer = setInterval(() => {

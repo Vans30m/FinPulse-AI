@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Bell, AlertTriangle, CheckCircle2, Plus, X, Target, Loader2, Play, Pause, Trash2, Search, ArrowUpDown, Clock } from 'lucide-react';
+import { Bell, CheckCircle2, Plus, X, Target, Loader2, Play, Pause, Trash2, Search, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAlerts, useCreateAlert, useDeleteAlert, useUpdateAlert, useToggleAlertStatus, useAlertHistory } from '../../../hooks/useDashboard';
+import { useAlerts, useCreateAlert, useDeleteAlert, useToggleAlertStatus, useAlertHistory } from '../../../hooks/useDashboard';
 import API_BASE_URL from "../../../config/api";
 
 export default function MyAlertsDashboard() {
   const { data: myAlerts = [], isLoading } = useAlerts();
   const { data: history = [] } = useAlertHistory();
   const createAlertMutation = useCreateAlert();
-  const updateAlertMutation = useUpdateAlert();
   const deleteAlertMutation = useDeleteAlert();
   const toggleStatusMutation = useToggleAlertStatus();
 
@@ -20,7 +19,7 @@ export default function MyAlertsDashboard() {
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [newTarget, setNewTarget] = useState('');
   const [newDirection, setNewDirection] = useState('ABOVE');
-  const [newType, setNewType] = useState('PRICE');
+  const [newType] = useState('PRICE');
   const [newNotes, setNewNotes] = useState('');
   const [newRepeat, setNewRepeat] = useState(false);
 
