@@ -114,9 +114,9 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     >
       <div className="mx-auto flex w-full max-w-none items-center justify-between px-4 sm:px-8">
 
-        {/* Left Column: Logo + Search Bar */}
+        {/* Left Column: Logo + brand name (desktop) / search bar (mobile) */}
         <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center group shrink-0">
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
             <img
               src={DarkLogo}
               alt="FinPulse Logo"
@@ -127,19 +127,22 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
               alt="FinPulse Logo"
               className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block mix-blend-screen"
             />
+            {/* Brand name: desktop only */}
+            <span className="hidden md:inline font-black text-lg tracking-tight text-slate-900 dark:text-white ml-1">
+              FinPulse<span className="bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">AI</span>
+            </span>
           </Link>
 
-          {/* Search Bar — always full, replaces brand name */}
+          {/* Search Bar: mobile only (replaces brand name) */}
           <button
             onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-            className="flex items-center justify-between gap-2 w-44 sm:w-56 md:w-72 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.03] px-3 py-2 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
+            className="md:hidden flex items-center justify-between gap-2 w-44 sm:w-56 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.03] px-3 py-2 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
             aria-label="Search (Ctrl K)"
           >
             <div className="flex items-center gap-2 min-w-0">
               <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
               <span className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate">Search</span>
             </div>
-            <kbd className="shrink-0 hidden sm:inline-flex rounded-md bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-400 dark:text-slate-500">Ctrl K</kbd>
           </button>
         </div>
 
@@ -196,6 +199,18 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Global Search Button: desktop only */}
+          <button
+            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+            className="hidden md:flex items-center justify-between w-56 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
+          >
+            <div className="flex items-center gap-2">
+              <Search className="h-3.5 w-3.5" />
+              <span>Search</span>
+            </div>
+            <kbd className="rounded bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-500 dark:text-slate-400">Ctrl K</kbd>
+          </button>
+
           <ThemeToggle />
 
           {/* Notification Bell */}
