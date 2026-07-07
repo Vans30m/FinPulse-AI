@@ -218,9 +218,13 @@ export default function PortfolioDashboard() {
           console.warn("Failed parsing cached portfolioAdvisor:", e);
         }
       }
+      const virtualTickers = virtualHoldings.map(h => h.ticker).join(',');
+      const holdingsUrl = virtualTickers 
+        ? `${API_BASE_URL}/api/portfolio/holdings?virtualTickers=${encodeURIComponent(virtualTickers)}`
+        : `${API_BASE_URL}/api/portfolio/holdings`;
 
       const promises: Promise<any>[] = [
-        fetch(`${API_BASE_URL}/api/portfolio/holdings`, { headers }),
+        fetch(holdingsUrl, { headers }),
         fetch(`${API_BASE_URL}/api/portfolio/watchlist`, { headers }),
         fetch(`${API_BASE_URL}/api/portfolio/rolling-cagr`, { headers })
       ];
