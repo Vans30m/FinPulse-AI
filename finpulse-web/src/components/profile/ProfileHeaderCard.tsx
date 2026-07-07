@@ -40,8 +40,8 @@ export default function ProfileHeaderCard({
 
       <div className="px-6 pb-6 relative z-10">
         {/* Avatar Area */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between -mt-16 mb-6 gap-4">
-          <div className="flex items-end gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between -mt-16 mb-6 gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
             <div className="relative">
               <div className="h-28 w-28 rounded-3xl bg-slate-100 dark:bg-night-850 p-1 border-4 border-white dark:border-night-900 shadow-xl overflow-hidden flex items-center justify-center">
                 <div className="h-full w-full rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-3xl font-black">
@@ -60,28 +60,28 @@ export default function ProfileHeaderCard({
               <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
                 {name}
               </h1>
-              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-1">
-                <Mail className="h-3 w-3" /> {email}
+              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center justify-center sm:justify-start gap-1 mt-1">
+                <Mail className="h-3 w-3 shrink-0" /> {email}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 w-full md:w-auto">
             <button
               onClick={onEditProfile}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
             >
               Edit Profile
             </button>
             <button
               onClick={onChangePassword}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
             >
               Change Password
             </button>
             <button
               onClick={onLogout}
-              className="px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black transition-colors"
+              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black transition-colors"
             >
               Logout
             </button>

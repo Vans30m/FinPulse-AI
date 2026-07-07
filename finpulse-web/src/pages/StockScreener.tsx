@@ -1264,47 +1264,49 @@ Slide Outline:
           </div>
 
           {/* Tab Selection Navigation Bar */}
-          <div className="flex flex-nowrap items-center gap-1 bg-slate-100/70 dark:bg-white/[0.02] backdrop-blur-md p-1 rounded-full border border-slate-200/50 dark:border-white/5 shadow-inner mt-2 w-full overflow-hidden">
-            {[
-              { id: 'screener-chart', label: 'Chart', tab: 'chart' },
-              { id: 'screener-analysis', label: 'Analysis', tab: 'analysis' },
-              { id: 'screener-peers', label: 'Peers', tab: 'peers' },
-              { id: 'screener-quarters', label: 'Quarters', tab: 'quarters' },
-              { id: 'screener-pnl', label: 'P&L', tab: 'pnl' },
-              { id: 'screener-balance-sheet', label: 'Balance Sheet', tab: 'balance-sheet' },
-              { id: 'screener-cash-flow', label: 'Cash Flow', tab: 'cash-flow' },
-              { id: 'screener-ratios', label: 'Ratios', tab: 'ratios' },
-              { id: 'screener-insights', label: 'Insights', tab: 'insights' },
-              { id: 'screener-shareholding', label: 'Holdings', tab: 'shareholding' },
-              { id: 'screener-documents', label: 'Docs', tab: 'documents' },
-            ].map((tab) => (
-              <button
-                key={tab.tab}
-                onClick={() => {
-                  setActiveTab(tab.tab as any);
-                  if (['peers', 'quarters', 'pnl', 'balance-sheet', 'cash-flow', 'ratios', 'insights'].includes(tab.tab)) {
-                    setWorkbookTab(tab.tab as any);
-                    const el = document.getElementById('screener-workbook');
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          <div className="flex items-center gap-1 bg-slate-100/70 dark:bg-white/[0.02] backdrop-blur-md p-1 rounded-full border border-slate-200/50 dark:border-white/5 shadow-inner mt-2 w-full overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-1 min-w-max">
+              {[
+                { id: 'screener-chart', label: 'Chart', tab: 'chart' },
+                { id: 'screener-analysis', label: 'Analysis', tab: 'analysis' },
+                { id: 'screener-peers', label: 'Peers', tab: 'peers' },
+                { id: 'screener-quarters', label: 'Quarters', tab: 'quarters' },
+                { id: 'screener-pnl', label: 'P&L', tab: 'pnl' },
+                { id: 'screener-balance-sheet', label: 'Balance Sheet', tab: 'balance-sheet' },
+                { id: 'screener-cash-flow', label: 'Cash Flow', tab: 'cash-flow' },
+                { id: 'screener-ratios', label: 'Ratios', tab: 'ratios' },
+                { id: 'screener-insights', label: 'Insights', tab: 'insights' },
+                { id: 'screener-shareholding', label: 'Holdings', tab: 'shareholding' },
+                { id: 'screener-documents', label: 'Docs', tab: 'documents' },
+              ].map((tab) => (
+                <button
+                  key={tab.tab}
+                  onClick={() => {
+                    setActiveTab(tab.tab as any);
+                    if (['peers', 'quarters', 'pnl', 'balance-sheet', 'cash-flow', 'ratios', 'insights'].includes(tab.tab)) {
+                      setWorkbookTab(tab.tab as any);
+                      const el = document.getElementById('screener-workbook');
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    } else {
+                      const el = document.getElementById(tab.id);
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
                     }
-                  } else {
-                    const el = document.getElementById(tab.id);
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }
-                }}
-                className={`flex-1 min-w-0 text-center px-1 py-1.5 text-[8px] xl:text-[10px] font-black uppercase tracking-wider rounded-full transition-all duration-300 truncate ${
-                  activeTab === tab.tab
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 dark:from-cyan-400 dark:to-teal-400 dark:text-slate-950 dark:shadow-cyan-400/20 transform scale-105'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-white/5'
-                }`}
-                title={tab.label}
-              >
-                {tab.label}
-              </button>
-            ))}
+                  }}
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-full transition-all duration-300 whitespace-nowrap ${
+                    activeTab === tab.tab
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 dark:from-cyan-400 dark:to-teal-400 dark:text-slate-950 dark:shadow-cyan-400/20 transform scale-105'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-white/5'
+                  }`}
+                  title={tab.label}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Company Title Info Section */}

@@ -6,6 +6,8 @@ import {
   ChevronDown,
   LogOut,
   Bell,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useAppData } from "../../context/AppDataContext";
 import ThemeToggle from '../ui/ThemeToggle';
@@ -42,6 +44,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { chartOpen } = useChart();
 
   const [alerts, setAlerts] = useState<UserAlert[]>([]);
@@ -111,9 +114,9 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     >
       <div className="mx-auto flex w-full max-w-none items-center justify-between px-4 sm:px-8">
 
-        {/* Left Column: Logo */}
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center gap-2 group">
+        {/* Left Column: Logo + Search Bar */}
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center group shrink-0">
             <img
               src={DarkLogo}
               alt="FinPulse Logo"
@@ -124,10 +127,20 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
               alt="FinPulse Logo"
               className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block mix-blend-screen"
             />
-            <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white ml-1">
-              FinPulse<span className="bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">AI</span>
-            </span>
           </Link>
+
+          {/* Search Bar — always full, replaces brand name */}
+          <button
+            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+            className="flex items-center justify-between gap-2 w-44 sm:w-56 md:w-72 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.03] px-3 py-2 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
+            aria-label="Search (Ctrl K)"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+              <span className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate">Search</span>
+            </div>
+            <kbd className="shrink-0 hidden sm:inline-flex rounded-md bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-400 dark:text-slate-500">Ctrl K</kbd>
+          </button>
         </div>
 
         {/* Middle Column: Centered Navigation */}
@@ -182,19 +195,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
           </LayoutGroup>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-4">
-          {/* Global Search Button */}
-          <button
-            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-            className="hidden sm:flex items-center justify-between w-56 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner"
-          >
-            <div className="flex items-center gap-2">
-              <Search className="h-3.5 w-3.5" />
-              <span>Search</span>
-            </div>
-            <kbd className="rounded bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-500 dark:text-slate-400">Ctrl K</kbd>
-          </button>
-
+        <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
 
           {/* Notification Bell */}
@@ -249,15 +250,15 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                           <div
                             key={alert.id}
                             className={`p-2.5 rounded-xl border text-xs transition-all ${alert.isTriggered
-                                ? "bg-rose-500/5 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-800 dark:text-rose-200"
-                                : "bg-slate-50 dark:bg-white/[0.02] border-slate-100 dark:border-white/5 text-slate-700 dark:text-slate-350"
+                              ? "bg-rose-500/5 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-800 dark:text-rose-200"
+                              : "bg-slate-50 dark:bg-white/[0.02] border-slate-100 dark:border-white/5 text-slate-700 dark:text-slate-350"
                               }`}
                           >
                             <div className="flex justify-between items-start">
                               <span className="font-extrabold tracking-wide uppercase text-slate-900 dark:text-white">{alert.ticker}</span>
                               <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${alert.isTriggered
-                                  ? "bg-rose-500 text-white"
-                                  : "bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400"
+                                ? "bg-rose-500 text-white"
+                                : "bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400"
                                 }`}>
                                 {alert.isTriggered ? "Triggered" : "Active"}
                               </span>
@@ -284,29 +285,29 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
           {!isLoggedIn ? (
             <button
               onClick={onLoginClick}
-              className="hidden sm:flex items-center gap-2 rounded-xl bg-blue-600 dark:bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all duration-350 hover:bg-blue-700 dark:hover:bg-cyan-300 hover:-translate-y-0.5"
+              className="flex items-center gap-2 rounded-xl bg-blue-600 dark:bg-cyan-400 px-3.5 py-2 text-xs font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all duration-350 hover:bg-blue-700 dark:hover:bg-cyan-300 hover:-translate-y-0.5"
             >
               <LogIn className="h-3.5 w-3.5 stroke-[2.5]" />
-              Sign In
+              <span className="hidden xs:inline">Sign In</span>
             </button>
           ) : (
-            <div className="relative hidden sm:block">
+            <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all"
+                className="flex items-center gap-2 rounded-xl p-1 sm:px-2.5 sm:py-1.5 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all"
               >
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md text-xs font-black">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md text-xs font-black shrink-0">
                   {user?.name ? user.name.slice(0, 2).toUpperCase() : 'US'}
                 </div>
 
-                <div className="text-left">
+                <div className="text-left hidden sm:block">
                   <p className="text-xs font-black text-slate-900 dark:text-white leading-tight">
                     {user?.name || 'User'}
                   </p>
                   <p className="text-[10px] font-extrabold text-slate-450 dark:text-slate-500 leading-none">Account</p>
                 </div>
 
-                <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-300 ${showProfileMenu ? "rotate-180" : ""}`} />
+                <ChevronDown className="h-3.5 w-3.5 text-slate-400 hidden sm:block" />
               </button>
 
               {/* Jitter-Free Animated Profile Dropdown */}
@@ -322,37 +323,19 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                     <Link
                       to="/profile"
                       onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-655 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
                     >
                       <UserCircle className="h-4 w-4" />
                       <span>My Profile</span>
                     </Link>
 
                     <Link
-                      to="/profile/edit"
+                      to="/profile"
                       onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-655 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
                     >
                       <UserCircle className="h-4 w-4" />
                       <span>Edit Profile</span>
-                    </Link>
-
-                    <Link
-                      to="/profile/preferences"
-                      onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
-                    >
-                      <UserCircle className="h-4 w-4" />
-                      <span>Preferences</span>
-                    </Link>
-
-                    <Link
-                      to="/profile/security"
-                      onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
-                    >
-                      <UserCircle className="h-4 w-4" />
-                      <span>Security Settings</span>
                     </Link>
 
                     <button
@@ -370,8 +353,50 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
               </AnimatePresence>
             </div>
           )}
+
+          {/* Hamburger Menu Toggle Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="flex md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-450 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all"
+            aria-label="Toggle navigation menu"
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Drawer Slide-out Navigation */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="absolute top-full left-0 right-0 z-30 md:hidden bg-white/95 dark:bg-night-950/95 backdrop-blur-lg border-b border-slate-200 dark:border-white/10 px-6 py-4 flex flex-col gap-2 shadow-xl"
+          >
+            {navItems.map((item) => {
+              const path = item.id === "pulse" ? "/pulse" : `/${item.id.toLowerCase()}`;
+              return (
+                <NavLink
+                  key={item.id}
+                  to={path}
+                  end={item.id === "pulse"}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `px-4 py-3 rounded-xl text-sm font-bold transition-all ${isActive
+                      ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/10"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-white hover:bg-slate-150/50 dark:hover:bg-white/5"
+                    }`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }

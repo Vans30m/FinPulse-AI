@@ -51,7 +51,7 @@ export default function InvestmentCalculator() {
 
   return (
     <div className="glass-panel p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <Calculator className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
@@ -63,10 +63,10 @@ export default function InvestmentCalculator() {
         </div>
         
         {/* Toggle SIP / Lumpsum */}
-        <div className="flex rounded-lg bg-white dark:bg-night-800/80 p-1 border border-slate-200 dark:border-white/10">
+        <div className="flex rounded-lg bg-white dark:bg-night-800/80 p-1 border border-slate-200 dark:border-white/10 w-full sm:w-auto">
           <button
             onClick={() => setIsSip(true)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+            className={`flex-1 sm:flex-none text-center px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
               isSip ? 'bg-blue-50 text-blue-700 dark:bg-cyan-400/20 dark:text-cyan-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -74,7 +74,7 @@ export default function InvestmentCalculator() {
           </button>
           <button
             onClick={() => setIsSip(false)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+            className={`flex-1 sm:flex-none text-center px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
               !isSip ? 'bg-blue-50 text-blue-700 dark:bg-cyan-400/20 dark:text-cyan-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >

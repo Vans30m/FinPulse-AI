@@ -1,7 +1,6 @@
-import { Newspaper, Calendar, Loader2, TrendingUp } from "lucide-react";
+import { Newspaper, Calendar, Loader2 } from "lucide-react";
 import { useEffect, useState, memo, useMemo } from "react";
 import AlertsTimeline from "../features/dashboard/components/AlertsTimeline";
-import { useChart } from "../context/ChartContext";
 import API_BASE_URL from "../config/api";
 
 interface EconomicEvent {
@@ -143,86 +142,27 @@ function CustomEconomicCalendar() {
 
 const MemoizedCustomEconomicCalendar = memo(CustomEconomicCalendar);
 
-interface MarketIndex {
-  symbol: string;
-  name: string;
-  price: string;
-  changePercent: number;
-}
-
 export default function News() {
-  const { openChart } = useChart();
-  const [indices, setIndices] = useState<MarketIndex[]>([
-    { symbol: '^GSPC', name: 'S&P 500', price: '5,432.10', changePercent: 0.45 },
-    { symbol: '^IXIC', name: 'NASDAQ', price: '18,245.50', changePercent: 0.80 },
-    { symbol: '^DJI', name: 'DOW JONES', price: '39,120.00', changePercent: -0.12 }
-  ]);
-
-  useEffect(() => {
-    const fetchIndices = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/market-indices`);
-        if (res.ok) {
-          const data = await res.json();
-          setIndices(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch indices:", err);
-      }
-    };
-    fetchIndices();
-    const interval = setInterval(fetchIndices, 30000); // refresh every 30s
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="space-y-6">
 
-      {/* Real-time Header Row (Without Box) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-6 border-b border-slate-200/50 dark:border-white/5 pt-2 shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10 shrink-0 hidden sm:block">
-            <Newspaper className="h-8 w-8" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400 font-mono text-[10px] font-bold uppercase tracking-[0.3em]">
-              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              Live Intel Feed
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
-              Market Intelligence
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1.5 max-w-xl">
-              Real-time global coverage aggregated from premium networks and macroeconomic schedules.
-            </p>
-          </div>
+      {/* Real-time Header Row */}
+      <div className="flex items-center gap-4 pb-6 border-b border-slate-200/50 dark:border-white/5 pt-2">
+        <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10 shrink-0 hidden sm:block">
+          <Newspaper className="h-8 w-8" />
         </div>
-
-        {/* Quick Index Tracker Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
-          {indices.map((idx) => {
-            const isPositive = idx.changePercent >= 0;
-            return (
-              <div key={idx.symbol} className="glass-panel px-4 py-3 rounded-2xl border border-slate-200/50 dark:border-white/5 bg-white/60 dark:bg-white/[0.02] backdrop-blur-sm min-w-[155px] shadow-sm flex items-center justify-between gap-3 group/index hover:border-blue-500/30 dark:hover:border-cyan-500/30 transition-all duration-300">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{idx.name}</span>
-                  <div className="flex items-baseline gap-1.5 mt-1">
-                    <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">{idx.price}</span>
-                    <span className={`text-[10px] font-bold ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-450'}`}>
-                      {isPositive ? '+' : ''}{idx.changePercent.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => openChart({ symbol: idx.symbol, yahooSymbol: idx.symbol, name: idx.name, exchange: 'INDEX', type: 'INDEX' })}
-                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-blue-600 dark:bg-white/5 dark:hover:bg-cyan-500 hover:text-white dark:hover:text-night-950 text-slate-450 dark:text-slate-400 transition-all duration-200 shadow-sm opacity-60 group-hover/index:opacity-100 shrink-0"
-                  title={`Open ${idx.name} Chart`}
-                >
-                  <TrendingUp className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            );
-          })}
+        <div>
+          <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400 font-mono text-[10px] font-bold uppercase tracking-[0.3em]">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            Live Intel Feed
+          </div>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
+            Market Intelligence
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1.5 max-w-xl">
+            Real-time global coverage aggregated from premium networks and macroeconomic schedules.
+          </p>
         </div>
       </div>
 

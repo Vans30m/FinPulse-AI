@@ -552,12 +552,12 @@ function UpcomingEventsSection() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 md:p-8 shadow-2xl max-h-[85vh] overflow-y-auto"
+              className="relative w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               {/* Close Button */}
               <button 
                 onClick={() => setSelectedEvent(null)}
-                className="absolute top-5 right-5 p-1 rounded-xl bg-slate-50 dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="absolute top-4 right-4 sm:top-5 sm:right-5 p-1.5 rounded-xl bg-slate-50 dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -567,10 +567,10 @@ function UpcomingEventsSection() {
                 <img 
                   src={selectedEvent.logo} 
                   alt={selectedEvent.symbol}
-                  className="h-12 w-12 rounded-2xl border border-slate-200 dark:border-slate-850 p-1 bg-white object-contain"
+                  className="h-12 w-12 rounded-2xl border border-slate-200 dark:border-slate-850 p-1 bg-white object-contain shrink-0"
                 />
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-snug">{selectedEvent.company}</h3>
+                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-snug">{selectedEvent.company}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="rounded bg-slate-100 dark:bg-white/5 px-2 py-0.5 text-[10px] font-black tracking-wider text-slate-500 dark:text-slate-400 font-mono">{selectedEvent.symbol}</span>
                     <span className="text-[9px] text-slate-450 uppercase">{selectedEvent.exchange} Exchange</span>
@@ -579,26 +579,26 @@ function UpcomingEventsSection() {
               </div>
 
               {/* Modal Grid Info */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3.5 rounded-2xl border border-slate-200/50 dark:border-white/5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5">
                   <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Event Horizon</span>
-                  <span className="text-xs font-black text-slate-900 dark:text-white">{new Date(selectedEvent.eventDate).toLocaleDateString()}</span>
+                  <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white">{new Date(selectedEvent.eventDate).toLocaleDateString()}</span>
                 </div>
-                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3.5 rounded-2xl border border-slate-200/50 dark:border-white/5">
+                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5">
                   <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Importance</span>
-                  <span className={`text-xs font-black uppercase ${
+                  <span className={`text-[11px] sm:text-xs font-black uppercase ${
                     selectedEvent.importance === "High" ? "text-rose-500" : selectedEvent.importance === "Medium" ? "text-amber-500" : "text-emerald-500"
                   }`}>{selectedEvent.importance}</span>
                 </div>
-                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3.5 rounded-2xl border border-slate-200/50 dark:border-white/5">
+                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5">
                   <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">AI Expected Impact</span>
-                  <span className={`text-xs font-black uppercase ${
+                  <span className={`text-[11px] sm:text-xs font-black uppercase ${
                     selectedEvent.expectedImpact === "Bullish" ? "text-emerald-500" : selectedEvent.expectedImpact === "Bearish" ? "text-rose-500" : "text-blue-500 dark:text-cyan-400"
                   }`}>{selectedEvent.expectedImpact}</span>
                 </div>
-                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3.5 rounded-2xl border border-slate-200/50 dark:border-white/5">
+                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5">
                   <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">AI Confidence</span>
-                  <span className="text-xs font-black text-purple-500">{selectedEvent.confidence}%</span>
+                  <span className="text-[11px] sm:text-xs font-black text-purple-500">{selectedEvent.confidence}%</span>
                 </div>
               </div>
 

@@ -139,15 +139,15 @@ export default function MarketExplanation() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           {isPositive ? (
-            <TrendingUp className="h-6 w-6 text-emerald-600 dark:text-emerald-400 animate-bounce-slow" />
+            <TrendingUp className="h-6 w-6 text-emerald-600 dark:text-emerald-400 animate-bounce-slow shrink-0" />
           ) : (
-            <TrendingDown className="h-6 w-6 text-rose-600 dark:text-rose-450 animate-bounce-slow" />
+            <TrendingDown className="h-6 w-6 text-rose-600 dark:text-rose-450 animate-bounce-slow shrink-0" />
           )}
           <div>
-            <h2 className={`text-xl font-bold tracking-tight ${titleTextClass}`}>
+            <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${titleTextClass}`}>
               Where Are Markets Moving?
             </h2>
-            <p className={`text-sm ${descriptionTextClass}`}>
+            <p className={`text-xs sm:text-sm ${descriptionTextClass}`}>
               AI-generated drivers based on market sentiment
             </p>
           </div>
@@ -155,7 +155,7 @@ export default function MarketExplanation() {
 
         <button
           onClick={() => fetchDrivers(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 text-xs font-bold transition-all w-fit self-end sm:self-auto"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 text-xs font-bold transition-all w-fit self-start sm:self-auto"
           title="Force refresh analysis"
         >
           <RotateCcw className="h-3 w-3" />

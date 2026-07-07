@@ -238,26 +238,28 @@ export default function Markets() {
         <MarketHeatmap markets={markets} />
       </div>
 
-      {/* 5. Control Center (Search removed, elements centrally aligned) */}
+      {/* 5. Control Center */}
       <div className="sticky top-0 z-20 -mx-4 flex flex-col gap-4 border-y border-slate-200/60 bg-slate-50/80 px-4 py-4 backdrop-blur-xl dark:border-night-800 dark:bg-night-900/80 md:mx-0 md:flex-row md:items-center md:justify-between md:rounded-2xl md:border">
         {/* Region Filters */}
-        <div className="flex flex-wrap gap-1.5 rounded-xl bg-slate-200/50 p-1 dark:bg-night-800/50 w-full md:w-auto">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={`
-                rounded-lg px-4 py-1.5 text-sm font-semibold transition-all duration-200 flex-1 md:flex-initial text-center
-                ${
-                  activeCategory === category
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-night-700 dark:text-white"
-                    : "text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-night-700/50 dark:hover:text-white"
-                }
-              `}
-            >
-              {category}
-            </button>
-          ))}
+        <div className="overflow-x-auto w-full md:w-auto scrollbar-none">
+          <div className="flex items-center gap-1.5 rounded-xl bg-slate-200/50 p-1 dark:bg-night-800/50 min-w-max">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className={`
+                  rounded-lg px-4 py-1.5 text-sm font-semibold transition-all duration-200 text-center whitespace-nowrap
+                  ${
+                    activeCategory === category
+                      ? "bg-white text-slate-900 shadow-sm dark:bg-night-700 dark:text-white"
+                      : "text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-night-700/50 dark:hover:text-white"
+                  }
+                `}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Sorting Dropdown */}

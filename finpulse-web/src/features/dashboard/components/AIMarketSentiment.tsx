@@ -129,16 +129,16 @@ export default function AIMarketSentiment() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Brain className="h-7 w-7 text-cyan-600 dark:text-cyan-400" />
+          <Brain className="h-7 w-7 text-cyan-600 dark:text-cyan-400 shrink-0" />
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">AI Market Brief</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">AI Market Brief</h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               AI-powered market intelligence
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3.5">
+        <div className="flex flex-wrap items-center gap-3.5">
           <button
             onClick={() => fetchBrief(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 text-xs font-bold transition-all"

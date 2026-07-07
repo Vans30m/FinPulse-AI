@@ -260,8 +260,8 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
         )}
       </div>
 
-      <div className="relative grid grid-cols-1 xl:grid-cols-[minmax(240px,320px)_1fr] gap-6 items-center mb-6">
-        <div className="rounded-3xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-6 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.65)] relative overflow-hidden group">
+      <div className="relative grid grid-cols-1 lg:grid-cols-[minmax(240px,320px)_1fr] gap-6 items-stretch mb-6">
+        <div className="rounded-3xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-6 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.65)] relative overflow-hidden group flex flex-col justify-center">
           <div className="absolute -inset-px bg-gradient-to-br from-blue-500/10 via-transparent to-cyan-500/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative flex flex-col items-center text-center gap-4">
             <div className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] border shadow-sm ${
@@ -289,7 +289,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Card 1: Diversification */}
           <motion.article whileHover={{ y: -3 }} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
             <div className="flex items-center justify-between gap-3 mb-4">
