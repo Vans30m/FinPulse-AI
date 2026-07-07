@@ -1176,7 +1176,7 @@ Slide Outline:
 
 
   return (
-    <div className="min-h-[85vh] bg-[#f8f9fa] dark:bg-night-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 rounded-3xl p-4 md:p-8 relative">
+    <div className="min-h-[85vh] bg-[#f8f9fa] dark:bg-night-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 rounded-3xl p-3 sm:p-4 md:p-8 relative">
       
       {/* Loading Overlay */}
       {isLoading && (
@@ -1310,46 +1310,48 @@ Slide Outline:
           </div>
 
           {/* Company Title Info Section */}
-          <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">{selectedStock.name}</h1>
-                <span className="px-2 py-0.5 bg-blue-100 dark:bg-cyan-500/10 text-blue-700 dark:text-cyan-400 text-[10px] font-black uppercase rounded-md tracking-wider">
-                  {selectedStock.symbol}
-                </span>
+          <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight leading-tight break-words">{selectedStock.name}</h1>
+                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-cyan-500/10 text-blue-700 dark:text-cyan-400 text-[10px] font-black uppercase rounded-md tracking-wider shrink-0">
+                    {selectedStock.symbol}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-baseline gap-2 mt-1.5">
+                  <span className="font-mono text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{currencySymbol}{selectedStock.price.toFixed(2)}</span>
+                  <span className={`font-mono text-sm font-extrabold ${selectedStock.changePercent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-450'}`}>
+                    {selectedStock.changePercent >= 0 ? '+' : ''}{selectedStock.changePercent.toFixed(2)}%
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Live Price</span>
+                </div>
               </div>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="font-mono text-2xl font-black text-slate-900 dark:text-white">{currencySymbol}{selectedStock.price.toFixed(2)}</span>
-                <span className={`font-mono text-sm font-extrabold ${selectedStock.changePercent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-450'}`}>
-                  {selectedStock.changePercent >= 0 ? '+' : ''}{selectedStock.changePercent.toFixed(2)}%
-                </span>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider ml-1">Live Price</span>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all shadow-sm">
-                <Download className="h-3.5 w-3.5" /> Export Excel
-              </button>
-              <button
-                onClick={handleFollowToggle}
-                disabled={addWatchlistItemMutation.isPending || removeWatchlistItemMutation.isPending || createWatchlistMutation.isPending}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md ${
-                  isFollowing
-                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 border border-emerald-500/30'
-                    : 'bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950'
-                }`}
-              >
-                {isFollowing ? (
-                  <>
-                    <Check className="h-3.5 w-3.5" /> Following
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-3.5 w-3.5" /> Follow
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button className="flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all shadow-sm whitespace-nowrap">
+                  <Download className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Export</span> Excel
+                </button>
+                <button
+                  onClick={handleFollowToggle}
+                  disabled={addWatchlistItemMutation.isPending || removeWatchlistItemMutation.isPending || createWatchlistMutation.isPending}
+                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md whitespace-nowrap ${
+                    isFollowing
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 border border-emerald-500/30'
+                      : 'bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950'
+                  }`}
+                >
+                  {isFollowing ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" /> Following
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-3.5 w-3.5" /> Follow
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
                   {/* Content Layout Grid */}
@@ -1359,7 +1361,7 @@ Slide Outline:
             <div className="lg:col-span-2 space-y-6">
               
               {/* Chart Card */}
-              <div id="screener-chart" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-6">
+              <div id="screener-chart" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-4 sm:space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
                   <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
                     <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
@@ -1453,15 +1455,15 @@ Slide Outline:
               </div>
 
               {/* Key Financial Ratios */}
-              <div id="screener-key-ratios" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-                <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-5 pb-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
+              <div id="screener-key-ratios" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+                <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4 sm:mb-5 pb-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
                   <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
                     <Bookmark className="h-4 w-4" />
                   </span>
                   Key Financial Ratios
                 </h3>
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                   {[
                     { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}`, desc: 'Total market value', icon: '💰' },
                     { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price', icon: '📈' },
@@ -1473,12 +1475,12 @@ Slide Outline:
                     { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%`, desc: 'Return on equity', icon: '🎯' },
                     { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}`, desc: 'Par value per share', icon: '💎' },
                   ].map((ratio) => (
-                    <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-4 rounded-2xl flex items-start gap-3 transition-all">
-                      <span className="text-xl pt-0.5">{ratio.icon}</span>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">{ratio.label}</span>
-                        <span className="font-mono text-sm font-black text-slate-900 dark:text-white mt-0.5">{ratio.value}</span>
-                        <span className="text-[8px] text-slate-400 mt-1 font-semibold">{ratio.desc}</span>
+                    <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
+                      <span className="text-lg sm:text-xl pt-0.5 shrink-0">{ratio.icon}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{ratio.label}</span>
+                        <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{ratio.value}</span>
+                        <span className="text-[8px] text-slate-400 mt-1 font-semibold leading-tight">{ratio.desc}</span>
                       </div>
                     </div>
                   ))}
@@ -1491,7 +1493,7 @@ Slide Outline:
             <div className="lg:col-span-1 space-y-6">
               
               {/* AI Strength & Risk Advisor */}
-              <div id="screener-analysis" className="bg-gradient-to-br from-slate-900 via-night-950 to-indigo-950 text-white border border-slate-800 dark:border-white/5 rounded-3xl p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-6 relative overflow-hidden">
+              <div id="screener-analysis" className="bg-gradient-to-br from-slate-900 via-night-950 to-indigo-950 text-white border border-slate-800 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-4 sm:space-y-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
                 
                 {/* Score Header */}
@@ -1560,7 +1562,7 @@ Slide Outline:
                 </div>
               </div>
 
-              <div className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-5 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-4">
+              <div className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-5 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-4">
                 <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
                   <Globe className="h-4 w-4 text-blue-600 dark:text-cyan-400" /> Company Profile
                 </h3>
@@ -1613,25 +1615,25 @@ Slide Outline:
                     </h3>
                   </div>
                   
-                  <div className="grid grid-cols-4 gap-2 text-xs">
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">RSI</span>
-                      <span className="font-mono text-xs font-black text-slate-800 dark:text-white mt-1">{technicals.rsi.toFixed(0)}</span>
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-xs">
+                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
+                      <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">RSI</span>
+                      <span className="font-mono text-[10px] sm:text-xs font-black text-slate-800 dark:text-white mt-1">{technicals.rsi.toFixed(0)}</span>
                     </div>
 
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Beta</span>
-                      <span className="font-mono text-xs font-black text-slate-800 dark:text-white mt-1">{technicals.beta.toFixed(1)}x</span>
+                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
+                      <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">Beta</span>
+                      <span className="font-mono text-[10px] sm:text-xs font-black text-slate-800 dark:text-white mt-1">{technicals.beta.toFixed(1)}x</span>
                     </div>
 
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">MACD</span>
-                      <span className={`font-black text-[9px] mt-1 ${technicals.macd.includes('Bullish') ? 'text-emerald-500' : 'text-rose-500'}`}>{technicals.macd.split(' ')[0]}</span>
+                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
+                      <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">MACD</span>
+                      <span className={`font-black text-[8px] sm:text-[9px] mt-1 ${technicals.macd.includes('Bullish') ? 'text-emerald-500' : 'text-rose-500'}`}>{technicals.macd.split(' ')[0]}</span>
                     </div>
 
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Trend</span>
-                      <span className="font-black text-[9px] text-slate-800 dark:text-white mt-1 truncate w-full">{technicals.trend.split(' ').pop()}</span>
+                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
+                      <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">Trend</span>
+                      <span className="font-black text-[8px] sm:text-[9px] text-slate-800 dark:text-white mt-1 truncate w-full">{technicals.trend.split(' ').pop()}</span>
                     </div>
                   </div>
                 </div>
@@ -1640,29 +1642,31 @@ Slide Outline:
           </div>
 
           {/* Unified Financial Statements Workbook Terminal */}
-          <div id="screener-workbook" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl space-y-6 mt-6 w-full relative">
+          <div id="screener-workbook" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6 mt-6 w-full relative">
             
             {/* Terminal Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
-                    <FileText className="h-4.5 w-4.5" />
-                  </span>
-                  Financial Workbook
-                </h3>
-                <p className="text-xs text-slate-400 font-bold mt-1">
-                  Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'}
-                </p>
+            <div className="flex flex-col gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
+                      <FileText className="h-4.5 w-4.5" />
+                    </span>
+                    Financial Workbook
+                  </h3>
+                  <p className="text-xs text-slate-400 font-bold mt-1">
+                    Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'}
+                  </p>
+                </div>
               </div>
 
               {/* Workbook Tabs */}
-              <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 text-[10px] font-black uppercase tracking-wider overflow-x-auto custom-scrollbar">
+              <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 text-[10px] font-black uppercase tracking-wider overflow-x-auto custom-scrollbar w-full">
                 {[
                   { id: 'peers', label: 'Peers' },
                   { id: 'quarters', label: 'Quarters' },
                   { id: 'pnl', label: 'P&L' },
-                  { id: 'balance-sheet', label: 'Balance Sheet' },
+                  { id: 'balance-sheet', label: 'Bal. Sheet' },
                   { id: 'cash-flow', label: 'Cash Flow' },
                   { id: 'ratios', label: 'Ratios' },
                   { id: 'insights', label: 'AI Insights' }
@@ -1670,7 +1674,7 @@ Slide Outline:
                   <button
                     key={t.id}
                     onClick={() => setWorkbookTab(t.id as any)}
-                    className={`px-3 py-1.5 rounded-lg transition-all font-bold shrink-0 ${
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all font-bold shrink-0 ${
                       workbookTab === t.id
                         ? 'bg-white text-blue-600 dark:bg-white/10 dark:text-cyan-400 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
@@ -1886,31 +1890,27 @@ Slide Outline:
                   </div>
 
                   {/* Growth indicators */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <div className="bg-slate-50 dark:bg-white/[0.01] p-4 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
-                      <div>
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Compounded Sales Growth</span>
-                        <div className="flex gap-4 mt-2 text-xs font-bold font-mono">
-                          <div>10 Years: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y10}</span></div>
-                          <div>5 Years: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y5}</span></div>
-                          <div>3 Years: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y3}</span></div>
-                          {pnlResults?.growth?.sales?.ttm !== undefined && (
-                            <div>TTM: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.ttm}</span></div>
-                          )}
-                        </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
+                    <div className="bg-slate-50 dark:bg-white/[0.01] p-3 sm:p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Compounded Sales Growth</span>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 text-[10px] sm:text-xs font-bold font-mono">
+                        <div>10Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y10}</span></div>
+                        <div>5Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y5}</span></div>
+                        <div>3Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y3}</span></div>
+                        {pnlResults?.growth?.sales?.ttm !== undefined && (
+                          <div>TTM: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.ttm}</span></div>
+                        )}
                       </div>
                     </div>
-                    <div className="bg-slate-50 dark:bg-white/[0.01] p-4 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
-                      <div>
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Compounded Profit Growth</span>
-                        <div className="flex gap-4 mt-2 text-xs font-bold font-mono">
-                          <div>10 Years: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y10}</span></div>
-                          <div>5 Years: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y5}</span></div>
-                          <div>3 Years: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y3}</span></div>
-                          {pnlResults?.growth?.profit?.ttm !== undefined && (
-                            <div>TTM: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.ttm}</span></div>
-                          )}
-                        </div>
+                    <div className="bg-slate-50 dark:bg-white/[0.01] p-3 sm:p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Compounded Profit Growth</span>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 text-[10px] sm:text-xs font-bold font-mono">
+                        <div>10Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y10}</span></div>
+                        <div>5Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y5}</span></div>
+                        <div>3Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y3}</span></div>
+                        {pnlResults?.growth?.profit?.ttm !== undefined && (
+                          <div>TTM: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.ttm}</span></div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2054,7 +2054,7 @@ Slide Outline:
             </div>
           </div>
 
-          <div id="screener-shareholding" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-6 mt-6 w-full relative overflow-hidden">
+          <div id="screener-shareholding" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-4 sm:space-y-6 mt-6 w-full relative overflow-hidden">
             {/* Header Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
               <div>
@@ -2072,13 +2072,13 @@ Slide Outline:
                 <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 text-[10px] font-black uppercase tracking-wider shadow-inner">
                   <button 
                     onClick={() => setShareholdingPeriod('quarterly')}
-                    className={`px-3.5 py-1.5 rounded-lg transition-all font-bold ${shareholdingPeriod === 'quarterly' ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
+                    className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-all font-bold ${shareholdingPeriod === 'quarterly' ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
                   >
                     Quarterly
                   </button>
                   <button 
                     onClick={() => setShareholdingPeriod('yearly')}
-                    className={`px-3.5 py-1.5 rounded-lg transition-all font-bold ${shareholdingPeriod === 'yearly' ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
+                    className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-all font-bold ${shareholdingPeriod === 'yearly' ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
                   >
                     Yearly
                   </button>
@@ -2172,7 +2172,7 @@ Slide Outline:
           </div>
 
           {/* Full Width Documents Card */}
-          <div id="screener-documents" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 mt-6 w-full relative">
+          <div id="screener-documents" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 mt-6 w-full relative">
             <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 pb-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
               <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/10">
                 <FileText className="h-4 w-4" />
@@ -2300,9 +2300,9 @@ Slide Outline:
                     { date: 'May 2023', ppt: true },
                     { date: 'May 2022', ppt: true }
                   ].map((c) => (
-                    <div key={c.date} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 py-1 border-b border-slate-100/50 dark:border-white/[0.02] last:border-0 pb-1.5">
+                    <div key={c.date} className="flex flex-wrap items-center justify-between gap-1.5 py-1 border-b border-slate-100/50 dark:border-white/[0.02] last:border-0 pb-1.5">
                       <span className="font-bold text-slate-700 dark:text-slate-350 font-mono text-[10px]">{c.date}</span>
-                      <div className="flex gap-1 shrink-0">
+                      <div className="flex flex-wrap gap-1 shrink-0">
                         <button 
                           onClick={() => showTranscript(c.date)}
                           className="px-2 py-0.5 border border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10 rounded text-[8px] font-black tracking-wider transition-all"
@@ -2334,8 +2334,8 @@ Slide Outline:
 
       {/* Document Viewer Modal */}
       {activeDocumentModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn relative">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-2xl w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn relative">
             {/* Ambient glows */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
