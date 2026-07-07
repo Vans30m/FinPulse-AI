@@ -106,6 +106,9 @@ const getHoldingColorClass = (marketId: string, ticker: string) => {
 export default function PortfolioDashboard() {
   const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
   const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
+  const [usdToEurRate, setUsdToEurRate] = useState<number>(0.92);
+  const [usdToGbpRate, setUsdToGbpRate] = useState<number>(0.79);
+  const [portfolioCurrency, setPortfolioCurrency] = useState<'USD' | 'INR' | 'EUR' | 'GBP'>('USD');
   const [watchlistItems, setWatchlistItems] = useState<any[]>([]);
   const [advisorData, setAdvisorData] = useState<any>(null);
   const [performanceData, setPerformanceData] = useState<{ month: string; value: number; invested: number; profit: number }[]>([]);
@@ -287,17 +290,21 @@ export default function PortfolioDashboard() {
   };
 
   useEffect(() => {
-    const fetchRate = async () => {
+    const fetchRates = async () => {
       try {
-        const data = await getFundamentals('USDINR=X');
-        if (data && data.price) {
-          setUsdToInrRate(data.price);
-        }
-      } catch (err) {
-        console.error("Failed to fetch USDINR exchange rate, using fallback 83.45:", err);
-      }
+        const inrData = await getFundamentals('USDINR=X');
+        if (inrData && inrData.price) setUsdToInrRate(inrData.price);
+      } catch (e) {}
+      try {
+        const eurData = await getFundamentals('USDEUR=X');
+        if (eurData && eurData.price) setUsdToEurRate(eurData.price);
+      } catch (e) {}
+      try {
+        const gbpData = await getFundamentals('USDGBP=X');
+        if (gbpData && gbpData.price) setUsdToGbpRate(gbpData.price);
+      } catch (e) {}
     };
-    fetchRate();
+    fetchRates();
     loadPortfolioData();
 
     const interval = setInterval(() => {
@@ -469,7 +476,24 @@ export default function PortfolioDashboard() {
     return h.totalGain;
   };
 
-  const displayCurrency = activeMarket === 'domestic' ? '₹' : '$';
+  const getCurrencyRate = () => {
+    if (portfolioCurrency === 'USD') return 1;
+    if (portfolioCurrency === 'INR') return usdToInrRate;
+    if (portfolioCurrency === 'EUR') return usdToEurRate;
+    if (portfolioCurrency === 'GBP') return usdToGbpRate;
+    return 1;
+  };
+  const currencyMultiplier = getCurrencyRate();
+
+  const getAssetPriceInCurrency = (price: number, sectionId: string) => {
+    const priceUSD = sectionId === 'domestic' ? price / usdToInrRate : price;
+    return priceUSD * currencyMultiplier;
+  };
+
+  const displayCurrency = 
+    portfolioCurrency === 'INR' ? '₹' : 
+    portfolioCurrency === 'EUR' ? '€' : 
+    portfolioCurrency === 'GBP' ? '£' : '$';
 
   // Group values by native currency / segment
   const portfolioSplits = useMemo(() => {
@@ -547,21 +571,22 @@ export default function PortfolioDashboard() {
   }, [virtualHoldings, sections, liveQuotes]);
 
   const currentSections = isSandboxMode ? virtualSections : sections;
+  const activeHubsCount = currentSections.filter(sec => sec.holdings.length > 0).length;
 
   const totalHoldingsValue = currentSections
     .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
     .reduce((sum, sec) => {
       return sum + sec.holdings.reduce((s, h) => {
-        if (activeMarket === 'all') {
-          return s + getHoldingValueInUSD(h, sec.id);
-        }
-        return s + h.marketValue;
+        const valUSD = getHoldingValueInUSD(h, sec.id);
+        return s + (valUSD * currencyMultiplier);
       }, 0);
     }, 0);
 
   const cashBalanceInCurrency = activeMarket === 'domestic'
     ? virtualBalance * usdToInrRate
-    : (activeMarket === 'all' ? virtualBalance : (activeMarket === 'us' ? virtualBalance : 0));
+    : (activeMarket === 'all' 
+        ? virtualBalance * currencyMultiplier 
+        : (activeMarket === 'us' ? virtualBalance : 0));
 
   const totalNetValue = isSandboxMode
     ? cashBalanceInCurrency + totalHoldingsValue
@@ -571,10 +596,8 @@ export default function PortfolioDashboard() {
     .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
     .reduce((sum, sec) => {
       return sum + sec.holdings.reduce((s, h) => {
-        if (activeMarket === 'all') {
-          return s + getHoldingGainInUSD(h, sec.id);
-        }
-        return s + h.totalGain;
+        const gainUSD = getHoldingGainInUSD(h, sec.id);
+        return s + (gainUSD * currencyMultiplier);
       }, 0);
     }, 0);
 
@@ -587,13 +610,8 @@ export default function PortfolioDashboard() {
     .reduce((sum, sec) => {
       return sum + sec.holdings.reduce((s, h: any) => {
         const val = h.dailyGain || 0;
-        if (activeMarket === 'all') {
-          if (sec.id === 'domestic') {
-            return s + (val / usdToInrRate);
-          }
-          return s + val;
-        }
-        return s + val;
+        const dailyGainUSD = sec.id === 'domestic' ? val / usdToInrRate : val;
+        return s + (dailyGainUSD * currencyMultiplier);
       }, 0);
     }, 0);
 
@@ -660,7 +678,8 @@ export default function PortfolioDashboard() {
     .map((section) => ({
       name: section.title,
       value: section.holdings.reduce((sum, h) => {
-        return sum + (section.id === 'domestic' ? h.marketValue / usdToInrRate : h.marketValue);
+        const valUSD = section.id === 'domestic' ? h.marketValue / usdToInrRate : h.marketValue;
+        return sum + (valUSD * currencyMultiplier);
       }, 0),
     }))
     .filter((x) => x.value > 0);
@@ -893,6 +912,28 @@ export default function PortfolioDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3.5 w-full sm:w-auto flex-wrap relative">
+          {/* Currency Toggle */}
+          <div className="flex bg-slate-100 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200 dark:border-white/5 text-[10px] font-bold shadow-sm">
+            {[
+              { code: 'USD', symbol: '$' },
+              { code: 'INR', symbol: '₹' },
+              { code: 'EUR', symbol: '€' },
+              { code: 'GBP', symbol: '£' }
+            ].map((cur) => (
+              <button
+                key={cur.code}
+                onClick={() => setPortfolioCurrency(cur.code as any)}
+                className={`px-3 py-1.5 rounded-xl transition-all ${
+                  portfolioCurrency === cur.code
+                    ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5 font-extrabold'
+                    : 'text-slate-650 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                {cur.code} ({cur.symbol})
+              </button>
+            ))}
+          </div>
+
           {/* Elegant Export Dropdown */}
           <div className="relative">
             <button
@@ -994,7 +1035,7 @@ export default function PortfolioDashboard() {
             <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
               {isSandboxMode 
                 ? `${displayCurrency}${cashBalanceInCurrency.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                : "5 Unique Hubs"}
+                : `${activeHubsCount} Active Hub${activeHubsCount !== 1 ? 's' : ''}`}
             </h3>
           </div>
         </div>
@@ -1076,7 +1117,12 @@ export default function PortfolioDashboard() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
               {filteredHoldings.map((asset, index) => {
-                const posCurrency = asset.sectionId === 'domestic' ? '₹' : '$';
+                const posCurrency = portfolioCurrency === 'INR' ? '₹' : '$';
+                const displayAvgCost = getAssetPriceInCurrency(asset.avgCost, asset.sectionId);
+                const displayCurrentPrice = getAssetPriceInCurrency(asset.currentPrice, asset.sectionId);
+                const displayMarketValue = getAssetPriceInCurrency(asset.marketValue, asset.sectionId);
+                const displayTotalGain = getAssetPriceInCurrency(asset.totalGain, asset.sectionId);
+
                 return (
                   <tr key={asset.id || `${asset.ticker}-${index}`} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle">
                     <td className="py-4 px-4">
@@ -1098,19 +1144,19 @@ export default function PortfolioDashboard() {
                       {asset.shares.toLocaleString()}
                     </td>
                     <td className="py-4 px-4 text-right font-mono text-sm text-slate-600 dark:text-slate-355 align-middle">
-                      {posCurrency}{asset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {posCurrency}{displayAvgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-4 text-right font-mono text-sm font-semibold text-slate-800 dark:text-slate-200 align-middle">
-                      {posCurrency}{asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {posCurrency}{displayCurrentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-4 text-right font-mono text-sm font-bold text-slate-950 dark:text-white align-middle">
-                      {posCurrency}{asset.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {posCurrency}{displayMarketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-4 text-right align-middle">
                       <div className={`flex flex-col items-end justify-center ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
                         <span className="text-sm font-semibold flex items-center gap-0.5">
                           {asset.totalGain >= 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
-                          {posCurrency}{Math.abs(asset.totalGain).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {posCurrency}{Math.abs(displayTotalGain).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                         <span className="text-[10px] font-medium opacity-85">
                           {asset.gainPercent.toFixed(2)}%

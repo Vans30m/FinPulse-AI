@@ -7,7 +7,7 @@ interface PaperTradingOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   virtualBalance: number;
-  activeCurrency: '₹' | '$';
+  activeCurrency: string;
   usdToInrRate: number;
   currentHoldings: Array<{ ticker: string; shares: number }>;
   onExecuteTrade: (trade: {

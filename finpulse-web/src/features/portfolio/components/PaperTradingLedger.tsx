@@ -13,7 +13,7 @@ export interface VirtualTransaction {
 
 interface PaperTradingLedgerProps {
   transactions: VirtualTransaction[];
-  activeCurrency: '₹' | '$';
+  activeCurrency: string;
 }
 
 export default function PaperTradingLedger({ transactions, activeCurrency }: PaperTradingLedgerProps) {
