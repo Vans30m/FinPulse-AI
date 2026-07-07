@@ -229,7 +229,7 @@ export default function StockSearch({
   };
 
   return (
-    <div className="relative w-full max-w-lg" ref={searchRef}>
+    <div className="relative w-full" ref={searchRef}>
       {/* Search Input Field */}
       <div className="relative flex items-center">
         <Search className="absolute left-3.5 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
@@ -304,9 +304,8 @@ export default function StockSearch({
                           }`}
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
-                            <div className={`h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br ${getLetterAvatarColor(item.symbol)} text-white text-xs font-black uppercase shadow-sm`}>
-                              {item.symbol.slice(0, 2).replace("^", "")}
-                            </div>
+                            {/* Logo avatar */}
+                            <StockLogo symbol={item.symbol} name={item.name} className="h-8 w-8" imgSizeClass="w-5 h-5" />
                             <div className="flex flex-col truncate">
                               <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
                                 {item.symbol}
@@ -341,9 +340,8 @@ export default function StockSearch({
                           }`}
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
-                            <div className={`h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br ${getLetterAvatarColor(item.symbol)} text-white text-xs font-black uppercase shadow-sm`}>
-                              {item.symbol.slice(0, 2).replace("^", "")}
-                            </div>
+                            {/* Logo avatar */}
+                            <StockLogo symbol={item.symbol} name={item.name} className="h-8 w-8" imgSizeClass="w-5 h-5" />
                             <div className="flex flex-col truncate">
                               <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
                                 {item.symbol}
