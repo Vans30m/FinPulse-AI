@@ -709,8 +709,10 @@ export async function getMarketHistory(
   if (range === "1d") days = 1;
   if (range === "1w") days = 7;
   if (range === "1mo") days = 30;
+  if (range === "3mo") days = 90;
   if (range === "6mo") days = 180;
-  if (range === "1y") days = 365;
+  if (range === "1y" || range === "1yr") days = 365;
+  if (range === "max" || range === "10y") days = 3650;
 
   const chart =
     await yahooFinance.chart(

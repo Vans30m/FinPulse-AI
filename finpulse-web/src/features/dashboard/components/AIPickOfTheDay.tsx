@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Sparkles, AlertCircle, RotateCcw, TrendingUp, ShieldAlert, Calendar } from "lucide-react";
+import { Sparkles, AlertCircle, RotateCcw, ShieldAlert, Calendar } from "lucide-react";
 import { getAIPickOfTheDay, type AIPickOfTheDayData } from "../../../services/marketService";
 
 export default function AIPickOfTheDay() {
