@@ -4,10 +4,49 @@ import { getAIScore, getAnalystConsensus } from "../services/yahooService.js";
 import YahooFinance from "yahoo-finance2";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
+import Parser from "rss-parser";
 
 const yahooFinance = new YahooFinance();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
+const rssParser = new Parser();
+
+async function getRecentNewsHeadlines(): Promise<string[]> {
+  const headlines: string[] = [];
+  
+  // 1. Fetch from Google News RSS
+  try {
+    const feed = await rssParser.parseURL(
+      'https://news.google.com/rss/search?q=stock+market+finance+economy+geopolitics+ceasefire+when:1d&hl=en-US&gl=US&ceid=US:en'
+    );
+    if (feed && feed.items) {
+      feed.items.slice(0, 15).forEach(item => {
+        if (item.title) headlines.push(item.title);
+      });
+    }
+  } catch (e) {
+    console.warn("Failed to fetch Google News RSS for AI routes:", e);
+  }
+
+  // 2. Fetch from Finnhub Live News
+  try {
+    const apiKey = process.env.FINNHUB_API_KEY;
+    if (apiKey) {
+      const response = await axios.get(
+        `https://finnhub.io/api/v1/news?category=general&token=${apiKey}`
+      );
+      if (Array.isArray(response.data)) {
+        response.data.slice(0, 15).forEach((item: any) => {
+          if (item.headline) headlines.push(item.headline);
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to fetch Finnhub news for AI routes:", e);
+  }
+
+  return Array.from(new Set(headlines)).slice(0, 30);
+}
 
 // Helper to fetch/create default user
 async function getOrCreateDefaultUser(req?: any) {
@@ -141,12 +180,16 @@ marketBriefRoutes.get("/market-brief", async (req, res) => {
       })
     );
 
+    const headlines = await getRecentNewsHeadlines();
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
     
-    const prompt = `Analyze the latest world financial markets using the provided structured market data.
+    const prompt = `Analyze the latest world financial markets using the provided structured market data and recent news headlines.
 
 Market Quotes:
 ${JSON.stringify(quotes, null, 2)}
+
+Recent News Headlines:
+${JSON.stringify(headlines, null, 2)}
 
 Evaluate each sector globally:
 Technology
@@ -598,12 +641,16 @@ marketBriefRoutes.get("/market-drivers", async (req, res) => {
       })
     );
 
+    const headlines = await getRecentNewsHeadlines();
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
     
-    const prompt = `Analyze the latest world financial markets using the provided structured market data.
+    const prompt = `Analyze the latest world financial markets using the provided structured market data and recent news headlines.
 
 Market Quotes:
 ${JSON.stringify(quotes, null, 2)}
+
+Recent News Headlines:
+${JSON.stringify(headlines, null, 2)}
 
 Determine the biggest reasons markets are moving today.
 
@@ -740,12 +787,16 @@ marketBriefRoutes.get("/global-market-pulse", async (req, res) => {
       })
     );
 
+    const headlines = await getRecentNewsHeadlines();
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
     
-    const prompt = `Analyze the latest global financial markets using the provided structured market data.
+    const prompt = `Analyze the latest global financial markets using the provided structured market data and recent news headlines.
 
 Market Quotes:
 ${JSON.stringify(quotes, null, 2)}
+
+Recent News Headlines:
+${JSON.stringify(headlines, null, 2)}
 
 Generate a concise Global Market Pulse highlighting the most important developments influencing investors today.
 
