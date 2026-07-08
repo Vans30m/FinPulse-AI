@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import type { WatchlistItem, Watchlist, WatchlistNote, WatchlistTag } from '@prisma/client';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 import { yahooFinance } from '../index.js';
+import { getAIScore } from '../services/yahooService.js';
 
 const prisma = new PrismaClient();
 const watchlistsRouter = express.Router();
@@ -42,11 +43,33 @@ watchlistsRouter.get('/', protect, async (req, res) => {
               const price = q.regularMarketPrice !== undefined
                 ? `${q.currency === "INR" ? "₹" : "$"}${q.regularMarketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : "N/A";
+
+              // Fetch AI Score
+              let aiScoreVal = 50;
+              let aiReasonVal = "No analysis available";
+              try {
+                const aiData = await getAIScore(item.symbol);
+                aiScoreVal = aiData.score;
+                if (aiScoreVal >= 80) {
+                  aiReasonVal = "Strong Buy - Bullish technical indicators and solid financials.";
+                } else if (aiScoreVal >= 65) {
+                  aiReasonVal = "Buy - Supported by positive market sentiment and analyst targets.";
+                } else if (aiScoreVal >= 50) {
+                  aiReasonVal = "Hold - Neutral technicals and stable financials.";
+                } else {
+                  aiReasonVal = "Sell - Underperforming indicators and bearish sentiment.";
+                }
+              } catch (aiErr) {
+                console.error(`Failed to fetch AI score for ${item.symbol}:`, aiErr);
+              }
+
               return {
                 ...item,
                 price,
                 changePercent,
-                name: q.longName || q.shortName || item.symbol
+                name: q.longName || q.shortName || item.symbol,
+                aiScore: aiScoreVal,
+                aiReason: aiReasonVal
               };
             } catch (err) {
               console.error(`Failed to fetch live quote for ${item.symbol}:`, err);
@@ -54,7 +77,9 @@ watchlistsRouter.get('/', protect, async (req, res) => {
                 ...item,
                 price: "N/A",
                 changePercent: "0.00%",
-                name: item.symbol
+                name: item.symbol,
+                aiScore: 50,
+                aiReason: "No analysis available"
               };
             }
           })
