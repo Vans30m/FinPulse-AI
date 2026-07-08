@@ -349,6 +349,7 @@ portfolioRoutes.get('/watchlist', async (req, res) => {
           company: quote.longName || quote.shortName || symbol,
           symbol,
           price: quote.regularMarketPrice || 0,
+          currency: quote.currency || 'USD',
           dailyChangePercent: changePercent,
           sentiment: changePercent >= 0 ? 'Bullish' : 'Bearish',
           sparkline: [100, 101, 103, 102, 105],

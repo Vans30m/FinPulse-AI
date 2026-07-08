@@ -1121,11 +1121,11 @@ export default function PortfolioDashboard() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
               {filteredHoldings.map((asset, index) => {
-                const posCurrency = portfolioCurrency === 'INR' ? '₹' : '$';
-                const displayAvgCost = getAssetPriceInCurrency(asset.avgCost, asset.sectionId);
-                const displayCurrentPrice = getAssetPriceInCurrency(asset.currentPrice, asset.sectionId);
-                const displayMarketValue = getAssetPriceInCurrency(asset.marketValue, asset.sectionId);
-                const displayTotalGain = getAssetPriceInCurrency(asset.totalGain, asset.sectionId);
+                const posCurrency = asset.sectionId === 'domestic' ? '₹' : '$';
+                const displayAvgCost = asset.avgCost;
+                const displayCurrentPrice = asset.currentPrice;
+                const displayMarketValue = asset.marketValue;
+                const displayTotalGain = asset.totalGain;
 
                 return (
                   <tr key={asset.id || `${asset.ticker}-${index}`} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle">

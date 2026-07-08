@@ -114,7 +114,10 @@ function WatchlistSnapshotSection({ items }: Props) {
                   <div className="mt-2 flex items-end justify-between gap-3">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">Current Price</p>
-                      <p className="mt-1 text-2xl font-black tracking-tight text-slate-900 dark:text-white">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="mt-1 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                        {item.currency === 'INR' ? '₹' : item.currency === 'EUR' ? '€' : item.currency === 'GBP' ? '£' : '$'}
+                        {item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
 
                     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${positive ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-600 dark:text-rose-400"}`}>

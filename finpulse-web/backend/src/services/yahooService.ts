@@ -1214,7 +1214,14 @@ export async function getFundamentals(symbol: string) {
     console.error(`Error fetching fundamentals for ${symbol}:`, error);
     // Return high-quality, mock/fallback values so the UI doesn't crash on 429 rate limit
     const hash = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const mockPrice = (hash % 150) + 50.5;
+    let mockPrice = (hash % 150) + 50.5;
+    if (symbol === 'USDINR=X') {
+      mockPrice = 83.45;
+    } else if (symbol === 'USDEUR=X') {
+      mockPrice = 0.91;
+    } else if (symbol === 'USDGBP=X') {
+      mockPrice = 0.78;
+    }
     return {
       name: symbol.split('.')[0] || symbol,
       price: mockPrice,

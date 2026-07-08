@@ -9,6 +9,7 @@ export type WatchlistSnapshotItem = {
   sparkline: number[];
   logoInitials: string;
   logoTone: "blue" | "emerald" | "amber" | "rose" | "purple";
+  currency?: string;
 };
 
 export type UpcomingPortfolioEvent = {
