@@ -678,6 +678,15 @@ export default function PortfolioDashboard() {
     },
   ];
 
+  const convertedPerformanceData = useMemo(() => {
+    return performanceData.map(d => ({
+      ...d,
+      value: d.value * currencyMultiplier,
+      invested: d.invested * currencyMultiplier,
+      profit: d.profit * currencyMultiplier
+    }));
+  }, [performanceData, currencyMultiplier]);
+
   const allocationData = currentSections
     .map((section) => ({
       name: section.title,
@@ -1052,7 +1061,7 @@ export default function PortfolioDashboard() {
 
       {/* 1. Performance Chart (Full Page Width) */}
       <PortfolioPerformanceChart
-        data={performanceData}
+        data={convertedPerformanceData}
         currencySymbol={displayCurrency}
       />
 

@@ -396,12 +396,20 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
     else if (timeframe === 'MAX') years = 15;
     startDate.setFullYear(endDate.getFullYear() - years);
 
+    // Fetch USD/INR history for converting domestic holdings to USD
+    let usdinrHist: any[] = [];
+    try {
+      usdinrHist = await yahooFinance.historical('USDINR=X', { period1: startDate, period2: endDate, interval: '1mo' }).catch(() => []);
+    } catch (err) {
+      console.error("Failed to fetch USD/INR history for cagr:", err);
+    }
+
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {
       try {
         const hist = await yahooFinance.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1mo' });
-        return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: hist };
+        return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, marketId: h.marketId, history: hist };
       } catch {
-        return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: [] };
+        return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, marketId: h.marketId, history: [] };
       }
     }));
 
@@ -412,11 +420,23 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
     const portfolioValues = allDates.map(month => {
       let value = 0;
       let invested = 0;
+
+      // Find exchange rate for this month
+      const usdInrCandle = usdinrHist.find(c => new Date(c.date as any).toISOString().slice(0, 7) === month);
+      const rate = usdInrCandle ? (usdInrCandle.close ?? usdInrCandle.adjClose ?? 83.45) : 83.45;
+
       holdingsHistory.forEach(h => {
         const candle = h.history.find(c => new Date(c.date as any).toISOString().slice(0, 7) === month);
-        const price = candle ? (candle.close ?? candle.adjClose ?? h.avgCost) : h.avgCost;
+        let price = candle ? (candle.close ?? candle.adjClose ?? h.avgCost) : h.avgCost;
+        let cost = h.avgCost;
+
+        if (h.marketId === 'domestic') {
+          price = price / rate;
+          cost = cost / rate;
+        }
+
         value += h.shares * price;
-        invested += h.shares * h.avgCost;
+        invested += h.shares * cost;
       });
       const profit = value - invested;
       return { month, value, invested, profit };
