@@ -31,63 +31,65 @@ watchlistsRouter.get('/', protect, async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    // Helper: race a promise against a timeout
+    function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+      return Promise.race([
+        promise,
+        new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))
+      ]);
+    }
+
     const populatedLists = await Promise.all(
       lists.map(async (list) => {
         const populatedItems = await Promise.all(
           list.items.map(async (item) => {
-            try {
-              const q = await yahooFinance.quote(item.symbol);
-              const changePercent = q.regularMarketChangePercent !== undefined 
-                ? `${q.regularMarketChangePercent >= 0 ? "+" : ""}${q.regularMarketChangePercent.toFixed(2)}%`
-                : "0.00%";
-              const price = q.regularMarketPrice !== undefined
-                ? `${q.currency === "INR" ? "₹" : "$"}${q.regularMarketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                : "N/A";
+            // Run Yahoo quote and AI score in parallel, each with a timeout
+            const [quoteResult, aiResult] = await Promise.allSettled([
+              withTimeout(
+                yahooFinance.quote(item.symbol),
+                8000,
+                null as any
+              ),
+              withTimeout(
+                getAIScore(item.symbol),
+                8000,
+                { score: 50 } as any
+              )
+            ]);
 
-              // Fetch AI Score
-              let aiScoreVal = 50;
-              let aiReasonVal = "No analysis available";
-              try {
-                const aiData = await getAIScore(item.symbol);
-                aiScoreVal = aiData.score;
-                if (aiScoreVal >= 80) {
-                  aiReasonVal = "Strong Buy - Bullish technical indicators and solid financials.";
-                } else if (aiScoreVal >= 65) {
-                  aiReasonVal = "Buy - Supported by positive market sentiment and analyst targets.";
-                } else if (aiScoreVal >= 50) {
-                  aiReasonVal = "Hold - Neutral technicals and stable financials.";
-                } else {
-                  aiReasonVal = "Sell - Underperforming indicators and bearish sentiment.";
-                }
-              } catch (aiErr) {
-                console.error(`Failed to fetch AI score for ${item.symbol}:`, aiErr);
-              }
+            const q = quoteResult.status === 'fulfilled' ? quoteResult.value : null;
+            const aiData = aiResult.status === 'fulfilled' ? aiResult.value : { score: 50 };
 
-              return {
-                ...item,
-                price,
-                changePercent,
-                name: q.longName || q.shortName || item.symbol,
-                aiScore: aiScoreVal,
-                aiReason: aiReasonVal
-              };
-            } catch (err) {
-              console.error(`Failed to fetch live quote for ${item.symbol}:`, err);
-              return {
-                ...item,
-                price: "N/A",
-                changePercent: "0.00%",
-                name: item.symbol,
-                aiScore: 50,
-                aiReason: "No analysis available"
-              };
+            const changePercent = q?.regularMarketChangePercent !== undefined
+              ? `${q.regularMarketChangePercent >= 0 ? '+' : ''}${q.regularMarketChangePercent.toFixed(2)}%`
+              : '0.00%';
+            const price = q?.regularMarketPrice !== undefined
+              ? `${q.currency === 'INR' ? '\u20b9' : '$'}${q.regularMarketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : 'N/A';
+
+            const aiScoreVal: number = (aiData as any)?.score ?? 50;
+            let aiReasonVal = 'No analysis available';
+            if (aiScoreVal >= 80) {
+              aiReasonVal = 'Strong Buy - Bullish technical indicators and solid financials.';
+            } else if (aiScoreVal >= 65) {
+              aiReasonVal = 'Buy - Supported by positive market sentiment and analyst targets.';
+            } else if (aiScoreVal >= 50) {
+              aiReasonVal = 'Hold - Neutral technicals and stable financials.';
+            } else {
+              aiReasonVal = 'Sell - Underperforming indicators and bearish sentiment.';
             }
+
+            return {
+              ...item,
+              price,
+              changePercent,
+              name: q?.longName || q?.shortName || item.symbol,
+              aiScore: aiScoreVal,
+              aiReason: aiReasonVal
+            };
           })
         );
-        return {
-          ...list,
-          items: populatedItems
-        };
+        return { ...list, items: populatedItems };
       })
     );
 
@@ -96,6 +98,7 @@ watchlistsRouter.get('/', protect, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // POST /api/watchlists - Create new watchlist
 watchlistsRouter.post('/', protect, async (req, res) => {

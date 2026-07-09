@@ -3,11 +3,15 @@ import API_BASE_URL from "../config/api";
 const API_BASE = `${API_BASE_URL}/api`;
 
 function getHeaders() {
-  const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || 'simulated-jwt-token-123456';
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
+  const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || '';
+  const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+  const userId = storedUser.id || '';
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
   };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (userId) headers['X-User-Id'] = userId;
+  return headers;
 }
 
 export const dashboardService = {
