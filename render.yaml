@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: finpulse-backend
+    env: node
+    region: oregon
+    plan: free
+    rootDir: finpulse-web/backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
