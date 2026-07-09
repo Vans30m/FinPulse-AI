@@ -1,3 +1,5 @@
+import { useQueryClient } from "@tanstack/react-query";
+
 interface RankedAsset {
   symbol: string;
   score: number;
@@ -7,6 +9,8 @@ interface RankedAsset {
 interface Props {
   assets: RankedAsset[];
   isLoading?: boolean;
+  isError?: boolean;
+  stockCount?: number;
 }
 
 function ScoreBadge({ score }: { score: number }) {
@@ -45,7 +49,15 @@ function SkeletonRow() {
   );
 }
 
-export default function AIRankingCard({ assets, isLoading = false }: Props) {
+export default function AIRankingCard({ assets, isLoading = false, isError = false, stockCount = 0 }: Props) {
+  const queryClient = useQueryClient();
+
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ['watchlist-ai-rankings'] });
+  };
+
+  const hasNoStocks = stockCount === 0;
+
   return (
     <div className="bg-white/70 dark:bg-night-900/70 backdrop-blur-xl rounded-3xl border border-slate-200 dark:border-white/10 p-6 shadow-lg">
 
@@ -58,27 +70,59 @@ export default function AIRankingCard({ assets, isLoading = false }: Props) {
           <p className="text-[10px] text-slate-400 mt-0.5">
             {isLoading
               ? "Analyzing technicals, financials & sentiment…"
-              : assets.length === 0
+              : isError
+              ? "Failed to load AI rankings — click retry"
+              : hasNoStocks
               ? "Add stocks to your watchlist to see AI rankings"
+              : assets.length === 0
+              ? "Fetching scores for your watchlist…"
               : "Top picks ranked by AI score — updated on demand"}
           </p>
         </div>
-        {isLoading && (
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-full">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            Analyzing
-          </div>
-        )}
+
+        <div className="flex items-center gap-2">
+          {isLoading && (
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-full">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              Analyzing
+            </div>
+          )}
+          {(isError || (!isLoading && !hasNoStocks && assets.length === 0)) && (
+            <button
+              onClick={handleRetry}
+              className="text-[10px] font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+            >
+              ↺ Retry
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2.5">
         {isLoading ? (
           // Show 3 skeleton rows while loading
           [1, 2, 3].map((i) => <SkeletonRow key={i} />)
-        ) : assets.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-xs">
-            No ranked assets yet. Add stocks to your watchlist.
+        ) : isError ? (
+          <div className="text-center py-8 space-y-3">
+            <div className="text-3xl">⚠️</div>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">AI Rankings Unavailable</p>
+            <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
+              The AI ranking service could not be reached. This usually means the backend needs to be redeployed with the latest changes.
+            </p>
+            <button
+              onClick={handleRetry}
+              className="mt-2 text-xs font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl transition-colors"
+            >
+              ↺ Retry Now
+            </button>
           </div>
+        ) : hasNoStocks ? (
+          <div className="text-center py-8 text-slate-400 text-xs">
+            Add stocks to your watchlist to see AI-powered rankings.
+          </div>
+        ) : assets.length === 0 ? (
+          // Data loading but still empty — likely first load
+          [1, 2, 3].map((i) => <SkeletonRow key={i} />)
         ) : (
           assets.map((asset, index) => (
             <div

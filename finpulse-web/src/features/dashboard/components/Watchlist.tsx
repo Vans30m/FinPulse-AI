@@ -207,7 +207,7 @@ export default function Watchlist() {
   };
 
   // Lazy AI rankings — fetched from a dedicated endpoint after the main watchlist loads
-  const { data: aiRankingsData, isLoading: aiRankingsLoading } = useWatchlistAIRankings(activeListId);
+  const { data: aiRankingsData, isLoading: aiRankingsLoading, isError: aiRankingsError } = useWatchlistAIRankings(activeListId);
 
   const rankedAssets = useMemo(() => {
     if (!aiRankingsData) return [];
@@ -496,7 +496,12 @@ export default function Watchlist() {
       </div>
 
       {/* AI RANKINGS CARD */}
-      <AIRankingCard assets={rankedAssets} isLoading={aiRankingsLoading} />
+      <AIRankingCard
+        assets={rankedAssets}
+        isLoading={aiRankingsLoading}
+        isError={aiRankingsError}
+        stockCount={(activeWatchlist.items || []).length}
+      />
     </div>
   );
 }
