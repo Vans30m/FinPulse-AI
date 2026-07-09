@@ -351,50 +351,6 @@ portfolioRoutes.get('/events', async (req, res) => {
   }
 });
 
-// GET /api/portfolio/watchlist - live watchlist summary
-portfolioRoutes.get('/watchlist', async (req, res) => {
-  try {
-    const user = await getOrCreateDefaultUser(req);
-    // Fetch all watchlists for the user to get a complete overview of monitored assets
-    const watchlists = await prisma.watchlist.findMany({
-      where: { userId: user.id },
-      include: { items: true }
-    });
-
-    const symbolSet = new Set<string>();
-    watchlists.forEach(list => {
-      list.items.forEach(item => {
-        symbolSet.add(item.symbol);
-      });
-    });
-    const symbols = Array.from(symbolSet);
-
-    const enriched = await Promise.all(symbols.map(async (symbol) => {
-      try {
-        const quote = await yahooFinance.quote(symbol);
-        const changePercent = quote.regularMarketChangePercent || 0;
-        return {
-          id: symbol,
-          company: quote.longName || quote.shortName || symbol,
-          symbol,
-          price: quote.regularMarketPrice || 0,
-          currency: quote.currency || 'USD',
-          dailyChangePercent: changePercent,
-          sentiment: changePercent >= 0 ? 'Bullish' : 'Bearish',
-          sparkline: [100, 101, 103, 102, 105],
-          logoInitials: symbol.slice(0, 2),
-          logoTone: changePercent >= 0 ? 'emerald' : 'rose'
-        };
-      } catch {
-        return null;
-      }
-    }));
-
-    res.json(enriched.filter(Boolean));
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 // GET /api/portfolio/rolling-cagr - dynamic rolling CAGR calculation
 portfolioRoutes.get('/rolling-cagr', async (req, res) => {

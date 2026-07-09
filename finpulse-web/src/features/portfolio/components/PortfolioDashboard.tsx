@@ -3,7 +3,7 @@ import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, 
 import { BarChart3 } from "lucide-react";
 import PortfolioAllocationChart from "./PortfolioAllocationChart";
 import PortfolioSummarySection, { type PortfolioSummaryMetric } from "./PortfolioSummarySection";
-import WatchlistSnapshotSection from "./WatchlistSnapshotSection";
+
 import UpcomingEventsSection from "./UpcomingEventsSection";
 import PortfolioPerformanceChart from "./PortfolioPerformanceChart";
 import { useChart } from "../../../context/ChartContext";
@@ -109,7 +109,7 @@ export default function PortfolioDashboard() {
   const [usdToEurRate, setUsdToEurRate] = useState<number>(0.92);
   const [usdToGbpRate, setUsdToGbpRate] = useState<number>(0.79);
   const [portfolioCurrency, setPortfolioCurrency] = useState<'USD' | 'INR' | 'EUR' | 'GBP'>('USD');
-  const [watchlistItems, setWatchlistItems] = useState<any[]>([]);
+
   const [advisorData, setAdvisorData] = useState<any>(null);
   const [performanceData, setPerformanceData] = useState<{ month: string; value: number; invested: number; profit: number }[]>([]);
   const [liveQuotes, setLiveQuotes] = useState<Record<string, { price: number; change: number }>>({});
@@ -201,73 +201,38 @@ export default function PortfolioDashboard() {
   };
 
   const loadPortfolioData = async () => {
-    try {
-      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
-      const userId = storedUser.id;
-      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
-      const headers: any = {};
-      if (userId) headers['X-User-Id'] = userId;
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+    const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+    const userId = storedUser.id;
+    const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+    const headers: any = {};
+    if (userId) headers['X-User-Id'] = userId;
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      // Check session cache for advisor data
-      const cachedAdvisor = sessionStorage.getItem("portfolioAdvisor");
-      if (cachedAdvisor) {
-        try {
-          setAdvisorData(JSON.parse(cachedAdvisor));
-        } catch (e) {
-          console.warn("Failed parsing cached portfolioAdvisor:", e);
-        }
-      }
+
+
+    // --- Holdings (independent) ---
+    try {
       const virtualTickers = virtualHoldings.map(h => h.ticker).join(',');
-      const holdingsUrl = virtualTickers 
+      const holdingsUrl = virtualTickers
         ? `${API_BASE_URL}/api/portfolio/holdings?virtualTickers=${encodeURIComponent(virtualTickers)}`
         : `${API_BASE_URL}/api/portfolio/holdings`;
-
-      const promises: Promise<any>[] = [
-        fetch(holdingsUrl, { headers }),
-        fetch(`${API_BASE_URL}/api/portfolio/watchlist`, { headers }),
-        fetch(`${API_BASE_URL}/api/portfolio/rolling-cagr`, { headers })
-      ];
-
-      // Fetch advisor dynamically only if not present in session cache
-      let advisorPromiseIdx = -1;
-      if (!cachedAdvisor) {
-        advisorPromiseIdx = promises.length;
-        promises.push(fetch(`${API_BASE_URL}/api/ai/portfolio-advisor`, { headers }));
-      }
-
-      const responses = await Promise.all(promises);
-      const holdingsRes = responses[0];
-      const watchlistRes = responses[1];
-      const cagrRes = responses[2];
-
-      if (advisorPromiseIdx !== -1) {
-        const advisorRes = responses[advisorPromiseIdx];
-        if (advisorRes && advisorRes.ok) {
-          const data = await advisorRes.json();
-          sessionStorage.setItem("portfolioAdvisor", JSON.stringify(data));
-          setAdvisorData(data);
-        }
-      }
-
-      if (holdingsRes && holdingsRes.ok) {
+      const holdingsRes = await fetch(holdingsUrl, { headers });
+      if (holdingsRes.ok) {
         const data = await holdingsRes.json();
         const mapped = INITIAL_SECTIONS.map(initial => {
           const found = data.sections?.find((s: any) => s.id === initial.id);
-          return {
-            ...initial,
-            holdings: found ? found.holdings : []
-          };
+          return { ...initial, holdings: found ? found.holdings : [] };
         });
         setSections(mapped);
-        if (data.liveQuotes) {
-          setLiveQuotes(data.liveQuotes);
-        }
+        if (data.liveQuotes) setLiveQuotes(data.liveQuotes);
       }
-      if (watchlistRes && watchlistRes.ok) {
-        const data = await watchlistRes.json();
-        setWatchlistItems(data || []);
-      }
+    } catch (err) {
+      console.error('Holdings fetch error:', err);
+    }
+
+    // --- Rolling CAGR (independent, can be slow) ---
+    try {
+      const cagrRes = await fetch(`${API_BASE_URL}/api/portfolio/rolling-cagr`, { headers });
       if (cagrRes.ok) {
         const cagrData = await cagrRes.json();
         if (cagrData.portfolioValues) {
@@ -289,7 +254,24 @@ export default function PortfolioDashboard() {
         }
       }
     } catch (err) {
-      console.error("Error loading portfolio data:", err);
+      console.error('CAGR fetch error:', err);
+    }
+
+    // --- Portfolio Advisor (independent, can be slow — skip if cached) ---
+    try {
+      const cachedAdvisor = sessionStorage.getItem('portfolioAdvisor');
+      if (cachedAdvisor) {
+        setAdvisorData(JSON.parse(cachedAdvisor));
+      } else {
+        const advisorRes = await fetch(`${API_BASE_URL}/api/ai/portfolio-advisor`, { headers });
+        if (advisorRes.ok) {
+          const data = await advisorRes.json();
+          sessionStorage.setItem('portfolioAdvisor', JSON.stringify(data));
+          setAdvisorData(data);
+        }
+      }
+    } catch (err) {
+      console.error('Advisor fetch error:', err);
     }
   };
 
@@ -1219,9 +1201,6 @@ export default function PortfolioDashboard() {
         </div>
       </div>
 
-        <WatchlistSnapshotSection
-          items={watchlistItems}
-        />
 
         <UpcomingEventsSection />
 

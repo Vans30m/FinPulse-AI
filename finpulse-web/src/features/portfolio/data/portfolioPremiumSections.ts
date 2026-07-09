@@ -1,16 +1,4 @@
-export type WatchlistSnapshotItem = {
-  id: string;
-  company: string;
-  symbol: string;
-  price: number;
-  dailyChangePercent: number;
-  sentiment: "Bullish" | "Neutral" | "Bearish";
-  alertLabel?: string;
-  sparkline: number[];
-  logoInitials: string;
-  logoTone: "blue" | "emerald" | "amber" | "rose" | "purple";
-  currency?: string;
-};
+
 
 export type UpcomingPortfolioEvent = {
   id: string;
@@ -55,7 +43,7 @@ export type PortfolioAdvisorSnapshot = {
   actions: PortfolioAdvisorAction[];
 };
 
-export const watchlistSnapshotItems: WatchlistSnapshotItem[] = [];
+
 export const upcomingPortfolioEvents: UpcomingPortfolioEvent[] = [];
 export const portfolioAdvisorSnapshot: PortfolioAdvisorSnapshot = {
   score: 0,
