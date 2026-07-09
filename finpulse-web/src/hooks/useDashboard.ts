@@ -110,6 +110,16 @@ export function useWatchlistAnalytics(id: string) {
   });
 }
 
+export function useWatchlistAIRankings(id: string) {
+  return useQuery({
+    queryKey: ['watchlist-ai-rankings', id],
+    queryFn: () => dashboardService.getWatchlistAIRankings(id),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes — AI scores don't change that fast
+    retry: 1,
+  });
+}
+
 export function useWatchlistNotes(itemId: string) {
   return useQuery({
     queryKey: ['watchlist-notes', itemId],

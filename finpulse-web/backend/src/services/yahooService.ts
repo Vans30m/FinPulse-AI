@@ -479,42 +479,38 @@ export async function getCompanyNews(
 export async function getAIScore(
   symbol: string
 ) {
-  const technicals =
-    await getTechnicalIndicators(
-      symbol
-    );
+  // Run all 4 sub-calls in parallel with individual fallbacks.
+  // Promise.allSettled ensures one failure doesn't abort the others.
+  const [techResult, finResult, analystResult, newsResult] = await Promise.allSettled([
+    getTechnicalIndicators(symbol),
+    getFinancialHealth(symbol),
+    getAnalystConsensus(symbol),
+    getCompanyNews(symbol),
+  ]);
 
-  const financials =
-    await getFinancialHealth(
-      symbol
-    );
+  const technicals = techResult.status === 'fulfilled'
+    ? techResult.value
+    : { recommendation: 'HOLD' };
 
-  const analysts =
-    await getAnalystConsensus(
-      symbol
-    );
+  const financials = finResult.status === 'fulfilled'
+    ? finResult.value
+    : { revenueGrowth: 0, earningsGrowth: 0, profitMargin: 0 };
 
-  const news =
-    await getCompanyNews(
-      symbol
-    );
+  const analysts = analystResult.status === 'fulfilled'
+    ? analystResult.value
+    : { recommendation: 'hold' };
+
+  const news = newsResult.status === 'fulfilled'
+    ? newsResult.value
+    : [];
 
   let technicalScore = 0;
 
-  if (
-    technicals.recommendation ===
-    "STRONG BUY"
-  ) {
+  if (technicals.recommendation === "STRONG BUY") {
     technicalScore = 40;
-  } else if (
-    technicals.recommendation ===
-    "BUY"
-  ) {
+  } else if (technicals.recommendation === "BUY") {
     technicalScore = 30;
-  } else if (
-    technicals.recommendation ===
-    "HOLD"
-  ) {
+  } else if (technicals.recommendation === "HOLD") {
     technicalScore = 20;
   } else {
     technicalScore = 10;
@@ -522,39 +518,30 @@ export async function getAIScore(
 
   let financialScore = 0;
 
-  if (financials.revenueGrowth > 0.15) {
+  if ((financials as any).revenueGrowth > 0.15) {
     financialScore += 10;
   }
-  if (financials.earningsGrowth > 0.15) {
+  if ((financials as any).earningsGrowth > 0.15) {
     financialScore += 10;
   }
-  if (financials.profitMargin > 0.20) {
+  if ((financials as any).profitMargin > 0.20) {
     financialScore += 5;
   }
 
   let analystScore = 0;
 
-  if (
-    analysts.recommendation ===
-    "strong_buy"
-  ) {
+  if (analysts.recommendation === "strong_buy") {
     analystScore = 20;
-  } else if (
-    analysts.recommendation ===
-    "buy"
-  ) {
+  } else if (analysts.recommendation === "buy") {
     analystScore = 15;
-  } else if (
-    analysts.recommendation ===
-    "hold"
-  ) {
+  } else if (analysts.recommendation === "hold") {
     analystScore = 10;
   } else {
     analystScore = 5;
   }
 
   let newsScore = 0;
-  const headlines = news.map((item: any) => item.title?.toLowerCase() || "");
+  const headlines = (news as any[]).map((item: any) => item.title?.toLowerCase() || "");
 
   const positiveWords = ["buy", "bullish", "growth", "record", "strong", "beat", "upgrade", "surge", "gain"];
   const negativeWords = ["sell", "bearish", "drop", "weak", "downgrade", "fall", "decline", "miss", "risk"];

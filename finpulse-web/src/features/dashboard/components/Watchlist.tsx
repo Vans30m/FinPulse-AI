@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import {
   useWatchlists, useCreateWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
-  useUpdateWatchlistItem, useDeleteWatchlist
+  useUpdateWatchlistItem, useDeleteWatchlist, useWatchlistAIRankings
 } from "../../../hooks/useDashboard";
 import AIRankingCard from "./AIRankingCard";
 import toast from "react-hot-toast";
@@ -206,13 +206,15 @@ export default function Watchlist() {
     return colors[sym.charCodeAt(0) % colors.length];
   };
 
+  // Lazy AI rankings — fetched from a dedicated endpoint after the main watchlist loads
+  const { data: aiRankingsData, isLoading: aiRankingsLoading } = useWatchlistAIRankings(activeListId);
+
   const rankedAssets = useMemo(() => {
-    return [...(activeWatchlist.items || [])]
-      .filter((item: any) => item.aiScore !== undefined)
-      .sort((a: any, b: any) => (b.aiScore || 0) - (a.aiScore || 0))
+    if (!aiRankingsData) return [];
+    return aiRankingsData
       .slice(0, 5)
-      .map((item: any) => ({ symbol: item.symbol, score: item.aiScore || 0, verdict: item.aiReason || "No analysis available" }));
-  }, [activeWatchlist.items]);
+      .map((item) => ({ symbol: item.symbol, score: item.score, verdict: item.reason }));
+  }, [aiRankingsData]);
 
   const stats = useMemo(() => {
     const items = activeWatchlist.items || [];
@@ -494,7 +496,7 @@ export default function Watchlist() {
       </div>
 
       {/* AI RANKINGS CARD */}
-      <AIRankingCard assets={rankedAssets} />
+      <AIRankingCard assets={rankedAssets} isLoading={aiRankingsLoading} />
     </div>
   );
 }

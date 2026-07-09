@@ -306,6 +306,14 @@ export const dashboardService = {
     return res.json();
   },
 
+  async getWatchlistAIRankings(id: string): Promise<{ symbol: string; score: number; reason: string }[]> {
+    const res = await fetch(`${API_BASE}/watchlists/${id}/ai-rankings`, {
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to fetch AI rankings');
+    return res.json();
+  },
+
   async getWatchlistItemNotes(itemId: string): Promise<any[]> {
     const res = await fetch(`${API_BASE}/watchlists/items/${itemId}/notes`, {
       headers: getHeaders()

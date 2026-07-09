@@ -8,6 +8,14 @@ import { getAIScore } from '../services/yahooService.js';
 const prisma = new PrismaClient();
 const watchlistsRouter = express.Router();
 
+// Helper: race a promise against a timeout
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))
+  ]);
+}
+
 // Helper to seed/retrieve default user
 async function getUserId(req: AuthenticatedRequest) {
   if (req.userId) return req.userId;
@@ -15,7 +23,7 @@ async function getUserId(req: AuthenticatedRequest) {
   return user ? user.id : '';
 }
 
-// GET /api/watchlists - Fetch all watchlists for user
+// GET /api/watchlists - Fetch all watchlists for user (price data only — AI scores are separate)
 watchlistsRouter.get('/', protect, async (req, res) => {
   try {
     const userId = await getUserId(req);
@@ -31,34 +39,18 @@ watchlistsRouter.get('/', protect, async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    // Helper: race a promise against a timeout
-    function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
-      return Promise.race([
-        promise,
-        new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))
-      ]);
-    }
-
     const populatedLists = await Promise.all(
       lists.map(async (list) => {
         const populatedItems = await Promise.all(
           list.items.map(async (item) => {
-            // Run Yahoo quote and AI score in parallel, each with a timeout
-            const [quoteResult, aiResult] = await Promise.allSettled([
-              withTimeout(
-                yahooFinance.quote(item.symbol),
-                8000,
-                null as any
-              ),
-              withTimeout(
-                getAIScore(item.symbol),
-                8000,
-                { score: 50 } as any
-              )
-            ]);
+            // Only fetch price quote here — AI scores are computed by a separate endpoint
+            const quoteResult = await withTimeout(
+              yahooFinance.quote(item.symbol),
+              8000,
+              null as any
+            ).catch(() => null);
 
-            const q = quoteResult.status === 'fulfilled' ? quoteResult.value : null;
-            const aiData = aiResult.status === 'fulfilled' ? aiResult.value : { score: 50 };
+            const q = quoteResult;
 
             const changePercent = q?.regularMarketChangePercent !== undefined
               ? `${q.regularMarketChangePercent >= 0 ? '+' : ''}${q.regularMarketChangePercent.toFixed(2)}%`
@@ -67,25 +59,11 @@ watchlistsRouter.get('/', protect, async (req, res) => {
               ? `${q.currency === 'INR' ? '\u20b9' : '$'}${q.regularMarketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
               : 'N/A';
 
-            const aiScoreVal: number = (aiData as any)?.score ?? 50;
-            let aiReasonVal = 'No analysis available';
-            if (aiScoreVal >= 80) {
-              aiReasonVal = 'Strong Buy - Bullish technical indicators and solid financials.';
-            } else if (aiScoreVal >= 65) {
-              aiReasonVal = 'Buy - Supported by positive market sentiment and analyst targets.';
-            } else if (aiScoreVal >= 50) {
-              aiReasonVal = 'Hold - Neutral technicals and stable financials.';
-            } else {
-              aiReasonVal = 'Sell - Underperforming indicators and bearish sentiment.';
-            }
-
             return {
               ...item,
               price,
               changePercent,
               name: q?.longName || q?.shortName || item.symbol,
-              aiScore: aiScoreVal,
-              aiReason: aiReasonVal
             };
           })
         );
@@ -94,6 +72,57 @@ watchlistsRouter.get('/', protect, async (req, res) => {
     );
 
     res.json(populatedLists);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/watchlists/:id/ai-rankings - Dedicated AI ranking endpoint (called lazily by frontend)
+watchlistsRouter.get('/:id/ai-rankings', protect, async (req, res) => {
+  try {
+    const userId = await getUserId(req);
+    const { id } = req.params;
+
+    const list = await prisma.watchlist.findFirst({
+      where: { id: id as string, userId: userId as string },
+      include: { items: { orderBy: { position: 'asc' } } }
+    });
+
+    if (!list) return res.status(404).json({ error: 'Watchlist not found' });
+
+    const items = list.items || [];
+    if (items.length === 0) return res.json([]);
+
+    // Compute AI scores for all items in parallel, each with its own 12s timeout and fallback
+    const rankingResults = await Promise.all(
+      items.map(async (item) => {
+        try {
+          const aiData = await withTimeout(
+            getAIScore(item.symbol),
+            12000,
+            { score: 50 } as any
+          );
+          const scoreVal: number = (aiData as any)?.score ?? 50;
+          let reason = 'No analysis available';
+          if (scoreVal >= 80) {
+            reason = 'Strong Buy — Bullish technical indicators and solid financials.';
+          } else if (scoreVal >= 65) {
+            reason = 'Buy — Supported by positive market sentiment and analyst targets.';
+          } else if (scoreVal >= 50) {
+            reason = 'Hold — Neutral technicals and stable financials.';
+          } else {
+            reason = 'Sell — Underperforming indicators and bearish sentiment.';
+          }
+          return { symbol: item.symbol, score: scoreVal, reason };
+        } catch {
+          return { symbol: item.symbol, score: 50, reason: 'No analysis available' };
+        }
+      })
+    );
+
+    // Sort descending by score
+    const sorted = rankingResults.sort((a, b) => b.score - a.score);
+    res.json(sorted);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
