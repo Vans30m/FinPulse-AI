@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Bell, ExternalLink, Sparkles } from "lucide-react";
+import { ArrowUpRight, Bell, Bookmark, ExternalLink, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { WatchlistSnapshotItem } from "../data/portfolioPremiumSections";
 
@@ -73,7 +73,25 @@ function WatchlistSnapshotSection({ items }: Props) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {items.map((item, index) => {
+        {items.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-12 border border-dashed border-slate-200 dark:border-slate-800/80 bg-slate-50/20 dark:bg-black/[0.05] rounded-2xl text-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
+              <Bookmark className="h-5 w-5 text-blue-500 dark:text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">No watchlist assets found</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Add stocks, crypto, or ETFs to your watchlist to see them here.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/watchlist")}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-xs font-bold text-blue-600 dark:text-cyan-400 transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Go to Watchlist
+            </button>
+          </div>
+        ) : items.map((item, index) => {
           const positive = item.dailyChangePercent >= 0;
           const tone = toneClasses[item.logoTone];
 
