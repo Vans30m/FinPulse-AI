@@ -18,7 +18,12 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
   },
+  connectionTimeout: 10_000,
+  greetingTimeout: 10_000,
+  socketTimeout: 15_000,
 });
+
+const SMTP_SEND_TIMEOUT_MS = 15_000;
 
 async function sendOtpEmail(email: string, code: string) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -29,12 +34,13 @@ async function sendOtpEmail(email: string, code: string) {
   }
 
   try {
-    await transporter.sendMail({
-      from: `"FinPulse AI" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: 'Verify your FinPulse AI Account',
-      text: `Your 6-digit verification code is: ${code}. It expires in 10 minutes.`,
-      html: `
+    await Promise.race([
+      transporter.sendMail({
+        from: `"FinPulse AI" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Verify your FinPulse AI Account',
+        text: `Your 6-digit verification code is: ${code}. It expires in 10 minutes.`,
+        html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #0284c7;">Verify your FinPulse AI Account</h2>
           <p>Thank you for signing up for FinPulse AI. Please use the following 6-digit verification code to complete your registration:</p>
@@ -45,11 +51,19 @@ async function sendOtpEmail(email: string, code: string) {
           <p style="font-size: 12px; color: #666; margin-top: 30px;">If you did not request this, please ignore this email.</p>
         </div>
       `,
-    });
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('SMTP send timed out')), SMTP_SEND_TIMEOUT_MS)
+      ),
+    ]);
     console.log(`✉️ OTP email sent to ${email}`);
   } catch (error) {
     console.error(`Failed to send OTP email to ${email}:`, error);
   }
+}
+
+function queueOtpEmail(email: string, code: string) {
+  void sendOtpEmail(email, code);
 }
 
 
@@ -216,8 +230,8 @@ router.post('/register', async (req: any, res: any) => {
       },
     });
 
-    // Send email (or print to console if no credentials)
-    await sendOtpEmail(email, code);
+    // Respond immediately; email delivery runs in the background
+    queueOtpEmail(email, code);
 
     res.json({
       requiresVerification: true,
@@ -353,8 +367,8 @@ router.post('/login', async (req: any, res: any) => {
       },
     });
 
-    // Send email (or print to console if no credentials)
-    await sendOtpEmail(email, code);
+    // Respond immediately; email delivery runs in the background
+    queueOtpEmail(email, code);
 
     res.json({
       requiresVerification: true,
@@ -465,8 +479,8 @@ router.post('/forgot-pin', async (req: any, res: any) => {
       },
     });
 
-    // Send email
-    await sendOtpEmail(email, code);
+    // Respond immediately; email delivery runs in the background
+    queueOtpEmail(email, code);
 
     res.json({ message: 'Verification code sent to your email.' });
   } catch (error: any) {

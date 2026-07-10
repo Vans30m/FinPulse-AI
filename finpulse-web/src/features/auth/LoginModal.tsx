@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, LayoutDashboard, LockKeyhole } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAppData } from '../../context/AppDataContext';
-import API_BASE_URL from "../../config/api";
+import API_BASE_URL, { apiFetch, ApiRequestError } from "../../config/api";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -28,21 +28,21 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   const [bio, setBio] = useState('');
   const [profileUserId, setProfileUserId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const loginWithGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      setLoading(true);
+      setGoogleLoading(true);
       try {
-        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        const userInfoResponse = await apiFetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
         });
         const userInfo = await userInfoResponse.json();
         if (userInfo.email) {
           setEmail(userInfo.email);
 
-          // Verify/Register user in PostgreSQL backend via Neon
-          const backendRes = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+          const backendRes = await apiFetch(`${API_BASE_URL}/api/auth/google-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -69,14 +69,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         }
       } catch (err) {
         console.error("Google user profile load failed:", err);
-        setError('Failed to load Google profile.');
+        setError(err instanceof ApiRequestError ? err.message : 'Failed to load Google profile.');
       } finally {
-        setLoading(false);
+        setGoogleLoading(false);
       }
     },
     onError: () => {
       setError('Google Login Failed. Please try again.');
-      setLoading(false);
+      setGoogleLoading(false);
     },
   });
 
@@ -96,8 +96,19 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       setBio('');
       setProfileUserId('');
       setLoading(false);
+      setGoogleLoading(false);
     }
   }, [isOpen]);
+
+  const parseJsonResponse = async (res: Response) => {
+    const text = await res.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new ApiRequestError('Unexpected server response. Please try again.');
+    }
+  };
 
   const handleTraditionalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,13 +121,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setLoading(true);
     try {
       const endpoint = isRegisterMode ? 'register' : 'login';
-      const res = await fetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name, password })
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (res.ok) {
         if (data.requiresVerification) {
           setStep('otp-verification');
@@ -132,7 +143,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       }
     } catch (err) {
       console.error('Traditional auth failed:', err);
-      setError('Connection error. Please try again.');
+      setError(err instanceof ApiRequestError ? err.message : 'Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -149,13 +160,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setLoading(true);
     try {
       const endpoint = isRegisterMode ? 'verify-otp' : 'login-verify-otp';
-      const res = await fetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name, password, code: otpCode })
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (res.ok) {
         localStorage.setItem('finpulse_token', data.token);
         localStorage.setItem('finpulse-user', JSON.stringify(data.user));
@@ -171,7 +182,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       }
     } catch (err) {
       console.error('OTP verification failed:', err);
-      setError('Connection error. Please try again.');
+      setError(err instanceof ApiRequestError ? err.message : 'Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -181,13 +192,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setError('');
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/forgot-pin`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/forgot-pin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (res.ok) {
         setStep('reset-pin');
         setResetOtp('');
@@ -197,7 +208,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       }
     } catch (err) {
       console.error('Forgot PIN request failed:', err);
-      setError('Connection error. Please try again.');
+      setError(err instanceof ApiRequestError ? err.message : 'Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -217,13 +228,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/reset-pin-with-otp`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/reset-pin-with-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: resetOtp, newPin })
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (res.ok) {
         localStorage.setItem('finpulse_token', data.token);
         localStorage.setItem('finpulse-user', JSON.stringify(data.user));
@@ -234,7 +245,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       }
     } catch (err) {
       console.error('Reset PIN failed:', err);
-      setError('Connection error. Please try again.');
+      setError(err instanceof ApiRequestError ? err.message : 'Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -250,13 +261,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/update-profile`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/update-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: profileUserId, name, bio })
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (res.ok) {
         localStorage.setItem('finpulse-user', JSON.stringify(data.user));
         setUser(data.user);
@@ -266,7 +277,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       }
     } catch (err) {
       console.error('Profile setup failed:', err);
-      setError('Connection error. Please try again.');
+      setError(err instanceof ApiRequestError ? err.message : 'Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -298,7 +309,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       setLoading(true);
       try {
         if (step === 'set-pin') {
-          const res = await fetch(`${API_BASE_URL}/api/auth/set-pin`, {
+          const res = await apiFetch(`${API_BASE_URL}/api/auth/set-pin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, pin: val })
@@ -317,7 +328,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             setPin('');
           }
         } else if (step === 'enter-pin') {
-          const res = await fetch(`${API_BASE_URL}/api/auth/verify-pin`, {
+          const res = await apiFetch(`${API_BASE_URL}/api/auth/verify-pin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, pin: val })
@@ -337,7 +348,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         }
       } catch (err) {
         console.error("PIN authentication failed:", err);
-        setError('Connection error. Please try again.');
+        setError(err instanceof ApiRequestError ? err.message : 'Connection error. Please try again.');
         setPin('');
       } finally {
         setLoading(false);
@@ -484,7 +495,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 {/* Google Sign-in */}
                 <button
                   type="button"
-                  disabled={loading}
+                  disabled={googleLoading || loading}
                   onClick={() => loginWithGoogle()}
                   className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -493,7 +504,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
-                  {loading ? 'Connecting...' : 'Continue with Google'}
+                  {googleLoading ? 'Connecting...' : 'Continue with Google'}
                 </button>
 
                 {error && (
@@ -520,7 +531,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                   Verify your email
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-10">
-                  We've sent a 6-digit verification code to <span className="font-extrabold">{email}</span>. Please enter it below to complete registration.
+                  We've sent a 6-digit verification code to <span className="font-extrabold">{email}</span>. Please enter it below to {isRegisterMode ? 'complete registration' : 'sign in'}.
                 </p>
 
                 <form onSubmit={handleOtpSubmit} className="space-y-6">
