@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { TrendingUp, TrendingDown, Activity, AlertCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useChart } from "../../../context/ChartContext";
 import { useMarketScreener } from "../../../hooks/useMarketScreeners";
 
 interface Props {
@@ -18,7 +18,7 @@ interface Stock {
 type TabId = "Gainers" | "Losers" | "Active";
 
 export default function MarketScreeners({ marketRegion }: Props) {
-  const navigate = useNavigate();
+  const { openAsset } = useChart();
   const [activeTab, setActiveTab] = useState<TabId>("Gainers");
 
   const screenerType =
@@ -117,8 +117,15 @@ export default function MarketScreeners({ marketRegion }: Props) {
               <button
                 key={stock.symbol}
                 onClick={() =>
-                  navigate(`/asset/${encodeURIComponent(stock.symbol)}`, {
-                    state: { name: stock.name },
+                  openAsset({
+                    symbol: stock.symbol,
+                    yahooSymbol: stock.symbol,
+                    name: stock.name,
+                    exchange: marketRegion === "india" ? "NSE" : "NASDAQ",
+                    type: "Stock",
+                    price: Number(stock.price),
+                    change: Number(stock.change),
+                    changePercent: Number(stock.changePercent),
                   })
                 }
                 className="min-w-[190px] shrink-0 snap-start glass-card p-4 text-left hover:border-blue-400/50 dark:hover:border-cyan-500/40 cursor-pointer group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

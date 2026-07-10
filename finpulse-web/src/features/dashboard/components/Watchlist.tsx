@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Plus, Trash2,
@@ -12,9 +11,10 @@ import {
 import AIRankingCard from "./AIRankingCard";
 import toast from "react-hot-toast";
 import API_BASE_URL from "../../../config/api";
+import { useChart } from "../../../context/ChartContext";
 
 export default function Watchlist() {
-  const navigate = useNavigate();
+  const { openAsset } = useChart();
   const { data: watchlists = [] } = useWatchlists();
   const createListMutation = useCreateWatchlist();
   const deleteListMutation = useDeleteWatchlist();
@@ -427,7 +427,13 @@ export default function Watchlist() {
                       <div className="flex justify-between items-start gap-3">
                         <div
                           className="flex items-center gap-3 cursor-pointer"
-                          onClick={() => navigate(`/asset/${item.symbol}`)}
+                          onClick={() => openAsset({
+                            symbol: item.symbol,
+                            yahooSymbol: item.symbol,
+                            name: item.name || "Stock Asset",
+                            exchange: "NSE",
+                            type: "Stock",
+                          })}
                           title="Click to view detailed asset profile page"
                         >
                           <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${getAvatarColor(item.symbol)} flex items-center justify-center text-white text-sm font-black uppercase shadow-inner`}>

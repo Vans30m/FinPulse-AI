@@ -13,7 +13,7 @@ interface SearchResult {
 }
 
 export default function CommandPalette() {
-  const { openChart } = useChart();
+  const { openAsset } = useChart();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -57,7 +57,7 @@ export default function CommandPalette() {
       return [item, ...filtered].slice(0, 5); // Keep top 5
     });
 
-    openChart({
+    openAsset({
       symbol: item.symbol,
       yahooSymbol: item.yahooSymbol,
       name: item.name,

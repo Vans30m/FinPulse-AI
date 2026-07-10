@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useChart } from "../../context/ChartContext";
 
 interface Market {
   symbol: string;
@@ -21,16 +21,18 @@ interface Props {
 }
 
 export default function MarketHeatmap({ markets }: Props) {
-  const navigate = useNavigate();
+  const { openAsset } = useChart();
 
   const handleTileClick = (market: Market) => {
-    navigate(`/asset/${market.symbol}`, {
-      state: {
-        name: market.name,
-        price: market.price,
-        change: market.change,
-        changePercent: market.changePercent
-      }
+    openAsset({
+      symbol: market.symbol,
+      yahooSymbol: market.symbol,
+      name: market.name,
+      exchange: market.region,
+      type: "Index",
+      price: market.price,
+      change: market.change,
+      changePercent: market.changePercent,
     });
   };
 

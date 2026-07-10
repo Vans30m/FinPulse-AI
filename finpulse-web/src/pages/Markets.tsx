@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
 import MarketHeatmap from "../components/markets/MarketHeatmap";
-import { useNavigate } from "react-router-dom";
 import MarketStatusBar from "../features/dashboard/components/MarketStatusBar";
 import { Search, X } from "lucide-react";
 import API_BASE_URL from "../config/api";
+import { useChart } from "../context/ChartContext";
 
 function Sparkline({ data, isPositive }: { data: { value: number }[]; isPositive: boolean }) {
   const gradientId = useMemo(() => `sparkline-grad-${Math.random().toString(36).substring(2, 9)}`, []);
@@ -53,7 +53,8 @@ function Sparkline({ data, isPositive }: { data: { value: number }[]; isPositive
   );
 }
 
-function MarketCard({ market, navigate }: { market: any; navigate: any }) {
+function MarketCard({ market }: { market: any }) {
+  const { openAsset } = useChart();
   const [history, setHistory] = useState<any[]>([]);
   const changePercent = parseFloat(market.changePercent) || 0;
   const change = parseFloat(market.change) || 0;
@@ -76,10 +77,16 @@ function MarketCard({ market, navigate }: { market: any; navigate: any }) {
   return (
     <div
       onClick={() =>
-        navigate(
-          `/asset/${encodeURIComponent(market.symbol)}`,
-          { state: { name: market.name } }
-        )
+        openAsset({
+          symbol: market.symbol,
+          yahooSymbol: market.symbol,
+          name: market.name,
+          exchange: market.region,
+          type: "Index",
+          price: parseFloat(market.price) || 0,
+          change: parseFloat(market.change) || 0,
+          changePercent: parseFloat(market.changePercent) || 0,
+        })
       }
       className="
         relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-6 
@@ -140,7 +147,6 @@ function MarketCard({ market, navigate }: { market: any; navigate: any }) {
 }
 
 export default function Markets() {
-  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("default");
   const [searchQueries, setSearchQueries] = useState<Record<string, string>>({});
@@ -337,7 +343,6 @@ export default function Markets() {
                       <MarketCard
                         key={market.symbol}
                         market={market}
-                        navigate={navigate}
                       />
                     ))}
                   </div>

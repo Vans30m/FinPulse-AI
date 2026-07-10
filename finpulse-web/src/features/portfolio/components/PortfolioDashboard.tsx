@@ -154,7 +154,7 @@ export default function PortfolioDashboard() {
   const [cost, setCost] = useState('');
 
   const {
-    openChart,
+    openAsset,
   } = useChart();
 
   // Finnhub Debounced Search
@@ -1163,7 +1163,7 @@ export default function PortfolioDashboard() {
                         <button
                           type="button"
                           onClick={() =>
-                            openChart({
+                            openAsset({
                               symbol: asset.ticker,
                               yahooSymbol: asset.yahooSymbol || asset.ticker,
                               name: asset.name,

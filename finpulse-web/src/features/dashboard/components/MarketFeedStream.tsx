@@ -6,7 +6,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useGlobalMarkets } from "../../../hooks/useGlobalMarkets";
-import { useNavigate } from "react-router-dom";
+import { useChart } from "../../../context/ChartContext";
 
 interface Props {
   marketRegion: "india" | "us";
@@ -22,7 +22,7 @@ export default function MarketFeedStream({
   const { data: markets = [], isLoading } =
     useGlobalMarkets();
 
-const navigate = useNavigate();
+const { openAsset } = useChart();
 
   const [filter, setFilter] =
     useState<
@@ -123,16 +123,16 @@ const navigate = useNavigate();
                 <div
                   key={market.symbol}
                   onClick={() =>
-  navigate(
-  `/asset/${encodeURIComponent(
-    market.symbol
-  )}`,
-  {
-    state: {
-      name: market.name,
-    },
-  }
-)
+  openAsset({
+    symbol: market.symbol,
+    yahooSymbol: market.symbol,
+    name: market.name,
+    exchange: marketType,
+    type: "Index",
+    price: Number(market.price),
+    change: Number(market.change),
+    changePercent: Number(market.changePercent),
+  })
 }
                   className="
                     glass-card
