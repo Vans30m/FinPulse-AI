@@ -123,6 +123,14 @@ model User {
   occupation            String?
   preferences           String?                // JSON string for compatibility
   notificationSettings  String?                // JSON string for compatibility
+  riskProfile           String?
+  investmentGoal        String?
+  investmentHorizon     String?
+  experienceLevel       String?
+  preferredExchange     String?
+  baseCurrency          String?
+  taxCountry            String?
+  connectedAccounts     String?                // JSON string for Google, GitHub, Apple, Microsoft status
   passwordHash          String?
   devicePin             String?  
   role                  UserRole               @default(USER)

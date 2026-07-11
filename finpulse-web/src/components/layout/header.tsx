@@ -311,8 +311,12 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="flex items-center gap-2 rounded-xl p-1 sm:px-2.5 sm:py-1.5 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all"
               >
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md text-xs font-black shrink-0">
-                  {user?.name ? user.name.slice(0, 2).toUpperCase() : 'US'}
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md text-xs font-black shrink-0 overflow-hidden">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    user?.name ? user.name.slice(0, 2).toUpperCase() : 'US'
+                  )}
                 </div>
 
                 <div className="text-left hidden sm:block">

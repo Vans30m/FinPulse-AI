@@ -19,24 +19,22 @@ export function protect(req: AuthenticatedRequest, res: Response, next: NextFunc
     // Try JWT Bearer token first
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1] || '';
-      if (token) {
         try {
           const decoded = jwt.verify(token, JWT_SECRET as string) as any;
-          req.userId = decoded.id;
+          req.userId = decoded.id || decoded.userId;
           req.userEmail = decoded.email;
           req.user = decoded;
           return next();
         } catch (err) {
           // Try decoding without verification (expired tokens, etc.)
           const decoded = jwt.decode(token) as any;
-          if (decoded && decoded.id) {
-            req.userId = decoded.id;
+          if (decoded && (decoded.id || decoded.userId)) {
+            req.userId = decoded.id || decoded.userId;
             req.userEmail = decoded.email;
             req.user = decoded;
             return next();
           }
         }
-      }
     }
 
     // Fallback: accept X-User-Id header (used by portfolio routes and Google OAuth users)

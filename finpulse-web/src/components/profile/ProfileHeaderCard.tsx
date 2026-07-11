@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 interface ProfileHeaderCardProps {
   name: string;
   email: string;
+  avatar?: string;
   memberSince?: string;
   plan?: string;
   country?: string;
@@ -17,6 +18,7 @@ interface ProfileHeaderCardProps {
 export default function ProfileHeaderCard({
   name,
   email,
+  avatar,
   memberSince = "June 2024",
   plan = "Premium Plus",
   country = "India",
@@ -43,10 +45,14 @@ export default function ProfileHeaderCard({
         <div className="flex flex-col md:flex-row md:items-end justify-between -mt-16 mb-6 gap-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
             <div className="relative">
-              <div className="h-28 w-28 rounded-3xl bg-slate-100 dark:bg-night-850 p-1 border-4 border-white dark:border-night-900 shadow-xl overflow-hidden flex items-center justify-center">
-                <div className="h-full w-full rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-3xl font-black">
-                  {name ? name.slice(0, 2).toUpperCase() : "FP"}
-                </div>
+              <div className="h-28 w-28 rounded-3xl bg-slate-100 dark:bg-night-855 p-1 border-4 border-white dark:border-night-900 shadow-xl overflow-hidden flex items-center justify-center">
+                {avatar ? (
+                  <img src={avatar} alt={name} className="h-full w-full rounded-2xl object-cover" />
+                ) : (
+                  <div className="h-full w-full rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-3xl font-black">
+                    {name ? name.slice(0, 2).toUpperCase() : "FP"}
+                  </div>
+                )}
               </div>
               <button 
                 onClick={onEditProfile}
