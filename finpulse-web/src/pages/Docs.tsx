@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { BookOpen, Play, Settings, Database, Bell } from "lucide-react";
+import { BookOpen, Play, Settings, Database, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Docs() {
   const [activeSection, setActiveSection] = useState<"intro" | "config" | "sentiment" | "alerts">("intro");
+  const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
 
   const sections = {
     intro: {
@@ -42,7 +43,7 @@ JWT_SECRET=your_jwt_signing_secret`}
         <div className="space-y-4">
           <p>Market Sentiment scores range from -100 (Extremely Bearish) to +100 (Extremely Bullish). They are compiled based on historical sentiment correlation analysis.</p>
           <h3 className="text-lg font-bold mt-6 text-slate-900 dark:text-white">Sentiment Calculation Parameters</h3>
-          <ul className="list-disc list-inside space-y-2 text-sm text-slate-600 dark:text-slate-300 pl-2">
+          <ul className="list-disc list-inside space-y-2 text-sm text-slate-650 dark:text-slate-350 pl-2">
             <li><strong>News Catalysts:</strong> Weighted by news source reputation.</li>
             <li><strong>Index Weighting:</strong> High impact news is dynamically prioritized.</li>
             <li><strong>Decay Constant:</strong> Older news sentiment decay occurs exponentially over a 12-hour window.</li>
@@ -74,33 +75,48 @@ JWT_SECRET=your_jwt_signing_secret`}
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* Sidebar Navigation */}
-      <div className="lg:col-span-1 space-y-2">
-        <div className="flex items-center gap-2 px-3 py-2 text-slate-400 font-bold uppercase text-xs tracking-wider">
-          <BookOpen className="h-4 w-4" />
-          <span>Documentation</span>
+      <div className={`transition-all duration-300 ${isCollapsed ? 'lg:col-span-1 flex flex-col items-center' : 'lg:col-span-3'} space-y-2`}>
+        <div className="flex items-center justify-between w-full px-3 py-2">
+          <div className={`flex items-center gap-2 text-slate-400 font-bold uppercase text-xs tracking-wider ${isCollapsed ? 'sr-only lg:not-sr-only lg:hidden' : ''}`}>
+            <BookOpen className="h-4 w-4" />
+            <span>Docs</span>
+          </div>
+          <button 
+            onClick={() => {
+              const nextVal = !isCollapsed;
+              setIsCollapsed(nextVal);
+              localStorage.setItem('sidebar_collapsed', String(nextVal));
+            }}
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors ml-auto"
+            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
         </div>
-        <nav className="space-y-1">
+        
+        <nav className={`space-y-1 w-full ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
           {Object.entries(sections).map(([key, section]) => (
             <button
               key={key}
               onClick={() => setActiveSection(key as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-left transition-all ${
+              title={section.title}
+              className={`flex items-center rounded-xl transition-all ${isCollapsed ? 'justify-center p-3 w-11 h-11' : 'w-full gap-3 px-4 py-3 text-sm font-semibold text-left'} ${
                 activeSection === key
                   ? "bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400"
-                  : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/20 hover:text-slate-800 dark:hover:text-slate-300"
+                  : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/20 hover:text-slate-800 dark:hover:text-slate-350"
               }`}
             >
               {section.icon}
-              {section.title.split(" ").slice(0, 3).join(" ")}
+              {!isCollapsed && <span className="truncate">{section.title.split(" ").slice(0, 3).join(" ")}</span>}
             </button>
           ))}
         </nav>
       </div>
 
       {/* Main Content Area */}
-      <div className="lg:col-span-3 glass-panel p-8">
+      <div className={`transition-all duration-300 ${isCollapsed ? 'lg:col-span-11' : 'lg:col-span-9'} glass-panel p-8`}>
         <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-6 border-b border-slate-100 dark:border-slate-800/60 pb-4">
           {sections[activeSection].title}
         </h1>

@@ -23,6 +23,17 @@ export interface FundamentalData {
 
 // Helper mapping object conforming exactly to TradingView / Yahoo parameters mappings
 export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }> = {
+  // New timeframes
+  "24H": { range: "2d", interval: "15m" },
+  "5D": { range: "5d", interval: "30m" },
+  "1M": { range: "30d", interval: "1d" },
+  "6M": { range: "180d", interval: "1d" },
+  "YTD": { range: "ytd", interval: "1d" },
+  "1Y": { range: "1y", interval: "1d" },
+  "5Y": { range: "5y", interval: "1wk" },
+  "All": { range: "max", interval: "1mo" },
+
+  // Compatibility fallbacks
   "1m": { range: "2d", interval: "1m" },
   "5m": { range: "10d", interval: "5m" },
   "15m": { range: "15d", interval: "15m" },
@@ -31,16 +42,11 @@ export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }
   "1H": { range: "30d", interval: "1h" },
   "4h": { range: "90d", interval: "1h" },
   "4H": { range: "90d", interval: "1h" },
-  "1d": { range: "7y", interval: "1d" },
-  "1D": { range: "7y", interval: "1d" },
+  "1d": { range: "1y", interval: "1d" },
+  "1D": { range: "1y", interval: "1d" },
   "1w": { range: "3y", interval: "1wk" },
   "1W": { range: "3y", interval: "1wk" },
-  "1M": { range: "10y", interval: "1mo" },
   "3M": { range: "3y", interval: "1mo" },
-  "6M": { range: "5y", interval: "1mo" },
-  "YTD": { range: "ytd", interval: "1d" },
-  "1Y": { range: "2y", interval: "1d" },
-  "5Y": { range: "10y", interval: "1wk" },
   "MAX": { range: "max", interval: "1mo" },
 };
 

@@ -82,60 +82,13 @@ export default function PortfolioPerformanceChart({
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {/* Total Invested */}
-        <div className="bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">Total Invested</span>
-            <h3 className="text-lg font-black text-slate-850 dark:text-white mt-1">
-              {currencySymbol}{totalInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h3>
-          </div>
-          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500">
-            <Wallet className="h-5 w-5" />
-          </div>
-        </div>
-
-        {/* Current Value */}
-        <div className="bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">Current Value (Made)</span>
-            <h3 className="text-lg font-black text-slate-850 dark:text-white mt-1">
-              {currencySymbol}{currentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h3>
-          </div>
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500">
-            <DollarSign className="h-5 w-5" />
-          </div>
-        </div>
-
-        {/* Total Profit */}
-        <div className="bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">Total Profit / Return</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <h3 className={`text-lg font-black ${isProfit ? "text-emerald-500" : "text-rose-500"}`}>
-                {isProfit ? "+" : "-"}{currencySymbol}{Math.abs(totalProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </h3>
-              <span className={`text-xs font-bold flex items-center ${isProfit ? "text-emerald-500" : "text-rose-500"}`}>
-                {isProfit ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
-                {profitPercentage.toFixed(2)}%
-              </span>
-            </div>
-          </div>
-          <div className={`p-2.5 rounded-xl ${isProfit ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"}`}>
-            {isProfit ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-          </div>
-        </div>
-      </div>
-
       <div className="h-[320px] w-full">
         <CandlestickChart
           customMultiData={mappedChartData}
           seriesKeys={seriesKeys}
           chartType="multiline"
           height={320}
+          currencySymbol={currencySymbol}
         />
       </div>
     </div>

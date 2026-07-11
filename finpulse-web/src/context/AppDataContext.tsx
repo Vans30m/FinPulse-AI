@@ -18,6 +18,7 @@ export interface UserProfile {
   name: string;
   email: string;
   avatar?: string;
+  currency?: string;
 }
 
 interface AppDataContextType {
@@ -133,6 +134,7 @@ export function AppDataProvider({
             name: "Vans",
             email:
               "user@example.com",
+            currency: "INR (₹)",
           };
     });
 

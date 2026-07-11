@@ -22,6 +22,7 @@ import { processCumulativeData } from "../../../utils/chartUtils";
 import CumulativeReturnChart from "./performance/CumulativeReturnChart";
 import AIPortfolioAdvisorSection from "../../portfolio/components/AIPortfolioAdvisorSection";
 import API_BASE_URL from "../../../config/api";
+import { useAppData } from "../../../context/AppDataContext";
 
 export default function PerformanceComparison() {
   const navigate = useNavigate();
@@ -323,6 +324,20 @@ export default function PerformanceComparison() {
     );
   }
  
+  const { user } = useAppData();
+  const getCurrencySymbol = (currencyString?: string) => {
+    if (!currencyString) return '₹';
+    if (currencyString.includes('₹') || currencyString.toUpperCase().includes('INR')) return '₹';
+    if (currencyString.includes('$') || currencyString.toUpperCase().includes('USD')) return '$';
+    if (currencyString.includes('€') || currencyString.toUpperCase().includes('EUR')) return '€';
+    if (currencyString.includes('£') || currencyString.toUpperCase().includes('GBP')) return '£';
+    return '₹';
+  };
+  const cSymbol = getCurrencySymbol(user?.currency);
+
+  const displayGain = cSymbol === '₹' ? portfolioStats.totalGain * usdToInrRate : portfolioStats.totalGain;
+  const displayValuation = cSymbol === '₹' ? portfolioStats.totalValuation * usdToInrRate : portfolioStats.totalValuation;
+
   return (
     <div className="space-y-8 text-slate-100 font-sans selection:bg-blue-500/25 selection:text-white">
       {/* HEADER SECTION WITH REFRESH TRIGGER */}
@@ -369,8 +384,8 @@ export default function PerformanceComparison() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
             { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Aggregate return yield", grad: "from-cyan-600/10 to-blue-500/10" },
-            { label: "Total Profit / Loss", val: `${portfolioStats.totalGain >= 0 ? "+" : ""}$${portfolioStats.totalGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Unrealized ledger delta", grad: "from-emerald-600/10 to-teal-500/10" },
-            { label: "Capital Valuation Ledger", val: `$${portfolioStats.totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Total asset valuation", grad: "from-blue-600/10 to-indigo-500/10" },
+            { label: "Total Profit / Loss", val: `${displayGain >= 0 ? "+" : ""}${cSymbol}${displayGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Unrealized ledger delta", grad: "from-emerald-600/10 to-teal-500/10" },
+            { label: "Capital Valuation Ledger", val: `${cSymbol}${displayValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Total asset valuation", grad: "from-blue-600/10 to-indigo-500/10" },
             { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active ledger size", grad: "from-purple-600/10 to-pink-500/10" }
           ].map((card, i) => (
             <div
@@ -600,18 +615,21 @@ export default function PerformanceComparison() {
                     {contributors.length === 0 ? (
                       <div className="text-slate-500 text-xs py-4 font-bold text-center">No profitable assets currently.</div>
                     ) : (
-                      contributors.map((c, i) => (
-                        <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
-                          <div>
-                            <span className="text-xs font-black text-white">{c.symbol}</span>
-                            <span className="text-[10px] text-slate-500 block">{c.name}</span>
+                      contributors.map((c, i) => {
+                        const displayVal = cSymbol === '₹' ? c.profit * usdToInrRate : c.profit;
+                        return (
+                          <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
+                            <div>
+                              <span className="text-xs font-black text-white">{c.symbol}</span>
+                              <span className="text-[10px] text-slate-500 block">{c.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-black text-emerald-400 font-mono">{c.return}</span>
+                              <span className="text-[10px] text-slate-400 block font-mono">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className="text-xs font-black text-emerald-400 font-mono">{c.return}</span>
-                            <span className="text-[10px] text-slate-400 block font-mono">+${c.profit.toFixed(2)} Profit</span>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -624,20 +642,23 @@ export default function PerformanceComparison() {
  
                   <div className="space-y-3">
                     {losses.length === 0 ? (
-                      <div className="text-slate-500 text-xs py-4 font-bold text-center">No negative assets currently.</div>
+                      <div className="text-slate-550 text-xs py-4 font-bold text-center">No negative assets currently.</div>
                     ) : (
-                      losses.map((l, i) => (
-                        <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
-                          <div>
-                            <span className="text-xs font-black text-white">{l.symbol}</span>
-                            <span className="text-[10px] text-slate-500 block">{l.name}</span>
+                      losses.map((l, i) => {
+                        const displayVal = cSymbol === '₹' ? Math.abs(l.loss) * usdToInrRate : Math.abs(l.loss);
+                        return (
+                          <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
+                            <div>
+                              <span className="text-xs font-black text-white">{l.symbol}</span>
+                              <span className="text-[10px] text-slate-500 block">{l.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-black text-rose-400 font-mono">{l.return}</span>
+                              <span className="text-[10px] text-slate-400 block font-mono">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className="text-xs font-black text-rose-400 font-mono">{l.return}</span>
-                            <span className="text-[10px] text-slate-400 block font-mono">-${Math.abs(l.loss).toFixed(2)} Loss</span>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>

@@ -7,6 +7,7 @@ import PortfolioSummarySection, { type PortfolioSummaryMetric } from "./Portfoli
 import UpcomingEventsSection from "./UpcomingEventsSection";
 import PortfolioPerformanceChart from "./PortfolioPerformanceChart";
 import { useChart } from "../../../context/ChartContext";
+import { useAppData } from "../../../context/AppDataContext";
 import toast from 'react-hot-toast';
 import { getFundamentals } from '../../../services/marketService';
 import PaperTradingOrderModal from './PaperTradingOrderModal';
@@ -108,7 +109,23 @@ export default function PortfolioDashboard() {
   const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
   const [usdToEurRate, setUsdToEurRate] = useState<number>(0.92);
   const [usdToGbpRate, setUsdToGbpRate] = useState<number>(0.79);
-  const [portfolioCurrency, setPortfolioCurrency] = useState<'USD' | 'INR' | 'EUR' | 'GBP'>('USD');
+  const { user } = useAppData();
+  const getCurrencyCode = (currencyString?: string): 'USD' | 'INR' | 'EUR' | 'GBP' => {
+    if (!currencyString) return 'INR';
+    if (currencyString.toUpperCase().includes('INR') || currencyString.includes('₹')) return 'INR';
+    if (currencyString.toUpperCase().includes('USD') || currencyString.includes('$')) return 'USD';
+    if (currencyString.toUpperCase().includes('EUR') || currencyString.includes('€')) return 'EUR';
+    if (currencyString.toUpperCase().includes('GBP') || currencyString.includes('£')) return 'GBP';
+    return 'INR';
+  };
+
+  const [portfolioCurrency, setPortfolioCurrency] = useState<'USD' | 'INR' | 'EUR' | 'GBP'>(() => getCurrencyCode(user?.currency));
+
+  useEffect(() => {
+    if (user?.currency) {
+      setPortfolioCurrency(getCurrencyCode(user.currency));
+    }
+  }, [user?.currency]);
 
   const [advisorData, setAdvisorData] = useState<any>(null);
   const [performanceData, setPerformanceData] = useState<{ month: string; value: number; invested: number; profit: number }[]>([]);
@@ -311,12 +328,16 @@ export default function PortfolioDashboard() {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
       const userId = storedUser.id;
 
+      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+      const headers: any = {
+        'Content-Type': 'application/json'
+      };
+      if (userId) headers['X-User-Id'] = userId;
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch(`${API_BASE_URL}/api/portfolio/holdings`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(userId ? { 'X-User-Id': userId } : {})
-        },
+        headers,
         body: JSON.stringify({
           ticker: selectedAsset.ticker,
           name: selectedAsset.name,
@@ -428,11 +449,14 @@ export default function PortfolioDashboard() {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
       const userId = storedUser.id;
 
+      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+      const headers: any = {};
+      if (userId) headers['X-User-Id'] = userId;
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch(`${API_BASE_URL}/api/portfolio/holdings/${id}`, {
         method: 'DELETE',
-        headers: {
-          ...(userId ? { 'X-User-Id': userId } : {})
-        }
+        headers
       });
 
       if (res.ok) {

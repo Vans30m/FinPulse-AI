@@ -138,7 +138,8 @@ export default function Profile() {
       setUser({
         name: data.name || user.name,
         email: data.email || user.email,
-        avatar: data.avatar
+        avatar: data.avatar,
+        currency: data.currency || user.currency
       });
       
       // Seed forms
@@ -174,7 +175,10 @@ export default function Profile() {
         if (prefs.accentColor) setAccentColor(prefs.accentColor);
         if (prefs.compactMode !== undefined) setCompactMode(prefs.compactMode);
         if (prefs.animationsEnabled !== undefined) setAnimationsEnabled(prefs.animationsEnabled);
-        if (prefs.sidebarCollapsed !== undefined) setSidebarCollapsed(prefs.sidebarCollapsed);
+        if (prefs.sidebarCollapsed !== undefined) {
+          setSidebarCollapsed(prefs.sidebarCollapsed);
+          localStorage.setItem('sidebar_collapsed', String(prefs.sidebarCollapsed));
+        }
         if (prefs.tableDensity) setTableDensity(prefs.tableDensity);
         
         if (prefs.publicProfile !== undefined) setPublicProfile(prefs.publicProfile);
@@ -296,7 +300,8 @@ export default function Profile() {
       setUser({
         ...user,
         name: editForm.name,
-        avatar: editForm.avatar
+        avatar: editForm.avatar,
+        currency: editForm.currency
       });
       setIsEditProfileOpen(false);
       loadProfile();
@@ -418,25 +423,35 @@ export default function Profile() {
     }
   };
 
+  const getCurrencySymbol = (currencyString?: string) => {
+    if (!currencyString) return '₹';
+    if (currencyString.includes('₹') || currencyString.toUpperCase().includes('INR')) return '₹';
+    if (currencyString.includes('$') || currencyString.toUpperCase().includes('USD')) return '$';
+    if (currencyString.includes('€') || currencyString.toUpperCase().includes('EUR')) return '€';
+    if (currencyString.includes('£') || currencyString.toUpperCase().includes('GBP')) return '£';
+    return '₹';
+  };
+  const cSymbol = getCurrencySymbol(user.currency || profileData?.currency);
+
   // Stats Grid Definition (Updated: removed static Favorite Market & Favorite Sector cards)
   const stats = [
     { 
       title: "Portfolio Value", 
-      value: profileStats && typeof profileStats.portfolioValue === 'number' ? `$${profileStats.portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00", 
+      value: profileStats && typeof profileStats.portfolioValue === 'number' ? `${cSymbol}${profileStats.portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${cSymbol}0.00`, 
       change: undefined, 
       isPositive: true, 
       icon: <DollarSign className="h-5 w-5" /> 
     },
     { 
       title: "Today's Profit/Loss", 
-      value: profileStats && typeof profileStats.todayProfitLoss === 'number' ? `${profileStats.todayProfitLoss >= 0 ? '+' : ''}$${profileStats.todayProfitLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00", 
+      value: profileStats && typeof profileStats.todayProfitLoss === 'number' ? `${profileStats.todayProfitLoss >= 0 ? '+' : ''}${cSymbol}${profileStats.todayProfitLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${cSymbol}0.00`, 
       change: profileStats && profileStats.holdingsCount > 0 && typeof profileStats.todayProfitLossPercent === 'number' ? `${profileStats.todayProfitLossPercent >= 0 ? '+' : ''}${profileStats.todayProfitLossPercent.toFixed(2)}%` : undefined, 
       isPositive: profileStats ? profileStats.todayProfitLoss >= 0 : true, 
       icon: <TrendingUp className="h-5 w-5" /> 
     },
     { 
       title: "Total Return", 
-      value: profileStats && typeof profileStats.totalReturn === 'number' ? `${profileStats.totalReturn >= 0 ? '+' : ''}$${profileStats.totalReturn.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00", 
+      value: profileStats && typeof profileStats.totalReturn === 'number' ? `${profileStats.totalReturn >= 0 ? '+' : ''}${cSymbol}${profileStats.totalReturn.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${cSymbol}0.00`, 
       change: profileStats && profileStats.holdingsCount > 0 && typeof profileStats.totalReturnPercent === 'number' ? `${profileStats.totalReturnPercent >= 0 ? '+' : ''}${profileStats.totalReturnPercent.toFixed(2)}%` : undefined, 
       isPositive: profileStats ? profileStats.totalReturn >= 0 : true, 
       icon: <Activity className="h-5 w-5" /> 
@@ -530,40 +545,9 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Connected Accounts Section */}
-          <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-lg space-y-4">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <Link className="h-5 w-5 text-blue-500" /> Connected Social Accounts
-              </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Revoke or link external single sign-on verification portals.</p>
-            </div>
-
-            <div className="grid gap-3">
-              {(['google', 'github', 'apple', 'microsoft'] as const).map((prov) => (
-                <div key={prov} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl">
-                  <div className="flex items-center gap-2 capitalize">
-                    <span className="font-extrabold text-xs text-slate-700 dark:text-slate-350">{prov} Authentication</span>
-                  </div>
-                  <button
-                    onClick={() => handleToggleAccountLink(prov)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all border ${
-                      connectedAccounts[prov]
-                        ? "bg-slate-200 dark:bg-white/5 text-slate-500 border-slate-200 dark:border-white/5 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
-                        : "bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500 hover:text-white"
-                    }`}
-                  >
-                    {connectedAccounts[prov] ? "Connected" : "Connect"}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Security Controls */}
           <SecurityCard
             onChangePassword={() => setIsChangePasswordOpen(true)}
-            onToggle2FA={() => toast.success("MFA 2FA settings toggled!")}
             onLogoutAllDevices={() => setIsLogoutAllOpen(true)}
             onDeleteAccount={() => setIsDeleteAccountOpen(true)}
             onRevokeSession={handleRevokeSession}
@@ -606,130 +590,22 @@ export default function Profile() {
                   ))}
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Accent Brand Color</span>
-                <div className="flex gap-3">
-                  {["indigo", "blue", "emerald", "cyan", "violet", "rose"].map((color) => {
-                    const bgColors: any = {
-                      indigo: "bg-indigo-500",
-                      blue: "bg-blue-500",
-                      emerald: "bg-emerald-500",
-                      cyan: "bg-cyan-400",
-                      violet: "bg-violet-500",
-                      rose: "bg-rose-500"
-                    };
-                    return (
-                      <button
-                        key={color}
-                        onClick={() => {
-                          setAccentColor(color);
-                          handleUpdatePreferences({ accentColor: color });
-                        }}
-                        className={`h-7 w-7 rounded-full ${bgColors[color]} relative flex items-center justify-center hover:scale-110 transition-transform`}
-                      >
-                        {accentColor === color && (
-                          <span className="block h-2 w-2 bg-white rounded-full" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                <ToggleRow 
-                  title="Compact Mode" 
-                  description="Optimizes tables and lists to fit on dense screens." 
-                  value={compactMode} 
-                  onChange={() => {
-                    setCompactMode(!compactMode);
-                    handleUpdatePreferences({ compactMode: !compactMode });
-                  }} 
-                />
-                <ToggleRow 
-                  title="Enable Layout Animations" 
-                  description="Enables smooth framer-motion page slides and card floats." 
-                  value={animationsEnabled} 
-                  onChange={() => {
-                    setAnimationsEnabled(!animationsEnabled);
-                    handleUpdatePreferences({ animationsEnabled: !animationsEnabled });
-                  }} 
-                />
                 <ToggleRow 
                   title="Collapse Sidebar by Default" 
                   description="Collapses navigation controls to clean up workspace." 
                   value={sidebarCollapsed} 
                   onChange={() => {
-                    setSidebarCollapsed(!sidebarCollapsed);
-                    handleUpdatePreferences({ sidebarCollapsed: !sidebarCollapsed });
+                    const nextVal = !sidebarCollapsed;
+                    setSidebarCollapsed(nextVal);
+                    localStorage.setItem('sidebar_collapsed', String(nextVal));
+                    handleUpdatePreferences({ sidebarCollapsed: nextVal });
                   }} 
                 />
               </div>
-
-              <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Table Density</span>
-                <div className="grid grid-cols-3 gap-2">
-                  {["spacious", "comfortable", "compact"].map((d) => (
-                    <button
-                      key={d}
-                      onClick={() => {
-                        setTableDensity(d);
-                        handleUpdatePreferences({ tableDensity: d });
-                      }}
-                      className={`py-2 rounded-xl text-xs font-black uppercase border capitalize transition-all ${
-                        tableDensity === d
-                          ? "bg-indigo-500 border-indigo-500 text-white shadow-md"
-                          : "border-slate-250 dark:border-white/5 text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5"
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Privacy & Security Settings Card */}
-          <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-lg space-y-4">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <Shield className="h-5 w-5 text-emerald-500" /> Privacy & General Consent
-              </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Manage global profile indexing and telemetry tracking consents.</p>
-            </div>
-
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              <ToggleRow 
-                title="Public Profile Visibility" 
-                description="Allows other managers to view your portfolios via share links." 
-                value={publicProfile} 
-                onChange={() => {
-                  setPublicProfile(!publicProfile);
-                  handleUpdatePreferences({ publicProfile: !publicProfile });
-                }} 
-              />
-              <ToggleRow 
-                title="Analytics Tracking Consent" 
-                description="We process telemetry data anonymously to optimize UI metrics." 
-                value={analyticsConsent} 
-                onChange={() => {
-                  setAnalyticsConsent(!analyticsConsent);
-                  handleUpdatePreferences({ analyticsConsent: !analyticsConsent });
-                }} 
-              />
-              <ToggleRow 
-                title="Marketing Email subscription" 
-                description="Receive updates on newly introduced features and products." 
-                value={marketingEmails} 
-                onChange={() => {
-                  setMarketingEmails(!marketingEmails);
-                  handleUpdatePreferences({ marketingEmails: !marketingEmails });
-                }} 
-              />
-            </div>
-          </div>
 
           {/* Data Export Options Section */}
           <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-lg space-y-4">
@@ -759,16 +635,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Premium Subscription Details (API Health info removed) */}
-          <SubscriptionCard
-            currentPlan={(profileData as any)?.role === 'ADMIN' ? 'Admin Tier' : 'Premium Plus'}
-            renewalDate={profileData?.createdAt ? new Date(new Date(profileData.createdAt).getTime() + 365*24*60*60*1000).toLocaleDateString() : undefined}
-            aiUsage={{ used: 82, limit: 500 }}
-            apiUsage={{ used: 1140, limit: 10000 }}
-            storageUsage={{ used: watchlistSummary?.totalAssets || 0, limit: 100 }}
-            onUpgrade={() => toast.success("Subscription upgrade portal opened!")}
-            onRenew={() => toast.success("Renewal processed successfully!")}
-          />
+
         </div>
 
       </div>
