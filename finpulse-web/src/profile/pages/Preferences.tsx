@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 export default function Preferences() {
   const { data: profile } = useProfile();
   const { updatePreferences } = usePreferences();
-  const { theme: currentTheme, toggleTheme } = useTheme();
+  const { theme: currentTheme, setTheme } = useTheme();
 
   const [preferences, setPreferences] = useState({
     theme: 'dark',
@@ -49,9 +49,7 @@ export default function Preferences() {
 
     if (name === 'theme') {
       const selected = value as 'light' | 'dark' | 'system';
-      if ((selected === 'light' && currentTheme === 'dark') || (selected === 'dark' && currentTheme === 'light')) {
-        toggleTheme();
-      }
+      setTheme(selected);
     }
   };
 
