@@ -44,6 +44,14 @@ export interface UserProfileData {
   notificationSettings?: NotificationSettings;
   lastLogin?: string;
   createdAt: string;
+  riskProfile?: string;
+  investmentGoal?: string;
+  investmentHorizon?: string;
+  experienceLevel?: string;
+  preferredExchange?: string;
+  baseCurrency?: string;
+  taxCountry?: string;
+  connectedAccounts?: any;
 }
 
 export interface SessionData {
@@ -53,6 +61,17 @@ export interface SessionData {
   ipAddress: string;
   createdAt: string;
   expiresAt: string;
+}
+
+export interface WatchlistSummaryData {
+  totalWatchlists: number;
+  totalAssets: number;
+  stocks: number;
+  etfs: number;
+  crypto: number;
+  forex: number;
+  commodities: number;
+  averageGainLoss: number;
 }
 
 export const profileService = {
@@ -166,5 +185,28 @@ export const profileService = {
       throw new Error(err.error || 'Failed to delete account');
     }
     return res.json();
+  },
+
+  async getWatchlistSummary(): Promise<WatchlistSummaryData> {
+    const res = await fetch(`${API_URL}/watchlist-summary`, {
+      method: 'GET',
+      headers: getHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch watchlist summary');
+    }
+    return res.json();
+  },
+
+  async exportData(format: 'json' | 'csv'): Promise<Blob> {
+    const res = await fetch(`${API_URL}/export?format=${format}`, {
+      method: 'GET',
+      headers: getHeaders()
+    });
+    if (!res.ok) {
+      throw new Error('Failed to export data');
+    }
+    return res.blob();
   }
 };

@@ -127,7 +127,7 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
           assets.map((asset, index) => (
             <div
               key={asset.symbol}
-              className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/3 p-4 hover:border-slate-200 dark:hover:border-white/10 transition-all"
+              className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 p-4 hover:bg-slate-100/70 dark:hover:bg-white/10 hover:border-slate-200 dark:hover:border-white/10 transition-all duration-300"
             >
               {/* Rank badge */}
               <div className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-white/10 flex items-center justify-center shrink-0">
