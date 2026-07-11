@@ -1066,10 +1066,12 @@ export default function PortfolioDashboard() {
       />
 
       {/* 1. Performance Chart (Full Page Width) */}
-      <PortfolioPerformanceChart
-        data={convertedPerformanceData}
-        currencySymbol={displayCurrency}
-      />
+      {!isSandboxMode && (
+        <PortfolioPerformanceChart
+          data={convertedPerformanceData}
+          currencySymbol={displayCurrency}
+        />
+      )}
 
       {/* Market Tab Selector at Dashboard Level */}
       <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner select-none mt-8 mb-4 overflow-x-auto w-full max-w-full scrollbar-none">
@@ -1226,53 +1228,55 @@ export default function PortfolioDashboard() {
       </div>
 
 
-        <UpcomingEventsSection />
+        {!isSandboxMode && <UpcomingEventsSection />}
 
 
 
-      <div className="glass-panel p-6 overflow-hidden shadow-lg transition-all duration-300 relative group">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] via-transparent to-blue-500/[0.04] pointer-events-none" />
+      {!isSandboxMode && (
+        <div className="glass-panel p-6 overflow-hidden shadow-lg transition-all duration-300 relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] via-transparent to-blue-500/[0.04] pointer-events-none" />
 
-        <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 border-b border-slate-100 dark:border-slate-800/60 pb-5">
-          <div>
-            <div className="flex items-center gap-2.5 mb-2">
-              <PieChart className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Portfolio Allocation</h2>
+          <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 border-b border-slate-100 dark:border-slate-800/60 pb-5">
+            <div>
+              <div className="flex items-center gap-2.5 mb-2">
+                <PieChart className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Portfolio Allocation</h2>
+              </div>
+              <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xl">A concentrated view of how your capital is distributed across markets, with the largest allocation highlighted for faster reading.</p>
             </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xl">A concentrated view of how your capital is distributed across markets, with the largest allocation highlighted for faster reading.</p>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-cyan-400">
-              {allocationData.length} Allocation Buckets
-            </span>
-            {dominantAllocation && (
-              <span className="rounded-full bg-slate-100 dark:bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-white/5">
-                Largest: {dominantAllocation.name}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-cyan-400">
+                {allocationData.length} Allocation Buckets
               </span>
-            )}
+              {dominantAllocation && (
+                <span className="rounded-full bg-slate-100 dark:bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-white/5">
+                  Largest: {dominantAllocation.name}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <PortfolioAllocationChart
+            data={allocationData}
+          />
+
+          <div className="relative mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Portfolio Value</p>
+              <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{displayCurrency}{allocationTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Largest Slice</p>
+              <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{dominantAllocation ? dominantAllocation.name : 'N/A'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Top Weight</p>
+              <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{allocationTotal > 0 && dominantAllocation ? `${((dominantAllocation.value / allocationTotal) * 100).toFixed(0)}%` : '0%'}</p>
+            </div>
           </div>
         </div>
-
-        <PortfolioAllocationChart
-          data={allocationData}
-        />
-
-        <div className="relative mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Portfolio Value</p>
-            <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{displayCurrency}{allocationTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Largest Slice</p>
-            <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{dominantAllocation ? dominantAllocation.name : 'N/A'}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Top Weight</p>
-            <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{allocationTotal > 0 && dominantAllocation ? `${((dominantAllocation.value / allocationTotal) * 100).toFixed(0)}%` : '0%'}</p>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* MODAL WITH NEW DEBOUNCED SEARCH */}
       {isModalOpen && (
@@ -1405,7 +1409,7 @@ export default function PortfolioDashboard() {
       <PaperTradingOrderModal
         isOpen={isSandboxOpen}
         onClose={() => setIsSandboxOpen(false)}
-        virtualBalance={virtualBalance}
+        virtualBalance={virtualBalance * currencyMultiplier}
         activeCurrency={displayCurrency}
         usdToInrRate={usdToInrRate}
         currentHoldings={virtualHoldings}

@@ -191,13 +191,6 @@ export default function App() {
                         <TrendingSectorStreaks />
                         <VolatilityGauges />
 
-                        <GlobalEarningsCalendar />
-
-                        <MarketScreeners
-                          marketRegion={marketRegion}
-                        />
-
-                        <InvestmentCalculator />
                       </div>
 
                       {/* Right Column (1 col wide on desktop) */}
@@ -205,7 +198,28 @@ export default function App() {
                         <GlobalMarketClock />
                         <FearGreedIndex />
                         <AIPickOfTheDay />
-                        <AlertsTimeline />
+                      </div>
+                    </div>
+
+                    {/* Full-width Market Screeners */}
+                    <div className="mt-8">
+                      <MarketScreeners
+                        marketRegion={marketRegion}
+                      />
+                    </div>
+
+                    {/* Full-width Global Earnings Calendar */}
+                    <div className="mt-8">
+                      <GlobalEarningsCalendar />
+                    </div>
+
+                    {/* Bottom Full-width Row: Calculator & Live News side-by-side with equal height */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8 items-stretch">
+                      <div className="h-[600px]">
+                        <InvestmentCalculator />
+                      </div>
+                      <div className="h-[600px]">
+                        <AlertsTimeline fullPage={true} />
                       </div>
                     </div>
                   </div>

@@ -134,7 +134,7 @@ export default function PaperTradingOrderModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit || !selectedAsset || !calculatedPrice) return;
+    if (!canSubmit || !selectedAsset || !livePrice) return;
 
     // Determine marketId
     let marketId = 'us';
@@ -146,13 +146,23 @@ export default function PaperTradingOrderModal({
       symbol: selectedAsset.symbol,
       name: selectedAsset.name,
       shares: sharesCount,
-      price: calculatedPrice,
+      price: livePrice,
       marketId,
     });
   };
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+      <style>{`
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+      `}</style>
       <div className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#090d1a] shadow-2xl p-6 text-slate-105 font-sans">
         <div className="flex justify-between items-center mb-6">
