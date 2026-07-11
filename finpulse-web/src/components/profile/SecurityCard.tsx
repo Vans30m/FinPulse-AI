@@ -57,22 +57,6 @@ export default function SecurityCard({
             <span className="text-[10px] lowercase text-slate-400">Manage credentials</span>
           </button>
 
-          <button
-            onClick={onToggle2FA}
-            className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-white/5 hover:bg-slate-55/50 dark:hover:bg-white/[0.02] text-left text-xs font-black uppercase text-slate-700 dark:text-slate-350 transition-all"
-          >
-            <div className="flex items-center gap-2">
-              <Fingerprint className="h-4.5 w-4.5 text-blue-500" />
-              <span>Two-Factor Authentication (2FA)</span>
-            </div>
-            <span className={`px-2 py-0.5 rounded border text-[9px] font-black uppercase ${
-              twoFactorEnabled 
-                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
-                : "bg-slate-100 dark:bg-white/5 text-slate-500 border-slate-200/50 dark:border-white/5"
-            }`}>
-              {twoFactorEnabled ? "Active" : "Disabled"}
-            </span>
-          </button>
 
           <button
             onClick={onLogoutAllDevices}

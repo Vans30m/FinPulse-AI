@@ -68,22 +68,6 @@ export default function SubscriptionCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {onRenew && (
-            <button
-              onClick={onRenew}
-              className="px-4 py-2.5 rounded-xl border border-slate-250 dark:border-white/10 text-slate-700 dark:text-slate-350 hover:bg-slate-55/50 dark:hover:bg-white/5 text-xs font-black uppercase transition-all"
-            >
-              Renew
-            </button>
-          )}
-          <button
-            onClick={onUpgrade}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-black uppercase hover:shadow-lg hover:shadow-blue-500/20 transition-all"
-          >
-            Upgrade Plan
-          </button>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -452,7 +452,7 @@ export default function PerformanceComparison() {
                     </div>
  
                     <div className="flex flex-wrap bg-[#050711] p-1 rounded-xl border border-slate-900 gap-1">
-                      {["1D", "5D", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "MAX"].map((tf) => (
+                      {["1D", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "MAX"].map((tf) => (
                         <button
                           key={tf}
                           onClick={() => setBenchmarkTimeframe(tf)}

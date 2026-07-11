@@ -1,4 +1,5 @@
 import { memo, useMemo, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import API_BASE_URL from "../../../config/api";
 import { 
@@ -544,131 +545,139 @@ function UpcomingEventsSection() {
       )}
 
       {/* Details Dialog Modal */}
-      <AnimatePresence>
-        {selectedEvent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto" onClick={() => setSelectedEvent(null)}>
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto"
-            >
-              {/* Close Button */}
-              <button 
-                onClick={() => setSelectedEvent(null)}
-                className="absolute top-4 right-4 sm:top-5 sm:right-5 p-1.5 rounded-xl bg-slate-50 dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+      {/* Details Dialog Modal */}
+      {createPortal(
+        <AnimatePresence>
+          {selectedEvent && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-y-auto" onClick={() => setSelectedEvent(null)}>
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                transition={{ type: "spring", duration: 0.4 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-2xl rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
               >
-                <X className="h-5 w-5" />
-              </button>
+                {/* Decorative top gradient accent */}
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600" />
 
-              {/* Modal Header */}
-              <div className="flex items-center gap-3.5 mb-6 border-b border-slate-100 dark:border-slate-800/80 pb-4">
-                <img 
-                  src={selectedEvent.logo} 
-                  alt={selectedEvent.symbol}
-                  className="h-12 w-12 rounded-2xl border border-slate-200 dark:border-slate-850 p-1 bg-white object-contain shrink-0"
-                />
-                <div>
-                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-snug">{selectedEvent.company}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="rounded bg-slate-100 dark:bg-white/5 px-2 py-0.5 text-[10px] font-black tracking-wider text-slate-500 dark:text-slate-400 font-mono">{selectedEvent.symbol}</span>
-                    <span className="text-[9px] text-slate-450 uppercase">{selectedEvent.exchange} Exchange</span>
-                  </div>
-                </div>
-              </div>
+                {/* Close Button */}
+                <button 
+                  onClick={() => setSelectedEvent(null)}
+                  className="absolute top-5 right-5 p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 border border-slate-200/40 dark:border-white/5 transition-all"
+                >
+                  <X className="h-4 w-4" />
+                </button>
 
-              {/* Modal Grid Info */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5">
-                  <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Event Horizon</span>
-                  <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white">{new Date(selectedEvent.eventDate).toLocaleDateString()}</span>
-                </div>
-                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5">
-                  <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Importance</span>
-                  <span className={`text-[11px] sm:text-xs font-black uppercase ${
-                    selectedEvent.importance === "High" ? "text-rose-500" : selectedEvent.importance === "Medium" ? "text-amber-500" : "text-emerald-500"
-                  }`}>{selectedEvent.importance}</span>
-                </div>
-                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5">
-                  <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">AI Expected Impact</span>
-                  <span className={`text-[11px] sm:text-xs font-black uppercase ${
-                    selectedEvent.expectedImpact === "Bullish" ? "text-emerald-500" : selectedEvent.expectedImpact === "Bearish" ? "text-rose-500" : "text-blue-500 dark:text-cyan-400"
-                  }`}>{selectedEvent.expectedImpact}</span>
-                </div>
-                <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5">
-                  <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">AI Confidence</span>
-                  <span className="text-[11px] sm:text-xs font-black text-purple-500">{selectedEvent.confidence}%</span>
-                </div>
-              </div>
-
-              {/* Event Body Description */}
-              <div className="space-y-5">
-                <div className="space-y-1.5">
-                  <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <Info className="h-3.5 w-3.5" />
-                    Overview Description
-                  </h4>
-                  <p className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-100 leading-relaxed bg-slate-50 dark:bg-white/[0.01] p-4 rounded-2xl border border-slate-100 dark:border-white/5">
-                    {selectedEvent.description}
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-                    AI Intelligence Summary
-                  </h4>
-                  <p className="text-xs md:text-sm text-slate-700 dark:text-slate-350 leading-relaxed bg-cyan-500/[0.02] border border-cyan-500/10 p-4 rounded-2xl">
-                    {selectedEvent.summary}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Historical Market Reaction</h5>
-                    <div className="p-3.5 rounded-2xl bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 text-xs text-slate-650 dark:text-slate-300 font-semibold leading-relaxed">
-                      {selectedEvent.historicalReaction}
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">AI Recommendation & Strategy</h5>
-                    <div className="p-3.5 rounded-2xl bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 text-xs text-slate-650 dark:text-slate-300 font-semibold leading-relaxed">
-                      {selectedEvent.aiRecommendation}
+                {/* Modal Header */}
+                <div className="flex items-center gap-4 mb-6 border-b border-slate-100 dark:border-white/5 pb-5">
+                  <img 
+                    src={selectedEvent.logo} 
+                    alt={selectedEvent.symbol}
+                    className="h-14 w-14 rounded-2xl border border-slate-200 dark:border-slate-800 p-1.5 bg-white object-contain shrink-0 shadow-sm"
+                  />
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug">{selectedEvent.company}</h3>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-black tracking-wider text-blue-600 dark:text-cyan-400 border border-blue-500/10 dark:border-cyan-500/10 font-mono">{selectedEvent.symbol}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{selectedEvent.exchange} Exchange</span>
                     </div>
                   </div>
                 </div>
 
-                {selectedEvent.thingsToWatch && selectedEvent.thingsToWatch.length > 0 && (
+                {/* Modal Grid Info */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                  <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
+                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">Event Horizon</span>
+                    <span className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-white">{new Date(selectedEvent.eventDate).toLocaleDateString()}</span>
+                  </div>
+                  <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
+                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">Importance</span>
+                    <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${
+                      selectedEvent.importance === "High" ? "text-rose-500" : selectedEvent.importance === "Medium" ? "text-amber-500" : "text-emerald-500"
+                    }`}>{selectedEvent.importance}</span>
+                  </div>
+                  <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
+                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">AI Expected Impact</span>
+                    <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${
+                      selectedEvent.expectedImpact === "Bullish" ? "text-emerald-500" : selectedEvent.expectedImpact === "Bearish" ? "text-rose-500" : "text-blue-500 dark:text-cyan-400"
+                    }`}>{selectedEvent.expectedImpact}</span>
+                  </div>
+                  <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
+                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">AI Confidence</span>
+                    <span className="text-[11px] sm:text-xs font-black text-purple-500">{selectedEvent.confidence}%</span>
+                  </div>
+                </div>
+
+                {/* Event Body Description */}
+                <div className="space-y-6">
                   <div className="space-y-2">
-                    <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Key Metrics to Watch</h4>
-                    <ul className="space-y-2">
-                      {selectedEvent.thingsToWatch.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 p-3 rounded-xl text-xs font-semibold">
-                          <CircleDot className="h-3.5 w-3.5 text-cyan-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-slate-700 dark:text-slate-300">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <h4 className="text-xs font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider flex items-center gap-1.5">
+                      <Info className="h-3.5 w-3.5 text-slate-455" />
+                      Overview Description
+                    </h4>
+                    <p className="text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-100 leading-relaxed bg-slate-50 dark:bg-white/[0.01] p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                      {selectedEvent.description}
+                    </p>
                   </div>
-                )}
 
-                {/* Additional detailed metrics placeholder blocks for Premium feeling */}
-                <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 flex flex-wrap justify-between items-center text-[10px] text-slate-450 gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Clock3 className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Timezone: {selectedEvent.timezone || "UTC"} ({selectedEvent.timezoneShort || "UTC"})</span>
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
+                      AI Intelligence Summary
+                    </h4>
+                    <p className="text-xs md:text-sm text-slate-700 dark:text-slate-355 leading-relaxed bg-gradient-to-r from-cyan-500/[0.03] to-blue-500/[0.03] border border-cyan-500/10 p-4 rounded-2xl font-medium">
+                      {selectedEvent.summary}
+                    </p>
                   </div>
-                  <a href={`https://finance.yahoo.com/quote/${selectedEvent.symbol}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-cyan-500 font-black uppercase tracking-wider hover:underline">
-                    Official Source Link
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-2">
+                      <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider">Historical Market Reaction</h5>
+                      <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 text-xs text-slate-655 dark:text-slate-300 font-semibold leading-relaxed">
+                        {selectedEvent.historicalReaction}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider">AI Recommendation & Strategy</h5>
+                      <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 text-xs text-slate-655 dark:text-slate-300 font-semibold leading-relaxed">
+                        {selectedEvent.aiRecommendation}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedEvent.thingsToWatch && selectedEvent.thingsToWatch.length > 0 && (
+                    <div className="space-y-2.5">
+                      <h4 className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Key Metrics to Watch</h4>
+                      <ul className="grid grid-cols-1 gap-2.5">
+                        {selectedEvent.thingsToWatch.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5 bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 p-3.5 rounded-2xl text-xs font-semibold hover:border-cyan-500/10 transition-colors">
+                            <CircleDot className="h-3.5 w-3.5 text-cyan-500 flex-shrink-0 mt-0.5" />
+                            <span className="text-slate-700 dark:text-slate-300">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Additional detailed metrics placeholder blocks for Premium feeling */}
+                  <div className="border-t border-slate-100 dark:border-white/5 pt-4 flex flex-wrap justify-between items-center text-[10px] text-slate-450 gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <Clock3 className="h-3.5 w-3.5 text-slate-450" />
+                      <span>Timezone: {selectedEvent.timezone || "UTC"} ({selectedEvent.timezoneShort || "UTC"})</span>
+                    </div>
+                    <a href={`https://finance.yahoo.com/quote/${selectedEvent.symbol}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400 font-extrabold uppercase tracking-wider hover:underline transition-colors">
+                      Official Source Link
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </section>
   );
 }
