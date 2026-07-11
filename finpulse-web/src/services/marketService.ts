@@ -25,7 +25,6 @@ export interface FundamentalData {
 export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }> = {
   // New timeframes
   "24H": { range: "2d", interval: "15m" },
-  "5D": { range: "5d", interval: "30m" },
   "1M": { range: "30d", interval: "1d" },
   "6M": { range: "180d", interval: "1d" },
   "YTD": { range: "ytd", interval: "1d" },
@@ -49,6 +48,157 @@ export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }
   "3M": { range: "3y", interval: "1mo" },
   "MAX": { range: "max", interval: "1mo" },
 };
+
+export interface AdvancedTimeframeConfig {
+  interval: string;
+  range: string;
+  aggregateType?: "index" | "monthly";
+  aggregateFactor?: number;
+}
+
+export const ADVANCED_TIMEFRAME_MAPPS: Record<string, AdvancedTimeframeConfig> = {
+  "1 min": { interval: "1m", range: "1d" },
+  "5 mins": { interval: "5m", range: "5d" },
+  "15 mins": { interval: "15m", range: "5d" },
+  "30 mins": { interval: "30m", range: "5d" },
+  "1 hour": { interval: "1h", range: "3mo" },
+  "4 hours": { interval: "1h", range: "6mo", aggregateType: "index", aggregateFactor: 4 },
+  "1 day": { interval: "1d", range: "5y" },
+  "1 week": { interval: "1wk", range: "max" },
+  "1 month": { interval: "1wk", range: "max", aggregateType: "monthly", aggregateFactor: 1 },
+  "3 months": { interval: "1wk", range: "max", aggregateType: "monthly", aggregateFactor: 3 }
+};
+
+const advancedChartCache = new Map<string, any>();
+
+export function aggregateToMonthly(quotes: any[], monthsPerCandle: number = 1): any[] {
+  if (!quotes || !Array.isArray(quotes) || quotes.length === 0) return [];
+
+  const groups = new Map<string, any[]>();
+  const groupKeys: string[] = [];
+
+  quotes.forEach((q) => {
+    if (!q || !q.date) return;
+    const date = new Date(q.date);
+    if (isNaN(date.getTime())) return;
+
+    const year = date.getFullYear();
+    const month = date.getMonth(); // 0-11
+    
+    // Group keys depending on monthsPerCandle
+    const periodIndex = Math.floor(month / monthsPerCandle);
+    const key = `${year}-${periodIndex}`;
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+      groupKeys.push(key);
+    }
+    groups.get(key)!.push(q);
+  });
+
+  const result: any[] = [];
+  groupKeys.forEach((key) => {
+    const chunk = groups.get(key)!;
+    if (chunk.length === 0) return;
+
+    // Sort chunk chronologically just in case
+    chunk.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const first = chunk[0];
+    const last = chunk[chunk.length - 1];
+
+    let high = -Infinity;
+    let low = Infinity;
+    let volume = 0;
+
+    chunk.forEach((item) => {
+      if (item.high != null && item.high > high) high = item.high;
+      if (item.low != null && item.low < low) low = item.low;
+      if (item.volume != null) volume += item.volume;
+    });
+
+    result.push({
+      date: first.date, // Represent the candle at the start of the month/period
+      open: first.open,
+      high: high === -Infinity ? first.high : high,
+      low: low === Infinity ? first.low : low,
+      close: last.close,
+      volume: volume
+    });
+  });
+
+  return result;
+}
+
+export function aggregateCandles(quotes: any[], factor: number): any[] {
+  if (!quotes || !Array.isArray(quotes) || quotes.length === 0) return [];
+  if (factor <= 1) return quotes;
+
+  const result: any[] = [];
+  for (let i = 0; i < quotes.length; i += factor) {
+    const chunk = quotes.slice(i, i + factor);
+    if (chunk.length === 0) continue;
+
+    const first = chunk[0];
+    const last = chunk[chunk.length - 1];
+
+    let high = -Infinity;
+    let low = Infinity;
+    let volume = 0;
+
+    chunk.forEach((item) => {
+      if (item.high != null && item.high > high) high = item.high;
+      if (item.low != null && item.low < low) low = item.low;
+      if (item.volume != null) volume += item.volume;
+    });
+
+    result.push({
+      date: first.date,
+      open: first.open,
+      high: high === -Infinity ? first.high : high,
+      low: low === Infinity ? first.low : low,
+      close: last.close,
+      volume: volume
+    });
+  }
+
+  return result;
+}
+
+export async function getAdvancedStockCandles(symbol: string, timeframeLabel: string) {
+  const config = ADVANCED_TIMEFRAME_MAPPS[timeframeLabel] || { interval: "1d", range: "5y" };
+  const cacheKey = `${symbol}-${config.interval}-${config.range}`;
+
+  let rawData: any;
+  if (advancedChartCache.has(cacheKey)) {
+    rawData = advancedChartCache.get(cacheKey);
+  } else {
+    const response = await fetch(
+      `${API_BASE_URL}/api/charts/${symbol}?range=${config.range}&interval=${config.interval}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch chart data: ${response.status}`);
+    }
+
+    rawData = await response.json();
+    advancedChartCache.set(cacheKey, rawData);
+  }
+
+  if (config.aggregateType === "monthly" && rawData?.quotes) {
+    return {
+      ...rawData,
+      quotes: aggregateToMonthly(rawData.quotes, config.aggregateFactor || 1)
+    };
+  } else if (config.aggregateType === "index" && config.aggregateFactor && rawData?.quotes) {
+    return {
+      ...rawData,
+      quotes: aggregateCandles(rawData.quotes, config.aggregateFactor)
+    };
+  }
+
+  return rawData;
+}
 
 export async function getStockCandles(symbol: string, timeframe: string) {
   // Graceful configuration extraction with fallback safety
@@ -93,7 +243,7 @@ export async function getBenchmarkHistory(
   return raw
     .filter((bar: any) => bar && (bar.close !== undefined || bar.value !== undefined))
     .map((bar: any) => ({
-      time:  typeof bar.time === 'string' ? Math.floor(new Date(bar.time).getTime() / 1000) : Number(bar.time),
+      time: typeof bar.time === 'string' ? Math.floor(new Date(bar.time).getTime() / 1000) : Number(bar.time),
       close: bar.close ?? bar.value ?? 0,
     }))
     .filter((bar) => bar.close > 0);

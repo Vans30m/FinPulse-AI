@@ -5,7 +5,7 @@ import {
   LineStyle
 } from "lightweight-charts";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { getStockCandles, getFundamentals, mergeDailyMetrics, type DailyMarketMetrics } from "../../services/marketService";
+import { getStockCandles, getAdvancedStockCandles, getFundamentals, mergeDailyMetrics, type DailyMarketMetrics } from "../../services/marketService";
 
 import { ChartHeader } from "./ChartHeader";
 import { PriceInfoBar } from "./PriceInfoBar";
@@ -74,11 +74,12 @@ interface Props {
   seriesKeys?: { key: string; color: string }[];
   onCompareChange?: (symbol: string) => void;
   onMetaLoaded?: (meta: any) => void;
+  currencySymbol?: string;
 }
 
 export default function CandlestickChart({
   symbol = "",
-  timeframe: propTimeframe = "1D",
+  timeframe: propTimeframe = "24H",
   height = 350,
   mini = false,
   chartType = "candlestick",
@@ -87,6 +88,7 @@ export default function CandlestickChart({
   seriesKeys,
   onCompareChange,
   onMetaLoaded,
+  currencySymbol = "$",
 }: Props) {
   const chartWrapperRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -97,25 +99,60 @@ export default function CandlestickChart({
   // Price Lines Array Reference to clear overlays during re-renders smoothly
   const addedPriceLinesRef = useRef<any[]>([]);
 
-  // 1. Persistent Timeframe in LocalStorage
+  // 1. Persistent Timeframe Range and Candle Interval in LocalStorage
   const [currentTimeframe, setCurrentTimeframe] = useState<string>(() => {
     return localStorage.getItem("finpulse_chart_timeframe") || propTimeframe || "1D";
+  });
+
+  const [currentInterval, setCurrentInterval] = useState<string>(() => {
+    return localStorage.getItem("finpulse_chart_interval") || "1 day";
   });
 
   const handleTimeframeChange = (tf: string) => {
     setCurrentTimeframe(tf);
     localStorage.setItem("finpulse_chart_timeframe", tf);
+
+    // Map Range to standard default Interval
+    let defaultInterval = "1 day";
+    if (tf === "1D") defaultInterval = "5 mins";
+    else if (tf === "5D") defaultInterval = "15 mins";
+    else if (tf === "1M") defaultInterval = "1 day";
+    else if (tf === "3M") defaultInterval = "1 day";
+    else if (tf === "6M") defaultInterval = "1 day";
+    else if (tf === "1Y") defaultInterval = "1 day";
+    else if (tf === "5Y") defaultInterval = "1 day";
+    else if (tf === "MAX") defaultInterval = "1 week";
+
+    setCurrentInterval(defaultInterval);
+    localStorage.setItem("finpulse_chart_interval", defaultInterval);
+  };
+
+  const handleIntervalChange = (val: string) => {
+    setCurrentInterval(val);
+    localStorage.setItem("finpulse_chart_interval", val);
+
+    // Map Interval to standard default Range
+    let range = "1D";
+    if (["1 min", "5 mins"].includes(val)) range = "1D";
+    else if (["15 mins", "30 mins"].includes(val)) range = "1M";
+    else if (["1 hour"].includes(val)) range = "3M";
+    else if (["4 hours"].includes(val)) range = "6M";
+    else if (["1 day"].includes(val)) range = "5Y";
+    else if (["1 week", "1 month", "3 months"].includes(val)) range = "MAX";
+
+    setCurrentTimeframe(range);
+    localStorage.setItem("finpulse_chart_timeframe", range);
   };
 
   const convertToIstTimestamp = useCallback((dateStr: string): number => {
     const utcSeconds = Math.floor(new Date(dateStr).getTime() / 1000);
-    const intradayTimeframes = ["1m", "5m", "15m", "30m", "1h", "1H", "4h", "4H"];
-    if (intradayTimeframes.includes(currentTimeframe)) {
+    const intradayTimeframes = ["1m", "2m", "3m", "5m", "15m", "30m", "1h", "1H", "4h", "4H", "24H", "1D", "5D", "1 min", "2 mins", "3 mins", "5 mins", "15 mins", "30 mins", "1 hour", "4 hours"];
+    if (intradayTimeframes.includes(currentTimeframe) || intradayTimeframes.includes(currentInterval)) {
       const istOffsetSeconds = 5.5 * 3600; // 19800 seconds (5.5 hours) for IST
       return utcSeconds + istOffsetSeconds;
     }
     return utcSeconds;
-  }, [currentTimeframe]);
+  }, [currentTimeframe, currentInterval]);
 
   // 2. Persistent Indicators in LocalStorage
   const [activeOverlays, setActiveOverlays] = useState<string[]>(() => {
@@ -468,7 +505,7 @@ export default function CandlestickChart({
     async function loadCompareData() {
       try {
         const [res, compFundamentals] = await Promise.all([
-          getStockCandles(compareSymbol, currentTimeframe),
+          getAdvancedStockCandles(compareSymbol, currentInterval),
           getFundamentals(compareSymbol).catch(() => null)
         ]);
         if (compFundamentals) {
@@ -491,7 +528,7 @@ export default function CandlestickChart({
       }
     }
     loadCompareData();
-  }, [compareSymbol, currentTimeframe, symbol]);
+  }, [compareSymbol, currentInterval, symbol]);
 
   useEffect(() => {
     if (propTimeframe) {
@@ -648,6 +685,13 @@ export default function CandlestickChart({
             volume: volData ? volData.value : undefined
           });
         }
+      } else if (customMultiData) {
+        const hoveredPoint = customMultiData.find(d => d.time === time);
+        if (hoveredPoint) {
+          setHoveredCandle(hoveredPoint);
+        } else {
+          setHoveredCandle(null);
+        }
       } else if (mainSeries) {
         const data = param.seriesData.get(mainSeries);
         if (data) {
@@ -751,7 +795,7 @@ export default function CandlestickChart({
 
       try {
         const [data, fundamentalsResponse] = await Promise.all([
-          getStockCandles(symbol, currentTimeframe),
+          getAdvancedStockCandles(symbol, currentInterval),
           getFundamentals(symbol).catch(() => null)
         ]);
 
@@ -853,7 +897,7 @@ export default function CandlestickChart({
       resizeObserver.disconnect();
       chart.remove();
     };
-  }, [symbol, currentTimeframe, height, customData, customMultiData, seriesKeys, mini, chartType, settings.lineThickness]);
+  }, [symbol, currentTimeframe, currentInterval, height, customData, customMultiData, seriesKeys, mini, chartType, settings.lineThickness]);
 
   // Effect: Render main chart overlay indicators (EMA, SMA, VWAP, Bollinger Bands) & Comparison line
   useEffect(() => {
@@ -1412,6 +1456,8 @@ export default function CandlestickChart({
             onReset={() => chartRef.current?.timeScale().fitContent()}
             currentTimeframe={currentTimeframe}
             onTimeframeChange={handleTimeframeChange}
+            currentInterval={currentInterval}
+            onIntervalChange={handleIntervalChange}
             activeOverlays={activeOverlays}
             activePanes={activePanes}
             onToggleOverlay={toggleOverlay}
@@ -1426,16 +1472,50 @@ export default function CandlestickChart({
             onSettingsChange={setSettings}
           />
         ) : (
-          <div className="flex justify-end gap-1.5 mb-2">
-            <button onClick={zoomIn} title="Zoom In" className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-all text-xs font-bold leading-none w-8 h-8 flex items-center justify-center">
-              +
-            </button>
-            <button onClick={zoomOut} title="Zoom Out" className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-all text-xs font-bold leading-none w-8 h-8 flex items-center justify-center">
-              -
-            </button>
-            <button onClick={() => chartRef.current?.timeScale().fitContent()} title="Reset Zoom" className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-all text-xs font-bold px-3 h-8 flex items-center justify-center">
-              Reset
-            </button>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3 pb-2 border-b border-slate-100 dark:border-white/5">
+            {/* Hovered stats */}
+            <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
+              {hoveredCandle ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="text-slate-450 dark:text-slate-500 font-bold uppercase">Invested:</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-black">
+                      {currencySymbol}{Number(hoveredCandle.invested).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 pl-3 border-l border-slate-150 dark:border-white/5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span className="text-slate-450 dark:text-slate-500 font-bold uppercase">Current Value:</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-black">
+                      {currencySymbol}{Number(hoveredCandle.value).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 pl-3 border-l border-slate-150 dark:border-white/5">
+                    <span className="text-slate-450 dark:text-slate-500 font-bold uppercase">P&L:</span>
+                    <span className={`font-black ${Number(hoveredCandle.value) >= Number(hoveredCandle.invested) ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {Number(hoveredCandle.value) >= Number(hoveredCandle.invested) ? '+' : ''}
+                      {currencySymbol}{(Number(hoveredCandle.value) - Number(hoveredCandle.invested)).toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <span className="text-slate-400 dark:text-slate-500 font-bold italic">Hover on graph to view details</span>
+              )}
+            </div>
+
+            {/* Zoom Controls */}
+            <div className="flex gap-1.5 ml-auto">
+              <button onClick={zoomIn} title="Zoom In" className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-350 transition-all text-xs font-bold leading-none w-8 h-8 flex items-center justify-center">
+                +
+              </button>
+              <button onClick={zoomOut} title="Zoom Out" className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-350 transition-all text-xs font-bold leading-none w-8 h-8 flex items-center justify-center">
+                -
+              </button>
+              <button onClick={() => chartRef.current?.timeScale().fitContent()} title="Reset Zoom" className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-355 transition-all text-xs font-bold px-3 h-8 flex items-center justify-center">
+                Reset
+              </button>
+            </div>
           </div>
         )}
 

@@ -625,6 +625,16 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
     let totalCostBasis = 0;
     let todayProfitLoss = 0;
 
+    let usdToInrRate = 83.45;
+    try {
+      const rateQuote: any = await yahooFinance.quote('USDINR=X');
+      if (rateQuote && rateQuote.regularMarketPrice) {
+        usdToInrRate = rateQuote.regularMarketPrice;
+      }
+    } catch (err) {
+      console.error("Failed to fetch USDINR rate on backend stats:", err);
+    }
+
     for (const h of holdings) {
       let currentPrice = h.avgCost;
       let dayChange = 0;
@@ -635,9 +645,29 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
       } catch (err) {
         console.error(`Failed to fetch Yahoo quote for ${h.ticker}:`, err);
       }
-      totalPortfolioValue += h.shares * currentPrice;
-      totalCostBasis += h.shares * h.avgCost;
-      todayProfitLoss += dayChange;
+      
+      let val = h.shares * currentPrice;
+      let cost = h.shares * h.avgCost;
+      let change = dayChange;
+      
+      if (h.marketId === 'domestic' || h.ticker.toUpperCase().endsWith('.NS') || h.ticker.toUpperCase().endsWith('.BO')) {
+        val = val / usdToInrRate;
+        cost = cost / usdToInrRate;
+        change = change / usdToInrRate;
+      }
+      
+      totalPortfolioValue += val;
+      totalCostBasis += cost;
+      todayProfitLoss += change;
+    }
+
+    const userCurrency = user.currency || 'INR (₹)';
+    const isINR = userCurrency.includes('₹') || userCurrency.toUpperCase().includes('INR');
+
+    if (isINR) {
+      totalPortfolioValue = totalPortfolioValue * usdToInrRate;
+      totalCostBasis = totalCostBasis * usdToInrRate;
+      todayProfitLoss = todayProfitLoss * usdToInrRate;
     }
 
     const totalReturn = totalPortfolioValue - totalCostBasis;

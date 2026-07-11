@@ -55,14 +55,16 @@ async function getOrCreateDefaultUser(req?: any) {
     const token = authHeader.split(' ')[1] || '';
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
-      if (decoded && decoded.id) {
-        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+      const uid = decoded?.userId || decoded?.id;
+      if (decoded && uid) {
+        const user = await prisma.user.findUnique({ where: { id: uid } });
         if (user) return user;
       }
     } catch {
       const decoded = jwt.decode(token) as any;
-      if (decoded && decoded.id) {
-        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+      const uid = decoded?.userId || decoded?.id;
+      if (decoded && uid) {
+        const user = await prisma.user.findUnique({ where: { id: uid } });
         if (user) return user;
       }
     }

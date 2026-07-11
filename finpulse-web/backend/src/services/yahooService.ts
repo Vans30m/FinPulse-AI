@@ -13,7 +13,7 @@ const screenerCache =
     stdTTL: 60,
   });
 
-const earningsCache = new NodeCache({ stdTTL: 720 });
+const earningsCache = new NodeCache({ stdTTL: 43200 }); // 12 hours TTL for Vercel deployment stability
 
 const yahooFinance =
   new YahooFinance();
@@ -176,15 +176,21 @@ export async function getYahooCandles(
     
     for (let i = rangeDays; i >= 0; i--) {
       const date = new Date(now - i * step);
-      basePrice += (Math.random() - 0.49) * 2;
+      const change = (Math.random() - 0.5) * 4;
+      const open = basePrice;
+      const close = basePrice + change;
+      const high = Math.max(open, close) + Math.random() * 2;
+      const low = Math.min(open, close) - Math.random() * 2;
+      basePrice = close;
+
       quotes.push({
         date: date.toISOString(),
-        open: basePrice - 0.5,
-        high: basePrice + 1.0,
-        low: basePrice - 1.0,
-        close: basePrice,
+        open: open,
+        high: high,
+        low: low,
+        close: close,
         volume: Math.floor(Math.random() * 500000) + 100000,
-        adjclose: basePrice
+        adjclose: close
       });
     }
     return {
@@ -774,32 +780,22 @@ export async function getDomesticScreener(
     return cached;
   }
 
-  const quotes =
-    await Promise.all(
-      DOMESTIC_INDICES.map(
-        async (symbol) => {
-          try {
-            const quote =
-              await yahooFinance.quote(
-                symbol
-              );
-
-            return {
-              symbol: quote.symbol,
-              name: quote.shortName || quote.longName,
-              price: quote.regularMarketPrice,
-              change: quote.regularMarketChange,
-              changePercent: quote.regularMarketChangePercent,
-              volume: quote.regularMarketVolume,
-            };
-          } catch {
-            return null;
-          }
-        }
-      )
-    );
-
-  const stocks = quotes.filter(Boolean);
+  let stocks: any[] = [];
+  try {
+    const quotes = await yahooFinance.quote(DOMESTIC_INDICES);
+    stocks = quotes
+      .filter((q: any) => q && q.symbol)
+      .map((quote: any) => ({
+        symbol: quote.symbol,
+        name: quote.shortName || quote.longName || quote.symbol,
+        price: quote.regularMarketPrice || 0,
+        change: quote.regularMarketChange || 0,
+        changePercent: quote.regularMarketChangePercent || 0,
+        volume: quote.regularMarketVolume || 0,
+      }));
+  } catch (err) {
+    console.error("Failed to batch fetch domestic screener quotes:", err);
+  }
 
   if (type === "gainers") {
     const result = stocks
@@ -907,9 +903,14 @@ export async function getUpcomingEarningsForMarket(market: string) {
     return cachedData;
   }
 
-  const symbols = MARKET_UNIVERSE[normalizedMarket];
+  let symbols = MARKET_UNIVERSE[normalizedMarket];
   if (!symbols) {
     throw new Error(`Unsupported market/region: ${market}`);
+  }
+
+  // Optimize scanned universe size to 40 symbols to prevent Vercel API timeouts (limits Yahoo Finance API batches to 1 request)
+  if (symbols.length > 40) {
+    symbols = symbols.slice(0, 40);
   }
 
   // 2. Process symbols in batches of 100 to avoid rate limits
@@ -986,11 +987,11 @@ export async function getUpcomingEarningsForMarket(market: string) {
     return getEarliestTimestamp(a) - getEarliestTimestamp(b);
   });
 
-  // 5. Slice to the top 10 closest upcoming earnings announcements
-  const top10Quotes = validQuotes.slice(0, 10);
-  const targetSymbols = top10Quotes.map(q => q.symbol);
+  // 5. Slice to the top 6 closest upcoming earnings announcements (speeds up concurrent details fetch by 40%)
+  const top6Quotes = validQuotes.slice(0, 6);
+  const targetSymbols = top6Quotes.map(q => q.symbol);
 
-  // 6. Concurrently fetch full profile details for ONLY the top 10 stocks
+  // 6. Concurrently fetch full profile details for ONLY the top 6 stocks
   const detailPromises = targetSymbols.map(async (symbol) => {
     try {
       const data = await getUpcomingEarnings(symbol);
@@ -1002,7 +1003,7 @@ export async function getUpcomingEarningsForMarket(market: string) {
       console.error(`[Earnings Calendar] Failed to fetch full details for ${symbol}:`, err);
 
       // Resilient fallback: build a minimal structure from the quote object
-      const q = top10Quotes.find(item => item.symbol === symbol);
+      const q = top6Quotes.find(item => item.symbol === symbol);
       if (!q) return null;
 
       const estEPS = q.epsCurrentYear || q.epsTrailingTwelveMonths || null;

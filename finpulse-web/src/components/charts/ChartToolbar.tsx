@@ -45,6 +45,8 @@ interface ChartToolbarProps {
     lineThickness: number;
   };
   onSettingsChange: (settings: any) => void;
+  currentInterval?: string;
+  onIntervalChange?: (interval: string) => void;
 }
 
 const OVERLAYS = [
@@ -79,6 +81,8 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
   onCompareSymbol,
   settings,
   onSettingsChange,
+  currentInterval = "1 day",
+  onIntervalChange,
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -86,10 +90,12 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
   const [compareInput, setCompareInput] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showIntervals, setShowIntervals] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const compareRef = useRef<HTMLDivElement>(null);
+  const intervalsRef = useRef<HTMLDivElement>(null);
 
   // Favorites state persistent in LocalStorage
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -125,6 +131,9 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
       if (compareRef.current && !compareRef.current.contains(target)) {
         setShowCompare(false);
       }
+      if (intervalsRef.current && !intervalsRef.current.contains(target)) {
+        setShowIntervals(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -158,7 +167,53 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-2 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/60 dark:border-slate-800/60 rounded-xl mb-4 relative z-30">
       <div className="flex flex-wrap items-center gap-1.5">
-        <TimeframeSelector selected={currentTimeframe} onChange={onTimeframeChange} />
+
+        {/* Static Intervals Dropdown */}
+        <div className="relative" ref={intervalsRef}>
+          <button
+            onClick={() => setShowIntervals(!showIntervals)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 ${showIntervals
+              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-sm"
+              : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+              }`}
+          >
+            <span className="font-mono">{currentInterval}</span>
+          </button>
+
+          {showIntervals && (
+            <div
+              className="absolute left-0 mt-2 w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 p-1.5 text-left space-y-0.5 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-150 origin-top-left"
+            >
+              {[
+                "1 min",
+                "5 mins",
+                "15 mins",
+                "30 mins",
+                "1 hour",
+                "4 hours",
+                "1 day",
+                "1 week",
+                "1 month",
+                "3 months"
+              ].map((val) => {
+                const isActive = currentInterval === val;
+                return (
+                  <button
+                    key={val}
+                    onClick={() => {
+                      onIntervalChange?.(val);
+                      setShowIntervals(false);
+                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-left transition-colors"
+                  >
+                    <span>{val}</span>
+                    {isActive && <Check className="h-3 w-3 text-blue-500 stroke-[3]" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Indicators Dropdown */}
         <div className="relative" ref={dropdownRef}>
