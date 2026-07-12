@@ -150,6 +150,131 @@ function queueOtpEmail(email: string, code: string) {
   void sendOtpEmail(email, code);
 }
 
+async function sendResetPasswordEmail(email: string, code: string) {
+  console.log(`✉️ [sendResetPasswordEmail] Initiated. BREVO_API_KEY detected: ${process.env.BREVO_API_KEY ? "YES (starts with " + process.env.BREVO_API_KEY.substring(0, 10) + ")" : "NO"}`);
+  if (process.env.BREVO_API_KEY) {
+    try {
+      console.log(`✉️ Attempting to send reset password email to ${email} via Brevo API...`);
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: 'FinPulse AI',
+            email: process.env.SENDER_EMAIL || 'afinpulse@gmail.com',
+          },
+          to: [{ email }],
+          subject: 'Reset your FinPulse AI Password',
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #0284c7;">Reset your FinPulse AI Password</h2>
+              <p>We received a request to reset your password. Please use the following 6-digit verification code to complete the reset:</p>
+              <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 15px; background-color: #f0f9ff; border-radius: 8px; text-align: center; color: #0369a1; margin: 20px 0;">
+                ${code}
+              </div>
+              <p>This code will expire in 10 minutes.</p>
+              <p style="font-size: 12px; color: #666; margin-top: 30px;">If you did not request this, please ignore this email.</p>
+            </div>
+          `,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(JSON.stringify(errorData));
+      }
+
+      console.log(`✉️ Reset password email sent to ${email} successfully via Brevo API`);
+      return;
+    } catch (error) {
+      console.error(`Failed to send reset password email via Brevo API to ${email}:`, error);
+      console.log('Falling back to other configurations...');
+    }
+  }
+
+  if (process.env.RESEND_API_KEY) {
+    try {
+      console.log(`✉️ Attempting to send reset password email to ${email} via Resend API...`);
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'FinPulse AI <onboarding@resend.dev>',
+          to: email,
+          subject: 'Reset your FinPulse AI Password',
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #0284c7;">Reset your FinPulse AI Password</h2>
+              <p>We received a request to reset your password. Please use the following 6-digit verification code to complete the reset:</p>
+              <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 15px; background-color: #f0f9ff; border-radius: 8px; text-align: center; color: #0369a1; margin: 20px 0;">
+                ${code}
+              </div>
+              <p>This code will expire in 10 minutes.</p>
+              <p style="font-size: 12px; color: #666; margin-top: 30px;">If you did not request this, please ignore this email.</p>
+            </div>
+          `,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(JSON.stringify(errorData));
+      }
+
+      console.log(`✉️ Reset password email sent to ${email} successfully via Resend API`);
+      return;
+    } catch (error) {
+      console.error(`Failed to send reset password email via Resend API to ${email}:`, error);
+      console.log('Falling back to SMTP configuration...');
+    }
+  }
+
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log(`\n==========================================`);
+    console.log(`✉️  [Reset Password Fallback] Verification code for ${email}: ${code}`);
+    console.log(`==========================================\n`);
+    return;
+  }
+
+  try {
+    await Promise.race([
+      transporter.sendMail({
+        from: `"FinPulse AI" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Reset your FinPulse AI Password',
+        text: `Your 6-digit verification code to reset your password is: ${code}. It expires in 10 minutes.`,
+        html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; border: 1px solid #eee; border-radius: 10px;">
+          <h2 style="color: #0284c7;">Reset your FinPulse AI Password</h2>
+          <p>We received a request to reset your password. Please use the following 6-digit verification code to complete the reset:</p>
+          <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 15px; background-color: #f0f9ff; border-radius: 8px; text-align: center; color: #0369a1; margin: 20px 0;">
+            ${code}
+          </div>
+          <p>This code will expire in 10 minutes.</p>
+          <p style="font-size: 12px; color: #666; margin-top: 30px;">If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('SMTP send timed out')), SMTP_SEND_TIMEOUT_MS)
+      ),
+    ]);
+    console.log(`✉️ Reset password email sent to ${email}`);
+  } catch (error) {
+    console.error(`Failed to send reset password email to ${email}:`, error);
+  }
+}
+
+function queueResetPasswordEmail(email: string, code: string) {
+  void sendResetPasswordEmail(email, code);
+}
+
 
 // 1. Google Login Check
 router.post('/google-login', async (req: any, res: any) => {
@@ -629,6 +754,116 @@ router.post('/reset-pin-with-otp', async (req: any, res: any) => {
     });
   } catch (error: any) {
     console.error('Error in reset-pin-with-otp:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// 8.5 Forgot Password - Sends OTP to email
+router.post('/forgot-password', async (req: any, res: any) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Verify user exists
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'No account found with this email.' });
+    }
+
+    if (!user.passwordHash) {
+      return res.status(400).json({ error: 'This account was registered using Google. Please log in using Google.' });
+    }
+
+    // Generate random 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    // Save OTP
+    await prisma.otpVerification.upsert({
+      where: { email },
+      update: {
+        code,
+        expiresAt,
+        updatedAt: new Date(),
+      },
+      create: {
+        email,
+        code,
+        expiresAt,
+      },
+    });
+
+    // Send OTP email
+    queueResetPasswordEmail(email, code);
+
+    res.json({ message: 'Verification code sent to your email.' });
+  } catch (error: any) {
+    console.error('Error in forgot-password:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// 8.6 Reset Password with OTP Verification
+router.post('/reset-password', async (req: any, res: any) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Email, verification code, and new password are required' });
+    }
+
+    // 1. Verify OTP
+    const verification = await prisma.otpVerification.findUnique({
+      where: { email },
+    });
+
+    if (!verification || verification.code !== code) {
+      return res.status(400).json({ error: 'Invalid verification code.' });
+    }
+
+    if (new Date() > verification.expiresAt) {
+      return res.status(400).json({ error: 'Verification code has expired. Please try again.' });
+    }
+
+    // 2. Hash new password and update user
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    const user = await prisma.user.update({
+      where: { email },
+      data: {
+        passwordHash: hashedPassword,
+      },
+    });
+
+    // 3. Delete OTP record
+    await prisma.otpVerification.delete({
+      where: { email },
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error in reset-password:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });

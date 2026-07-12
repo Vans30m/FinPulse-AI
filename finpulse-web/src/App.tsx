@@ -9,7 +9,7 @@ import MarketScreeners from './features/dashboard/components/MarketScreeners';
 import Watchlist from './features/dashboard/components/Watchlist';
 import MarketFeedStream from './features/dashboard/components/MarketFeedStream';
 import LoginModal from './features/auth/LoginModal';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import PortfolioDashboard from './features/portfolio/components/PortfolioDashboard';
 import PerformanceComparison from './features/dashboard/components/PerformanceComparison';
 import MyAlertsDashboard from './features/dashboard/components/MyAlertsDashboard';
@@ -114,7 +114,12 @@ export default function App() {
         navItems={navItems}
         isLoggedIn={isLoggedIn}
         onLoginClick={() => setIsLoginModalOpen(true)}
-        onLogoutClick={() => setIsLoggedIn(false)}
+        onLogoutClick={() => {
+          localStorage.removeItem('finpulse_token');
+          localStorage.removeItem('finpulse-user');
+          setIsLoggedIn(false);
+          toast.success("Logged out successfully");
+        }}
       />
 
       <Toaster
