@@ -984,7 +984,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                       localStorage.removeItem('finpulse_token');
                       localStorage.removeItem('finpulse-user');
                       sessionStorage.removeItem('finpulse_pin_verified');
-                      setUser(null);
+                      setUser({ name: 'Vans', email: 'user@example.com', currency: 'INR (₹)' });
                       if (onLogout) {
                         onLogout();
                       }
