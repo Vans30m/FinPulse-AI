@@ -114,14 +114,22 @@ export default function CandlestickChart({
 
     // Map Range to standard default Interval
     let defaultInterval = "1 day";
-    if (tf === "1D") defaultInterval = "5 mins";
+    if (tf === "1m") defaultInterval = "1 min";
+    else if (tf === "5m") defaultInterval = "5 mins";
+    else if (tf === "15m") defaultInterval = "15 mins";
+    else if (tf === "30m") defaultInterval = "30 mins";
+    else if (tf === "1h") defaultInterval = "1 hour";
+    else if (tf === "4h") defaultInterval = "4 hours";
+    else if (tf === "1D") defaultInterval = "5 mins";
     else if (tf === "5D") defaultInterval = "15 mins";
     else if (tf === "1M") defaultInterval = "1 day";
     else if (tf === "3M") defaultInterval = "1 day";
     else if (tf === "6M") defaultInterval = "1 day";
+    else if (tf === "YTD") defaultInterval = "1 day";
     else if (tf === "1Y") defaultInterval = "1 day";
-    else if (tf === "5Y") defaultInterval = "1 day";
-    else if (tf === "MAX") defaultInterval = "1 week";
+    else if (tf === "3Y") defaultInterval = "1 week";
+    else if (tf === "5Y") defaultInterval = "1 week";
+    else if (tf === "MAX") defaultInterval = "1 month";
 
     setCurrentInterval(defaultInterval);
     localStorage.setItem("finpulse_chart_interval", defaultInterval);
@@ -133,12 +141,15 @@ export default function CandlestickChart({
 
     // Map Interval to standard default Range
     let range = "1D";
-    if (["1 min", "5 mins"].includes(val)) range = "1D";
-    else if (["15 mins", "30 mins"].includes(val)) range = "1M";
-    else if (["1 hour"].includes(val)) range = "3M";
-    else if (["4 hours"].includes(val)) range = "6M";
-    else if (["1 day"].includes(val)) range = "5Y";
-    else if (["1 week", "1 month", "3 months"].includes(val)) range = "MAX";
+    if (val === "1 min") range = "1m";
+    else if (val === "5 mins") range = "5m";
+    else if (val === "15 mins") range = "15m";
+    else if (val === "30 mins") range = "30m";
+    else if (val === "1 hour") range = "1h";
+    else if (val === "4 hours") range = "4h";
+    else if (val === "1 day") range = "1Y";
+    else if (val === "1 week") range = "5Y";
+    else if (val === "1 month" || val === "3 months") range = "MAX";
 
     setCurrentTimeframe(range);
     localStorage.setItem("finpulse_chart_timeframe", range);
@@ -541,6 +552,8 @@ export default function CandlestickChart({
     const container = chartContainerRef.current;
     if (!container) return;
 
+    let active = true;
+
     setLoading(true);
 
     const isMini = !!mini;
@@ -752,6 +765,7 @@ export default function CandlestickChart({
     });
 
     const handleDoubleClickReset = () => {
+      if (!active) return;
       chart.timeScale().fitContent();
     };
     container.addEventListener("dblclick", handleDoubleClickReset);
@@ -759,6 +773,7 @@ export default function CandlestickChart({
     async function loadData() {
       // 1. Handle custom single series rendering
       if (customData) {
+        if (!active) return;
         if (mainSeries) {
           mainSeries.setData(customData as any);
         }
@@ -769,6 +784,7 @@ export default function CandlestickChart({
 
       // 2. Handle custom multiline comparison rendering
       if (customMultiData && seriesKeys) {
+        if (!active) return;
         seriesKeys.forEach(sKey => {
           const lineSeries = chart.addLineSeries({
             color: sKey.color,
@@ -789,7 +805,7 @@ export default function CandlestickChart({
 
       // 3. Fallback/Standard Candle Loader from APIs
       if (!symbol) {
-        setLoading(false);
+        if (active) setLoading(false);
         return;
       }
 
@@ -799,22 +815,7 @@ export default function CandlestickChart({
           getFundamentals(symbol).catch(() => null)
         ]);
 
-        if (fundamentalsResponse) {
-          setFundamentals(fundamentalsResponse);
-          const newMeta = {
-            name: fundamentalsResponse.name || "Asset",
-            exchange: fundamentalsResponse.marketState ? "GLOBAL" : "INDEX",
-            price: fundamentalsResponse.price || 0,
-            change: fundamentalsResponse.change || 0,
-            changePercent: fundamentalsResponse.changePercent || 0,
-            marketState: fundamentalsResponse.marketState || "CLOSED",
-            currency: fundamentalsResponse.currency || "USD"
-          };
-          setMeta(newMeta);
-          if (onMetaLoaded) {
-            onMetaLoaded(newMeta);
-          }
-        }
+        if (!active) return;
 
         if (!data?.quotes || !Array.isArray(data.quotes)) {
           console.error("No valid chart candle payload available:", data);
@@ -837,6 +838,25 @@ export default function CandlestickChart({
         if (!mappedCandles.length) {
           setLoading(false);
           return;
+        }
+
+        if (fundamentalsResponse) {
+          setFundamentals(fundamentalsResponse);
+        }
+
+        const newMeta = {
+          name: fundamentalsResponse?.name || (meta?.name || "Asset"),
+          exchange: fundamentalsResponse?.marketState ? "GLOBAL" : "INDEX",
+          price: fundamentalsResponse?.price || (mappedCandles[mappedCandles.length - 1]?.close || 0),
+          change: fundamentalsResponse?.change || 0,
+          changePercent: fundamentalsResponse?.changePercent || 0,
+          marketState: fundamentalsResponse?.marketState || "CLOSED",
+          currency: fundamentalsResponse?.currency || "USD",
+          performance: fundamentalsResponse?.performance || null
+        };
+        setMeta(newMeta);
+        if (onMetaLoaded) {
+          onMetaLoaded(newMeta);
         }
 
         // Set candles data
@@ -875,7 +895,7 @@ export default function CandlestickChart({
       } catch (error) {
         console.error("Fatal exception during rendering execution pipeline:", error);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
@@ -883,7 +903,7 @@ export default function CandlestickChart({
 
     let lastWidth = container.clientWidth;
     const resizeObserver = new ResizeObserver((entries) => {
-      if (!entries.length) return;
+      if (!entries.length || !active) return;
       const newWidth = entries[0].contentRect.width;
       if (Math.abs(newWidth - lastWidth) > 3) {
         chart.applyOptions({ width: newWidth });
@@ -893,9 +913,13 @@ export default function CandlestickChart({
     resizeObserver.observe(container);
 
     return () => {
+      active = false;
       container.removeEventListener("dblclick", handleDoubleClickReset);
       resizeObserver.disconnect();
       chart.remove();
+      chartRef.current = null;
+      candleSeriesRef.current = null;
+      volumeSeriesRef.current = null;
     };
   }, [symbol, currentTimeframe, currentInterval, height, customData, customMultiData, seriesKeys, mini, chartType, settings.lineThickness]);
 

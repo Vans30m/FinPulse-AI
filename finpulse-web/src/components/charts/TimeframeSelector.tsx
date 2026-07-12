@@ -6,7 +6,7 @@ interface TimeframeSelectorProps {
 }
 
 export const TIMEFRAMES = [
-  "1D", "1M", "3M", "6M", "1Y", "5Y", "MAX"
+  "1m", "5m", "15m", "30m", "1h", "4h", "1D", "5D", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "MAX"
 ];
 
 function TimeframeSelector({ selected, onChange }: TimeframeSelectorProps) {

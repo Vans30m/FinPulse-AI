@@ -96,8 +96,7 @@ transition-colors
 duration-300
 flex
 flex-col
-${fullPage ? "h-full" : "max-h-[1600px]"}
-`}>
+${fullPage ? "h-full" : "max-h-[1300px]"}`}>
       {/* HEADER */}
       <div className="border-b border-slate-100 dark:border-white/5 p-5 shrink-0 flex items-center gap-3">
         <div className="p-2 rounded-lg bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400">

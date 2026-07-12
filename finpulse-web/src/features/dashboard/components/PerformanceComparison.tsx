@@ -82,7 +82,9 @@ export default function PerformanceComparison() {
 
       if (holdingsRes.ok) {
         const data = await holdingsRes.json();
-        const allHoldings = (data.sections || []).flatMap((s: any) => s.holdings || []);
+        const allHoldings = (data.sections || []).flatMap((s: any) => 
+          (s.holdings || []).map((h: any) => ({ ...h, marketId: s.id }))
+        );
         setHoldings(allHoldings);
       }
 
