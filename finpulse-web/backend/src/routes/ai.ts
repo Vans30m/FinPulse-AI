@@ -5,11 +5,14 @@ import YahooFinance from "yahoo-finance2";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import Parser from "rss-parser";
+import NodeCache from "node-cache";
 
 const yahooFinance = new YahooFinance();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 const rssParser = new Parser();
+const aiCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache TTL
+
 
 async function getRecentNewsHeadlines(): Promise<string[]> {
   const headlines: string[] = [];
@@ -164,6 +167,12 @@ stockSentimentRoutes.get("/:symbol", async (req, res) => {
 const marketBriefRoutes = express.Router();
 
 marketBriefRoutes.get("/market-brief", async (req, res) => {
+  const cacheKey = "market-brief";
+  const cached = aiCache.get(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   try {
     const symbols = ["^GSPC", "^IXIC", "^NSEI", "^BSESN", "^GDAXI", "^FCHI", "^FTSE", "^N225", "000001.SS", "^HSI", "^TWII", "^KS11", "GC=F", "CL=F", "^VIX"];
     const quotes = await Promise.all(
@@ -322,6 +331,7 @@ Output ONLY valid JSON. Match this schema exactly. Do NOT wrap it in any markdow
 
     // Inject generatedAt
     result.generatedAt = new Date().toISOString();
+    aiCache.set(cacheKey, result);
 
     res.json(result);
   } catch (error: any) {
@@ -334,6 +344,11 @@ Output ONLY valid JSON. Match this schema exactly. Do NOT wrap it in any markdow
 marketBriefRoutes.get("/portfolio-advisor", async (req, res) => {
   try {
     const user = await getOrCreateDefaultUser(req);
+    const cacheKey = `portfolio-advisor-${user.id}`;
+    const cached = aiCache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
 
     // 1. If holdings list is empty, return an empty portfolio response structure
@@ -617,6 +632,7 @@ Generate personalized recommendations. Return ONLY valid JSON matching this sche
     }
 
     result.generatedAt = new Date().toISOString();
+    aiCache.set(cacheKey, result);
     res.json(result);
   } catch (error: any) {
     console.error("Failed to generate portfolio advisor report:", error);
@@ -625,6 +641,12 @@ Generate personalized recommendations. Return ONLY valid JSON matching this sche
 });
 
 marketBriefRoutes.get("/market-drivers", async (req, res) => {
+  const cacheKey = "market-drivers";
+  const cached = aiCache.get(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   try {
     const symbols = ["^GSPC", "^IXIC", "^NSEI", "^BSESN", "^GDAXI", "^FCHI", "^FTSE", "^N225", "000001.SS", "^HSI", "^TWII", "^KS11", "GC=F", "CL=F", "^VIX"];
     const quotes = await Promise.all(
@@ -763,6 +785,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     }
 
     result.generatedAt = new Date().toISOString();
+    aiCache.set(cacheKey, result);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate market drivers:", error);
@@ -771,6 +794,12 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 });
 
 marketBriefRoutes.get("/global-market-pulse", async (req, res) => {
+  const cacheKey = "global-market-pulse";
+  const cached = aiCache.get(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   try {
     const symbols = ["^GSPC", "^IXIC", "^NSEI", "^BSESN", "^GDAXI", "^FCHI", "^FTSE", "^N225", "000001.SS", "^HSI", "^TWII", "^KS11", "GC=F", "CL=F", "^VIX", "BTC-USD"];
     const quotes = await Promise.all(
@@ -886,6 +915,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     }
 
     result.generatedAt = new Date().toISOString();
+    aiCache.set(cacheKey, result);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate global market pulse:", error);
@@ -894,6 +924,12 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 });
 
 marketBriefRoutes.get("/fear-greed", async (req, res) => {
+  const cacheKey = "fear-greed";
+  const cached = aiCache.get(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   try {
     const symbols = ["^GSPC", "^IXIC", "^NSEI", "^BSESN", "^GDAXI", "^FCHI", "^FTSE", "^N225", "000001.SS", "^HSI", "^TWII", "^KS11", "GC=F", "CL=F", "^VIX", "BTC-USD"];
     const quotes = await Promise.all(
@@ -1037,6 +1073,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     if (!result.lastMonth) result.lastMonth = Math.max(0, Math.min(100, calculatedScore - 12));
     
     result.generatedAt = new Date().toISOString();
+    aiCache.set(cacheKey, result);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate fear-greed index:", error);
@@ -1045,6 +1082,12 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 });
 
 marketBriefRoutes.get("/pick-of-the-day", async (req, res) => {
+  const cacheKey = "pick-of-the-day";
+  const cached = aiCache.get(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   try {
     const candidates = [
       { symbol: "AAPL", name: "Apple Inc." },
@@ -1198,6 +1241,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     }
 
     result.generatedAt = new Date().toISOString();
+    aiCache.set(cacheKey, result);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate pick of the day:", error);
@@ -1206,6 +1250,12 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 });
 
 marketBriefRoutes.get("/sector-momentum", async (req, res) => {
+  const cacheKey = "sector-momentum";
+  const cached = aiCache.get(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   try {
     const sectorsDef = [
       { symbol: "XLK", name: "Information Technology" },
@@ -1348,6 +1398,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     }
 
     result.generatedAt = new Date().toISOString();
+    aiCache.set(cacheKey, result);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate sector momentum:", error);
