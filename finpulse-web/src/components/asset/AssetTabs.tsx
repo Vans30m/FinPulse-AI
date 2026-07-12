@@ -10,7 +10,7 @@ export default function AssetTabs({ tabs, activeTab, onChangeTab }: AssetTabsPro
       overview: "Overview",
       chart: "Interactive Chart",
       financials: "Financial Data",
-      technicals: "Technical Analysis",
+      technicals: "Structural Levels",
       news: "News Feed",
       ai_analysis: "AI Sentiment",
       market_cap: "Market Cap",
