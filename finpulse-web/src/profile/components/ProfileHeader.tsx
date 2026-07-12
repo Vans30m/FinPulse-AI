@@ -45,7 +45,14 @@ export default function ProfileHeader({
                   <img src={avatar} alt={name} className="h-full w-full rounded-2xl object-cover" />
                 ) : (
                   <div className="h-full w-full rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-3xl font-black">
-                    {name ? name.slice(0, 2).toUpperCase() : "FP"}
+                    {(() => {
+                      if (!name) return 'FP';
+                      const parts = name.trim().split(/\s+/);
+                      if (parts.length > 1) {
+                        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                      }
+                      return parts[0][0].toUpperCase();
+                    })()}
                   </div>
                 )}
               </div>

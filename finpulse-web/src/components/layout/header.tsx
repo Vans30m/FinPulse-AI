@@ -315,7 +315,14 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                   {user?.avatar ? (
                     <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
                   ) : (
-                    user?.name ? user.name.slice(0, 2).toUpperCase() : 'US'
+                    (() => {
+                      if (!user?.name) return 'US';
+                      const parts = user.name.trim().split(/\s+/);
+                      if (parts.length > 1) {
+                        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                      }
+                      return parts[0][0].toUpperCase();
+                    })()
                   )}
                 </div>
 

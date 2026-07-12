@@ -629,22 +629,9 @@ router.post('/login-verify-otp', async (req: any, res: any) => {
       where: { email },
     });
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '30d' }
-    );
-
     res.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatar: user.avatar,
-        role: user.role,
-      },
+      hasPin: !!user.devicePin,
+      email: user.email,
     });
   } catch (error: any) {
     console.error('Error in login-verify-otp:', error);

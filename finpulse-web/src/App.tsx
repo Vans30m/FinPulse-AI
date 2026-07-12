@@ -68,6 +68,15 @@ export default function App() {
   // Set this to false so it doesn't pop up on load
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  // Force PIN verification on reload/load if logged in
+  useEffect(() => {
+    const token = localStorage.getItem('finpulse_token');
+    const pinVerified = sessionStorage.getItem('finpulse_pin_verified');
+    if (token && pinVerified !== 'true') {
+      setIsLoginModalOpen(true);
+    }
+  }, []);
+
   const {
     chartOpen,
     selectedAsset,
@@ -103,6 +112,11 @@ export default function App() {
         onClose={() => setIsLoginModalOpen(false)}
         onLoginSuccess={() => {
           setIsLoggedIn(true);
+          sessionStorage.setItem('finpulse_pin_verified', 'true');
+          setIsLoginModalOpen(false);
+        }}
+        onLogout={() => {
+          setIsLoggedIn(false);
           setIsLoginModalOpen(false);
         }}
       />

@@ -8,11 +8,12 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: () => void;
+  onLogout?: () => void;
 }
 
 type AuthStep = 'email' | 'otp-verification' | 'reset-pin' | 'set-pin' | 'enter-pin' | 'profile-setup' | 'forgot-password' | 'reset-password';
 
-export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }: LoginModalProps) {
   const { setUser } = useAppData();
   const [step, setStep] = useState<AuthStep>('email');
 
@@ -85,8 +86,23 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setStep('email');
-      setEmail('');
+      const token = localStorage.getItem('finpulse_token');
+      const pinVerified = sessionStorage.getItem('finpulse_pin_verified');
+      if (token && pinVerified !== 'true') {
+        const storedUser = localStorage.getItem('finpulse-user');
+        if (storedUser) {
+          try {
+            const userObj = JSON.parse(storedUser);
+            setEmail(userObj.email || '');
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        setStep('enter-pin');
+      } else {
+        setStep('email');
+        setEmail('');
+      }
       setPin('');
       setError('');
       setIsRegisterMode(false);
@@ -172,14 +188,18 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
       const data = await parseJsonResponse(res);
       if (res.ok) {
-        localStorage.setItem('finpulse_token', data.token);
-        localStorage.setItem('finpulse-user', JSON.stringify(data.user));
-        setUser(data.user);
         if (isRegisterMode) {
+          localStorage.setItem('finpulse_token', data.token);
+          localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+          setUser(data.user);
           setProfileUserId(data.user.id);
           setStep('profile-setup');
         } else {
-          onLoginSuccess();
+          if (data.hasPin) {
+            setStep('enter-pin');
+          } else {
+            setStep('set-pin');
+          }
         }
       } else {
         setError(data.error || 'Verification failed.');
@@ -243,6 +263,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         localStorage.setItem('finpulse_token', data.token);
         localStorage.setItem('finpulse-user', JSON.stringify(data.user));
         setUser(data.user);
+        sessionStorage.setItem('finpulse_pin_verified', 'true');
         onLoginSuccess();
       } else {
         setError(data.error || 'Reset PIN failed.');
@@ -393,6 +414,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             localStorage.setItem('finpulse_token', data.token);
             localStorage.setItem('finpulse-user', JSON.stringify(data.user));
             setUser(data.user);
+            sessionStorage.setItem('finpulse_pin_verified', 'true');
             setProfileUserId(data.user.id);
             setStep('profile-setup');
           } else {
@@ -412,6 +434,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             localStorage.setItem('finpulse_token', data.token);
             localStorage.setItem('finpulse-user', JSON.stringify(data.user));
             setUser(data.user);
+            sessionStorage.setItem('finpulse_pin_verified', 'true');
             onLoginSuccess();
           } else {
             const errData = await res.json();
@@ -431,9 +454,18 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
 
 
+  const isForcePin = !!localStorage.getItem('finpulse_token') && sessionStorage.getItem('finpulse_pin_verified') !== 'true';
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-900/60 dark:bg-night-950/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div 
+        className="absolute inset-0 bg-slate-900/60 dark:bg-night-950/80 backdrop-blur-sm transition-opacity" 
+        onClick={() => {
+          if (!isForcePin) {
+            onClose();
+          }
+        }} 
+      />
 
       <div className="relative z-10 flex w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
 
@@ -455,9 +487,11 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
         {/* RIGHT PANE: Authentication Forms */}
         <div className="relative w-full p-8 sm:p-12 md:w-1/2">
-          <button onClick={onClose} className="absolute right-6 top-6 rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
-            <X className="h-5 w-5" />
-          </button>
+          {!isForcePin && (
+            <button onClick={onClose} className="absolute right-6 top-6 rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          )}
 
           <div className="mx-auto flex h-full max-w-sm flex-col justify-center">
 
@@ -944,10 +978,24 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               <div className="animate-in slide-in-from-right-4 fade-in duration-300">
 
                 <button
-                  onClick={() => setStep('email')}
+                  type="button"
+                  onClick={() => {
+                    if (isForcePin) {
+                      localStorage.removeItem('finpulse_token');
+                      localStorage.removeItem('finpulse-user');
+                      sessionStorage.removeItem('finpulse_pin_verified');
+                      setUser(null);
+                      if (onLogout) {
+                        onLogout();
+                      }
+                      setStep('email');
+                    } else {
+                      setStep('email');
+                    }
+                  }}
                   className="mb-6 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                 >
-                  ← Back
+                  {isForcePin ? '← Sign Out' : '← Back'}
                 </button>
 
                 <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-white/5 text-blue-600 dark:text-cyan-400">

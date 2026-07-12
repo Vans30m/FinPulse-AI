@@ -677,7 +677,14 @@ export default function Profile() {
                     {editForm.avatar ? (
                       <img src={editForm.avatar} alt="Preview" className="h-full w-full object-cover" />
                     ) : (
-                      editForm.name.slice(0, 2).toUpperCase()
+                      (() => {
+                        if (!editForm.name) return 'US';
+                        const parts = editForm.name.trim().split(/\s+/);
+                        if (parts.length > 1) {
+                          return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                        }
+                        return parts[0][0].toUpperCase();
+                      })()
                     )}
                   </div>
                   <input 
