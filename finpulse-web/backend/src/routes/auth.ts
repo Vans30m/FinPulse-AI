@@ -26,6 +26,7 @@ const transporter = nodemailer.createTransport({
 const SMTP_SEND_TIMEOUT_MS = 15_000;
 
 async function sendOtpEmail(email: string, code: string) {
+  console.log(`✉️ [sendOtpEmail] Initiated. BREVO_API_KEY detected: ${process.env.BREVO_API_KEY ? "YES (starts with " + process.env.BREVO_API_KEY.substring(0, 10) + ")" : "NO"}`);
   if (process.env.BREVO_API_KEY) {
     try {
       console.log(`✉️ Attempting to send OTP email to ${email} via Brevo API...`);
