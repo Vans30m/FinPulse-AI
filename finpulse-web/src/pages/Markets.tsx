@@ -66,7 +66,7 @@ function MarketCard({ market }: { market: any }) {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setHistory(data.map((c: any) => ({ time: c.date, value: c.close || c.value })));
+          setHistory(data.map((c: any) => ({ time: c.date, value: c.price || c.close || c.value })));
         }
       })
       .catch(err => console.error(err));

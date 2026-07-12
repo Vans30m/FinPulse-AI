@@ -51,16 +51,32 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Disclosures from "./pages/Disclosures";
 import Security from "./pages/Security";
+import { useTheme } from './context/ThemeContext';
+import { profileService } from './profile/services/profileService';
 
 export default function App() {
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('finpulse_token'));
 
   // Scroll to top on navigation/page change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('finpulse_token'));
+  // Sync saved theme preference from database profile on load
+  useEffect(() => {
+    const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+    if (token) {
+      profileService.getProfile()
+        .then(data => {
+          if (data?.preferences?.theme) {
+            setTheme(data.preferences.theme as any);
+          }
+        })
+        .catch(err => console.error("Failed to fetch profile theme preference on app load:", err));
+    }
+  }, [isLoggedIn]);
 
   // The state for managing selected region
   const [marketRegion, setMarketRegion] = useState<"india" | "us">("india");

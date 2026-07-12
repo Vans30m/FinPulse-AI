@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import CandlestickChart from "../../../components/charts/CandlestickChart";
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Wallet, TrendingDown, DollarSign } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Props {
   data: {
@@ -62,11 +63,20 @@ export default function PortfolioPerformanceChart({
   return (
     <div className="glass-panel p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2.5">
-          <TrendingUp className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-            Portfolio Performance
-          </h2>
+        <div className="flex items-center justify-between w-full md:w-auto gap-4">
+          <div className="flex items-center gap-2.5">
+            <TrendingUp className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Portfolio Performance
+            </h2>
+          </div>
+          <Link
+            to="/performance"
+            className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-all shadow-sm flex items-center gap-1 shrink-0"
+          >
+            <span>Compare Benchmarks</span>
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
         </div>
         
         {/* Performance Legend & Quick Stats */}

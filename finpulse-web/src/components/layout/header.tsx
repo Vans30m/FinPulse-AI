@@ -10,7 +10,6 @@ import {
   X,
 } from 'lucide-react';
 import { useAppData } from "../../context/AppDataContext";
-import ThemeToggle from '../ui/ThemeToggle';
 import LightLogo from '../../assets/Dark_Logo.png';
 import DarkLogo from '../../assets/Light_Logo.png';
 import { Link, NavLink } from "react-router-dom";
@@ -210,8 +209,6 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
             </div>
             <kbd className="rounded bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-500 dark:text-slate-400">Ctrl K</kbd>
           </button>
-
-          <ThemeToggle />
 
           {/* Notification Bell */}
           {isLoggedIn && (

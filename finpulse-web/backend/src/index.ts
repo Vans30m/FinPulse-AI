@@ -1,4 +1,7 @@
 import 'dotenv/config';
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
+
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import axios from 'axios';
@@ -32,6 +35,7 @@ import customScreenerRouter from "./routes/screeners.js";
 import aiHistoryRouter from "./routes/aiHistory.js";
 import { getUpcomingEarningsForMarket, getAssetEvents } from "./services/yahooService.js";
 import authRoutes from "./routes/auth.js";
+import assetDetailsRoute from "./routes/assetDetails.js";
 
 // ==========================================
 // INITIALISE CORE SERVICES
@@ -131,6 +135,7 @@ app.use("/api/alerts-custom", alertsRouter);
 app.use("/api/recent", recentRouter);
 app.use("/api/saved-screeners", customScreenerRouter);
 app.use("/api/auth", authRoutes);
+app.use("/api/asset-details", assetDetailsRoute);
 
 // ==========================================
 // 0. GLOBAL EARNINGS CALENDAR ENDPOINT

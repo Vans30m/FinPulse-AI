@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { BarChart3 } from "lucide-react";
+import { Link } from 'react-router-dom';
 import PortfolioAllocationChart from "./PortfolioAllocationChart";
 import PortfolioSummarySection, { type PortfolioSummaryMetric } from "./PortfolioSummarySection";
 
@@ -1039,6 +1040,13 @@ export default function PortfolioDashboard() {
             >
               {isSandboxMode ? 'Switch to Tracker' : 'Try Paper Trading'}
             </button>
+            <Link
+              to="/performance"
+              className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5 shadow-sm inline-flex items-center gap-1.5"
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span>Performance Comparison</span>
+            </Link>
           </div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
             {isSandboxMode ? 'Test strategies in real-time with $100k virtual cash balance.' : 'Global allocation breakdown with modular tracking.'}
