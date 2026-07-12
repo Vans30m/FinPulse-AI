@@ -26,6 +26,49 @@ const transporter = nodemailer.createTransport({
 const SMTP_SEND_TIMEOUT_MS = 15_000;
 
 async function sendOtpEmail(email: string, code: string) {
+  if (process.env.BREVO_API_KEY) {
+    try {
+      console.log(`✉️ Attempting to send OTP email to ${email} via Brevo API...`);
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: 'FinPulse AI',
+            email: process.env.SENDER_EMAIL || 'afinpulse@gmail.com',
+          },
+          to: [{ email }],
+          subject: 'Verify your FinPulse AI Account',
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #0284c7;">Verify your FinPulse AI Account</h2>
+              <p>Thank you for signing up for FinPulse AI. Please use the following 6-digit verification code to complete your registration:</p>
+              <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 15px; background-color: #f0f9ff; border-radius: 8px; text-align: center; color: #0369a1; margin: 20px 0;">
+                ${code}
+              </div>
+              <p>This code will expire in 10 minutes.</p>
+              <p style="font-size: 12px; color: #666; margin-top: 30px;">If you did not request this, please ignore this email.</p>
+            </div>
+          `,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(JSON.stringify(errorData));
+      }
+
+      console.log(`✉️ OTP email sent to ${email} successfully via Brevo API`);
+      return;
+    } catch (error) {
+      console.error(`Failed to send OTP email via Brevo API to ${email}:`, error);
+      console.log('Falling back to other configurations...');
+    }
+  }
+
   if (process.env.RESEND_API_KEY) {
     try {
       console.log(`✉️ Attempting to send OTP email to ${email} via Resend API...`);
