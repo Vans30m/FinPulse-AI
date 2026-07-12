@@ -149,6 +149,12 @@ export default function PortfolioDashboard() {
 
   const [activeMarket, setActiveMarket] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [isBookedHistoryOpen, setIsBookedHistoryOpen] = useState(false);
+  const [closeTradeAsset, setCloseTradeAsset] = useState<any | null>(null);
+  const [closeTradeShares, setCloseTradeShares] = useState("");
+  const [closeTradePrice, setCloseTradePrice] = useState("");
+  const [isClosingPosition, setIsClosingPosition] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   // Debounced Search States
@@ -361,6 +367,89 @@ export default function PortfolioDashboard() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to persist transaction");
+    }
+  };
+
+  const handleClosePositionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!closeTradeAsset) return;
+
+    const sharesToCloseNum = parseFloat(closeTradeShares);
+    const closePriceNum = parseFloat(closeTradePrice);
+
+    if (isNaN(sharesToCloseNum) || sharesToCloseNum <= 0 || sharesToCloseNum > closeTradeAsset.shares) {
+      toast.error("Invalid number of shares to close");
+      return;
+    }
+    if (isNaN(closePriceNum) || closePriceNum <= 0) {
+      toast.error("Invalid closing price");
+      return;
+    }
+
+    if (isSandboxMode) {
+      const pnl = (closePriceNum - closeTradeAsset.avgCost) * sharesToCloseNum;
+      const nextHoldings = virtualHoldings.map(h => {
+        if (h.ticker.toUpperCase() === closeTradeAsset.ticker.toUpperCase()) {
+          const updatedShares = Math.max(h.shares - sharesToCloseNum, 0);
+          return {
+            ...h,
+            shares: updatedShares,
+            bookedPL: (h.bookedPL || 0) + pnl
+          };
+        }
+        return h;
+      });
+
+      const cashReceivedUSD = closeTradeAsset.sectionId === 'domestic' ? (sharesToCloseNum * closePriceNum) / usdToInrRate : (sharesToCloseNum * closePriceNum);
+      const nextBalance = virtualBalance + cashReceivedUSD;
+
+      setVirtualHoldings(nextHoldings);
+      setVirtualBalance(nextBalance);
+
+      localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+      localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
+
+      toast.success(`Trade closed successfully! Realized P&L: ${closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}${pnl.toFixed(2)}`);
+      setIsCloseModalOpen(false);
+      setCloseTradeAsset(null);
+      return;
+    }
+
+    try {
+      setIsClosingPosition(true);
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || '';
+
+      const headers: any = {
+        'Content-Type': 'application/json'
+      };
+      if (userId) headers['X-User-Id'] = userId;
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE_URL}/api/portfolio/holdings/${closeTradeAsset.id}/close`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          sharesToClose: sharesToCloseNum,
+          closePrice: closePriceNum
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to close position");
+      }
+
+      const pnl = (closePriceNum - closeTradeAsset.avgCost) * sharesToCloseNum;
+      toast.success(`Trade closed successfully! Realized P&L: ${closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}${pnl.toFixed(2)}`);
+      setIsCloseModalOpen(false);
+      setCloseTradeAsset(null);
+      loadPortfolioData();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to close position");
+    } finally {
+      setIsClosingPosition(false);
     }
   };
 
@@ -615,6 +704,29 @@ export default function PortfolioDashboard() {
     ? Math.max(totalHoldingsValue - totalGain, 0)
     : Math.max(totalNetValue - totalGain, 0);
 
+  const totalBookedPL = useMemo(() => {
+    return currentSections
+      .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
+      .reduce((sum, sec) => {
+        return sum + sec.holdings.reduce((s, h) => {
+          const bookedPLUSD = sec.id === 'domestic' ? (h.bookedPL || 0) / usdToInrRate : (h.bookedPL || 0);
+          return s + (bookedPLUSD * currencyMultiplier);
+        }, 0);
+      }, 0);
+  }, [currentSections, activeMarket, usdToInrRate, currencyMultiplier]);
+
+  const bookedAssets = useMemo(() => {
+    return currentSections.flatMap(section => 
+      section.holdings
+        .filter(h => (h.bookedPL || 0) !== 0)
+        .map(h => ({
+          ...h,
+          sectionId: section.id,
+          posCurrency: section.id === 'domestic' ? '₹' : '$'
+        }))
+    );
+  }, [currentSections]);
+
   const todayProfitLoss = currentSections
     .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
     .reduce((sum, sec) => {
@@ -716,11 +828,13 @@ export default function PortfolioDashboard() {
   const filteredHoldings = currentSections
     .filter((section) => activeMarket === 'all' || activeMarket === section.id)
     .flatMap((section) =>
-      section.holdings.map(h => ({
-        ...h,
-        category: section.title,
-        sectionId: section.id,
-      }))
+      section.holdings
+        .filter(h => h.shares > 0)
+        .map(h => ({
+          ...h,
+          category: section.title,
+          sectionId: section.id,
+        }))
     );
 
   const exportPortfolioToCSV = (isExcel: boolean = false) => {
@@ -957,7 +1071,7 @@ export default function PortfolioDashboard() {
           <div className="relative">
             <button
               onClick={() => setShowExportDropdown(!showExportDropdown)}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-250 transition-all duration-300 w-full sm:w-auto shadow-sm"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-blue-200 dark:border-cyan-500/30 hover:border-blue-500 dark:hover:border-cyan-400 bg-blue-50/20 dark:bg-cyan-500/5 hover:bg-blue-50/50 dark:hover:bg-cyan-500/10 px-4 py-2.5 text-xs font-extrabold text-blue-600 dark:text-cyan-400 shadow-sm transition-all duration-300 w-full sm:w-auto"
             >
               <Download className="h-3.5 w-3.5" />
               <span>Export Hub</span>
@@ -1018,7 +1132,7 @@ export default function PortfolioDashboard() {
         </div>
       </div>
       {/* Aggregate Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="glass-panel p-6 flex items-center gap-4 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
           <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400">
             <PieChart className="h-6 w-6" />
@@ -1055,6 +1169,21 @@ export default function PortfolioDashboard() {
               {isSandboxMode 
                 ? `${displayCurrency}${cashBalanceInCurrency.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
                 : `${activeHubsCount} Active Hub${activeHubsCount !== 1 ? 's' : ''}`}
+            </h3>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => setIsBookedHistoryOpen(true)}
+          className="glass-panel p-6 flex items-center gap-4 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 cursor-pointer group"
+        >
+          <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-550/10 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
+            <TrendingUp className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Booked P&L</p>
+            <h3 className={`text-2xl font-black mt-1 ${totalBookedPL >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+              {totalBookedPL >= 0 ? '+' : ''}{displayCurrency}{totalBookedPL.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </h3>
           </div>
         </div>
@@ -1132,6 +1261,7 @@ export default function PortfolioDashboard() {
                 <th className="py-4 px-4 text-right">Avg Cost</th>
                 <th className="py-4 px-4 text-right">Current Price</th>
                 <th className="py-4 px-4 text-right">Market Value</th>
+                <th className="py-4 px-4 text-right">Booked P&L</th>
                 <th className="py-4 px-4 text-right">Returns</th>
                 <th className="py-4 px-4 text-center">Actions</th>
               </tr>
@@ -1167,7 +1297,7 @@ export default function PortfolioDashboard() {
                     <td className="py-4 px-4 text-right font-mono text-sm text-slate-600 dark:text-slate-355 align-middle">
                       {posCurrency}{displayAvgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="py-4 px-4 text-right font-mono text-sm font-semibold text-slate-800 dark:text-slate-200 align-middle">
+                    <td className="py-4 px-4 text-right font-mono text-sm font-semibold text-slate-850 dark:text-slate-200 align-middle">
                       {posCurrency}{displayCurrentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-4 text-right font-mono text-sm font-bold text-slate-950 dark:text-white align-middle">
@@ -1204,9 +1334,18 @@ export default function PortfolioDashboard() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteHolding(asset.id, asset.name)}
+                          onClick={() => {
+                            if (asset.shares > 0) {
+                              setCloseTradeAsset({ ...asset, sectionId: asset.sectionId || 'us' });
+                              setCloseTradeShares(String(asset.shares));
+                              setCloseTradePrice(String(asset.currentPrice));
+                              setIsCloseModalOpen(true);
+                            } else {
+                              handleDeleteHolding(asset.id, asset.name);
+                            }
+                          }}
                           className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
-                          title="Remove asset from portfolio"
+                          title={asset.shares > 0 ? "Close trade / Realize profit" : "Remove asset permanently"}
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -1415,6 +1554,170 @@ export default function PortfolioDashboard() {
         currentHoldings={virtualHoldings}
         onExecuteTrade={handleExecutePaperTrade}
       />
+
+      {/* Close Position Modal */}
+      {isCloseModalOpen && closeTradeAsset && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsCloseModalOpen(false)} />
+          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white font-display">Close Position - {closeTradeAsset.name}</h3>
+              <button disabled={isClosingPosition} onClick={() => setIsCloseModalOpen(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleClosePositionSubmit} className="space-y-4">
+              <div className="p-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-2xl space-y-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                <div className="flex justify-between">
+                  <span>Current Shares:</span>
+                  <span className="font-mono text-slate-800 dark:text-slate-200">{closeTradeAsset.shares.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Avg Purchase Cost:</span>
+                  <span className="font-mono text-slate-800 dark:text-slate-200">
+                    {closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}{closeTradeAsset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Current Market Price:</span>
+                  <span className="font-mono text-slate-800 dark:text-slate-200">
+                    {closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}{closeTradeAsset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Shares to Close</label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    disabled={isClosingPosition}
+                    value={closeTradeShares}
+                    onChange={e => setCloseTradeShares(e.target.value)}
+                    max={closeTradeAsset.shares}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Closing Price ($)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    disabled={isClosingPosition}
+                    value={closeTradePrice}
+                    onChange={e => setCloseTradePrice(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Realized Profit/Loss Preview */}
+              {(() => {
+                const sharesNum = parseFloat(closeTradeShares);
+                const priceNum = parseFloat(closeTradePrice);
+                if (isNaN(sharesNum) || isNaN(priceNum) || sharesNum <= 0) return null;
+                const pl = (priceNum - closeTradeAsset.avgCost) * sharesNum;
+                const isGain = pl >= 0;
+                return (
+                  <div className={`p-4 rounded-2xl border text-center space-y-1 ${isGain ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-450' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
+                    <span className="text-[10px] font-black uppercase tracking-wider block">Estimated Booked Profit/Loss</span>
+                    <span className="text-lg font-black font-mono">
+                      {isGain ? '+' : ''}{closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}{pl.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                );
+              })()}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isClosingPosition}
+                  onClick={() => setIsCloseModalOpen(false)}
+                  className="flex-1 py-3 rounded-xl border border-slate-250 dark:border-white/10 text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isClosingPosition}
+                  className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-900 text-xs font-black uppercase shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {isClosingPosition && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Execute Close
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Booked P&L History Modal */}
+      {isBookedHistoryOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsBookedHistoryOpen(false)} />
+          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white font-display">Booked P&L History</h3>
+              <button onClick={() => setIsBookedHistoryOpen(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+              {bookedAssets.map(asset => (
+                <div key={asset.id} className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] transition-colors">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 text-[9px] font-black rounded border leading-tight ${getHoldingColorClass(asset.sectionId, asset.ticker).bg} ${getHoldingColorClass(asset.sectionId, asset.ticker).text} ${getHoldingColorClass(asset.sectionId, asset.ticker).border}`}>
+                        {asset.ticker}
+                      </span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">{asset.name}</span>
+                    </div>
+                    <span className="text-[10px] font-extrabold text-slate-450 dark:text-slate-500 uppercase tracking-wider mt-1 block">
+                      {asset.shares === 0 ? "Fully Closed Position" : `${asset.shares} Active Shares`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm font-black font-mono ${(asset.bookedPL || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                      {(asset.bookedPL || 0) >= 0 ? '+' : ''}{asset.posCurrency}{(asset.bookedPL || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                    {asset.shares === 0 && (
+                      <button
+                        onClick={() => {
+                          handleDeleteHolding(asset.id, asset.name);
+                          // Delay slightly to allow db refresh before re-filtering
+                          setTimeout(() => {
+                            loadPortfolioData();
+                          }, 500);
+                        }}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
+                        title="Delete history entry"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {bookedAssets.length === 0 && (
+                <p className="text-center text-sm text-slate-400 py-6">No booked profit or loss transactions yet.</p>
+              )}
+            </div>
+
+            <button
+              onClick={() => setIsBookedHistoryOpen(false)}
+              className="w-full mt-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white text-xs font-bold transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

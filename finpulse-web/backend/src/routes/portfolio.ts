@@ -102,6 +102,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
           totalGain,
           gainPercent,
           dailyGain,
+          bookedPL: h.bookedPL,
           colorClass,
           sector: h.marketId === 'crypto' ? 'Crypto' : 'Technology'
         };
@@ -118,6 +119,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
           totalGain: 0,
           gainPercent: 0,
           dailyGain: 0,
+          bookedPL: h.bookedPL,
           colorClass: getHoldingColorClass(h.marketId, h.ticker),
           sector: 'Technology'
         };
@@ -189,6 +191,71 @@ portfolioRoutes.delete('/holdings/:id', async (req, res) => {
       where: { id }
     });
     res.json({ success: true, message: 'Holding deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/portfolio/holdings/:id/close - closes/sells shares of a holding and books P&L
+portfolioRoutes.post('/holdings/:id/close', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sharesToClose, closePrice } = req.body;
+    const user = await getOrCreateDefaultUser(req);
+
+    const holding = await prisma.holding.findFirst({
+      where: { id, userId: user.id }
+    });
+
+    if (!holding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
+
+    const sharesToSell = parseFloat(sharesToClose);
+    const sellPrice = parseFloat(closePrice);
+
+    if (isNaN(sharesToSell) || sharesToSell <= 0 || sharesToSell > holding.shares) {
+      return res.status(400).json({ error: 'Invalid number of shares to close' });
+    }
+
+    if (isNaN(sellPrice) || sellPrice <= 0) {
+      return res.status(400).json({ error: 'Invalid closing price' });
+    }
+
+    // Realized/Booked P&L = (Selling Price - Avg Cost) * Shares Sold
+    const realizedGain = (sellPrice - holding.avgCost) * sharesToSell;
+    const remainingShares = holding.shares - sharesToSell;
+
+    let updatedHolding;
+    if (remainingShares === 0) {
+      // If closing the entire position, set shares to 0
+      updatedHolding = await prisma.holding.update({
+        where: { id },
+        data: {
+          shares: 0,
+          bookedPL: {
+            increment: realizedGain
+          }
+        }
+      });
+    } else {
+      // If closing partially, update shares and increment booked P&L
+      updatedHolding = await prisma.holding.update({
+        where: { id },
+        data: {
+          shares: remainingShares,
+          bookedPL: {
+            increment: realizedGain
+          }
+        }
+      });
+    }
+
+    res.json({
+      message: 'Position closed successfully',
+      realizedGain,
+      holding: updatedHolding
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
