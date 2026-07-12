@@ -130,9 +130,12 @@ export default function App() {
         onLoginClick={() => setIsLoginModalOpen(true)}
         onLogoutClick={() => {
           localStorage.removeItem('finpulse_token');
+          localStorage.removeItem('finpulse-token');
           localStorage.removeItem('finpulse-user');
+          sessionStorage.removeItem('finpulse_pin_verified');
           setIsLoggedIn(false);
           toast.success("Logged out successfully");
+          window.location.href = '/';
         }}
       />
 
