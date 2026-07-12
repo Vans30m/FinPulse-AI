@@ -458,13 +458,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div 
-        className="absolute inset-0 bg-slate-900/60 dark:bg-night-950/80 backdrop-blur-sm transition-opacity" 
+      <div
+        className="absolute inset-0 bg-slate-900/60 dark:bg-night-950/80 backdrop-blur-sm transition-opacity"
         onClick={() => {
           if (!isForcePin) {
             onClose();
           }
-        }} 
+        }}
       />
 
       <div className="relative z-10 flex w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
@@ -511,8 +511,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                     type="button"
                     onClick={() => { setIsRegisterMode(false); setError(''); }}
                     className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all ${!isRegisterMode
-                        ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400'
-                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                      ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
                       }`}
                   >
                     Sign In
@@ -521,8 +521,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                     type="button"
                     onClick={() => { setIsRegisterMode(true); setError(''); }}
                     className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all ${isRegisterMode
-                        ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400'
-                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                      ? 'border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
                       }`}
                   >
                     Sign Up
@@ -984,7 +984,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                       localStorage.removeItem('finpulse_token');
                       localStorage.removeItem('finpulse-user');
                       sessionStorage.removeItem('finpulse_pin_verified');
-                      setUser({ name: 'Vans', email: 'user@example.com', currency: 'INR (₹)' });
+                      setUser({ name: 'User', email: 'user@example.com', currency: 'INR (₹)' });
                       if (onLogout) {
                         onLogout();
                       }
@@ -1028,10 +1028,10 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                       <div
                         key={i}
                         className={`flex h-14 w-12 items-center justify-center rounded-xl border-2 text-xl font-bold transition-colors ${pin.length === i
-                            ? 'border-blue-600 dark:border-cyan-400 text-slate-900 dark:text-white'
-                            : pin.length > i
-                              ? 'border-slate-800 dark:border-white bg-slate-800 dark:bg-white text-white dark:text-night-900'
-                              : 'border-slate-200 dark:border-white/10 text-slate-900 dark:text-white'
+                          ? 'border-blue-600 dark:border-cyan-400 text-slate-900 dark:text-white'
+                          : pin.length > i
+                            ? 'border-slate-800 dark:border-white bg-slate-800 dark:bg-white text-white dark:text-night-900'
+                            : 'border-slate-200 dark:border-white/10 text-slate-900 dark:text-white'
                           }`}
                       >
                         {pin.length > i ? '•' : ''}
