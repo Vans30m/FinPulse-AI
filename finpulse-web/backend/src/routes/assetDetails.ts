@@ -1,6 +1,7 @@
 import express from "express";
 import YahooFinance from "yahoo-finance2";
 import NodeCache from "node-cache";
+import axios from "axios";
 
 const router = express.Router();
 const yahooFinance = new YahooFinance();
@@ -187,9 +188,6 @@ router.get("/:symbol", async (req, res) => {
       chartCache.set(symbol, chart5yData);
     }
 
-    // Calculate technicals
-    const technicals = calculateTechnicals(chart5yData);
-
     // Build consolidated payload conforming strictly to requested data
     const summary = quoteData.summary || {};
     const quote = quoteData.quote || {};
@@ -202,8 +200,19 @@ router.get("/:symbol", async (req, res) => {
     const upgradesDowngrades = summary.upgradeDowngradeHistory || {};
     const recTrend = summary.recommendationTrend || {};
 
+    // Calculate technicals
+    const technicals = calculateTechnicals(chart5yData);
+
+    // Calculate blended sentiment
+    const sentiment = await calculateBlendedSentiment(symbol, chart5yData, financialData);
+
     res.json({
       symbol,
+      quote: {
+        currency: quote.currency || "USD",
+        exchangeName: quote.exchangeName || "GLOBAL",
+        marketState: quote.marketState || "CLOSED"
+      },
       profile: {
         name: quote.longName || quote.shortName || quote.displayName || symbol,
         sector: assetProfile.sector || "Not Available",
@@ -279,9 +288,12 @@ router.get("/:symbol", async (req, res) => {
       },
       ownership: {
         institutionOwnership: majorHolders.institutionsPercentHeld || "Not Available",
-        insiderOwnership: majorHolders.insidersPercentHeld || "Not Available"
+        insiderOwnership: majorHolders.insidersPercentHeld || "Not Available",
+        institutionsFloatPercentHeld: majorHolders.institutionsFloatPercentHeld || "Not Available",
+        institutionsCount: majorHolders.institutionsCount || "Not Available"
       },
       technicals,
+      sentiment,
       news: newsData
     });
   } catch (error: any) {
@@ -289,6 +301,113 @@ router.get("/:symbol", async (req, res) => {
     res.status(500).json({ error: error.message || "Failed to fetch asset details" });
   }
 });
+
+async function calculateBlendedSentiment(symbol: string, quotes: any[], financialData: any) {
+  let newsScore = 50;
+  let hasNews = false;
+
+  try {
+    const response = await axios.get("https://www.alphavantage.co/query", {
+      params: {
+        function: "NEWS_SENTIMENT",
+        tickers: symbol,
+        limit: 20,
+        sort: "LATEST",
+        apikey: process.env.ALPHA_VANTAGE_API_KEY
+      },
+      timeout: 3000
+    });
+
+    const feed = response.data.feed || [];
+    if (feed.length > 0) {
+      const avgScore = feed.reduce((sum: number, item: any) => sum + Number(item.overall_sentiment_score || 0), 0) / feed.length;
+      newsScore = Math.max(0, Math.min(100, Math.round(50 + avgScore * 50)));
+      hasNews = true;
+    }
+  } catch (newsErr) {
+    // Fail silently
+  }
+
+  let trendScore = 50;
+  let hasTrend = false;
+  const reasons: string[] = [];
+
+  if (quotes && quotes.length > 0) {
+    const currentPrice = quotes[quotes.length - 1]?.close || 0;
+
+    const now = new Date();
+    const oneYearAgoDate = new Date();
+    oneYearAgoDate.setFullYear(now.getFullYear() - 1);
+    const quote1y = quotes.find(q => q.date && new Date(q.date) >= oneYearAgoDate) || quotes[Math.max(0, quotes.length - 252)];
+    const price1y = quote1y?.close || currentPrice;
+    const return1y = price1y ? (currentPrice - price1y) / price1y : 0;
+
+    const price5y = quotes[0]?.close || currentPrice;
+    const return5y = price5y ? (currentPrice - price5y) / price5y : 0;
+
+    const closes = quotes.map(q => q.close).filter((c): c is number => typeof c === 'number');
+    const sma50 = closes.length >= 50 ? closes.slice(-50).reduce((a,b) => a+b, 0) / 50 : currentPrice;
+    const sma200 = closes.length >= 200 ? closes.slice(-200).reduce((a,b) => a+b, 0) / 200 : currentPrice;
+
+    let scoreModifiers = 0;
+
+    if (currentPrice > sma50) {
+      scoreModifiers += 10;
+      reasons.push("Price trading above medium-term 50-day SMA");
+    } else {
+      scoreModifiers -= 10;
+      reasons.push("Price trading below medium-term 50-day SMA");
+    }
+
+    if (currentPrice > sma200) {
+      scoreModifiers += 15;
+      reasons.push("Price trading above structural 200-day SMA");
+    } else {
+      scoreModifiers -= 15;
+      reasons.push("Price trading below structural 200-day SMA (long-term bearish)");
+    }
+
+    if (return1y > 0.05) {
+      scoreModifiers += 10;
+      reasons.push(`Strong 1-year price performance (+${(return1y * 100).toFixed(1)}%)`);
+    } else if (return1y < -0.05) {
+      scoreModifiers -= 10;
+      reasons.push(`Weak 1-year price performance (${(return1y * 100).toFixed(1)}%)`);
+    }
+
+    if (return5y > 0.20) {
+      scoreModifiers += 15;
+      reasons.push(`Strong 5-year wealth generation (+${(return5y * 100).toFixed(1)}%)`);
+    } else if (return5y < -0.20) {
+      scoreModifiers -= 20;
+      reasons.push(`Persistent 5-year structural decline (${(return5y * 100).toFixed(1)}%)`);
+    }
+
+    trendScore = Math.max(0, Math.min(100, 50 + scoreModifiers));
+    hasTrend = true;
+  }
+
+  let finalScore = 50;
+  if (hasNews && hasTrend) {
+    finalScore = Math.max(0, Math.min(100, Math.round(newsScore * 0.35 + trendScore * 0.65)));
+    reasons.unshift(`Short-term news sentiment is positive (Score: ${newsScore}%)`);
+  } else if (hasTrend) {
+    finalScore = trendScore;
+  } else if (hasNews) {
+    finalScore = newsScore;
+    reasons.push(`Short-term news sentiment (Score: ${newsScore}%)`);
+  }
+
+  let label = "Neutral";
+  if (finalScore >= 62) label = "Bullish";
+  if (finalScore <= 42) label = "Bearish";
+
+  return {
+    score: finalScore,
+    label,
+    reasons
+  };
+}
 
 function resolvedPriceFallback(quote: any, summaryDetail: any, chartData: any[]) {
   if (quote?.regularMarketPrice) return quote.regularMarketPrice;
