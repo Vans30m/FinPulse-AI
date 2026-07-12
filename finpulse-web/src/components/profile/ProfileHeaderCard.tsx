@@ -79,22 +79,22 @@ export default function ProfileHeaderCard({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
             <button
               onClick={onEditProfile}
-              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl border border-blue-200 dark:border-cyan-500/30 hover:border-blue-500 dark:hover:border-cyan-400 bg-blue-50/20 dark:bg-cyan-500/5 text-xs font-extrabold text-blue-600 dark:text-cyan-400 hover:bg-blue-50/50 dark:hover:bg-cyan-500/10 shadow-sm transition-all duration-300"
             >
               Edit Profile
             </button>
             <button
               onClick={onChangePassword}
-              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl border border-blue-200 dark:border-cyan-500/30 hover:border-blue-500 dark:hover:border-cyan-400 bg-blue-50/20 dark:bg-cyan-500/5 text-xs font-extrabold text-blue-600 dark:text-cyan-400 hover:bg-blue-50/50 dark:hover:bg-cyan-500/10 shadow-sm transition-all duration-300"
             >
               Change Password
             </button>
             <button
               onClick={onLogout}
-              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black transition-colors"
+              className="flex-1 md:flex-initial text-center px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black shadow-md shadow-red-500/10 hover:shadow-red-500/20 hover:scale-[1.02] transition-all duration-300"
             >
               Logout
             </button>

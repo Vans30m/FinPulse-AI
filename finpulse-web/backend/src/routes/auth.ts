@@ -306,6 +306,31 @@ router.post('/google-login', async (req: any, res: any) => {
           }
         },
       });
+    } else {
+      if (avatar && user.avatar !== avatar) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { avatar },
+        });
+
+        const userProfile = await prisma.profile.findUnique({
+          where: { userId: user.id }
+        });
+        if (userProfile) {
+          await prisma.profile.update({
+            where: { userId: user.id },
+            data: { avatar }
+          });
+        } else {
+          await prisma.profile.create({
+            data: {
+              userId: user.id,
+              avatar,
+              bio: ''
+            }
+          });
+        }
+      }
     }
 
     res.json({

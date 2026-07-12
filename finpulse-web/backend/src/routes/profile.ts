@@ -9,53 +9,15 @@ const prisma = new PrismaClient();
 const profileRoutes = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 
-// Helper to seed a dummy user for the requests if none exists (to ensure frictionless login and execution)
 async function getOrCreateUser(req: AuthenticatedRequest) {
   let userId = req.userId;
-  let userEmail = req.userEmail || 'google_user@gmail.com';
 
   if (userId) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (user && !user.isDeleted) return user;
   }
 
-  // Fallback to first non-deleted user or create default
-  let user = await prisma.user.findFirst({ where: { isDeleted: false } });
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email: userEmail,
-        name: 'Vans',
-        username: 'vans_finpulse',
-        phone: '+919999999999',
-        country: 'India',
-        timezone: 'Asia/Kolkata',
-        currency: 'INR (₹)',
-        bio: 'Wealth Manager & Portfolio Designer',
-        occupation: 'Software Engineer',
-        preferences: JSON.stringify({
-          theme: 'dark',
-          language: 'English',
-          currency: 'INR (₹)',
-          region: 'India',
-          defaultDashboard: 'Portfolio'
-        }),
-        notificationSettings: JSON.stringify({
-          priceAlerts: true,
-          earnings: true,
-          news: true,
-          portfolio: true,
-          aiInsights: true,
-          weeklySummary: true,
-          monthlyReport: true,
-          productUpdates: true
-        }),
-        passwordHash: await bcrypt.hash('Finpulse@123', 10),
-        lastLogin: new Date()
-      }
-    });
-  }
-  return user;
+  throw new Error('Unauthorized: Session is invalid or expired. Please sign in again.');
 }
 
 // Helper to log user session activity

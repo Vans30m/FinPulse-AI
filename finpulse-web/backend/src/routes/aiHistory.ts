@@ -7,8 +7,7 @@ const aiHistoryRouter = express.Router();
 
 async function getUserId(req: AuthenticatedRequest) {
   if (req.userId) return req.userId;
-  const user = await prisma.user.findFirst({ where: { isDeleted: false } });
-  return user ? user.id : '';
+  throw new Error('Unauthorized: User ID is required');
 }
 
 // GET /api/ai/history - Fetch AI chat session logs

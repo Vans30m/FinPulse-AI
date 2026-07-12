@@ -1030,7 +1030,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                         className={`flex h-14 w-12 items-center justify-center rounded-xl border-2 text-xl font-bold transition-colors ${pin.length === i
                           ? 'border-blue-600 dark:border-cyan-400 text-slate-900 dark:text-white'
                           : pin.length > i
-                            ? 'border-slate-800 dark:border-white bg-slate-800 dark:bg-white text-white dark:text-night-900'
+                            ? 'border-blue-500 dark:border-cyan-400/80 text-blue-600 dark:text-cyan-400 bg-blue-50/20 dark:bg-cyan-500/5'
                             : 'border-slate-200 dark:border-white/10 text-slate-900 dark:text-white'
                           }`}
                       >

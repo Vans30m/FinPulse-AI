@@ -19,8 +19,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
 // Helper to seed/retrieve default user
 async function getUserId(req: AuthenticatedRequest) {
   if (req.userId) return req.userId;
-  const user = await prisma.user.findFirst({ where: { isDeleted: false } });
-  return user ? user.id : '';
+  throw new Error('Unauthorized: User ID is required');
 }
 
 // GET /api/watchlists - Fetch all watchlists for user (price data only — AI scores are separate)

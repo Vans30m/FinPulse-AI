@@ -51,16 +51,16 @@ export default function SecurityCard({
         <div className="space-y-3">
           <button
             onClick={onChangePassword}
-            className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-white/5 hover:bg-slate-55/50 dark:hover:bg-white/[0.02] text-left text-xs font-black uppercase text-slate-700 dark:text-slate-350 transition-all"
+            className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5 text-left text-xs font-black uppercase text-slate-800 dark:text-slate-200 transition-all duration-300"
           >
             <span>Change Account Password</span>
-            <span className="text-[10px] lowercase text-slate-400">Manage credentials</span>
+            <span className="text-[10px] lowercase text-slate-450 dark:text-slate-500">manage credentials</span>
           </button>
 
 
           <button
             onClick={onLogoutAllDevices}
-            className="w-full flex items-center gap-2 p-4 rounded-2xl border border-red-500/10 hover:bg-red-500/[0.02] text-left text-xs font-black uppercase text-red-500 transition-all"
+            className="w-full flex items-center gap-2 p-4 rounded-2xl border border-red-500/20 dark:border-red-500/30 hover:bg-red-550 hover:text-white text-left text-xs font-black uppercase text-red-500 hover:border-red-550 transition-all duration-300"
           >
             <LogOut className="h-4.5 w-4.5" />
             <span>Logout Other Devices</span>
@@ -68,7 +68,7 @@ export default function SecurityCard({
 
           <button
             onClick={onDeleteAccount}
-            className="w-full flex items-center gap-2 p-4 rounded-2xl border border-rose-500/20 hover:bg-rose-500/[0.02] text-left text-xs font-black uppercase text-rose-500 transition-all"
+            className="w-full flex items-center gap-2 p-4 rounded-2xl border border-rose-500/20 dark:border-rose-500/30 hover:bg-rose-550 hover:text-white text-left text-xs font-black uppercase text-rose-500 hover:border-rose-550 transition-all duration-300"
           >
             <Trash2 className="h-4.5 w-4.5" />
             <span>Delete Account</span>
@@ -109,7 +109,7 @@ export default function SecurityCard({
                     {!isCurrent && onRevokeSession && (
                       <button 
                         onClick={() => onRevokeSession(s.id)}
-                        className="text-[9px] font-black text-rose-500 hover:bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20 uppercase transition-all"
+                        className="text-[9px] font-black text-rose-500 hover:text-white hover:bg-rose-500 px-3 py-1 rounded-lg border border-rose-500/30 hover:border-rose-500 uppercase transition-all duration-300"
                       >
                         Revoke
                       </button>

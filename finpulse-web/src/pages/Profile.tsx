@@ -85,6 +85,7 @@ export default function Profile() {
   const [isLogoutAllOpen, setIsLogoutAllOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   // Edit Profile Form State
   const [editForm, setEditForm] = useState({
@@ -171,7 +172,6 @@ export default function Profile() {
 
       if (data.preferences) {
         const prefs = data.preferences as any;
-        if (prefs.theme) setTheme(prefs.theme as ThemeMode);
         if (prefs.accentColor) setAccentColor(prefs.accentColor);
         if (prefs.compactMode !== undefined) setCompactMode(prefs.compactMode);
         if (prefs.animationsEnabled !== undefined) setAnimationsEnabled(prefs.animationsEnabled);
@@ -289,13 +289,15 @@ export default function Profile() {
       toast.error("Display Name is required");
       return;
     }
-    if (!editForm.username.trim()) {
-      toast.error("Username is required");
-      return;
-    }
+
+    const payload = {
+      ...editForm,
+      username: editForm.username.trim() || user.email.split('@')[0] || "user"
+    };
 
     try {
-      const res = await profileService.updateProfile(editForm);
+      setIsSaving(true);
+      const res = await profileService.updateProfile(payload);
       toast.success(res.message || "Profile updated successfully!");
       setUser({
         ...user,
@@ -307,6 +309,8 @@ export default function Profile() {
       loadProfile();
     } catch (err: any) {
       toast.error(err.message || "Failed to update profile");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -619,18 +623,18 @@ export default function Profile() {
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => handleExportData('json')}
-                className="py-3 rounded-2xl border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] flex flex-col items-center justify-center gap-1.5 transition-all"
+                className="py-3 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-blue-500 dark:hover:border-cyan-400 bg-slate-50/30 dark:bg-white/[0.01] hover:bg-slate-50 dark:hover:bg-cyan-500/5 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 shadow-sm"
               >
                 <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">JSON Archive</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-350">Download Data</span>
+                <span className="text-xs font-extrabold text-blue-600 dark:text-slate-250">Download Data</span>
               </button>
               
               <button
                 onClick={() => handleExportData('csv')}
-                className="py-3 rounded-2xl border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] flex flex-col items-center justify-center gap-1.5 transition-all"
+                className="py-3 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-blue-500 dark:hover:border-cyan-400 bg-slate-50/30 dark:bg-white/[0.01] hover:bg-slate-50 dark:hover:bg-cyan-500/5 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 shadow-sm"
               >
                 <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">CSV Spreadsheet</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-350">Download Sheets</span>
+                <span className="text-xs font-extrabold text-blue-600 dark:text-slate-250">Download Sheets</span>
               </button>
             </div>
           </div>
@@ -762,16 +766,23 @@ export default function Profile() {
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
+                  disabled={isSaving}
                   onClick={() => setIsEditProfileOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-black uppercase transition-all"
+                  disabled={isSaving}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-black uppercase transition-all disabled:opacity-50 flex items-center gap-2"
                 >
-                  Save Changes
+                  {isSaving ? (
+                    <>
+                      <div className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : "Save Changes"}
                 </button>
               </div>
             </form>

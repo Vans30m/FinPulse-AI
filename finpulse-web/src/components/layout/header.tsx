@@ -352,16 +352,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-655 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
                     >
                       <UserCircle className="h-4 w-4" />
-                      <span>My Profile</span>
-                    </Link>
-
-                    <Link
-                      to="/profile"
-                      onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-655 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
-                    >
-                      <UserCircle className="h-4 w-4" />
-                      <span>Edit Profile</span>
+                      <span>Profile</span>
                     </Link>
 
                     <button

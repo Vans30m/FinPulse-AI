@@ -35,17 +35,8 @@ async function getOrCreateDefaultUser(req?: any) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (user) return user;
   }
-  let user = await prisma.user.findFirst();
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email: 'google_user@gmail.com',
-        name: 'Default User',
-        devicePin: '123456'
-      }
-    });
-  }
-  return user;
+
+  throw new Error('Unauthorized: User ID is required');
 }
 
 const getHoldingColorClass = (marketId: string, ticker: string) => {
