@@ -102,7 +102,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
           totalGain,
           gainPercent,
           dailyGain,
-          bookedPL: h.bookedPL,
+          bookedPL: (h as any).bookedPL,
           colorClass,
           sector: h.marketId === 'crypto' ? 'Crypto' : 'Technology'
         };
@@ -119,7 +119,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
           totalGain: 0,
           gainPercent: 0,
           dailyGain: 0,
-          bookedPL: h.bookedPL,
+          bookedPL: (h as any).bookedPL,
           colorClass: getHoldingColorClass(h.marketId, h.ticker),
           sector: 'Technology'
         };

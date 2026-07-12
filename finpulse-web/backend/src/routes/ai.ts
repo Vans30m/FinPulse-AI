@@ -113,40 +113,137 @@ const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 stockSentimentRoutes.get("/:symbol", async (req, res) => {
   try {
     const symbol = req.params.symbol;
-    const response = await axios.get("https://www.alphavantage.co/query", {
-      params: {
-        function: "NEWS_SENTIMENT",
-        tickers: symbol,
-        limit: 20,
-        sort: "LATEST",
-        apikey: API_KEY
-      }
-    });
-
-    const feed = response.data.feed || [];
-    if (!feed.length) {
-      return res.json({
-        symbol,
-        sentiment: "Neutral",
-        score: 50,
-        reason: "Insufficient news data."
-      });
+    if (!symbol) {
+      return res.status(400).json({ error: "Symbol is required" });
     }
 
-    const avgScore = feed.reduce((sum: number, item: any) => sum + Number(item.overall_sentiment_score || 0), 0) / feed.length;
-    const score = Math.max(0, Math.min(100, Math.round(50 + avgScore * 50)));
+    // 1. Fetch short-term news sentiment from Alpha Vantage
+    let newsScore = 50;
+    let topHeadline = "No major short-term news catalyst.";
+    let hasNews = false;
+
+    try {
+      const response = await axios.get("https://www.alphavantage.co/query", {
+        params: {
+          function: "NEWS_SENTIMENT",
+          tickers: symbol,
+          limit: 20,
+          sort: "LATEST",
+          apikey: API_KEY
+        },
+        timeout: 4000
+      });
+
+      const feed = response.data.feed || [];
+      if (feed.length > 0) {
+        const avgScore = feed.reduce((sum: number, item: any) => sum + Number(item.overall_sentiment_score || 0), 0) / feed.length;
+        newsScore = Math.max(0, Math.min(100, Math.round(50 + avgScore * 50)));
+        topHeadline = feed[0]?.title || "Neutral news stream.";
+        hasNews = true;
+      }
+    } catch (newsErr) {
+      console.warn(`Alpha Vantage news sentiment fetch failed for ${symbol}, falling back to technical trend only.`, newsErr.message);
+    }
+
+    // 2. Fetch 5-year historical daily chart candles from Yahoo Finance
+    const now = new Date();
+    const startDate = new Date();
+    startDate.setFullYear(now.getFullYear() - 5);
+
+    let trendScore = 50;
+    let reason = topHeadline;
+    let currentPrice = 0;
+    let return1y = 0;
+    let return5y = 0;
+    let sma50 = 0;
+    let sma200 = 0;
+    let hasTrend = false;
+
+    try {
+      const chartResult = await yahooFinance.chart(symbol, {
+        period1: startDate,
+        period2: now,
+        interval: '1d'
+      });
+
+      const quotes = chartResult?.quotes || [];
+      if (quotes.length > 0) {
+        currentPrice = quotes[quotes.length - 1]?.close || 0;
+
+        // Find quote closest to 1 year ago (approx 252 trading days)
+        const oneYearAgoDate = new Date();
+        oneYearAgoDate.setFullYear(now.getFullYear() - 1);
+        const quote1y = quotes.find(q => q.date && new Date(q.date) >= oneYearAgoDate) || quotes[Math.max(0, quotes.length - 252)];
+        const price1y = quote1y?.close || currentPrice;
+        return1y = price1y ? (currentPrice - price1y) / price1y : 0;
+
+        // Find quote closest to 5 years ago (first quote in the 5y chart)
+        const price5y = quotes[0]?.close || currentPrice;
+        return5y = price5y ? (currentPrice - price5y) / price5y : 0;
+
+        // Calculate simple moving averages (SMA50 & SMA200)
+        const closes = quotes.map(q => q.close).filter((c): c is number => typeof c === 'number');
+        sma50 = closes.length >= 50 ? closes.slice(-50).reduce((a,b) => a+b, 0) / 50 : currentPrice;
+        sma200 = closes.length >= 200 ? closes.slice(-200).reduce((a,b) => a+b, 0) / 200 : currentPrice;
+
+        // Base trend evaluation
+        let scoreModifiers = 0;
+
+        // SMA crossovers
+        if (currentPrice > sma50) scoreModifiers += 10;
+        else scoreModifiers -= 10;
+
+        if (currentPrice > sma200) scoreModifiers += 15;
+        else scoreModifiers -= 15;
+
+        // Returns
+        if (return1y > 0.05) scoreModifiers += 10;
+        else if (return1y < -0.05) scoreModifiers -= 10;
+
+        if (return5y > 0.20) scoreModifiers += 15;
+        else if (return5y < -0.20) scoreModifiers -= 20;
+
+        trendScore = Math.max(0, Math.min(100, 50 + scoreModifiers));
+        hasTrend = true;
+      }
+    } catch (trendErr) {
+      console.error(`Yahoo Finance chart fetch failed for ${symbol} trend calculation:`, trendErr);
+    }
+
+    // 3. Blend short-term news sentiment and long-term trend
+    let finalScore = 50;
+    if (hasNews && hasTrend) {
+      finalScore = Math.max(0, Math.min(100, Math.round(newsScore * 0.35 + trendScore * 0.65)));
+    } else if (hasTrend) {
+      finalScore = trendScore;
+    } else if (hasNews) {
+      finalScore = newsScore;
+    }
 
     let sentiment = "Neutral";
-    if (score >= 65) sentiment = "Bullish";
-    if (score <= 40) sentiment = "Bearish";
+    if (finalScore >= 62) sentiment = "Bullish";
+    if (finalScore <= 42) sentiment = "Bearish";
 
-    const topHeadline = feed[0]?.title || "No major catalyst.";
+    // 4. Construct descriptive reasons detailing structural findings
+    if (hasTrend) {
+      const formatted1y = (return1y * 100).toFixed(1);
+      const formatted5y = (return5y * 100).toFixed(1);
+      const smaDiff = (((currentPrice - sma200) / sma200) * 100).toFixed(1);
+
+      if (sentiment === "Bearish") {
+        reason = `Bearish overall sentiment due to long-term structural downtrend (trading ${smaDiff}% ${currentPrice < sma200 ? 'below' : 'above'} its 200-day moving average and showing a ${formatted5y}% return over the past 5 years), outweighing short-term news catalysts.`;
+      } else if (sentiment === "Bullish") {
+        reason = `Bullish overall sentiment supported by positive technical indicators (trading ${smaDiff}% above its 200-day moving average and returning ${formatted1y}% over the past year).`;
+      } else {
+        reason = `Neutral overall sentiment: short-term news catalysts are offset by horizontal long-term price action (${formatted5y}% return over 5 years).`;
+      }
+    }
 
     res.json({
       symbol,
       sentiment,
-      score,
-      reason: topHeadline
+      score: finalScore,
+      reason
     });
   } catch (error: any) {
     console.error(error);
