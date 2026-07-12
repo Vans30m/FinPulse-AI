@@ -19,34 +19,26 @@ export interface FundamentalData {
   marketState?: string;
   peRatio?: number;
   eps?: number;
+  performance?: any;
 }
 
-// Helper mapping object conforming exactly to TradingView / Yahoo parameters mappings
 export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }> = {
-  // New timeframes
-  "24H": { range: "2d", interval: "15m" },
+  "1m": { range: "1d", interval: "1m" },
+  "5m": { range: "5d", interval: "5m" },
+  "15m": { range: "5d", interval: "15m" },
+  "30m": { range: "5d", interval: "30m" },
+  "1h": { range: "1mo", interval: "1h" },
+  "4h": { range: "3mo", interval: "1h" },
+  "1D": { range: "1d", interval: "5m" },
+  "5D": { range: "5d", interval: "15m" },
   "1M": { range: "30d", interval: "1d" },
+  "3M": { range: "90d", interval: "1d" },
   "6M": { range: "180d", interval: "1d" },
   "YTD": { range: "ytd", interval: "1d" },
   "1Y": { range: "1y", interval: "1d" },
+  "3Y": { range: "3y", interval: "1wk" },
   "5Y": { range: "5y", interval: "1wk" },
-  "All": { range: "max", interval: "1mo" },
-
-  // Compatibility fallbacks
-  "1m": { range: "2d", interval: "1m" },
-  "5m": { range: "10d", interval: "5m" },
-  "15m": { range: "15d", interval: "15m" },
-  "30m": { range: "30d", interval: "30m" },
-  "1h": { range: "30d", interval: "1h" },
-  "1H": { range: "30d", interval: "1h" },
-  "4h": { range: "90d", interval: "1h" },
-  "4H": { range: "90d", interval: "1h" },
-  "1d": { range: "1y", interval: "1d" },
-  "1D": { range: "1y", interval: "1d" },
-  "1w": { range: "3y", interval: "1wk" },
-  "1W": { range: "3y", interval: "1wk" },
-  "3M": { range: "3y", interval: "1mo" },
-  "MAX": { range: "max", interval: "1mo" },
+  "MAX": { range: "max", interval: "1mo" }
 };
 
 export interface AdvancedTimeframeConfig {
@@ -253,6 +245,12 @@ export async function getBenchmarkHistory(
 export async function getFundamentals(symbol: string): Promise<FundamentalData> {
   const response = await fetch(`${API_BASE_URL}/api/fundamentals/${symbol}`);
   if (!response.ok) throw new Error("Failed to fetch fundamentals");
+  return response.json();
+}
+
+export async function getUnifiedAssetDetails(symbol: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/asset-details/${encodeURIComponent(symbol)}`);
+  if (!response.ok) throw new Error("Failed to fetch asset details");
   return response.json();
 }
 

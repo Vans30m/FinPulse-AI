@@ -1141,52 +1141,16 @@ const CONSTITUENTS: Record<string, { symbol: string; name: string; weight?: numb
     { symbol: '006400.KS', name: 'Samsung SDI Co.', weight: 1.0, sector: 'Technology' }
   ],
   'GC=F': [
-    { symbol: 'GLD', name: 'SPDR Gold Shares', weight: 15.0, sector: 'Commodities' },
-    { symbol: 'IAU', name: 'iShares Gold Trust', weight: 12.0, sector: 'Commodities' },
-    { symbol: 'FNV', name: 'Franco-Nevada Corp.', weight: 10.0, sector: 'Basic Materials' },
-    { symbol: 'NEM', name: 'Newmont Corporation', weight: 9.0, sector: 'Basic Materials' },
-    { symbol: 'AEM', name: 'Agnico Eagle Mines', weight: 8.5, sector: 'Basic Materials' },
-    { symbol: 'GOLD', name: 'Barrick Gold Corp.', weight: 8.0, sector: 'Basic Materials' },
-    { symbol: 'WPM', name: 'Wheaton Precious Metals', weight: 7.5, sector: 'Basic Materials' },
-    { symbol: 'GFI', name: 'Gold Fields Ltd.', weight: 5.0, sector: 'Basic Materials' },
-    { symbol: 'AU', name: 'AngloGold Ashanti', weight: 4.0, sector: 'Basic Materials' },
-    { symbol: 'KGC', name: 'Kinross Gold Corp.', weight: 3.0, sector: 'Basic Materials' }
+    { symbol: 'GC=F', name: 'Gold', weight: 100.0, sector: 'Commodities' }
   ],
   'SI=F': [
-    { symbol: 'SLV', name: 'iShares Silver Trust', weight: 20.0, sector: 'Commodities' },
-    { symbol: 'WPM', name: 'Wheaton Precious Metals', weight: 15.0, sector: 'Basic Materials' },
-    { symbol: 'PAAS', name: 'Pan American Silver', weight: 10.0, sector: 'Basic Materials' },
-    { symbol: 'AG', name: 'First Majestic Silver', weight: 8.0, sector: 'Basic Materials' },
-    { symbol: 'CDE', name: 'Coeur Mining Inc.', weight: 6.0, sector: 'Basic Materials' },
-    { symbol: 'HL', name: 'Hecla Mining Company', weight: 5.0, sector: 'Basic Materials' },
-    { symbol: 'SILV', name: 'SilverCrest Metals', weight: 4.5, sector: 'Basic Materials' },
-    { symbol: 'FSM', name: 'Fortuna Silver Mines', weight: 4.0, sector: 'Basic Materials' },
-    { symbol: 'MAG', name: 'MAG Silver Corp.', weight: 3.5, sector: 'Basic Materials' },
-    { symbol: 'SSRM', name: 'SSR Mining Inc.', weight: 3.0, sector: 'Basic Materials' }
+    { symbol: 'SI=F', name: 'Silver', weight: 100.0, sector: 'Commodities' }
   ],
   'BTC-USD': [
-    { symbol: 'MSTR', name: 'MicroStrategy Inc.', weight: 25.0, sector: 'Technology' },
-    { symbol: 'MARA', name: 'Marathon Digital', weight: 15.0, sector: 'Technology' },
-    { symbol: 'RIOT', name: 'Riot Platforms Inc.', weight: 12.0, sector: 'Technology' },
-    { symbol: 'HUT', name: 'Hut 8 Corp.', weight: 10.0, sector: 'Technology' },
-    { symbol: 'CLSK', name: 'CleanSpark Inc.', weight: 8.0, sector: 'Technology' },
-    { symbol: 'HIVE', name: 'HIVE Digital Technologies', weight: 6.0, sector: 'Technology' },
-    { symbol: 'BITF', name: 'Bitfarms Ltd.', weight: 5.0, sector: 'Technology' },
-    { symbol: 'CIFR', name: 'Cipher Mining Inc.', weight: 4.5, sector: 'Technology' },
-    { symbol: 'CAN', name: 'Canaan Inc.', weight: 3.0, sector: 'Technology' },
-    { symbol: 'BTDR', name: 'Bitdeer Technologies', weight: 2.5, sector: 'Technology' }
+    { symbol: 'BTC-USD', name: 'Bitcoin', weight: 100.0, sector: 'Cryptocurrency' }
   ],
   'ETH-USD': [
-    { symbol: 'COIN', name: 'Coinbase Global Inc.', weight: 20.0, sector: 'Technology' },
-    { symbol: 'LDO-USD', name: 'Lido DAO', weight: 15.0, sector: 'Technology' },
-    { symbol: 'RPL-USD', name: 'Rocket Pool', weight: 12.0, sector: 'Technology' },
-    { symbol: 'UNI-USD', name: 'Uniswap', weight: 10.0, sector: 'Technology' },
-    { symbol: 'MKR-USD', name: 'Maker', weight: 8.0, sector: 'Technology' },
-    { symbol: 'AAVE-USD', name: 'Aave', weight: 6.0, sector: 'Technology' },
-    { symbol: 'LINK-USD', name: 'Chainlink', weight: 5.0, sector: 'Technology' },
-    { symbol: 'ARB-USD', name: 'Arbitrum', weight: 4.5, sector: 'Technology' },
-    { symbol: 'OP-USD', name: 'Optimism', weight: 3.0, sector: 'Technology' },
-    { symbol: 'MATIC-USD', name: 'Polygon', weight: 2.5, sector: 'Technology' }
+    { symbol: 'ETH-USD', name: 'Ethereum', weight: 100.0, sector: 'Cryptocurrency' }
   ]
 };
 
