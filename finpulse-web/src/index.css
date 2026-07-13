@@ -158,4 +158,19 @@ html {
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(200%); }
+}
+
+/* Hide all TradingView logo references and copyright attribution overlays */
+.tradingview-widget-copyright,
+.tradingview-widget-container__widget + a,
+[id^="tradingview-"] a,
+.tradingview-widget-container a,
+iframe[src*="tradingview.com"] + a {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
 }

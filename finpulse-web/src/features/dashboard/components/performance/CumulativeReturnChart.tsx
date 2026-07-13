@@ -60,6 +60,7 @@ export default function CumulativeReturnChart({
         textColor: textColorVal,
         fontSize: 11,
         fontFamily: "JetBrains Mono, Menlo, monospace",
+        attributionLogo: false,
       },
       width: container.clientWidth,
       height,
