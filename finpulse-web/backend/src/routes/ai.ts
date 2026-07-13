@@ -7,7 +7,17 @@ import jwt from "jsonwebtoken";
 import Parser from "rss-parser";
 import NodeCache from "node-cache";
 
-const yahooFinance = new YahooFinance();
+const yahooFinance = new YahooFinance({
+  fetchOptions: {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Accept': '*/*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Origin': 'https://finance.yahoo.com',
+      'Referer': 'https://finance.yahoo.com/'
+    }
+  }
+});
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 const rssParser = new Parser();

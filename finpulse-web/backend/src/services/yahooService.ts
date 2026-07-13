@@ -15,8 +15,17 @@ const screenerCache =
 
 const earningsCache = new NodeCache({ stdTTL: 43200 }); // 12 hours TTL for Vercel deployment stability
 
-const yahooFinance =
-  new YahooFinance();
+const yahooFinance = new YahooFinance({
+  fetchOptions: {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Accept': '*/*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Origin': 'https://finance.yahoo.com',
+      'Referer': 'https://finance.yahoo.com/'
+    }
+  }
+});
 
 // ==========================================
 // NEW WORKING HISTORICAL RECHARTS TIMELINE METHOD
