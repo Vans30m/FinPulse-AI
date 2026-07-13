@@ -43,7 +43,10 @@ export default function Preferences() {
         });
       }
       if (profile.notificationSettings) {
-        setNotifications(profile.notificationSettings);
+        setNotifications(prev => ({
+          ...prev,
+          ...profile.notificationSettings
+        }));
       }
     }
   }, [profile]);
