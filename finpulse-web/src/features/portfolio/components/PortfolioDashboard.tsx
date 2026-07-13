@@ -404,11 +404,26 @@ export default function PortfolioDashboard() {
       const cashReceivedUSD = closeTradeAsset.sectionId === 'domestic' ? (sharesToCloseNum * closePriceNum) / usdToInrRate : (sharesToCloseNum * closePriceNum);
       const nextBalance = virtualBalance + cashReceivedUSD;
 
+      const newTx = {
+        id: Math.random().toString(36).substring(2, 9),
+        timestamp: new Date().toISOString(),
+        type: 'SELL' as const,
+        symbol: closeTradeAsset.ticker,
+        name: closeTradeAsset.name,
+        shares: sharesToCloseNum,
+        price: closePriceNum,
+        totalValue: sharesToCloseNum * closePriceNum
+      };
+
+      const nextTxs = [...virtualTransactions, newTx];
+
       setVirtualHoldings(nextHoldings);
       setVirtualBalance(nextBalance);
+      setVirtualTransactions(nextTxs);
 
       localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
       localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
+      localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
 
       toast.success(`Trade closed successfully! Realized P&L: ${closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}${pnl.toFixed(2)}`);
       setIsCloseModalOpen(false);
@@ -524,14 +539,34 @@ export default function PortfolioDashboard() {
   };
 
   const handleDeleteHolding = async (id: string, name: string) => {
-    const confirmed = window.confirm(`Are you sure you want to remove ${name} from your portfolio?`);
+    // Determine if this is a reset-only or complete delete
+    const targetAsset = bookedAssets.find(a => a.id === id);
+    const isResetOnly = targetAsset && targetAsset.shares > 0;
+
+    const confirmMsg = isResetOnly 
+      ? `Are you sure you want to clear the booked P&L history for ${name}? (Your active position of ${targetAsset.shares} shares will not be deleted)`
+      : `Are you sure you want to remove ${name} history entry from your portfolio?`;
+
+    const confirmed = window.confirm(confirmMsg);
     if (!confirmed) return;
 
     if (isSandboxMode) {
-      const nextHoldings = virtualHoldings.filter(h => (h.id || h.ticker) !== id);
-      setVirtualHoldings(nextHoldings);
-      localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
-      toast.success(`Removed virtual asset ${name}`);
+      if (isResetOnly) {
+        const nextHoldings = virtualHoldings.map(h => {
+          if ((h.id || h.ticker) === id) {
+            return { ...h, bookedPL: 0 };
+          }
+          return h;
+        });
+        setVirtualHoldings(nextHoldings);
+        localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+        toast.success(`Cleared booked P&L history for ${name}`);
+      } else {
+        const nextHoldings = virtualHoldings.filter(h => (h.id || h.ticker) !== id);
+        setVirtualHoldings(nextHoldings);
+        localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+        toast.success(`Removed virtual asset ${name}`);
+      }
       return;
     }
 
@@ -544,21 +579,27 @@ export default function PortfolioDashboard() {
       if (userId) headers['X-User-Id'] = userId;
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch(`${API_BASE_URL}/api/portfolio/holdings/${id}`, {
-        method: 'DELETE',
+      const url = isResetOnly 
+        ? `${API_BASE_URL}/api/portfolio/holdings/${id}/reset-booked-pl`
+        : `${API_BASE_URL}/api/portfolio/holdings/${id}`;
+      
+      const method = isResetOnly ? 'PATCH' : 'DELETE';
+
+      const res = await fetch(url, {
+        method,
         headers
       });
 
       if (res.ok) {
-        toast.success(`Successfully removed ${name}`);
+        toast.success(isResetOnly ? `Cleared booked P&L history for ${name}` : `Successfully removed ${name}`);
         loadPortfolioData();
       } else {
         const errorData = await res.json().catch(() => ({}));
-        toast.error(errorData.error || "Failed to remove asset");
+        toast.error(errorData.error || "Failed to update asset");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to remove asset");
+      toast.error("Failed to update asset");
     }
   };
 
@@ -1264,14 +1305,14 @@ export default function PortfolioDashboard() {
           <table className="w-full text-left border-collapse table-auto min-w-[700px] md:min-w-full">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50/50 dark:bg-white/[0.01]">
-                <th className="py-4 px-4">Asset / Hub</th>
-                <th className="py-4 px-4 text-right">Qty / Vol</th>
+                <th className="py-4 px-4">Asset</th>
+                <th className="py-4 px-4 text-right">Qty</th>
                 <th className="py-4 px-4 text-right">Avg Cost</th>
                 <th className="py-4 px-4 text-right">Current Price</th>
                 <th className="py-4 px-4 text-right">Market Value</th>
-                <th className="py-4 px-4 text-right">Booked P&L</th>
-                <th className="py-4 px-4 text-right">Returns</th>
-                <th className="py-4 px-4 text-center">Actions</th>
+                <th className="py-4 px-4 text-right">Returns (Total)</th>
+                <th className="py-4 px-4 text-right">Day Change</th>
+                <th className="py-4 px-4 w-10"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
@@ -1281,23 +1322,40 @@ export default function PortfolioDashboard() {
                 const displayCurrentPrice = asset.currentPrice;
                 const displayMarketValue = asset.marketValue;
                 const displayTotalGain = asset.totalGain;
+                const displayDailyGain = asset.dailyGain || 0;
+
+                const changePerShare = asset.shares > 0 ? displayDailyGain / asset.shares : 0;
+                const prevPrice = displayCurrentPrice - changePerShare;
+                const dailyGainPercent = prevPrice > 0 ? (changePerShare / prevPrice) * 100 : 0;
 
                 return (
                   <tr key={asset.id || `${asset.ticker}-${index}`} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle">
                     <td className="py-4 px-4">
-                      <div className="flex flex-col gap-1 justify-center">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openAsset({
+                            symbol: asset.ticker,
+                            yahooSymbol: asset.yahooSymbol || asset.ticker,
+                            name: asset.name,
+                            exchange: asset.exchange || "GLOBAL",
+                            type: asset.type || "Asset",
+                          })
+                        }
+                        className="flex flex-col gap-1 text-left group/asset cursor-pointer focus:outline-none"
+                      >
                         <div className="flex items-center gap-2.5">
                           <span className={`px-2 py-0.5 text-[9px] font-black rounded border leading-tight ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>
                             {asset.ticker}
                           </span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover/asset:text-blue-600 dark:group-hover/asset:text-cyan-400 transition-colors">
                             {asset.name}
                           </span>
                         </div>
                         <span className="text-[9px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
                           {asset.category}
                         </span>
-                      </div>
+                      </button>
                     </td>
                     <td className="py-4 px-4 text-right font-mono text-sm text-slate-650 dark:text-slate-300 align-middle">
                       {asset.shares.toLocaleString()}
@@ -1322,49 +1380,42 @@ export default function PortfolioDashboard() {
                         </span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-center align-middle">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openAsset({
-                              symbol: asset.ticker,
-                              yahooSymbol: asset.yahooSymbol || asset.ticker,
-                              name: asset.name,
-                              exchange: asset.exchange || "GLOBAL",
-                              type: asset.type || "Asset",
-                            })
-                          }
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-cyan-400 hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-xs font-bold transition-all"
-                        >
-                          <BarChart3 className="h-3.5 w-3.5" />
-                          Chart
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (asset.shares > 0) {
-                              setCloseTradeAsset({ ...asset, sectionId: asset.sectionId || 'us' });
-                              setCloseTradeShares(String(asset.shares));
-                              setCloseTradePrice(String(asset.currentPrice));
-                              setIsCloseModalOpen(true);
-                            } else {
-                              handleDeleteHolding(asset.id, asset.name);
-                            }
-                          }}
-                          className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
-                          title={asset.shares > 0 ? "Close trade / Realize profit" : "Remove asset permanently"}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+                    <td className="py-4 px-4 text-right align-middle font-mono">
+                      <div className={`flex flex-col items-end justify-center ${displayDailyGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                        <span className="text-sm font-semibold flex items-center gap-0.5">
+                          {displayDailyGain >= 0 ? '+' : ''}
+                          {posCurrency}{displayDailyGain.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-[10px] font-medium opacity-85">
+                          {displayDailyGain >= 0 ? '+' : ''}{dailyGainPercent.toFixed(2)}%
+                        </span>
                       </div>
+                    </td>
+                    <td className="py-4 px-4 text-center align-middle">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (asset.shares > 0) {
+                            setCloseTradeAsset({ ...asset, sectionId: asset.sectionId || 'us' });
+                            setCloseTradeShares(String(asset.shares));
+                            setCloseTradePrice(String(asset.currentPrice));
+                            setIsCloseModalOpen(true);
+                          } else {
+                            handleDeleteHolding(asset.id, asset.name);
+                          }
+                        }}
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
+                        title={asset.shares > 0 ? "Close trade / Realize profit" : "Remove asset permanently"}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     </td>
                   </tr>
                 );
               })}
               {filteredHoldings.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-sm text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-sm text-slate-400">
                     No active holdings found in this category.
                   </td>
                 </tr>
@@ -1693,21 +1744,19 @@ export default function PortfolioDashboard() {
                     <span className={`text-sm font-black font-mono ${(asset.bookedPL || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
                       {(asset.bookedPL || 0) >= 0 ? '+' : ''}{asset.posCurrency}{(asset.bookedPL || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
-                    {asset.shares === 0 && (
-                      <button
-                        onClick={() => {
-                          handleDeleteHolding(asset.id, asset.name);
-                          // Delay slightly to allow db refresh before re-filtering
-                          setTimeout(() => {
-                            loadPortfolioData();
-                          }, 500);
-                        }}
-                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
-                        title="Delete history entry"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        handleDeleteHolding(asset.id, asset.name);
+                        // Delay slightly to allow db refresh before re-filtering
+                        setTimeout(() => {
+                          loadPortfolioData();
+                        }, 500);
+                      }}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
+                      title={asset.shares > 0 ? "Clear booked P&L history" : "Delete history entry"}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}

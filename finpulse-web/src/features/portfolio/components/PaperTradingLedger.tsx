@@ -34,7 +34,7 @@ export default function PaperTradingLedger({ transactions, activeCurrency }: Pap
         </span>
       </div>
 
-      <div className="w-full overflow-hidden">
+      <div className="w-full max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-350 dark:scrollbar-thumb-slate-800">
         {transactions.length === 0 ? (
           <div className="p-12 text-center text-sm text-slate-400 font-medium">
             No virtual trades executed yet. Place an order to start tracking performance!
@@ -42,7 +42,7 @@ export default function PaperTradingLedger({ transactions, activeCurrency }: Pap
         ) : (
           <table className="w-full text-left border-collapse table-auto">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50/50 dark:bg-white/[0.01]">
+              <tr className="sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800/60 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-night-900">
                 <th className="py-4 px-6">Timestamp</th>
                 <th className="py-4 px-4">Asset</th>
                 <th className="py-4 px-4 text-center">Type</th>

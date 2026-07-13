@@ -196,6 +196,27 @@ portfolioRoutes.delete('/holdings/:id', async (req, res) => {
   }
 });
 
+// PATCH /api/portfolio/holdings/:id/reset-booked-pl - resets bookedPL of a holding to 0
+portfolioRoutes.patch('/holdings/:id/reset-booked-pl', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await getOrCreateDefaultUser(req);
+    const holding = await prisma.holding.findFirst({
+      where: { id, userId: user.id }
+    });
+    if (!holding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
+    const updated = await prisma.holding.update({
+      where: { id },
+      data: { bookedPL: 0 }
+    });
+    res.json({ success: true, message: 'Booked P&L reset successfully', holding: updated });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /api/portfolio/holdings/:id/close - closes/sells shares of a holding and books P&L
 portfolioRoutes.post('/holdings/:id/close', async (req, res) => {
   try {
