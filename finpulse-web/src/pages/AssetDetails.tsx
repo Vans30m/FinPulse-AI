@@ -222,6 +222,17 @@ function IndexDetails({ symbol }: { symbol: string }) {
   );
 }
 
+// Helpers for Calendar Events and Forecast UI
+const parseDateParts = (dateVal: any) => {
+  if (!dateVal) return null;
+  const dateObj = new Date(dateVal);
+  if (isNaN(dateObj.getTime())) return null;
+  const day = dateObj.getDate().toString().padStart(2, '0');
+  const month = dateObj.toLocaleDateString(undefined, { month: 'short' }).toUpperCase();
+  const year = dateObj.getFullYear();
+  return { day, month, year };
+};
+
 export default function AssetDetails() {
   const { symbol = "AAPL" } = useParams();
   const navigate = useNavigate();
@@ -367,6 +378,123 @@ export default function AssetDetails() {
     if (Math.abs(num) >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
     if (Math.abs(num) >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
     return num.toLocaleString();
+  };
+
+  const renderCalendarCard = (dateVal: any, title: string, subtitle: string, color: 'blue' | 'purple') => {
+    const parts = parseDateParts(dateVal);
+    const colorClasses = color === 'blue'
+      ? {
+        bg: 'bg-blue-500/10 border-blue-500/20',
+        header: 'bg-blue-500 text-white',
+        text: 'text-blue-400',
+        glow: 'shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+      }
+      : {
+        bg: 'bg-purple-500/10 border-purple-500/20',
+        header: 'bg-purple-500 text-white',
+        text: 'text-purple-400',
+        glow: 'shadow-[0_0_15px_rgba(168,85,247,0.15)]'
+      };
+
+    return (
+      <div className="flex items-center gap-4 bg-[#0c1022] p-4 rounded-xl border border-slate-900 hover:border-slate-800 transition-all duration-300">
+        {parts ? (
+          <div className={`w-12 h-14 rounded-lg overflow-hidden flex flex-col items-center justify-between border border-slate-800 shrink-0 ${colorClasses.glow}`}>
+            <div className={`w-full py-0.5 text-[8px] font-black text-center uppercase tracking-wider ${colorClasses.header}`}>
+              {parts.month}
+            </div>
+            <div className="flex-1 flex items-center justify-center bg-[#070b19] w-full text-base font-black text-white font-mono leading-none">
+              {parts.day}
+            </div>
+            <div className="w-full text-[8px] text-slate-500 text-center pb-0.5 bg-[#070b19] font-bold">
+              {parts.year}
+            </div>
+          </div>
+        ) : (
+          <div className="w-12 h-14 rounded-lg bg-[#070b19] border border-slate-800 flex items-center justify-center text-slate-600 shrink-0">
+            <span className="text-xs font-bold font-mono">N/A</span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <span className="text-[9px] text-slate-400 uppercase font-black tracking-wider block">
+            {title}
+          </span>
+          <span className="text-sm font-black text-slate-100 mt-1 block truncate">
+            {parts
+              ? new Date(dateVal).toLocaleDateString(undefined, { dateStyle: 'long' })
+              : "Not Scheduled"}
+          </span>
+          <span className="text-[9px] text-slate-500 font-bold block mt-0.5">
+            {subtitle}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderRangeTrack = (title: string, value: any, low: any, high: any, isCurrency = true) => {
+    const avgNum = value !== undefined && value !== null && value !== "Not Available" ? Number(value) : null;
+    const lowNum = low !== undefined && low !== null && low !== "Not Available" ? Number(low) : null;
+    const highNum = high !== undefined && high !== null && high !== "Not Available" ? Number(high) : null;
+
+    const showBar = avgNum !== null && lowNum !== null && highNum !== null && (highNum - lowNum) > 0;
+
+    let percentage = 50;
+    if (showBar) {
+      percentage = ((avgNum - lowNum) / (highNum - lowNum)) * 100;
+      percentage = Math.max(0, Math.min(100, percentage));
+    }
+
+    return (
+      <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 hover:border-slate-800 transition-all duration-300 flex flex-col justify-between h-full">
+        <div>
+          <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider block">{title}</span>
+          <div className="flex items-baseline gap-2 mt-3">
+            <span className="text-3xl font-black text-white font-mono tracking-tight">
+              {formatVal(value, isCurrency)}
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              Average
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-2">
+          {showBar ? (
+            <>
+              {/* Range track bar */}
+              <div className="relative h-2 bg-slate-950 rounded-full border border-slate-900/60 overflow-visible">
+                <div
+                  className="absolute top-0 bottom-0 left-0 rounded-full bg-gradient-to-r from-blue-500/20 to-emerald-500/30 border-r border-emerald-500/50"
+                  style={{ width: `${percentage}%` }}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.6)] flex items-center justify-center transition-all duration-300 hover:scale-125 cursor-pointer"
+                  style={{ left: `${percentage}%` }}
+                  title={`Average: ${formatVal(value, isCurrency)}`}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                </div>
+              </div>
+              <div className="flex justify-between text-[9px] font-bold text-slate-500 pt-1">
+                <div className="flex flex-col items-start">
+                  <span className="uppercase text-[8px] text-slate-650 tracking-wider">Low Target</span>
+                  <span className="font-mono text-slate-350 mt-0.5">{formatVal(low, isCurrency)}</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="uppercase text-[8px] text-slate-650 tracking-wider">High Target</span>
+                  <span className="font-mono text-slate-350 mt-0.5">{formatVal(high, isCurrency)}</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="pt-2 text-center text-[10px] text-slate-600 font-bold">
+              Range forecasts not available
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   // Derive dynamic sentiment
@@ -1114,110 +1242,59 @@ export default function AssetDetails() {
                 })()}
               </div>
             )}
-
             {/* CALENDAR EVENTS TAB */}
             {activeTab === "events" && data && (
               <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
-                <h3 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-3 tracking-wider">
-                  Calendar Events & Estimates Forecasts
-                </h3>
+                <div className="border-b border-slate-900 pb-3 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider">
+                    Calendar Events & Estimates Forecasts
+                  </h3>
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                    Powered by Yahoo Finance
+                  </span>
+                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Col 1: Date Timeline */}
+                  {/* Col 1: Date Timeline / Cards */}
                   <div className="lg:col-span-1 space-y-4">
-                    <h4 className="text-[10px] text-slate-550 uppercase font-black tracking-wider mb-4">Upcoming Schedule</h4>
+                    <h4 className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Upcoming Schedule</h4>
 
-                    <div className="space-y-4 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
-                      {/* Earnings Date */}
-                      <div className="flex gap-4 relative">
-                        <div className="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 z-10 shrink-0">
-                          <Calendar className="w-3 h-3" />
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider block">Upcoming Earnings Date</span>
-                          <span className="text-sm font-black text-slate-200 mt-0.5 block">
-                            {data.events.earnings?.earningsDate?.[0]
-                              ? new Date(data.events.earnings.earningsDate[0]).toLocaleDateString(undefined, { dateStyle: 'long' })
-                              : "Not Available"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Ex-Dividend Date */}
-                      <div className="flex gap-4 relative">
-                        <div className="w-6 h-6 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 z-10 shrink-0">
-                          <Scissors className="w-3 h-3" />
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider block">Ex-Dividend Date</span>
-                          <span className="text-sm font-black text-slate-200 mt-0.5 block">
-                            {data.events.exDividendDate
-                              ? new Date(data.events.exDividendDate).toLocaleDateString(undefined, { dateStyle: 'long' })
-                              : "Not Available"}
-                          </span>
-                        </div>
-                      </div>
+                    <div className="space-y-4">
+                      {renderCalendarCard(
+                        data.events.earnings?.earningsDate?.[0],
+                        "Upcoming Earnings Date",
+                        "Projected release of financial results",
+                        "blue"
+                      )}
+                      {renderCalendarCard(
+                        data.events.exDividendDate,
+                        "Ex-Dividend Date",
+                        "Cut-off date for next dividend eligibility",
+                        "purple"
+                      )}
                     </div>
                   </div>
 
                   {/* Col 2: EPS Estimates */}
-                  <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Earnings Per Share (EPS) Estimate</span>
-                      <span className="text-3xl font-black text-white font-mono mt-4 block">
-                        {data.events.earnings?.earningsAverage !== undefined && data.events.earnings?.earningsAverage !== null && data.events.earnings?.earningsAverage !== "Not Available"
-                          ? formatVal(data.events.earnings.earningsAverage, true)
-                          : "N/A"}
-                      </span>
-                    </div>
-                    <div className="border-t border-slate-900/60 pt-4 mt-6">
-                      <div className="flex justify-between text-[10px] font-bold text-slate-550">
-                        <span>Low Target</span>
-                        <span>High Target</span>
-                      </div>
-                      <div className="flex justify-between text-xs font-black text-slate-350 font-mono mt-1">
-                        <span>
-                          {data.events.earnings?.earningsLow !== undefined && data.events.earnings?.earningsLow !== null && data.events.earnings?.earningsLow !== "Not Available"
-                            ? formatVal(data.events.earnings.earningsLow, true)
-                            : "N/A"}
-                        </span>
-                        <span>
-                          {data.events.earnings?.earningsHigh !== undefined && data.events.earnings?.earningsHigh !== null && data.events.earnings?.earningsHigh !== "Not Available"
-                            ? formatVal(data.events.earnings.earningsHigh, true)
-                            : "N/A"}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="lg:col-span-1">
+                    {renderRangeTrack(
+                      "Earnings Per Share (EPS) Estimate",
+                      data.events.earnings?.earningsAverage,
+                      data.events.earnings?.earningsLow,
+                      data.events.earnings?.earningsHigh,
+                      true
+                    )}
                   </div>
 
                   {/* Col 3: Revenue Estimates */}
-                  <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-550 uppercase font-black tracking-wider block">Revenue Estimate Forecast</span>
-                      <span className="text-3xl font-black text-white font-mono mt-4 block">
-                        {data.events.earnings?.revenueAverage !== undefined && data.events.earnings?.revenueAverage !== null && data.events.earnings?.revenueAverage !== "Not Available"
-                          ? formatVal(data.events.earnings.revenueAverage, true)
-                          : "N/A"}
-                      </span>
-                    </div>
-                    <div className="border-t border-slate-900/60 pt-4 mt-6">
-                      <div className="flex justify-between text-[10px] font-bold text-slate-555">
-                        <span>Low Target</span>
-                        <span>High Target</span>
-                      </div>
-                      <div className="flex justify-between text-xs font-black text-slate-350 font-mono mt-1">
-                        <span>
-                          {data.events.earnings?.revenueLow !== undefined && data.events.earnings?.revenueLow !== null && data.events.earnings?.revenueLow !== "Not Available"
-                            ? formatVal(data.events.earnings.revenueLow, true)
-                            : "N/A"}
-                        </span>
-                        <span>
-                          {data.events.earnings?.revenueHigh !== undefined && data.events.earnings?.revenueHigh !== null && data.events.earnings?.revenueHigh !== "Not Available"
-                            ? formatVal(data.events.earnings.revenueHigh, true)
-                            : "N/A"}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="lg:col-span-1">
+                    {renderRangeTrack(
+                      "Revenue Estimate Forecast",
+                      data.events.earnings?.revenueAverage,
+                      data.events.earnings?.revenueLow,
+                      data.events.earnings?.revenueHigh,
+                      true
+                    )}
                   </div>
                 </div>
               </div>
@@ -1250,16 +1327,30 @@ export default function AssetDetails() {
                     { name: "200", ema: Number(data.technicals?.ema200), sma: Number(data.technicals?.sma200) }
                   ];
 
+                  let maBuyCount = 0;
+                  let maSellCount = 0;
                   mas.forEach(ma => {
                     if (ma.sma && price) {
-                      if (price > ma.sma) buyCount++;
-                      else sellCount++;
+                      if (price > ma.sma) {
+                        buyCount++;
+                        maBuyCount++;
+                      } else {
+                        sellCount++;
+                        maSellCount++;
+                      }
                     }
                     if (ma.ema && price) {
-                      if (price > ma.ema) buyCount++;
-                      else sellCount++;
+                      if (price > ma.ema) {
+                        buyCount++;
+                        maBuyCount++;
+                      } else {
+                        sellCount++;
+                        maSellCount++;
+                      }
                     }
                   });
+                  const maVerdict = maBuyCount > maSellCount ? "Bullish" : maBuyCount < maSellCount ? "Bearish" : "Neutral";
+                  const maVerdictBadge = maVerdict === "Bullish" ? "text-emerald-450 border-emerald-500/20 bg-emerald-500/5" : maVerdict === "Bearish" ? "text-rose-455 border-rose-500/20 bg-rose-500/5" : "text-slate-400 border-slate-800 bg-slate-800/10";
 
                   // MACD
                   if (macd !== 0 || macdSignal !== 0) {
@@ -1338,12 +1429,11 @@ export default function AssetDetails() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Oscillators + Key Levels Stack */}
-                        <div className="space-y-6 col-span-1">
-                          {/* Oscillators */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Oscillators */}
+                        <div className="col-span-1">
                           <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
-                            <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-3 tracking-wider">
+                            <h4 className="text-xs font-black uppercase text-slate-355 border-b border-slate-900 pb-3 tracking-wider">
                               Oscillators
                             </h4>
 
@@ -1374,7 +1464,7 @@ export default function AssetDetails() {
                             {/* MACD */}
                             <div className="space-y-4 pt-2">
                               <div className="flex justify-between text-xs font-mono">
-                                <span className="text-slate-550 font-sans font-bold">MACD Crossover</span>
+                                <span className="text-slate-555 font-sans font-bold">MACD Crossover</span>
                                 <span className={`font-black ${macd > macdSignal ? "text-emerald-450" : "text-rose-455"}`}>
                                   {macd > macdSignal ? "Bullish Crossover" : "Bearish Crossover"}
                                 </span>
@@ -1391,64 +1481,18 @@ export default function AssetDetails() {
                               </div>
                             </div>
                           </div>
-
-                          {/* Major Key Levels */}
-                          {hasKeyLevels ? (
-                            <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4">
-                              <div className="flex justify-between items-center border-b border-slate-900/60 pb-3">
-                                <h4 className="text-xs font-black uppercase text-slate-355 tracking-wider">
-                                  Major Key Levels
-                                </h4>
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${verdictBadgeColor}`}>
-                                  {keyVerdict}
-                                </span>
-                              </div>
-
-                              <div className="space-y-3 text-xs font-mono">
-                                <div className="flex justify-between items-center py-1 border-b border-slate-900/40">
-                                  <span className="text-rose-455 font-sans font-bold">R2 (Resistance 2)</span>
-                                  <span className="text-slate-200 font-bold">
-                                    {formatVal(R2, true)} <span className="text-[10px] text-slate-500 font-sans">({price >= R2 ? "Above" : "Below"})</span>
-                                  </span>
-                                </div>
-                                <div className="flex justify-between items-center py-1 border-b border-slate-900/40">
-                                  <span className="text-rose-400 font-sans font-bold">R1 (Resistance 1)</span>
-                                  <span className="text-slate-200 font-bold">
-                                    {formatVal(R1, true)} <span className={`text-[10px] font-sans ${price >= R1 ? "text-emerald-400" : "text-rose-400"}`}>({price >= R1 ? "Above" : "Below"})</span>
-                                  </span>
-                                </div>
-                                <div className="flex justify-between items-center py-1 border-b border-slate-900/40 bg-blue-500/5 px-2 rounded-lg">
-                                  <span className="text-blue-400 font-sans font-bold">PP (Pivot Point)</span>
-                                  <span className="text-slate-200 font-bold">
-                                    {formatVal(PP, true)} <span className={`text-[10px] font-sans ${price >= PP ? "text-emerald-400" : "text-rose-400"}`}>({price >= PP ? "Above" : "Below"})</span>
-                                  </span>
-                                </div>
-                                <div className="flex justify-between items-center py-1 border-b border-slate-900/40">
-                                  <span className="text-emerald-455 font-sans font-bold">S1 (Support 1)</span>
-                                  <span className="text-slate-200 font-bold">
-                                    {formatVal(S1, true)} <span className={`text-[10px] font-sans ${price >= S1 ? "text-emerald-400" : "text-rose-400"}`}>({price >= S1 ? "Above" : "Below"})</span>
-                                  </span>
-                                </div>
-                                <div className="flex justify-between items-center py-1">
-                                  <span className="text-emerald-400 font-sans font-bold">S2 (Support 2)</span>
-                                  <span className="text-slate-200 font-bold">
-                                    {formatVal(S2, true)} <span className="text-[10px] text-slate-500 font-sans">({price >= S2 ? "Above" : "Below"})</span>
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md text-center text-xs text-slate-500 py-8">
-                              No price data available to compute pivot levels.
-                            </div>
-                          )}
                         </div>
 
                         {/* Moving Averages */}
-                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md col-span-2 space-y-4">
-                          <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-3 tracking-wider">
-                            Moving Averages (MAs)
-                          </h4>
+                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md col-span-1 space-y-4">
+                          <div className="flex justify-between items-center border-b border-slate-900 pb-3">
+                            <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider">
+                              Moving Averages (MAs)
+                            </h4>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${maVerdictBadge}`}>
+                              {maVerdict}
+                            </span>
+                          </div>
 
                           <div className="overflow-x-auto">
                             <table className="w-full text-xs font-mono text-left">
@@ -1473,7 +1517,7 @@ export default function AssetDetails() {
                                         <div className="inline-flex flex-col items-center">
                                           <span className="text-slate-200 font-bold">{formatVal(ma.sma, true)}</span>
                                           {ma.sma > 0 && (
-                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 ${price >= ma.sma ? "bg-emerald-500/10 text-emerald-450" : "bg-rose-500/10 text-rose-455"}`}>
+                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 ${price >= ma.sma ? "bg-emerald-500/10 text-emerald-455" : "bg-rose-500/10 text-rose-455"}`}>
                                               {price >= ma.sma ? "▲ Above" : "▼ Below"} ({Math.abs(smaDiff).toFixed(1)}%)
                                             </span>
                                           )}
@@ -1483,7 +1527,7 @@ export default function AssetDetails() {
                                         <div className="inline-flex flex-col items-end">
                                           <span className="text-slate-200 font-bold">{formatVal(ma.ema, true)}</span>
                                           {ma.ema > 0 && (
-                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 ${price >= ma.ema ? "bg-emerald-500/10 text-emerald-450" : "bg-rose-500/10 text-rose-455"}`}>
+                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 ${price >= ma.ema ? "bg-emerald-500/10 text-emerald-455" : "bg-rose-500/10 text-rose-455"}`}>
                                               {price >= ma.ema ? "▲ Above" : "▼ Below"} ({Math.abs(emaDiff).toFixed(1)}%)
                                             </span>
                                           )}
@@ -1497,6 +1541,113 @@ export default function AssetDetails() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Major Key Levels (Structural Levels) - Rendered full-width below oscillators and MAs */}
+                      {hasKeyLevels ? (
+                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4 w-full">
+                          <div className="flex justify-between items-center border-b border-slate-900/60 pb-3">
+                            <h4 className="text-xs font-black uppercase text-slate-355 tracking-wider">
+                              Major Key Levels (Structural Levels)
+                            </h4>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${verdictBadgeColor}`}>
+                              {keyVerdict}
+                            </span>
+                          </div>
+
+                          {(() => {
+                            const minLevel = S2;
+                            const maxLevel = R2;
+                            const range = maxLevel - minLevel;
+                            const getPct = (val: number) => {
+                              if (!range || range <= 0) return 50;
+                              return Math.max(0, Math.min(100, ((val - minLevel) / range) * 100));
+                            };
+                            const pricePct = getPct(price);
+
+                            return (
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center pt-2">
+                                {/* Price Ladder Visual Gauge */}
+                                <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-[#0c1022]/40 rounded-xl border border-slate-900/60 h-full min-h-[220px]">
+                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider mb-5">Price Alignment</span>
+                                  <div className="relative w-full px-6 h-36 flex items-center justify-center">
+                                    {/* Vertical track */}
+                                    <div className="absolute top-0 bottom-0 w-1.5 rounded-full bg-gradient-to-t from-emerald-500/20 via-blue-500/10 to-rose-500/20 border border-slate-900" />
+                                    
+                                    {/* Ticks/Labels */}
+                                    {[
+                                      { label: "R2", value: R2, color: "text-rose-455" },
+                                      { label: "R1", value: R1, color: "text-rose-400" },
+                                      { label: "PP", value: PP, color: "text-blue-400" },
+                                      { label: "S1", value: S1, color: "text-emerald-455" },
+                                      { label: "S2", value: S2, color: "text-emerald-400" },
+                                    ].map((lvl, idx) => {
+                                      const pct = getPct(lvl.value);
+                                      return (
+                                        <div 
+                                          key={idx} 
+                                          className="absolute left-0 right-0 flex items-center justify-between pointer-events-none"
+                                          style={{ bottom: `${pct}%` }}
+                                        >
+                                          <span className={`w-8 text-right font-mono text-[9px] font-bold ${lvl.color}`}>{lvl.label}</span>
+                                          <div className="w-4 h-px bg-slate-800" />
+                                          <span className="w-14 text-left font-mono text-[9px] text-slate-500">{formatVal(lvl.value, true)}</span>
+                                        </div>
+                                      );
+                                    })}
+
+                                    {/* Current Price Pointer */}
+                                    <div 
+                                      className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 ease-out z-10 w-12"
+                                      style={{ bottom: `${pricePct}%` }}
+                                    >
+                                      <div className="w-full h-[2px] bg-cyan-400 shadow-[0_0_8px_#22d3ee] relative flex items-center justify-center">
+                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
+                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950" />
+                                        
+                                        {/* Price Label Overlay (Centered above pointer) */}
+                                        <div className="absolute bottom-full mb-1.5 bg-cyan-950/90 text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded text-[8px] font-black font-mono shadow-[0_0_10px_rgba(34,211,238,0.2)] whitespace-nowrap">
+                                          {formatVal(price, true)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Detailed Levels List */}
+                                <div className="col-span-2 space-y-2">
+                                  {[
+                                    { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-455", bgClass: "hover:bg-rose-500/5" },
+                                    { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-400", bgClass: "hover:bg-rose-500/5" },
+                                    { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-400", bgClass: "bg-blue-500/5 border border-blue-500/10" },
+                                    { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-455", bgClass: "hover:bg-emerald-500/5" },
+                                    { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-400", bgClass: "hover:bg-emerald-500/5" },
+                                  ].map((lvl, idx) => {
+                                    const isAbove = price >= lvl.value;
+                                    return (
+                                      <div 
+                                        key={idx} 
+                                        className={`flex justify-between items-center px-3 py-1.5 rounded-xl transition-all duration-200 ${lvl.bgClass}`}
+                                      >
+                                        <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
+                                        <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-200">
+                                          <span>{formatVal(lvl.value, true)}</span>
+                                          <span className={`text-[10px] font-sans px-2 py-0.5 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
+                                            {isAbove ? "Above" : "Below"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md text-center text-xs text-slate-500 py-8 w-full">
+                          No price data available to compute pivot levels.
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -1505,10 +1656,54 @@ export default function AssetDetails() {
 
             {/* PERFORMANCE COMPARISON TAB */}
             {activeTab === "performance" && meta && (
-              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4">
-                <h3 className="text-sm font-black uppercase text-slate-300 border-b border-slate-900 pb-3">
-                  Historical Total Return Comparison
-                </h3>
+              <div className="space-y-6">
+                {/* Performance Summary Banner */}
+                {(() => {
+                  const p1y = meta.performance?.["1Y"];
+                  const p5y = meta.performance?.["5Y"];
+                  const pAll = meta.performance?.["All Time"];
+                  
+                  const primaryGrowth = p5y ?? p1y ?? pAll ?? 0;
+                  
+                  return (
+                    <div className={`border rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md transition-all duration-300 ${
+                      primaryGrowth >= 0 
+                        ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20" 
+                        : "bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent border-rose-500/20"
+                    }`}>
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Return Analysis</span>
+                        <h4 className="text-xl font-black text-slate-200">
+                          {primaryGrowth >= 20 
+                            ? "Exceptional Long-Term Growth" 
+                            : primaryGrowth >= 0 
+                              ? "Steady Wealth Growth" 
+                              : "Undergoing Asset Consolidation"}
+                        </h4>
+                        <p className="text-xs text-slate-400 max-w-xl leading-relaxed mt-1">
+                          This asset has delivered a cumulative return of <span className={`font-bold ${primaryGrowth >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{primaryGrowth >= 0 ? "+" : ""}{primaryGrowth.toFixed(1)}%</span> over the multi-year cycle.
+                        </p>
+                      </div>
+                      
+                      <div className="flex gap-4 shrink-0 font-mono">
+                        <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
+                          <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">1-Year Return</span>
+                          <span className={`text-base font-black block mt-1 ${p1y >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            {p1y != null ? `${p1y >= 0 ? "+" : ""}${p1y.toFixed(2)}%` : "N/A"}
+                          </span>
+                        </div>
+                        <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
+                          <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">5-Year Return</span>
+                          <span className={`text-base font-black block mt-1 ${p5y >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            {p5y != null ? `${p5y >= 0 ? "+" : ""}${p5y.toFixed(2)}%` : "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Return Horizon Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
                   {[
                     { label: "1D", key: "1D" },
@@ -1521,14 +1716,55 @@ export default function AssetDetails() {
                     { label: "All Time", key: "All Time" }
                   ].map((item, idx) => {
                     const val = meta.performance?.[item.key];
+                    const hasVal = val !== undefined && val !== null;
                     const isPositive = val >= 0;
+                    
                     return (
-                      <div key={idx} className="bg-[#0c1022] p-4 rounded-xl border border-slate-800 text-center">
-                        <span className="text-[10px] text-slate-500 uppercase font-black block tracking-wider">{item.label}</span>
-                        <span className={`text-base font-mono font-black mt-2 block ${val != null ? (isPositive ? "text-emerald-450" : "text-rose-455") : "text-slate-600"
+                      <div 
+                        key={idx} 
+                        className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${
+                          hasVal 
+                            ? isPositive 
+                              ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]" 
+                              : "bg-rose-500/[0.02] border-rose-950/60 hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
+                            : "bg-slate-950/30 border-slate-900 text-slate-655"
+                        }`}
+                      >
+                        {/* Period label */}
+                        <div className="flex justify-between items-center z-10">
+                          <span className="text-[10px] text-slate-505 uppercase font-black tracking-wider">{item.label}</span>
+                          {hasVal && (
+                            <span className={`text-[10px] font-bold ${isPositive ? "text-emerald-455" : "text-rose-455"}`}>
+                              {isPositive ? "▲" : "▼"}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Visual bar/track of performance magnitude */}
+                        {hasVal && (
+                          <div className="w-full bg-slate-950/80 rounded-full h-1 my-1 overflow-hidden border border-slate-900">
+                            <div 
+                              className={`h-full rounded-full ${isPositive ? "bg-emerald-500" : "bg-rose-500"}`}
+                              style={{ width: `${Math.min(100, Math.abs(val) * (item.key === "1D" || item.key === "1W" ? 10 : 1))}%` }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Value */}
+                        <div className="z-10 mt-auto">
+                          <span className={`text-sm font-mono font-black block tracking-tight ${
+                            hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
                           }`}>
-                          {formatVal(val, false, true)}
-                        </span>
+                            {hasVal ? `${isPositive ? "+" : ""}${val.toFixed(2)}%` : "N/A"}
+                          </span>
+                        </div>
+
+                        {/* Ambient Card Glow */}
+                        {hasVal && (
+                          <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${
+                            isPositive ? "bg-emerald-400" : "bg-rose-400"
+                          }`} />
+                        )}
                       </div>
                     );
                   })}
@@ -1538,40 +1774,80 @@ export default function AssetDetails() {
 
             {/* NEWS TAB */}
             {activeTab === "news" && data && (
-              <div className="space-y-4">
-                {data.news?.map((item: any, idx: number) => (
-                  <div key={idx} className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-md flex gap-4 hover:border-slate-800 transition-colors">
-                    {item.thumbnail?.resolutions?.[0]?.url && (
-                      <img
-                        src={item.thumbnail.resolutions[0].url}
-                        alt="Article thumbnail"
-                        className="w-24 h-16 rounded-xl object-cover shrink-0"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <h4 className="text-xs font-bold text-slate-200 line-clamp-1">{item.title}</h4>
-                        <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[10px] text-blue-400 hover:text-blue-300 font-bold inline-flex items-center gap-0.5 shrink-0 ml-2"
-                        >
-                          <span>Read</span>
-                          <ExternalLink size={10} />
-                        </a>
-                      </div>
-                      <p className="text-[10px] text-slate-400 line-clamp-2 mt-1.5 leading-relaxed">
-                        {item.summary || item.title}
-                      </p>
-                      <div className="flex gap-4 text-[9px] text-slate-550 font-bold uppercase tracking-wider mt-2.5">
-                        <span>{item.publisher}</span>
-                        <span>{new Date(item.providerPublishTime * 1000).toLocaleDateString()}</span>
-                      </div>
+              (() => {
+                const newsItems = (data.news || []).slice(0, 10);
+                const leftColNews = newsItems.slice(0, 5);
+                const rightColNews = newsItems.slice(5, 10);
+                
+                const renderNewsTable = (items: any[]) => (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-900 bg-[#0c1022]">
+                          <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-20">Image</th>
+                          <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
+                          <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-16 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-900/60">
+                        {items.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
+                            <td className="px-4 py-3 align-middle w-20">
+                              <img
+                                src={item.thumbnail?.resolutions?.[0]?.url || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=200&q=80"}
+                                alt="News thumbnail"
+                                className="w-16 h-11 rounded-lg object-cover border border-slate-900 shadow-sm shrink-0 bg-slate-950"
+                              />
+                            </td>
+                            <td className="px-4 py-3.5 align-middle space-y-1">
+                              <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block">
+                                {item.publisher || "General News"}
+                              </span>
+                              <h4 className="text-xs font-bold text-slate-200 line-clamp-1 leading-snug">
+                                {item.title}
+                              </h4>
+                              <p className="text-[10px] text-slate-400 line-clamp-1 font-normal leading-relaxed">
+                                {item.summary || item.title}
+                              </p>
+                            </td>
+                            <td className="px-4 py-3.5 align-middle text-center">
+                              <a
+                                href={item.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-all"
+                                title="Read Article"
+                              >
+                                <ExternalLink size={12} className="stroke-[2.5]" />
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                        {items.length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-8 text-center text-xs text-slate-500">
+                              No articles found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Latest Coverage</h4>
+                      {renderNewsTable(leftColNews)}
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Market Sentiment</h4>
+                      {renderNewsTable(rightColNews)}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })()
             )}
           </div>
         )}
