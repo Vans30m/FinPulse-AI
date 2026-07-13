@@ -15,6 +15,8 @@ export interface UserPreferences {
   currency: string;
   region: string;
   defaultDashboard: string;
+  newsletterSubscribed?: boolean;
+  marketingEmails?: boolean;
 }
 
 export interface NotificationSettings {

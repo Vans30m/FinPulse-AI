@@ -33,7 +33,14 @@ export default function Preferences() {
   useEffect(() => {
     if (profile) {
       if (profile.preferences) {
-        setPreferences(profile.preferences);
+        setPreferences({
+          theme: profile.preferences.theme || 'dark',
+          language: profile.preferences.language || 'English',
+          currency: profile.preferences.currency || 'INR (₹)',
+          region: profile.preferences.region || 'India',
+          defaultDashboard: profile.preferences.defaultDashboard || 'Portfolio',
+          newsletterSubscribed: profile.preferences.newsletterSubscribed !== false
+        });
       }
       if (profile.notificationSettings) {
         setNotifications(profile.notificationSettings);
