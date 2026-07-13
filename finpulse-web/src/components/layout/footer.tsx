@@ -72,11 +72,24 @@ export default function Footer() {
     if (!email) return;
     
     setStatus('loading');
-    // Simulated subscription pipeline
-    setTimeout(() => {
-      setStatus('success');
-      setEmail('');
-    }, 1200);
+    try {
+      const res = await fetch('/api/auth/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setStatus('success');
+        setEmail('');
+      } else {
+        setStatus('error');
+      }
+    } catch (err) {
+      console.error('Subscription error:', err);
+      setStatus('error');
+    }
   };
 
   return (

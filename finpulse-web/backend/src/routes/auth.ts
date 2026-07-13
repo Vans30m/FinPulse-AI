@@ -1056,4 +1056,113 @@ router.post('/save-preferences', async (req: any, res: any) => {
   }
 });
 
+// Helper to send newsletter welcome email
+async function sendSubscriptionWelcomeEmail(email: string) {
+  console.log(`✉️ [sendSubscriptionWelcomeEmail] Initiated.`);
+  const subject = "Welcome to FinPulse AI Newsletters!";
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; border: 1px solid #eee; border-radius: 10px;">
+      <h2 style="color: #0284c7;">Welcome to FinPulse AI!</h2>
+      <p>Thank you for subscribing to our Intelligence Dispatches.</p>
+      <p>You will now receive advanced market sentiment analysis, real-time alerts, and regular financial news digests directly to your inbox.</p>
+      <div style="padding: 15px; background-color: #f0f9ff; border-radius: 8px; margin: 20px 0; color: #0369a1;">
+        <strong>Subscription Active:</strong> Advanced Sentiment Alerts & Weekly Market Recaps.
+      </div>
+      <p>Stay ahead of the markets with AI-driven insights.</p>
+      <p style="font-size: 12px; color: #666; margin-top: 30px;">If you wish to unsubscribe, you can do so at any time by clicking the link in our newsletters.</p>
+    </div>
+  `;
+
+  if (process.env.BREVO_API_KEY) {
+    try {
+      await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: 'FinPulse AI',
+            email: process.env.SENDER_EMAIL || 'afinpulse@gmail.com',
+          },
+          to: [{ email }],
+          subject,
+          htmlContent,
+        }),
+      });
+      console.log(`✉️ Subscription welcome email sent to ${email} via Brevo API`);
+      return;
+    } catch (error) {
+      console.error(`Failed to send newsletter welcome email via Brevo:`, error);
+    }
+  }
+
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'FinPulse AI <onboarding@resend.dev>',
+          to: email,
+          subject,
+          html: htmlContent,
+        }),
+      });
+      console.log(`✉️ Subscription welcome email sent to ${email} via Resend API`);
+      return;
+    } catch (error) {
+      console.error(`Failed to send newsletter welcome email via Resend:`, error);
+    }
+  }
+
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      await transporter.sendMail({
+        from: `"FinPulse AI" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject,
+        html: htmlContent,
+      });
+      console.log(`✉️ Subscription welcome email sent to ${email} via SMTP`);
+    } catch (error) {
+      console.error(`Failed to send subscription welcome email via SMTP:`, error);
+    }
+  } else {
+    console.log(`✉️ [Subscription Fallback] Welcome email simulated for ${email}`);
+  }
+}
+
+// 12. Newsletter Subscription
+router.post('/subscribe', async (req: any, res: any) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // If user is registered, sync subscription status in user preferences
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      const prefs = user.preferences ? JSON.parse(user.preferences) : {};
+      prefs.newsletterSubscribed = true;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { preferences: JSON.stringify(prefs) }
+      });
+    }
+
+    void sendSubscriptionWelcomeEmail(email);
+
+    res.json({ success: true, message: 'Subscribed successfully' });
+  } catch (error: any) {
+    console.error('Error in subscribe route:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 export default router;

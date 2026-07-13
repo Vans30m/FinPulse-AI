@@ -54,7 +54,16 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     if (!isLoggedIn) return;
     const fetchAlerts = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/alerts`);
+        const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || '';
+        const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+        const userId = storedUser.id || '';
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (userId) headers['X-User-Id'] = userId;
+
+        const res = await fetch(`${API_BASE_URL}/api/alerts-custom`, { headers });
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {

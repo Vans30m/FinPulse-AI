@@ -15,6 +15,8 @@ interface SecurityCardProps {
   onLogoutAllDevices?: () => void;
   onDeleteAccount?: () => void;
   onRevokeSession?: (id: string) => void;
+  onToggleSubscription?: () => void;
+  newsletterSubscribed?: boolean;
   twoFactorEnabled?: boolean;
   sessions?: SessionData[];
   currentSessionId?: string;
@@ -26,6 +28,8 @@ export default function SecurityCard({
   onLogoutAllDevices,
   onDeleteAccount,
   onRevokeSession,
+  onToggleSubscription,
+  newsletterSubscribed = false,
   twoFactorEnabled = false,
   sessions = [],
   currentSessionId = ""
@@ -57,6 +61,20 @@ export default function SecurityCard({
             <span className="text-[10px] lowercase text-slate-450 dark:text-slate-500">manage credentials</span>
           </button>
 
+
+          <button
+            onClick={onToggleSubscription}
+            className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 text-left text-xs font-black uppercase ${
+              newsletterSubscribed
+                ? "border-amber-500/20 dark:border-amber-500/30 hover:bg-amber-600 hover:text-white text-amber-500 hover:border-amber-600"
+                : "border-emerald-500/20 dark:border-emerald-500/30 hover:bg-emerald-600 hover:text-white text-emerald-500 hover:border-emerald-600"
+            }`}
+          >
+            <span>{newsletterSubscribed ? "Unsubscribe from Newsletters" : "Subscribe to Newsletters"}</span>
+            <span className="text-[10px] lowercase text-slate-450 dark:text-slate-500">
+              {newsletterSubscribed ? "active" : "inactive"}
+            </span>
+          </button>
 
           <button
             onClick={onLogoutAllDevices}

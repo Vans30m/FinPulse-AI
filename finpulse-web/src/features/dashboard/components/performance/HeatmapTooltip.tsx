@@ -23,8 +23,8 @@ export default function HeatmapTooltip({ point, x, y }: Props) {
 
   return (
     <div
-      className="pointer-events-none absolute z-20 w-[255px] rounded-2xl border border-slate-800 bg-[#050711]/95 backdrop-blur-md p-3.5 shadow-2xl"
-      style={{ left: x + 12, top: y + 12 }}
+      className="pointer-events-none fixed z-[9999] w-[255px] rounded-2xl border border-slate-800 bg-[#050711]/95 backdrop-blur-md p-3.5 shadow-2xl"
+      style={{ left: x, top: y, transform: "translate(-50%, calc(-100% - 12px))" }}
     >
       <p className="text-xs font-black text-white mb-2.5">{dateLabel}</p>
       <div className="space-y-1.5 text-[11px]">
