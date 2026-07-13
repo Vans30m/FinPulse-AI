@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 
 interface ChartHeaderProps {
   name: string;
@@ -22,6 +22,22 @@ export const ChartHeader = memo<ChartHeaderProps>(({
   currency = "USD",
 }) => {
   const isPositive = change >= 0;
+  const [priceDirection, setPriceDirection] = useState<"up" | "down" | null>(null);
+  const prevPriceRef = useRef(price);
+
+  useEffect(() => {
+    if (price > prevPriceRef.current) {
+      setPriceDirection("up");
+      const timer = setTimeout(() => setPriceDirection(null), 600);
+      prevPriceRef.current = price;
+      return () => clearTimeout(timer);
+    } else if (price < prevPriceRef.current) {
+      setPriceDirection("down");
+      const timer = setTimeout(() => setPriceDirection(null), 600);
+      prevPriceRef.current = price;
+      return () => clearTimeout(timer);
+    }
+  }, [price]);
   
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(val);
@@ -43,7 +59,13 @@ export const ChartHeader = memo<ChartHeaderProps>(({
 
       <div className="flex items-baseline md:items-center gap-4 md:text-right">
         <div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
+          <div className={`text-2xl font-black font-mono transition-all duration-300 ${
+            priceDirection === "up" 
+              ? "text-emerald-400 scale-[1.03] drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" 
+              : priceDirection === "down" 
+                ? "text-rose-400 scale-[0.97] drop-shadow-[0_0_8px_rgba(251,113,133,0.4)]" 
+                : "text-slate-900 dark:text-white"
+          }`}>
             {formatCurrency(price)}
           </div>
           <div className={`text-xs font-bold font-mono mt-0.5 ${isPositive ? "text-emerald-500" : "text-rose-500"}`}>

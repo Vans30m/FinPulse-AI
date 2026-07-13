@@ -143,38 +143,94 @@ export default function TechnicalCard({
               </span>
             </div>
             
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-white/[0.01]">
-                <span className="text-rose-455 font-bold">R2 (Resistance 2)</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">
-                  {formatNum(R2)} <span className="text-[10px] text-slate-500">({price >= R2 ? "▲ Above" : "▼ Below"})</span>
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-white/[0.01]">
-                <span className="text-rose-400 font-bold">R1 (Resistance 1)</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">
-                  {formatNum(R1)} <span className={`text-[10px] ${price >= R1 ? "text-emerald-450" : "text-rose-455"}`}>({price >= R1 ? "▲ Above" : "▼ Below"})</span>
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-white/[0.01] bg-blue-500/5 px-2 rounded-lg">
-                <span className="text-blue-400 font-bold">PP (Pivot Point)</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">
-                  {formatNum(PP)} <span className={`text-[10px] ${price >= PP ? "text-emerald-450" : "text-rose-455"}`}>({price >= PP ? "▲ Above" : "▼ Below"})</span>
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-white/[0.01]">
-                <span className="text-emerald-400 font-bold">S1 (Support 1)</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">
-                  {formatNum(S1)} <span className={`text-[10px] ${price >= S1 ? "text-emerald-455" : "text-rose-455"}`}>({price >= S1 ? "▲ Above" : "▼ Below"})</span>
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-emerald-455 font-bold">S2 (Support 2)</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">
-                  {formatNum(S2)} <span className="text-[10px] text-slate-500">({price >= S2 ? "▲ Above" : "▼ Below"})</span>
-                </span>
-              </div>
-            </div>
+            {(() => {
+              const minLevel = S2;
+              const maxLevel = R2;
+              const range = maxLevel - minLevel;
+              const getPct = (val: number) => {
+                if (!range || range <= 0) return 50;
+                return Math.max(0, Math.min(100, ((val - minLevel) / range) * 100));
+              };
+              const pricePct = getPct(price);
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center pt-2">
+                  {/* Price Ladder Visual Gauge */}
+                  <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-slate-50 dark:bg-[#0c1022]/40 rounded-xl border border-slate-200/60 dark:border-slate-900/60 h-full min-h-[220px]">
+                    <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider mb-5">Price Alignment</span>
+                    <div className="relative w-full px-6 h-36 flex items-center justify-center">
+                      {/* Vertical track */}
+                      <div className="absolute top-0 bottom-0 w-1.5 rounded-full bg-gradient-to-t from-emerald-500/20 via-blue-500/10 to-rose-500/20 border border-slate-200 dark:border-slate-900" />
+                      
+                      {/* Ticks/Labels */}
+                      {[
+                        { label: "R2", value: R2, color: "text-rose-500 dark:text-rose-455" },
+                        { label: "R1", value: R1, color: "text-rose-400" },
+                        { label: "PP", value: PP, color: "text-blue-500 dark:text-blue-400" },
+                        { label: "S1", value: S1, color: "text-emerald-500 dark:text-emerald-455" },
+                        { label: "S2", value: S2, color: "text-emerald-600 dark:text-emerald-400" },
+                      ].map((lvl, idx) => {
+                        const pct = getPct(lvl.value);
+                        return (
+                          <div 
+                            key={idx} 
+                            className="absolute left-0 right-0 flex items-center justify-between pointer-events-none"
+                            style={{ bottom: `${pct}%` }}
+                          >
+                            <span className={`w-8 text-right font-mono text-[9px] font-bold ${lvl.color}`}>{lvl.label}</span>
+                            <div className="w-4 h-px bg-slate-200 dark:bg-slate-800" />
+                            <span className="w-14 text-left font-mono text-[9px] text-slate-500">${formatNum(lvl.value)}</span>
+                          </div>
+                        );
+                      })}
+
+                      {/* Current Price Pointer */}
+                      <div 
+                        className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 ease-out z-10 w-12"
+                        style={{ bottom: `${pricePct}%` }}
+                      >
+                        <div className="w-full h-[2px] bg-cyan-500 dark:bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)] relative flex items-center justify-center">
+                          <div className="absolute w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 border border-white dark:border-slate-950 animate-ping" />
+                          <div className="absolute w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 border border-white dark:border-slate-950" />
+                          
+                          {/* Price Label Overlay (Centered above pointer) */}
+                          <div className="absolute bottom-full mb-1.5 bg-cyan-950/90 text-cyan-500 dark:text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded text-[8px] font-black font-mono shadow-[0_0_10px_rgba(6,182,212,0.2)] whitespace-nowrap">
+                            ${formatNum(price)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detailed Levels List */}
+                  <div className="col-span-2 space-y-2">
+                    {[
+                      { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-500 dark:text-rose-455", bgClass: "hover:bg-rose-500/5" },
+                      { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-400", bgClass: "hover:bg-rose-500/5" },
+                      { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-500 dark:text-blue-400", bgClass: "bg-blue-500/5 border border-blue-500/10 dark:border-blue-500/20" },
+                      { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-500 dark:text-emerald-455", bgClass: "hover:bg-emerald-500/5" },
+                      { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-600 dark:text-emerald-400", bgClass: "hover:bg-emerald-500/5" },
+                    ].map((lvl, idx) => {
+                      const isAbove = price >= lvl.value;
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`flex justify-between items-center px-3 py-1.5 rounded-xl transition-all duration-200 ${lvl.bgClass}`}
+                        >
+                          <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
+                          <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                            <span>${formatNum(lvl.value)}</span>
+                            <span className={`text-[10px] font-sans px-2 py-0.5 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-500 dark:text-rose-400"}`}>
+                              {isAbove ? "Above" : "Below"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <div className="space-y-4 text-center py-6 text-slate-500">

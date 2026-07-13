@@ -118,6 +118,86 @@ function calculateTechnicals(quotes: any[]) {
   };
 }
 
+function calculatePerformance(quotes: any[], currentPrice: number, previousClose: number) {
+  if (!quotes || quotes.length === 0 || !currentPrice) {
+    return {
+      "1D": 0, "1W": 0, "3M": 0, "6M": 0, "YTD": 0, "1Y": 0, "5Y": 0, "All Time": 0
+    };
+  }
+
+  const latestPrice = currentPrice;
+  const now = new Date();
+
+  const findReturn = (daysAgo: number) => {
+    const targetDate = new Date();
+    targetDate.setDate(now.getDate() - daysAgo);
+    
+    // Find quote closest to targetDate
+    let closestQuote = quotes[0];
+    let minDiff = Math.abs(new Date(quotes[0].date).getTime() - targetDate.getTime());
+    
+    for (let i = 1; i < quotes.length; i++) {
+      if (!quotes[i].date) continue;
+      const diff = Math.abs(new Date(quotes[i].date).getTime() - targetDate.getTime());
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestQuote = quotes[i];
+      }
+    }
+    
+    if (closestQuote && closestQuote.close) {
+      return ((latestPrice - closestQuote.close) / closestQuote.close) * 100;
+    }
+    return 0;
+  };
+
+  const findReturnYTD = () => {
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    let closestQuote = quotes[0];
+    let minDiff = Math.abs(new Date(quotes[0].date).getTime() - startOfYear.getTime());
+    
+    for (let i = 1; i < quotes.length; i++) {
+      if (!quotes[i].date) continue;
+      const diff = Math.abs(new Date(quotes[i].date).getTime() - startOfYear.getTime());
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestQuote = quotes[i];
+      }
+    }
+    
+    if (closestQuote && closestQuote.close) {
+      return ((latestPrice - closestQuote.close) / closestQuote.close) * 100;
+    }
+    return 0;
+  };
+
+  // 1D Return
+  const return1D = previousClose ? ((latestPrice - previousClose) / previousClose) * 100 : 0;
+
+  // Calculate others
+  const return1W = findReturn(7);
+  const return3M = findReturn(90);
+  const return6M = findReturn(180);
+  const returnYTD = findReturnYTD();
+  const return1Y = findReturn(365);
+  const return5Y = findReturn(365 * 5);
+  
+  // All Time (using oldest quote in 5y chart)
+  const oldestClose = quotes[0]?.close;
+  const returnAllTime = oldestClose ? ((latestPrice - oldestClose) / oldestClose) * 100 : return5Y;
+
+  return {
+    "1D": Number(return1D.toFixed(2)),
+    "1W": Number(return1W.toFixed(2)),
+    "3M": Number(return3M.toFixed(2)),
+    "6M": Number(return6M.toFixed(2)),
+    "YTD": Number(returnYTD.toFixed(2)),
+    "1Y": Number(return1Y.toFixed(2)),
+    "5Y": Number(return5Y.toFixed(2)),
+    "All Time": Number(returnAllTime.toFixed(2))
+  };
+}
+
 // Route to fetch unified premium asset details
 router.get("/:symbol", async (req, res) => {
   const symbol = req.params.symbol;
@@ -168,8 +248,48 @@ router.get("/:symbol", async (req, res) => {
     // 3. Fetch News Stream
     let newsData: any = newsCache.get(symbol);
     if (!newsData) {
-      const searchRes = await yahooFinance.search(symbol).catch(() => null);
-      newsData = searchRes?.news || [];
+      const companyName = quoteData.quote?.longName || quoteData.quote?.shortName || symbol;
+      const cleanBaseSymbol = symbol.split('.')[0];
+      
+      // Perform searches in parallel
+      const [searchCompany, searchSymbol, searchBase] = await Promise.all([
+        yahooFinance.search(companyName).catch(() => null),
+        yahooFinance.search(symbol).catch(() => null),
+        yahooFinance.search(cleanBaseSymbol).catch(() => null)
+      ]);
+      
+      const newsList: any[] = [];
+      const seenLinks = new Set<string>();
+      
+      const addNews = (newsArray: any[]) => {
+        if (!newsArray) return;
+        for (const item of newsArray) {
+          if (item && item.link && !seenLinks.has(item.link)) {
+            newsList.push(item);
+            seenLinks.add(item.link);
+          }
+        }
+      };
+      
+      addNews(searchCompany?.news || []);
+      addNews(searchSymbol?.news || []);
+      addNews(searchBase?.news || []);
+      
+      // Sort by publish time descending (latest news first)
+      const getTimestamp = (item: any) => {
+        if (!item.providerPublishTime) return 0;
+        const val = item.providerPublishTime;
+        if (typeof val === 'number') {
+          // If it's in seconds, convert to ms
+          return val < 1e11 ? val * 1000 : val;
+        }
+        const parsed = new Date(val).getTime();
+        return isNaN(parsed) ? 0 : parsed;
+      };
+      
+      newsList.sort((a, b) => getTimestamp(b) - getTimestamp(a));
+      
+      newsData = newsList;
       newsCache.set(symbol, newsData);
     }
 
@@ -253,7 +373,12 @@ router.get("/:symbol", async (req, res) => {
         dividendYield: summaryDetail.dividendYield || "Not Available",
         eps: defaultKeyStats.trailingEps || "Not Available",
         forwardEps: defaultKeyStats.forwardEps || "Not Available",
-        bookValue: defaultKeyStats.bookValue || "Not Available"
+        bookValue: defaultKeyStats.bookValue || "Not Available",
+        performance: calculatePerformance(
+          chart5yData, 
+          quote.regularMarketPrice || resolvedPriceFallback(quote, summaryDetail, chart5yData), 
+          summaryDetail.previousClose || quote.regularMarketPreviousClose
+        )
       },
       financialHealth: {
         cash: financialData.totalCash || "Not Available",
