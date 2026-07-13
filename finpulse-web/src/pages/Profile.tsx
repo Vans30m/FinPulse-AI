@@ -557,6 +557,13 @@ export default function Profile() {
             onRevokeSession={handleRevokeSession}
             sessions={sessions}
             currentSessionId={currentSessionId}
+            newsletterSubscribed={marketingEmails}
+            onToggleSubscription={() => {
+              const nextVal = !marketingEmails;
+              setMarketingEmails(nextVal);
+              handleUpdatePreferences({ marketingEmails: nextVal });
+              toast.success(nextVal ? "Subscribed to newsletters successfully!" : "Unsubscribed from newsletters successfully!");
+            }}
           />
         </div>
 

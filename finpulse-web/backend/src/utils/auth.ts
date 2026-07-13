@@ -26,14 +26,7 @@ export function protect(req: AuthenticatedRequest, res: Response, next: NextFunc
           req.user = decoded;
           return next();
         } catch (err) {
-          // Try decoding without verification (expired tokens, etc.)
-          const decoded = jwt.decode(token) as any;
-          if (decoded && (decoded.id || decoded.userId)) {
-            req.userId = decoded.id || decoded.userId;
-            req.userEmail = decoded.email;
-            req.user = decoded;
-            return next();
-          }
+          return res.status(401).json({ error: 'Unauthorized: Session is invalid or expired. Please sign in again.' });
         }
     }
 

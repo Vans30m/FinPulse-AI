@@ -21,12 +21,7 @@ async function getOrCreateDefaultUser(req?: any) {
         if (user) return user;
       }
     } catch {
-      const decoded = jwt.decode(token) as any;
-      const uid = decoded?.userId || decoded?.id;
-      if (decoded && uid) {
-        const user = await prisma.user.findUnique({ where: { id: uid } });
-        if (user) return user;
-      }
+      // Return null or let it fall through to x-user-id fallback
     }
   }
 

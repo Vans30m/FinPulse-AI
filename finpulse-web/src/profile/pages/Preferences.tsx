@@ -15,7 +15,8 @@ export default function Preferences() {
     language: 'English',
     currency: 'INR (₹)',
     region: 'India',
-    defaultDashboard: 'Portfolio'
+    defaultDashboard: 'Portfolio',
+    newsletterSubscribed: true
   });
 
   const [notifications, setNotifications] = useState({
@@ -57,6 +58,13 @@ export default function Preferences() {
     setNotifications(prev => ({
       ...prev,
       [key]: !prev[key]
+    }));
+  };
+
+  const handleNewsletterToggle = () => {
+    setPreferences(prev => ({
+      ...prev,
+      newsletterSubscribed: prev.newsletterSubscribed !== false ? false : true
     }));
   };
 
@@ -148,6 +156,24 @@ export default function Preferences() {
               <option value="Performance">CAGR / Performance Charts</option>
             </select>
           </div>
+        </div>
+
+        <div className="border-t border-slate-100 dark:border-white/5 pt-4 mt-4 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Intelligence Dispatches Subscription</span>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Receive advanced market sentiment digests and newsletter dispatches in your inbox.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleNewsletterToggle}
+            className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${
+              preferences.newsletterSubscribed !== false ? 'bg-blue-600 dark:bg-cyan-400' : 'bg-slate-200 dark:bg-white/10'
+            }`}
+          >
+            <div className={`bg-white dark:bg-night-900 w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+              preferences.newsletterSubscribed !== false ? 'translate-x-5' : 'translate-x-0'
+            }`} />
+          </button>
         </div>
       </div>
 

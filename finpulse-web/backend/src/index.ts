@@ -36,6 +36,7 @@ import aiHistoryRouter from "./routes/aiHistory.js";
 import { getUpcomingEarningsForMarket, getAssetEvents } from "./services/yahooService.js";
 import authRoutes from "./routes/auth.js";
 import assetDetailsRoute from "./routes/assetDetails.js";
+import { evaluateAlerts } from "./services/alertEvaluator.js";
 
 // ==========================================
 // INITIALISE CORE SERVICES
@@ -392,6 +393,12 @@ const server = app.listen(PORT, () => {
   console.log(`✅ FinPulse-AI Backend running on port ${PORT}`);
   console.log(`   Environment : ${NODE_ENV}`);
   console.log(`   Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
+
+  // Start background price alert evaluations
+  void evaluateAlerts();
+  setInterval(() => {
+    void evaluateAlerts();
+  }, 30000); // every 30 seconds
 });
 
 // ==========================================
