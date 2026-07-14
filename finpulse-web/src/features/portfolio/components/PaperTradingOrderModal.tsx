@@ -130,7 +130,7 @@ export default function PaperTradingOrderModal({
     !livePriceLoading &&
     (tradeType === 'BUY'
       ? estimatedValue <= virtualBalance
-      : sharesCount <= currentAvailableShares);
+      : true); // Allow short selling for SELL orders without holding balance restriction
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,7 +256,11 @@ export default function PaperTradingOrderModal({
               {tradeType === 'SELL' && (
                 <div className="flex justify-between items-center text-xs border-t border-slate-200 dark:border-slate-900 pt-2">
                   <span className="text-slate-400 font-medium">Own Holdings</span>
-                  <span className="font-mono font-bold text-slate-950 dark:text-white">{currentAvailableShares} shares available</span>
+                  <span className="font-mono font-bold text-slate-950 dark:text-white">
+                    {currentAvailableShares < 0 
+                      ? `${Math.abs(currentAvailableShares)} shares (Short)` 
+                      : `${currentAvailableShares} shares available`}
+                  </span>
                 </div>
               )}
             </div>
@@ -294,9 +298,6 @@ export default function PaperTradingOrderModal({
               </div>
               {tradeType === 'BUY' && estimatedValue > virtualBalance && (
                 <p className="text-[10px] text-rose-500 font-bold text-right">⚠️ Insufficient virtual balance to execute buy order.</p>
-              )}
-              {tradeType === 'SELL' && sharesCount > currentAvailableShares && (
-                <p className="text-[10px] text-rose-500 font-bold text-right">⚠️ Insufficient holding balance to execute sell order.</p>
               )}
             </div>
           )}

@@ -180,13 +180,19 @@ app.get("/api/search", async (req: Request, res: Response) => {
       yahooResults.quotes
         ?.filter((item: any) => item && item.symbol && (item.shortname || item.longname))
         ?.slice(0, 20)
-        .map((item: any) => ({
-          symbol: item.symbol,
-          yahooSymbol: item.symbol,
-          name: item.shortname || item.longname || item.symbol,
-          exchange: item.exchDisp || item.exchange || "GLOBAL",
-          type: item.quoteType || item.typeDisp || "Asset",
-        })) || [];
+        .map((item: any) => {
+          let name = item.shortname || item.longname || item.symbol;
+          if (item.symbol && item.symbol.toUpperCase() === 'CL=F') {
+            name = 'USOil';
+          }
+          return {
+            symbol: item.symbol,
+            yahooSymbol: item.symbol,
+            name: name,
+            exchange: item.exchDisp || item.exchange || "GLOBAL",
+            type: item.quoteType || item.typeDisp || "Asset",
+          };
+        }) || [];
 
     res.json(results);
   } catch (error) {

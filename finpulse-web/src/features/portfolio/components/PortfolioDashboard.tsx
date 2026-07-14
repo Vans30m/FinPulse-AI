@@ -149,6 +149,18 @@ export default function PortfolioDashboard() {
     return val ? JSON.parse(val) : [];
   });
 
+  // Automatically correct virtual cash balance if there is a mismatch due to old short sale proceeds
+  useEffect(() => {
+    const totalInvested = virtualHoldings.reduce((sum: number, h: any) => sum + (Math.abs(h.shares) * h.avgCost), 0);
+    const totalBooked = virtualHoldings.reduce((sum: number, h: any) => sum + (h.bookedPL || 0), 0);
+    const expectedBalance = 100000 - totalInvested + totalBooked;
+    
+    if (Math.abs(virtualBalance - expectedBalance) > 1.0) {
+      setVirtualBalance(expectedBalance);
+      localStorage.setItem('finpulse_virtual_balance', expectedBalance.toString());
+    }
+  }, [virtualHoldings, virtualBalance]);
+
   const [activeMarket, setActiveMarket] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
@@ -387,7 +399,7 @@ export default function PortfolioDashboard() {
     const sharesToCloseNum = parseFloat(closeTradeShares);
     const closePriceNum = parseFloat(closeTradePrice);
 
-    if (isNaN(sharesToCloseNum) || sharesToCloseNum <= 0 || sharesToCloseNum > closeTradeAsset.shares) {
+    if (isNaN(sharesToCloseNum) || sharesToCloseNum <= 0 || sharesToCloseNum > Math.abs(closeTradeAsset.shares)) {
       toast.error("Invalid number of shares to close");
       return;
     }
@@ -397,10 +409,16 @@ export default function PortfolioDashboard() {
     }
 
     if (isSandboxMode) {
-      const pnl = (closePriceNum - closeTradeAsset.avgCost) * sharesToCloseNum;
+      const isShort = closeTradeAsset.shares < 0;
+      const pnl = isShort 
+        ? (closeTradeAsset.avgCost - closePriceNum) * sharesToCloseNum
+        : (closePriceNum - closeTradeAsset.avgCost) * sharesToCloseNum;
+
       const nextHoldings = virtualHoldings.map(h => {
         if (h.ticker.toUpperCase() === closeTradeAsset.ticker.toUpperCase()) {
-          const updatedShares = Math.max(h.shares - sharesToCloseNum, 0);
+          const updatedShares = isShort
+            ? Math.min(h.shares + sharesToCloseNum, 0)
+            : Math.max(h.shares - sharesToCloseNum, 0);
           return {
             ...h,
             shares: updatedShares,
@@ -408,15 +426,15 @@ export default function PortfolioDashboard() {
           };
         }
         return h;
-      });
+      }).filter(h => Math.abs(h.shares) > 0.0001 || (h.bookedPL || 0) !== 0);
 
-      const cashReceivedUSD = closeTradeAsset.sectionId === 'domestic' ? (sharesToCloseNum * closePriceNum) / usdToInrRate : (sharesToCloseNum * closePriceNum);
-      const nextBalance = virtualBalance + cashReceivedUSD;
+      const cashImpactUSD = closeTradeAsset.sectionId === 'domestic' ? (sharesToCloseNum * closePriceNum) / usdToInrRate : (sharesToCloseNum * closePriceNum);
+      const nextBalance = isShort ? virtualBalance - cashImpactUSD : virtualBalance + cashImpactUSD;
 
       const newTx = {
         id: Math.random().toString(36).substring(2, 9),
         timestamp: new Date().toISOString(),
-        type: 'SELL' as const,
+        type: isShort ? 'BUY' as const : 'SELL' as const,
         symbol: closeTradeAsset.ticker,
         name: closeTradeAsset.name,
         shares: sharesToCloseNum,
@@ -494,35 +512,92 @@ export default function PortfolioDashboard() {
     const nextHoldings = [...virtualHoldings];
 
     if (trade.type === 'BUY') {
-      nextBalance -= tradeValueUSD;
       const existing = nextHoldings.find(h => h.ticker.toUpperCase() === trade.symbol.toUpperCase());
       if (existing) {
-        const prevCost = existing.shares * existing.avgCost;
-        const newCost = trade.shares * trade.price;
-        existing.shares += trade.shares;
-        existing.avgCost = (prevCost + newCost) / existing.shares;
+        if (existing.shares < 0) {
+          // Covering short position
+          const sharesToCover = Math.min(trade.shares, Math.abs(existing.shares));
+          const extraShares = Math.max(trade.shares - sharesToCover, 0);
+
+          // Return collateral for covered shares and apply cover cost
+          const collateralUSD = isDomestic ? (sharesToCover * existing.avgCost) / usdToInrRate : (sharesToCover * existing.avgCost);
+          const coverCostUSD = sharesToCover * priceInUSD;
+          nextBalance = nextBalance + collateralUSD - coverCostUSD;
+
+          const pnl = (existing.avgCost - trade.price) * sharesToCover;
+          existing.bookedPL = (existing.bookedPL || 0) + pnl;
+          
+          existing.shares += trade.shares;
+          if (existing.shares > 0.0001) {
+            // Flipped to long position (extra shares cost cash normally)
+            nextBalance -= extraShares * priceInUSD;
+            existing.avgCost = trade.price;
+          }
+        } else {
+          // Adding to long position (costs cash normally)
+          nextBalance -= tradeValueUSD;
+          const prevCost = existing.shares * existing.avgCost;
+          const newCost = trade.shares * trade.price;
+          existing.shares += trade.shares;
+          existing.avgCost = (prevCost + newCost) / existing.shares;
+        }
       } else {
+        // Regular long buy (costs cash normally)
+        nextBalance -= tradeValueUSD;
         nextHoldings.push({
           ticker: trade.symbol,
           name: trade.name,
           shares: trade.shares,
           avgCost: trade.price,
-          marketId: trade.marketId
+          marketId: trade.marketId,
+          bookedPL: 0
         });
       }
       toast.success(`Successfully bought ${trade.shares} shares of ${trade.symbol}`);
     } else {
-      nextBalance += tradeValueUSD;
       const existing = nextHoldings.find(h => h.ticker.toUpperCase() === trade.symbol.toUpperCase());
       if (existing) {
-        existing.shares -= trade.shares;
-        if (existing.shares <= 0.0001) {
-          const idx = nextHoldings.indexOf(existing);
-          nextHoldings.splice(idx, 1);
+        if (existing.shares > 0) {
+          // Closing/reducing long position (returns cash)
+          const sharesToClose = Math.min(trade.shares, existing.shares);
+          const extraShares = Math.max(trade.shares - sharesToClose, 0);
+
+          nextBalance += sharesToClose * priceInUSD;
+
+          const pnl = (trade.price - existing.avgCost) * sharesToClose;
+          existing.bookedPL = (existing.bookedPL || 0) + pnl;
+          
+          existing.shares -= trade.shares;
+          if (existing.shares < -0.0001) {
+            // Flipped to short position (extra shares lock up collateral)
+            nextBalance -= extraShares * priceInUSD;
+            existing.avgCost = trade.price;
+          }
+        } else {
+          // Adding to short position (locks up collateral)
+          nextBalance -= tradeValueUSD;
+          const prevCost = Math.abs(existing.shares) * existing.avgCost;
+          const newCost = trade.shares * trade.price;
+          existing.shares -= trade.shares;
+          existing.avgCost = (prevCost + newCost) / Math.abs(existing.shares);
         }
+      } else {
+        // Opening a short position (locks up collateral)
+        nextBalance -= tradeValueUSD;
+        nextHoldings.push({
+          ticker: trade.symbol,
+          name: trade.name,
+          shares: -trade.shares,
+          avgCost: trade.price,
+          marketId: trade.marketId,
+          bookedPL: 0
+        });
       }
       toast.success(`Successfully sold ${trade.shares} shares of ${trade.symbol}`);
     }
+
+    // Clean up holdings that are close to 0 shares and have no booked PL
+    const cleanedHoldings = nextHoldings.filter(h => Math.abs(h.shares) > 0.0001 || (h.bookedPL || 0) !== 0);
 
     const newTx = {
       id: Math.random().toString(36).substring(2, 9),
@@ -537,11 +612,11 @@ export default function PortfolioDashboard() {
 
     const nextTxs = [...virtualTransactions, newTx];
     setVirtualBalance(nextBalance);
-    setVirtualHoldings(nextHoldings);
+    setVirtualHoldings(cleanedHoldings);
     setVirtualTransactions(nextTxs);
 
     localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
-    localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+    localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(cleanedHoldings));
     localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
     
     setIsSandboxOpen(false);
@@ -654,7 +729,7 @@ export default function PortfolioDashboard() {
 
     const targetSecs = isSandboxMode ? virtualHoldings.map(h => ({
       marketId: h.marketId,
-      marketValue: h.shares * h.avgCost // Cost basis or lookup
+      marketValue: Math.abs(h.shares) * h.avgCost // Cost basis or lookup
     })) : sections.flatMap(s => s.holdings.map(h => ({ marketId: s.id, marketValue: h.marketValue })));
 
     targetSecs.forEach(h => {
@@ -693,17 +768,23 @@ export default function PortfolioDashboard() {
               changeVal = (realHold as any).dailyGain / realHold.shares;
             }
           }
-          const marketValue = h.shares * livePrice;
-          const costBasis = h.shares * h.avgCost;
-          const totalGain = marketValue - costBasis;
-          const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
+          const marketValue = Math.abs(h.shares) * livePrice;
+          const costBasis = Math.abs(h.shares) * h.avgCost;
+          const totalGain = h.shares < 0 ? costBasis - marketValue : marketValue - costBasis;
+          const gainPercent = costBasis !== 0 ? (totalGain / costBasis) * 100 : 0;
           const dailyGain = h.shares * changeVal;
           
           const colorClass = getHoldingColorClass(h.marketId, h.ticker);
 
+          let displayName = h.name;
+          if (uppercaseTicker === 'CL=F') {
+            displayName = 'USOil';
+          }
+
           return {
             ...h,
             id: h.id || h.ticker,
+            name: displayName,
             currentPrice: livePrice,
             marketValue,
             totalGain,
@@ -887,7 +968,7 @@ export default function PortfolioDashboard() {
     .filter((section) => activeMarket === 'all' || activeMarket === section.id)
     .flatMap((section) =>
       section.holdings
-        .filter(h => h.shares > 0)
+        .filter(h => Math.abs(h.shares) > 0.0001)
         .map(h => ({
           ...h,
           category: section.title,
@@ -1374,7 +1455,7 @@ export default function PortfolioDashboard() {
                       </button>
                     </td>
                     <td className="py-4 px-4 text-right font-mono text-sm text-slate-650 dark:text-slate-300 align-middle">
-                      {asset.shares.toLocaleString()}
+                      {asset.shares < 0 ? `${Math.abs(asset.shares).toLocaleString()} (Short)` : asset.shares.toLocaleString()}
                     </td>
                     <td className="py-4 px-4 text-right font-mono text-sm text-slate-600 dark:text-slate-355 align-middle">
                       {posCurrency}{displayAvgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -1411,9 +1492,9 @@ export default function PortfolioDashboard() {
                       <button
                         type="button"
                         onClick={() => {
-                          if (asset.shares > 0) {
+                          if (Math.abs(asset.shares) > 0.0001) {
                             setCloseTradeAsset({ ...asset, sectionId: asset.sectionId || 'us' });
-                            setCloseTradeShares(String(asset.shares));
+                            setCloseTradeShares(String(Math.abs(asset.shares)));
                             setCloseTradePrice(String(asset.currentPrice));
                             setIsCloseModalOpen(true);
                           } else {
@@ -1421,7 +1502,7 @@ export default function PortfolioDashboard() {
                           }
                         }}
                         className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
-                        title={asset.shares > 0 ? "Close trade / Realize profit" : "Remove asset permanently"}
+                        title={Math.abs(asset.shares) > 0.0001 ? (asset.shares < 0 ? "Cover short position / Close trade" : "Close trade / Realize profit") : "Remove asset permanently"}
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -1646,7 +1727,11 @@ export default function PortfolioDashboard() {
               <div className="p-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-2xl space-y-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>Current Shares:</span>
-                  <span className="font-mono text-slate-800 dark:text-slate-200">{closeTradeAsset.shares.toLocaleString()}</span>
+                  <span className="font-mono text-slate-800 dark:text-slate-200">
+                    {closeTradeAsset.shares < 0 
+                      ? `${Math.abs(closeTradeAsset.shares).toLocaleString()} (Short)` 
+                      : closeTradeAsset.shares.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Avg Purchase Cost:</span>
@@ -1672,7 +1757,7 @@ export default function PortfolioDashboard() {
                     disabled={isClosingPosition}
                     value={closeTradeShares}
                     onChange={e => setCloseTradeShares(e.target.value)}
-                    max={closeTradeAsset.shares}
+                    max={Math.abs(closeTradeAsset.shares)}
                     className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors disabled:opacity-50"
                   />
                 </div>
@@ -1695,7 +1780,10 @@ export default function PortfolioDashboard() {
                 const sharesNum = parseFloat(closeTradeShares);
                 const priceNum = parseFloat(closeTradePrice);
                 if (isNaN(sharesNum) || isNaN(priceNum) || sharesNum <= 0) return null;
-                const pl = (priceNum - closeTradeAsset.avgCost) * sharesNum;
+                const isShort = closeTradeAsset.shares < 0;
+                const pl = isShort 
+                  ? (closeTradeAsset.avgCost - priceNum) * sharesNum
+                  : (priceNum - closeTradeAsset.avgCost) * sharesNum;
                 const isGain = pl >= 0;
                 return (
                   <div className={`p-4 rounded-2xl border text-center space-y-1 ${isGain ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-450' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
