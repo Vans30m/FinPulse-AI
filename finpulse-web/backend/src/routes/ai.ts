@@ -1,24 +1,11 @@
 import express from "express";
 import axios from "axios";
 import { getAIScore, getAnalystConsensus } from "../services/yahooService.js";
-import YahooFinance from "yahoo-finance2";
-import { PrismaClient } from "@prisma/client";
+import { yahooFinance } from "../yahooFinance.js";
+import { prisma } from "../prisma.js";
 import jwt from "jsonwebtoken";
 import Parser from "rss-parser";
 import NodeCache from "node-cache";
-
-const yahooFinance = new YahooFinance({
-  fetchOptions: {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept': '*/*',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Origin': 'https://finance.yahoo.com',
-      'Referer': 'https://finance.yahoo.com/'
-    }
-  }
-});
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 const rssParser = new Parser();
 const aiCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache TTL

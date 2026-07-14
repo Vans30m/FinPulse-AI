@@ -1,8 +1,8 @@
 import express from 'express';
-import { PrismaClient, AlertStatus, AlertType } from '@prisma/client';
+import { prisma } from '../prisma.js';
+import { AlertStatus, AlertType } from '@prisma/client';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 
-const prisma = new PrismaClient();
 const alertsRouter = express.Router();
 
 async function getUserId(req: AuthenticatedRequest) {

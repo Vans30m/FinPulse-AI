@@ -1,8 +1,7 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma.js';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 
-const prisma = new PrismaClient();
 const aiHistoryRouter = express.Router();
 
 async function getUserId(req: AuthenticatedRequest) {
