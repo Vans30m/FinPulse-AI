@@ -161,6 +161,135 @@ export default function PortfolioDashboard() {
     }
   }, [virtualHoldings, virtualBalance]);
 
+  // Sync virtual states on localStorage updates (e.g. from chart modal actions)
+  useEffect(() => {
+    const handleStorage = () => {
+      const balance = localStorage.getItem('finpulse_virtual_balance');
+      const holdings = localStorage.getItem('finpulse_virtual_holdings');
+      const txs = localStorage.getItem('finpulse_virtual_transactions');
+      if (balance) setVirtualBalance(parseFloat(balance));
+      if (holdings) setVirtualHoldings(JSON.parse(holdings));
+      if (txs) setVirtualTransactions(JSON.parse(txs));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  // Automatic SL/TP Evaluation Handler
+  useEffect(() => {
+    if (!isSandboxMode || !liveQuotes || !virtualHoldings.length) return;
+
+    let balanceChanged = false;
+    let nextBalance = virtualBalance;
+    let nextHoldings = [...virtualHoldings];
+    const newTxs: any[] = [];
+    const triggeredMessages: string[] = [];
+
+    nextHoldings = nextHoldings.map(h => {
+      if (Math.abs(h.shares) <= 0.0001) return h;
+
+      const uppercaseTicker = h.ticker.toUpperCase();
+      const quote = liveQuotes[uppercaseTicker];
+      if (!quote) return h;
+
+      const livePrice = quote.price;
+      let triggerPrice = 0;
+      let triggeredType: 'SL' | 'TP' | null = null;
+
+      const isShort = h.shares < 0;
+
+      // 1. Check Stop Loss (SL)
+      if (h.sl) {
+        if (isShort && livePrice >= h.sl) {
+          triggeredType = 'SL';
+          triggerPrice = h.sl;
+        } else if (!isShort && livePrice <= h.sl) {
+          triggeredType = 'SL';
+          triggerPrice = h.sl;
+        }
+      }
+
+      // 2. Check Take Profit (TP)
+      if (h.tp && !triggeredType) {
+        if (isShort && livePrice <= h.tp) {
+          triggeredType = 'TP';
+          triggerPrice = h.tp;
+        } else if (!isShort && livePrice >= h.tp) {
+          triggeredType = 'TP';
+          triggerPrice = h.tp;
+        }
+      }
+
+      if (triggeredType) {
+        balanceChanged = true;
+        const sharesToClose = Math.abs(h.shares);
+        
+        // P&L Calculation
+        const pnl = isShort
+          ? (h.avgCost - triggerPrice) * sharesToClose
+          : (triggerPrice - h.avgCost) * sharesToClose;
+
+        // Cash impact (refund collateral and cover/sell cost)
+        const isDomestic = h.ticker.endsWith('.NS') || h.ticker.endsWith('.BO');
+        const cashImpactUSD = isDomestic 
+          ? (sharesToClose * triggerPrice) / usdToInrRate 
+          : (sharesToClose * triggerPrice);
+        
+        if (isShort) {
+          const collateralUSD = isDomestic 
+            ? (sharesToClose * h.avgCost) / usdToInrRate 
+            : (sharesToClose * h.avgCost);
+          nextBalance = nextBalance + collateralUSD - cashImpactUSD;
+        } else {
+          nextBalance = nextBalance + cashImpactUSD;
+        }
+
+        triggeredMessages.push(
+          `[${triggeredType} Triggered] ${h.ticker} hit ${triggeredType} at $${triggerPrice.toFixed(2)}. Position closed. P&L: ${isDomestic ? '₹' : '$'}${pnl.toFixed(2)}`
+        );
+
+        newTxs.push({
+          id: Math.random().toString(36).substring(2, 9),
+          timestamp: new Date().toISOString(),
+          type: isShort ? 'BUY' : 'SELL',
+          symbol: h.ticker,
+          name: h.name,
+          shares: sharesToClose,
+          price: triggerPrice,
+          totalValue: sharesToClose * triggerPrice
+        });
+
+        return {
+          ...h,
+          shares: 0,
+          bookedPL: (h.bookedPL || 0) + pnl,
+          sl: undefined,
+          tp: undefined
+        };
+      }
+
+      return h;
+    }).filter(h => Math.abs(h.shares) > 0.0001 || (h.bookedPL || 0) !== 0);
+
+    if (balanceChanged) {
+      setVirtualBalance(nextBalance);
+      setVirtualHoldings(nextHoldings);
+      
+      const transactions = JSON.parse(localStorage.getItem('finpulse_virtual_transactions') || '[]');
+      const nextTxs = [...transactions, ...newTxs];
+      setVirtualTransactions(nextTxs);
+
+      localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
+      localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+      localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
+
+      triggeredMessages.forEach(msg => toast.success(msg, { duration: 6000 }));
+      
+      // Dispatch storage event to update modal/chart in real-time
+      window.dispatchEvent(new Event('storage'));
+    }
+  }, [liveQuotes, virtualHoldings, isSandboxMode, usdToInrRate]);
+
   const [activeMarket, setActiveMarket] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
@@ -1698,6 +1827,10 @@ export default function PortfolioDashboard() {
         <PaperTradingLedger
           transactions={virtualTransactions}
           activeCurrency={displayCurrency}
+          usdToInrRate={usdToInrRate}
+          usdToEurRate={usdToEurRate}
+          usdToGbpRate={usdToGbpRate}
+          portfolioCurrency={portfolioCurrency}
         />
       )}
 

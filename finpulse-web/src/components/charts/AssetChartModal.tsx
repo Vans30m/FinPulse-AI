@@ -25,6 +25,7 @@ import {
 import CandlestickChart from "./CandlestickChart";
 import { ChartHeader } from "./ChartHeader";
 import { getUnifiedAssetDetails } from "../../services/marketService";
+import toast from "react-hot-toast";
 
 interface Props {
   open: boolean;
@@ -82,6 +83,151 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const [meta, setMeta] = useState<any>(null);
   const [hasComparison, setHasComparison] = useState(false);
   const [timeframe, setTimeframe] = useState("1Y");
+
+  // Position, SL, TP States
+  const [activePosition, setActivePosition] = useState<any | null>(null);
+  const [slInput, setSlInput] = useState("");
+  const [tpInput, setTpInput] = useState("");
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [closeType, setCloseType] = useState<"full" | "partial">("full");
+  const [closeQtyInput, setCloseQtyInput] = useState("");
+
+  const isSymbolMatch = (t1: string, t2: string) => {
+    if (!t1 || !t2) return false;
+    const clean = (s: string) => s.toUpperCase().split('.')[0].split('=')[0].split('-')[0];
+    return t1.toUpperCase() === t2.toUpperCase() || clean(t1) === clean(t2);
+  };
+
+  const loadActivePosition = () => {
+    try {
+      const stored = localStorage.getItem('finpulse_virtual_holdings');
+      if (stored) {
+        const holdings = JSON.parse(stored);
+        const pos = holdings.find((h: any) => isSymbolMatch(h.ticker, symbol));
+        if (pos && Math.abs(pos.shares) > 0.0001) {
+          setActivePosition(pos);
+        } else {
+          setActivePosition(null);
+        }
+      } else {
+        setActivePosition(null);
+      }
+    } catch (err) {
+      console.error(err);
+      setActivePosition(null);
+    }
+  };
+
+  useEffect(() => {
+    loadActivePosition();
+  }, [symbol, open]);
+
+  useEffect(() => {
+    if (activePosition) {
+      setSlInput(activePosition.sl ? String(activePosition.sl) : "");
+      setTpInput(activePosition.tp ? String(activePosition.tp) : "");
+    } else {
+      setSlInput("");
+      setTpInput("");
+    }
+  }, [activePosition]);
+
+  const handleSaveSlTp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!symbol) return;
+
+    try {
+      const stored = localStorage.getItem('finpulse_virtual_holdings');
+      if (stored) {
+        const holdings = JSON.parse(stored);
+        const updated = holdings.map((h: any) => {
+          if (isSymbolMatch(h.ticker, symbol)) {
+            return {
+              ...h,
+              sl: slInput ? parseFloat(slInput) : undefined,
+              tp: tpInput ? parseFloat(tpInput) : undefined
+            };
+          }
+          return h;
+        });
+        localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(updated));
+        toast.success("Stop Loss / Take Profit updated successfully!");
+        loadActivePosition();
+        window.dispatchEvent(new Event('storage'));
+      }
+    } catch (err) {
+      toast.error("Failed to update SL/TP");
+    }
+  };
+
+  const handleClosePosition = () => {
+    if (!activePosition || !symbol) return;
+    setCloseType("full");
+    setCloseQtyInput(String(Math.abs(activePosition.shares)));
+    setShowCloseConfirm(true);
+  };
+
+  const executeClosePosition = (sharesToClose: number) => {
+    if (!activePosition || !symbol) return;
+
+    try {
+      const currentPrice = meta?.price || activePosition.avgCost;
+      const isShort = activePosition.shares < 0;
+
+      const pnl = isShort
+        ? (activePosition.avgCost - currentPrice) * sharesToClose
+        : (currentPrice - activePosition.avgCost) * sharesToClose;
+
+      const holdings = JSON.parse(localStorage.getItem('finpulse_virtual_holdings') || '[]');
+      const nextHoldings = holdings.map((h: any) => {
+        if (isSymbolMatch(h.ticker, symbol)) {
+          const isShortPos = h.shares < 0;
+          const currentAbsShares = Math.abs(h.shares);
+          const remainingAbs = Math.max(0, currentAbsShares - sharesToClose);
+          const remainingShares = isShortPos ? -remainingAbs : remainingAbs;
+          return {
+            ...h,
+            shares: remainingShares,
+            bookedPL: (h.bookedPL || 0) + pnl
+          };
+        }
+        return h;
+      }).filter((h: any) => Math.abs(h.shares) > 0.0001 || (h.bookedPL || 0) !== 0);
+
+      const isDomestic = symbol.endsWith('.NS') || symbol.endsWith('.BO');
+      const usdToInrRate = 83.45;
+      const cashImpactUSD = isDomestic ? (sharesToClose * currentPrice) / usdToInrRate : (sharesToClose * currentPrice);
+
+      const currentBalance = parseFloat(localStorage.getItem('finpulse_virtual_balance') || '100000');
+      const nextBalance = isShort ? currentBalance - cashImpactUSD : currentBalance + cashImpactUSD;
+
+      const newTx = {
+        id: Math.random().toString(36).substring(2, 9),
+        timestamp: new Date().toISOString(),
+        type: isShort ? 'BUY' as const : 'SELL' as const,
+        symbol: activePosition.ticker,
+        name: activePosition.name,
+        shares: sharesToClose,
+        price: currentPrice,
+        totalValue: sharesToClose * currentPrice
+      };
+
+      const transactions = JSON.parse(localStorage.getItem('finpulse_virtual_transactions') || '[]');
+      const nextTxs = [...transactions, newTx];
+
+      localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+      localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
+      localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
+
+      toast.success(`Position closed successfully! Realized P&L: ${isDomestic ? '₹' : '$'}${pnl.toFixed(2)}`);
+      setShowCloseConfirm(false);
+      setActivePosition(null);
+      loadActivePosition();
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      toast.error("Failed to close position");
+    }
+  };
 
   useEffect(() => {
     if (isSpecialAsset) {
@@ -454,6 +600,74 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
               {/* Right Side Sidebar Analytics */}
               <div className="space-y-4">
+                {/* Position Controls Panel */}
+                {activePosition && (
+                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-900/60 pb-2">
+                      <span className="text-xs font-bold text-slate-300 tracking-wide">Active Position</span>
+                      <span className={`px-2 py-0.5 text-[9px] font-black rounded border ${
+                        activePosition.shares < 0 
+                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      }`}>
+                        {activePosition.shares < 0 ? 'SHORT' : 'LONG'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                      <div>
+                        <span className="text-[9px] text-slate-500 uppercase tracking-wider block">Quantity</span>
+                        <span className="text-slate-200 font-bold">{Math.abs(activePosition.shares).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-500 uppercase tracking-wider block">Entry Price</span>
+                        <span className="text-slate-200 font-bold">${activePosition.avgCost.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    {/* SL / TP Form */}
+                    <form onSubmit={handleSaveSlTp} className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[9px] text-slate-500 uppercase tracking-wider block mb-1">Stop Loss</label>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="None"
+                            value={slInput}
+                            onChange={e => setSlInput(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-900/80 px-2 py-1.5 text-xs rounded-xl outline-none text-slate-200 focus:border-red-500 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-500 uppercase tracking-wider block mb-1">Take Profit</label>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="None"
+                            value={tpInput}
+                            onChange={e => setTpInput(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-900/80 px-2 py-1.5 text-xs rounded-xl outline-none text-slate-200 focus:border-emerald-500 font-mono"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-300 hover:text-white transition-all"
+                      >
+                        Update SL / TP
+                      </button>
+                    </form>
+
+                    <button
+                      onClick={handleClosePosition}
+                      className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-rose-500/10 transition-all active:scale-95"
+                    >
+                      Close Position
+                    </button>
+                  </div>
+                )}
+
                 {/* Tab Navigation Menu */}
                 <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg">
                   <div className="flex items-center justify-between border-b border-slate-900/60 pb-2 mb-3">
@@ -1750,6 +1964,197 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
               )}
             </div>
           </div>
+
+          {/* Custom Close Confirmation Popup */}
+          <AnimatePresence>
+            {showCloseConfirm && activePosition && (() => {
+              const currentPrice = meta?.price || activePosition.avgCost;
+              const isShort = activePosition.shares < 0;
+              const isDomestic = symbol.endsWith('.NS') || symbol.endsWith('.BO');
+              const totalShares = Math.abs(activePosition.shares);
+              
+              // Parse input quantity to close
+              let sharesToClose = totalShares;
+              if (closeType === "partial") {
+                const parsed = parseFloat(closeQtyInput);
+                sharesToClose = isNaN(parsed) ? 0 : parsed;
+              }
+              
+              // Calculate estimated P&L
+              const pnl = isShort
+                ? (activePosition.avgCost - currentPrice) * sharesToClose
+                : (currentPrice - activePosition.avgCost) * sharesToClose;
+
+              const currencySymbol = isDomestic ? '₹' : '$';
+              
+              const isValid = sharesToClose > 0.0001 && sharesToClose <= totalShares;
+
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-[100000] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+                >
+                  <motion.div
+                    initial={{ scale: 0.95, y: 10 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.95, y: 10 }}
+                    transition={{ type: "spring", duration: 0.4 }}
+                    className="w-full max-w-md bg-[#0a0d1d] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 text-slate-100"
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-900 pb-3">
+                      <h3 className="text-sm font-black uppercase tracking-wider text-slate-200">
+                        Close Position - {symbol}
+                      </h3>
+                      <button
+                        onClick={() => setShowCloseConfirm(false)}
+                        className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Position Details */}
+                      <div className="grid grid-cols-2 gap-3 bg-[#070913] p-3 rounded-xl border border-slate-900 text-xs font-mono">
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Position Size</span>
+                          <span className="text-slate-200 font-bold">{totalShares.toLocaleString()} shares</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Type</span>
+                          <span className={`font-bold ${isShort ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            {isShort ? 'SHORT' : 'LONG'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Entry Price</span>
+                          <span className="text-slate-200 font-bold">{currencySymbol}{activePosition.avgCost.toFixed(2)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Current Price</span>
+                          <span className="text-slate-200 font-bold">{currencySymbol}{currentPrice.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* Close Type Selection */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] text-slate-400 uppercase font-black tracking-wider block">
+                          How would you like to close?
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCloseType("full");
+                              setCloseQtyInput(String(totalShares));
+                            }}
+                            className={`py-2 rounded-xl text-xs font-bold transition-all border ${
+                              closeType === "full"
+                                ? "bg-rose-600/10 text-rose-450 border-rose-500/30"
+                                : "bg-slate-900/40 text-slate-400 border-slate-900/60 hover:bg-slate-900/80"
+                            }`}
+                          >
+                            Close Full Position
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCloseType("partial");
+                              setCloseQtyInput(String(Math.min(totalShares, Math.ceil(totalShares / 2))));
+                            }}
+                            className={`py-2 rounded-xl text-xs font-bold transition-all border ${
+                              closeType === "partial"
+                                ? "bg-rose-600/10 text-rose-450 border-rose-500/30"
+                                : "bg-slate-900/40 text-slate-400 border-slate-900/60 hover:bg-slate-900/80"
+                            }`}
+                          >
+                            Partial Close
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Quantity Input for Partial Close */}
+                      {closeType === "partial" && (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center">
+                            <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+                              Quantity to Close
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setCloseQtyInput(String(totalShares))}
+                              className="text-[9px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider"
+                            >
+                              Use Max
+                            </button>
+                          </div>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="any"
+                              value={closeQtyInput}
+                              onChange={(e) => setCloseQtyInput(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-900 px-3 py-2 text-sm rounded-xl outline-none text-slate-200 focus:border-rose-500 font-mono"
+                              placeholder="0.00"
+                            />
+                          </div>
+                          {!isValid && closeQtyInput !== "" && (
+                            <span className="text-[10px] text-rose-400 block font-medium">
+                              Please enter a valid quantity between 0.0001 and {totalShares.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Estimated P&L and Balance Impact */}
+                      {isValid && (
+                        <div className="p-3 rounded-xl bg-[#0d1226] border border-blue-900/20 text-xs space-y-1.5">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Estimated Realized P&L:</span>
+                            <span className={`font-mono font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {pnl >= 0 ? '+' : ''}{currencySymbol}{pnl.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Shares to Close:</span>
+                            <span className="font-mono text-slate-250 font-bold">{sharesToClose.toLocaleString()} / {totalShares.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowCloseConfirm(false)}
+                        className="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-black uppercase tracking-wider text-slate-350 hover:text-white transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isValid) {
+                            executeClosePosition(sharesToClose);
+                          }
+                        }}
+                        disabled={!isValid}
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                          isValid
+                            ? "bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-500/10 active:scale-95"
+                            : "bg-slate-900 text-slate-650 cursor-not-allowed border border-slate-900/60"
+                        }`}
+                      >
+                        Confirm Close
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              );
+            })()}
+          </AnimatePresence>
         </motion.div>
       </div>
     </AnimatePresence>

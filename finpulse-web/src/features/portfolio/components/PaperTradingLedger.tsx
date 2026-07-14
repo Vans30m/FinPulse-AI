@@ -14,14 +14,25 @@ export interface VirtualTransaction {
 interface PaperTradingLedgerProps {
   transactions: VirtualTransaction[];
   activeCurrency: string;
+  usdToInrRate?: number;
+  usdToEurRate?: number;
+  usdToGbpRate?: number;
+  portfolioCurrency?: string;
 }
 
-export default function PaperTradingLedger({ transactions, activeCurrency }: PaperTradingLedgerProps) {
+export default function PaperTradingLedger({
+  transactions,
+  activeCurrency,
+  usdToInrRate = 83.45,
+  usdToEurRate = 0.92,
+  usdToGbpRate = 0.79,
+  portfolioCurrency = 'USD'
+}: PaperTradingLedgerProps) {
   return (
     <div className="glass-panel overflow-hidden shadow-lg transition-all duration-300 relative group">
       <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.01] via-transparent to-purple-500/[0.02] pointer-events-none" />
       
-      <div className="p-6 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-6 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <FileText className="h-5 w-5 text-indigo-500" />
@@ -42,7 +53,7 @@ export default function PaperTradingLedger({ transactions, activeCurrency }: Pap
         ) : (
           <table className="w-full text-left border-collapse table-auto">
             <thead>
-              <tr className="sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800/60 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-night-900">
+              <tr className="sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-night-900">
                 <th className="py-4 px-6">Timestamp</th>
                 <th className="py-4 px-4">Asset</th>
                 <th className="py-4 px-4 text-center">Type</th>
@@ -51,9 +62,36 @@ export default function PaperTradingLedger({ transactions, activeCurrency }: Pap
                 <th className="py-4 px-6 text-right">Total Order Value</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-850/40">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {[...transactions].reverse().map((tx) => {
                 const isBuy = tx.type === 'BUY';
+                const isDomestic = tx.symbol.endsWith('.NS') || tx.symbol.endsWith('.BO');
+                
+                // Determine rate conversion multiplier
+                let multiplier = 1;
+                if (isDomestic) {
+                  // Transaction price originally stored in INR
+                  if (portfolioCurrency === 'USD') {
+                    multiplier = 1 / usdToInrRate;
+                  } else if (portfolioCurrency === 'EUR') {
+                    multiplier = (1 / usdToInrRate) * usdToEurRate;
+                  } else if (portfolioCurrency === 'GBP') {
+                    multiplier = (1 / usdToInrRate) * usdToGbpRate;
+                  }
+                } else {
+                  // Transaction price originally stored in USD
+                  if (portfolioCurrency === 'INR') {
+                    multiplier = usdToInrRate;
+                  } else if (portfolioCurrency === 'EUR') {
+                    multiplier = usdToEurRate;
+                  } else if (portfolioCurrency === 'GBP') {
+                    multiplier = usdToGbpRate;
+                  }
+                }
+
+                const convertedPrice = tx.price * multiplier;
+                const convertedTotalValue = tx.totalValue * multiplier;
+
                 return (
                   <tr key={tx.id} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle font-mono">
                     <td className="py-4 px-6 text-xs text-slate-500">
@@ -83,10 +121,10 @@ export default function PaperTradingLedger({ transactions, activeCurrency }: Pap
                       {tx.shares.toLocaleString()}
                     </td>
                     <td className="py-4 px-4 text-right text-xs text-slate-600 dark:text-slate-300">
-                      {activeCurrency}{tx.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {activeCurrency}{convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-6 text-right text-xs font-bold text-slate-900 dark:text-white">
-                      {activeCurrency}{tx.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {activeCurrency}{convertedTotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 );

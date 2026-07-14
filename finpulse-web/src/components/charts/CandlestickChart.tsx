@@ -260,13 +260,17 @@ export default function CandlestickChart({
   }, []);
 
   // States
+  const [candles, setCandles] = useState<any[]>([]);
   const [hoveredCandle, setHoveredCandle] = useState<any>(null);
   const [hoveredCompareCandle, setHoveredCompareCandle] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
-
+  const [positionLinesTrigger, setPositionLinesTrigger] = useState(0);
   const [fundamentals, setFundamentals] = useState<any>(null);
   const [metrics, setMetrics] = useState<DailyMarketMetrics | null>(null);
-
+  const [hoveredTime, setHoveredTime] = useState<number | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [compareSymbol, setCompareSymbol] = useState("");
+  const [compareCandles, setCompareCandles] = useState<any[]>([]);
   const [meta, setMeta] = useState({
     name: "Asset",
     exchange: "GLOBAL",
@@ -277,16 +281,81 @@ export default function CandlestickChart({
     currency: "USD"
   });
 
-  // State hooks for indicators & historical candles
-  const [candles, setCandles] = useState<any[]>([]);
-  const [hoveredTime, setHoveredTime] = useState<number | null>(null);
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setPositionLinesTrigger(prev => prev + 1);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
-  // Fullscreen state
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Render active position lines (Entry, SL, TP) on the chart
+  useEffect(() => {
+    const chart = chartRef.current;
+    const series = candleSeriesRef.current;
+    if (!chart || !series || !symbol || loading) return;
 
-  // Compare Symbol Overlay State
-  const [compareSymbol, setCompareSymbol] = useState("");
-  const [compareCandles, setCompareCandles] = useState<any[]>([]);
+    // Clear existing price lines first
+    addedPriceLinesRef.current.forEach(line => {
+      try {
+        series.removePriceLine(line);
+      } catch (err) {
+        console.error("Failed to remove price line:", err);
+      }
+    });
+    addedPriceLinesRef.current = [];
+
+    // Find if we have an active position for this symbol
+    try {
+      const stored = localStorage.getItem('finpulse_virtual_holdings');
+      if (stored) {
+        const holdings = JSON.parse(stored);
+        const position = holdings.find((h: any) => h.ticker.toUpperCase() === symbol.toUpperCase());
+        if (position && Math.abs(position.shares) > 0.0001) {
+          // 1. Entry Price Line
+          const entryLine = series.createPriceLine({
+            price: position.avgCost,
+            color: '#3b82f6', // blue
+            lineWidth: 2,
+            lineStyle: LineStyle.Dashed,
+            axisLabelVisible: true,
+            title: `Entry (${position.shares < 0 ? 'Short' : 'Long'}) @ ${position.avgCost.toFixed(2)}`,
+          });
+          addedPriceLinesRef.current.push(entryLine);
+
+          // 2. Stop Loss (SL) Line
+          if (position.sl) {
+            const slLine = series.createPriceLine({
+              price: position.sl,
+              color: '#ef4444', // red
+              lineWidth: 2,
+              lineStyle: LineStyle.Dashed,
+              axisLabelVisible: true,
+              title: `SL @ ${position.sl.toFixed(2)}`,
+            });
+            addedPriceLinesRef.current.push(slLine);
+          }
+
+          // 3. Take Profit (TP) Line
+          if (position.tp) {
+            const tpLine = series.createPriceLine({
+              price: position.tp,
+              color: '#10b981', // green
+              lineWidth: 2,
+              lineStyle: LineStyle.Dashed,
+              axisLabelVisible: true,
+              title: `TP @ ${position.tp.toFixed(2)}`,
+            });
+            addedPriceLinesRef.current.push(tpLine);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to draw position lines:", err);
+    }
+  }, [symbol, loading, candles, positionLinesTrigger]);
+
+
 
   // Ref container holding computed indicator data
   const indicatorDataRef = useRef<{
@@ -928,6 +997,9 @@ export default function CandlestickChart({
   useEffect(() => {
     if (loading || !candles.length || !candleSeriesRef.current) return;
 
+    const isMarketOpen = meta.marketState?.toUpperCase() === "REGULAR" || meta.marketState?.toUpperCase() === "OPEN";
+    if (!isMarketOpen) return;
+
     const interval = setInterval(() => {
       const changePercent = (Math.random() - 0.5) * 0.0004; // small fluctuation
       
@@ -973,7 +1045,7 @@ export default function CandlestickChart({
     }, 1500);
 
     return () => clearInterval(interval);
-  }, [loading, candles.length, onMetaLoaded]);
+  }, [loading, candles.length, onMetaLoaded, meta.marketState]);
 
   // Effect: Render main chart overlay indicators (EMA, SMA, VWAP, Bollinger Bands) & Comparison line
   useEffect(() => {
