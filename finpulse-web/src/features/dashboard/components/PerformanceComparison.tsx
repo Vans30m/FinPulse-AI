@@ -29,6 +29,7 @@ import DarkLogo from "../../../assets/Light_Logo.png";
 
 export default function PerformanceComparison() {
   const navigate = useNavigate();
+  const { user } = useAppData();
   const [loading, setLoading] = useState(true);
   const [holdings, setHoldings] = useState<any[]>([]);
   const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
@@ -329,8 +330,6 @@ export default function PerformanceComparison() {
       </div>
     );
   }
- 
-  const { user } = useAppData();
   const getCurrencySymbol = (currencyString?: string) => {
     if (!currencyString) return '₹';
     if (currencyString.includes('₹') || currencyString.toUpperCase().includes('INR')) return '₹';
