@@ -1,18 +1,6 @@
 import express from "express";
-import YahooFinance from "yahoo-finance2";
+import { yahooFinance } from "../yahooFinance.js";
 import { fetchNewsSentiment } from "../controllers/newsController.js";
-
-const yahooFinance = new YahooFinance({
-  fetchOptions: {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept': '*/*',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Origin': 'https://finance.yahoo.com',
-      'Referer': 'https://finance.yahoo.com/'
-    }
-  }
-});
 
 // newsRoutes handles /api/news-sentiment
 const newsRoutes = express.Router();

@@ -1,9 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma.js';
 import { yahooFinance } from '../index.js';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
 const portfolioRoutes = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 

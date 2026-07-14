@@ -1,4 +1,4 @@
-import YahooFinance from "yahoo-finance2";
+import { yahooFinance } from '../yahooFinance.js';
 import {
   RSI,
   MACD,
@@ -14,18 +14,6 @@ const screenerCache =
   });
 
 const earningsCache = new NodeCache({ stdTTL: 43200 }); // 12 hours TTL for Vercel deployment stability
-
-const yahooFinance = new YahooFinance({
-  fetchOptions: {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept': '*/*',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Origin': 'https://finance.yahoo.com',
-      'Referer': 'https://finance.yahoo.com/'
-    }
-  }
-});
 
 // ==========================================
 // NEW WORKING HISTORICAL RECHARTS TIMELINE METHOD
@@ -1453,7 +1441,8 @@ export async function getFundamentals(symbol: string) {
       dayLow: quote.regularMarketDayLow,
       fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
       fiftyTwoWeekLow: quote.fiftyTwoWeekLow,
-      volume: quote.regularMarketVolume,
+      volume: quote.regularMarketVolume || (quote as any).averageDailyVolume3Month || 0,
+      averageVolume: (quote as any).averageDailyVolume3Month || (quote as any).averageDailyVolume10Day || 0,
       marketCap: quote.marketCap,
       circulatingSupply: quote.circulatingSupply,
       currency: quote.currency,

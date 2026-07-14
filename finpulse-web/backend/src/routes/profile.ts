@@ -1,11 +1,10 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma.js';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 import { yahooFinance } from '../index.js';
 
-const prisma = new PrismaClient();
 const profileRoutes = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 

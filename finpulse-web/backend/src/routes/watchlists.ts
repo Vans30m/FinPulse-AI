@@ -1,11 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma.js';
 import type { WatchlistItem, Watchlist, WatchlistNote, WatchlistTag } from '@prisma/client';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 import { yahooFinance } from '../index.js';
 import { getAIScore } from '../services/yahooService.js';
-
-const prisma = new PrismaClient();
 const watchlistsRouter = express.Router();
 
 // Helper: race a promise against a timeout
