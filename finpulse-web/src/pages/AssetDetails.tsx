@@ -82,6 +82,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
     fiftyTwoWeekHigh?: number;
     fiftyTwoWeekLow?: number;
     volume?: number;
+    averageVolume?: number;
     marketCap?: number;
     currency?: string;
     marketState?: string;
@@ -115,6 +116,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
             fiftyTwoWeekHigh: fundData.fiftyTwoWeekHigh,
             fiftyTwoWeekLow: fundData.fiftyTwoWeekLow,
             volume: fundData.volume,
+            averageVolume: fundData.averageVolume,
             marketCap: fundData.marketCap,
             currency: fundData.currency || "USD",
             marketState: fundData.marketState
@@ -126,6 +128,8 @@ function IndexDetails({ symbol }: { symbol: string }) {
     };
 
     fetchBaseQuote();
+    const interval = setInterval(fetchBaseQuote, 10000);
+    return () => clearInterval(interval);
   }, [symbol]);
 
   useEffect(() => {
@@ -187,6 +191,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
               fiftyTwoWeekHigh={quoteData.fiftyTwoWeekHigh}
               fiftyTwoWeekLow={quoteData.fiftyTwoWeekLow}
               volume={quoteData.volume}
+              averageVolume={quoteData.averageVolume}
               marketCap={quoteData.marketCap}
               currency={quoteData.currency}
               exchange={assetExchange}
@@ -202,6 +207,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
               dayHigh={quoteData.dayHigh}
               dayLow={quoteData.dayLow}
               previousClose={quoteData.previousClose}
+              isIndex={true}
             />
           )}
 
@@ -214,6 +220,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
               trend={aiScore?.trend || "Neutral"}
               momentum={aiScore?.momentum || "Neutral Momentum"}
               score={aiScore?.score || 65}
+              isIndex={true}
             />
           )}
         </div>

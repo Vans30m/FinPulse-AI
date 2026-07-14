@@ -13,6 +13,7 @@ export interface FundamentalData {
   fiftyTwoWeekHigh?: number;
   fiftyTwoWeekLow?: number;
   volume?: number;
+  averageVolume?: number;
   marketCap?: number;
   circulatingSupply?: number;
   currency?: string;

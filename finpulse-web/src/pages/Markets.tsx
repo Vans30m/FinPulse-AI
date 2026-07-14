@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
 import MarketHeatmap from "../components/markets/MarketHeatmap";
 import MarketStatusBar from "../features/dashboard/components/MarketStatusBar";
-import { Search, X } from "lucide-react";
+import { Search, X, Activity } from "lucide-react";
 import API_BASE_URL from "../config/api";
 import { useChart } from "../context/ChartContext";
 
@@ -194,18 +194,8 @@ export default function Markets() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-4 md:p-8">
-        <div className="h-10 w-48 rounded-lg bg-slate-200 dark:bg-night-800 animate-pulse"></div>
-        <div className="h-24 w-full rounded-2xl bg-slate-200 dark:bg-night-800 animate-pulse"></div>
-        <div className="flex gap-4">
-          <div className="h-20 flex-1 rounded-2xl bg-slate-200 dark:bg-night-800 animate-pulse"></div>
-          <div className="h-20 flex-1 rounded-2xl bg-slate-200 dark:bg-night-800 animate-pulse"></div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="h-40 rounded-2xl bg-slate-100 dark:bg-night-800/50 animate-pulse"></div>
-          ))}
-        </div>
+      <div className="flex h-96 items-center justify-center">
+        <Activity className="h-8 w-8 text-blue-500 animate-spin" />
       </div>
     );
   }

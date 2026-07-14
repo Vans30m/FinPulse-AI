@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet, Activity } from 'lucide-react';
 import { BarChart3 } from "lucide-react";
 import { Link } from 'react-router-dom';
 import PortfolioAllocationChart from "./PortfolioAllocationChart";
@@ -106,6 +106,7 @@ const getHoldingColorClass = (marketId: string, ticker: string) => {
 };
 
 export default function PortfolioDashboard() {
+  const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
   const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
   const [usdToEurRate, setUsdToEurRate] = useState<number>(0.92);
@@ -314,14 +315,22 @@ export default function PortfolioDashboard() {
         if (gbpData && gbpData.price) setUsdToGbpRate(gbpData.price);
       } catch (e) {}
     };
-    fetchRates();
-    loadPortfolioData();
+
+    const initialize = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchRates(),
+        loadPortfolioData()
+      ]);
+      setLoading(false);
+    };
+
+    initialize();
 
     const interval = setInterval(() => {
       loadPortfolioData();
     }, 15000); // 15 seconds auto-refresh
 
-    return () => clearInterval(interval);
   }, [virtualHoldings]);
 
   const handleAddAsset = async (e: React.FormEvent) => {
@@ -837,7 +846,6 @@ export default function PortfolioDashboard() {
       iconKey: "return",
     },
   ];
-
   const convertedPerformanceData = useMemo(() => {
     return performanceData.map(d => ({
       ...d,
@@ -846,6 +854,14 @@ export default function PortfolioDashboard() {
       profit: d.profit * currencyMultiplier
     }));
   }, [performanceData, currencyMultiplier]);
+
+  if (loading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <Activity className="h-8 w-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   const allocationData = currentSections
     .map((section) => ({

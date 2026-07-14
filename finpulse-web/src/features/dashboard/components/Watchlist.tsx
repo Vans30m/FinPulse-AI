@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Plus, Trash2,
-  Download, Star, Pin, Info, Search, Sparkles, X
+  Download, Star, Pin, Info, Search, Sparkles, X, Activity
 } from "lucide-react";
 import {
   useWatchlists, useCreateWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
@@ -15,7 +15,7 @@ import { useChart } from "../../../context/ChartContext";
 
 export default function Watchlist() {
   const { openAsset } = useChart();
-  const { data: watchlists = [] } = useWatchlists();
+  const { data: watchlists = [], isLoading } = useWatchlists();
   const createListMutation = useCreateWatchlist();
   const deleteListMutation = useDeleteWatchlist();
   const addItemMutation = useAddWatchlistItem();
@@ -23,6 +23,14 @@ export default function Watchlist() {
   const updateItemMutation = useUpdateWatchlistItem();
 
   const [activeListId, setActiveListId] = useState<string>("");
+
+  if (isLoading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <Activity className="h-8 w-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState("");
