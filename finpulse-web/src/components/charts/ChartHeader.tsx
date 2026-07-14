@@ -39,7 +39,15 @@ export const ChartHeader = memo<ChartHeaderProps>(({
     }
   }, [price]);
   
+  const isIndexSymbol = (sym: string) => {
+    return sym.startsWith("^") || sym.includes("=F") || sym.includes("=X") || sym.toUpperCase() === "NIFTY" || sym.toUpperCase().includes("CNX");
+  };
+  const isIndex = isIndexSymbol(symbol);
+
   const formatCurrency = (val: number) => {
+    if (isIndex) {
+      return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
     return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(val);
   };
 

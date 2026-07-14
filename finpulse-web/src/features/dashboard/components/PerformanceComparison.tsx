@@ -24,6 +24,9 @@ import AIPortfolioAdvisorSection from "../../portfolio/components/AIPortfolioAdv
 import API_BASE_URL from "../../../config/api";
 import { useAppData } from "../../../context/AppDataContext";
 
+import LightLogo from "../../../assets/Dark_Logo.png";
+import DarkLogo from "../../../assets/Light_Logo.png";
+
 export default function PerformanceComparison() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -98,12 +101,13 @@ export default function PerformanceComparison() {
       }
 
       fetch(`${API_BASE_URL}/api/ai/portfolio-advisor`, { headers })
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data) {
-            sessionStorage.setItem("portfolioAdvisor", JSON.stringify(data));
+        .then(async res => {
+          if (res.ok) {
+            const data = await res.json();
             setAdvisorData(data);
+            sessionStorage.setItem("portfolioAdvisor", JSON.stringify(data));
           }
+          setAdvisorLoading(false);
         })
         .catch(err => console.error("Advisor load failed:", err))
         .finally(() => setAdvisorLoading(false));

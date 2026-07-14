@@ -37,6 +37,7 @@ import { GlobalMarketClock } from './features/dashboard/components/GlobalMarketC
 
 // Stock Screener Page Component Integration
 import StockScreener from './pages/StockScreener';
+import Pulse from './pages/Pulse';
 
 // New Footer Pages
 import Analytics from "./pages/Analytics";
@@ -203,67 +204,7 @@ export default function App() {
 
             <Route
               path="/pulse"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="space-y-8">
-                    {/* Horizontal marquee ticker at the top */}
-                    <ForexCryptoRibbon />
-
-                    <AIMarketSentiment />
-                    <MarketExplanation />
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-                      {/* Left Column (2 cols wide on desktop) */}
-                      <div className="lg:col-span-2 space-y-8">
-                        <AIBulletSummary />
-
-                        <MarketFeedStream
-                          marketRegion={marketRegion}
-                          onMarketChange={setMarketRegion}
-                        />
-
-                        <TrendingSectorStreaks />
-                        <VolatilityGauges />
-
-                      </div>
-
-                      {/* Right Column (1 col wide on desktop) */}
-                      <div className="space-y-6 sm:space-y-8">
-                        <GlobalMarketClock />
-                        <FearGreedIndex />
-                        <AIPickOfTheDay />
-                      </div>
-                    </div>
-
-                    {/* Full-width Market Screeners */}
-                    <div className="mt-8">
-                      <MarketScreeners
-                        marketRegion={marketRegion}
-                      />
-                    </div>
-
-                    {/* Full-width Global Earnings Calendar */}
-                    <div className="mt-8">
-                      <GlobalEarningsCalendar />
-                    </div>
-
-                    {/* Bottom Full-width Row: Calculator & Live News side-by-side with equal height */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8 items-stretch">
-                      <div className="h-[600px]">
-                        <InvestmentCalculator />
-                      </div>
-                      <div className="h-[600px]">
-                        <AlertsTimeline fullPage={true} />
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              }
+              element={<Pulse />}
             />
 
             <Route
