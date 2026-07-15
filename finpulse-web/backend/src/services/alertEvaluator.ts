@@ -2,6 +2,7 @@ import { AlertStatus } from '@prisma/client';
 import { prisma } from '../prisma.js';
 import { yahooFinance } from '../yahooFinance.js';
 import nodemailer from 'nodemailer';
+import axios from 'axios';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
@@ -95,6 +96,63 @@ async function sendAlertEmail(email: string, name: string, ticker: string, direc
   }
 }
 
+async function fetchPricesBatch(tickers: string[]): Promise<Record<string, number>> {
+  const prices: Record<string, number> = {};
+  if (tickers.length === 0) return prices;
+
+  const uniqueTickers = Array.from(new Set(tickers));
+
+  try {
+    // Yahoo Finance spark endpoint does not require crumb and accepts batching
+    const url = 'https://query2.finance.yahoo.com/v8/finance/spark';
+    const response = await axios.get(url, {
+      params: {
+        symbols: uniqueTickers.join(','),
+        range: '1d',
+        interval: '1d'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      },
+      timeout: 10000
+    });
+
+    const data = response.data || {};
+    for (const symbol of uniqueTickers) {
+      const spark = data[symbol];
+      if (spark && Array.isArray(spark.close) && spark.close.length > 0) {
+        const lastPrice = spark.close[spark.close.length - 1];
+        if (typeof lastPrice === 'number') {
+          prices[symbol] = lastPrice;
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn(`[Alert Evaluator] Spark batch fetch failed: ${err.message}. Falling back to individual chart requests.`);
+    
+    // Fallback: fetch individually using yahooFinance.chart (which does not require crumb)
+    for (const symbol of uniqueTickers) {
+      try {
+        const now = new Date();
+        const start = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 1 day ago
+        const chartResult = await yahooFinance.chart(symbol, {
+          period1: start,
+          period2: now,
+          interval: '1d'
+        });
+        const lastQuote = chartResult?.quotes?.[chartResult.quotes.length - 1];
+        const lastPrice = lastQuote?.close || lastQuote?.adjclose;
+        if (typeof lastPrice === 'number') {
+          prices[symbol] = lastPrice;
+        }
+      } catch (fallbackErr: any) {
+        console.error(`[Alert Evaluator] Fallback chart fetch failed for ${symbol}:`, fallbackErr.message);
+      }
+    }
+  }
+  return prices;
+}
+
 export async function evaluateAlerts() {
   console.log('⏰ Starting background price alert evaluation...');
   try {
@@ -115,13 +173,15 @@ export async function evaluateAlerts() {
 
     console.log(`Evaluating ${activeAlerts.length} active alerts...`);
 
+    const alertTickers = activeAlerts.map(a => a.ticker);
+    const prices = await fetchPricesBatch(alertTickers);
+
     for (const alert of activeAlerts) {
       try {
-        const quote = await yahooFinance.quote(alert.ticker);
-        const currentPrice = quote.regularMarketPrice;
+        const currentPrice = prices[alert.ticker];
 
-        if (!currentPrice) {
-          console.warn(`Could not fetch quote for ${alert.ticker}`);
+        if (currentPrice === undefined || currentPrice === null) {
+          console.warn(`Could not fetch price for ${alert.ticker}`);
           continue;
         }
 

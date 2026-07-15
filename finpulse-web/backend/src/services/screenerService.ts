@@ -2,6 +2,7 @@ import { yahooFinance } from '../yahooFinance.js';
 import { DOMESTIC_INDICES, MARKET_UNIVERSE } from '../config/markets.js';
 import { getAllGlobalMarkets } from './globalMarketService.js';
 import NodeCache from 'node-cache';
+import axios from 'axios';
 
 const screenerCache = new NodeCache({ stdTTL: 60 });
 const earningsCache = new NodeCache({ stdTTL: 43200 }); // 12 hours TTL for Vercel deployment stability
@@ -65,8 +66,44 @@ export async function getDomesticScreener(
         changePercent: quote.regularMarketChangePercent || 0,
         volume: quote.regularMarketVolume || 0,
       }));
-  } catch (err) {
-    console.error("Failed to batch fetch domestic screener quotes:", err);
+  } catch (err: any) {
+    console.warn("Failed to batch fetch domestic screener quotes via quote API. Falling back to spark endpoint.", err.message);
+    try {
+      const url = 'https://query2.finance.yahoo.com/v8/finance/spark';
+      const response = await axios.get(url, {
+        params: {
+          symbols: DOMESTIC_INDICES.join(','),
+          range: '1d',
+          interval: '1d'
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        },
+        timeout: 10000
+      });
+
+      const data = response.data || {};
+      stocks = DOMESTIC_INDICES.map(symbol => {
+        const spark = data[symbol];
+        if (!spark) return null;
+        
+        const price = spark.close?.[spark.close.length - 1] || 0;
+        const prevClose = spark.chartPreviousClose || price;
+        const change = price - prevClose;
+        const changePercent = prevClose ? (change / prevClose) * 100 : 0;
+        
+        return {
+          symbol,
+          name: symbol.split('.')[0],
+          price,
+          change,
+          changePercent,
+          volume: 0 // spark doesn't return volume
+        };
+      }).filter(Boolean);
+    } catch (fallbackErr: any) {
+      console.error("Failed fallback spark fetch for domestic screener:", fallbackErr.message);
+    }
   }
 
   if (type === "gainers") {
