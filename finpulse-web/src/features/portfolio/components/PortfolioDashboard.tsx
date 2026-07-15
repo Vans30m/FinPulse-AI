@@ -1528,16 +1528,16 @@ export default function PortfolioDashboard() {
         </div>
 
         <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-slate-350 dark:scrollbar-thumb-slate-800">
-          <table className="w-full text-left border-collapse table-auto min-w-[700px] md:min-w-full">
+          <table className="w-full text-left border-collapse table-auto">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50/50 dark:bg-white/[0.01]">
                 <th className="py-4 px-4">Asset</th>
-                <th className="py-4 px-4 text-right">Qty</th>
-                <th className="py-4 px-4 text-right">Avg Cost</th>
-                <th className="py-4 px-4 text-right">Current Price</th>
+                <th className="py-4 px-4 text-right hidden sm:table-cell">Qty</th>
+                <th className="py-4 px-4 text-right hidden md:table-cell">Avg Cost</th>
+                <th className="py-4 px-4 text-right hidden md:table-cell">Current Price</th>
                 <th className="py-4 px-4 text-right">Market Value</th>
                 <th className="py-4 px-4 text-right">Returns (Total)</th>
-                <th className="py-4 px-4 text-right">Day Change</th>
+                <th className="py-4 px-4 text-right hidden sm:table-cell">Day Change</th>
                 <th className="py-4 px-4 w-10"></th>
               </tr>
             </thead>
@@ -1583,13 +1583,13 @@ export default function PortfolioDashboard() {
                         </span>
                       </button>
                     </td>
-                    <td className="py-4 px-4 text-right font-mono text-sm text-slate-650 dark:text-slate-300 align-middle">
+                    <td className="py-4 px-4 text-right font-mono text-sm text-slate-655 dark:text-slate-300 align-middle hidden sm:table-cell">
                       {asset.shares < 0 ? `${Math.abs(asset.shares).toLocaleString()} (Short)` : asset.shares.toLocaleString()}
                     </td>
-                    <td className="py-4 px-4 text-right font-mono text-sm text-slate-600 dark:text-slate-355 align-middle">
+                    <td className="py-4 px-4 text-right font-mono text-sm text-slate-600 dark:text-slate-355 align-middle hidden md:table-cell">
                       {posCurrency}{displayAvgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="py-4 px-4 text-right font-mono text-sm font-semibold text-slate-850 dark:text-slate-200 align-middle">
+                    <td className="py-4 px-4 text-right font-mono text-sm font-semibold text-slate-850 dark:text-slate-200 align-middle hidden md:table-cell">
                       {posCurrency}{displayCurrentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-4 text-right font-mono text-sm font-bold text-slate-950 dark:text-white align-middle">
@@ -1606,7 +1606,7 @@ export default function PortfolioDashboard() {
                         </span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-right align-middle font-mono">
+                    <td className="py-4 px-4 text-right align-middle font-mono hidden sm:table-cell">
                       <div className={`flex flex-col items-end justify-center ${displayDailyGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
                         <span className="text-sm font-semibold flex items-center gap-0.5">
                           {displayDailyGain >= 0 ? '+' : ''}

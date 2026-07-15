@@ -56,22 +56,24 @@ export default function Pulse() {
           {/* Left Column (2 cols wide on desktop) */}
           <div className="lg:col-span-2 space-y-8">
             <AIBulletSummary />
-
-            <MarketFeedStream
-              marketRegion={marketRegion}
-              onMarketChange={setMarketRegion}
-            />
-
             <TrendingSectorStreaks />
-            <AIPickOfTheDay />
+            <GlobalMarketClock />
           </div>
 
           {/* Right Column (1 col wide on desktop) */}
           <div className="space-y-6 sm:space-y-8">
-            <GlobalMarketClock />
             <FearGreedIndex />
             <VolatilityGauges />
+            <AIPickOfTheDay />
           </div>
+        </div>
+
+        {/* Indices Stream: Full-width / fully covered page */}
+        <div className="mt-8">
+          <MarketFeedStream
+            marketRegion={marketRegion}
+            onMarketChange={setMarketRegion}
+          />
         </div>
 
         {/* Full-width Market Screeners */}
@@ -84,7 +86,7 @@ export default function Pulse() {
           <GlobalEarningsCalendar />
         </div>
 
-        {/* Bottom Full-width Row: Calculator & Live News side-by-side with equal height */}
+        {/* Bottom Full-width Row: Lumpsum Calculator & Live News side-by-side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8 items-stretch">
           <div className="h-auto lg:h-[600px]">
             <InvestmentCalculator />

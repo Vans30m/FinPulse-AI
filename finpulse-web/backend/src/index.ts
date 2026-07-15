@@ -274,8 +274,29 @@ app.get('/api/news/google', async (_req: Request, res: Response) => {
 
     res.json(formattedNews);
   } catch (error) {
-    console.error("RSS Parsing Error:", error);
-    res.status(500).json({ error: "Failed to fetch Google News RSS" });
+    console.error("RSS Parsing Error, falling back to Finnhub general news:", error);
+    try {
+      const apiKey = process.env.FINNHUB_API_KEY || 'co3oap1r01qj8aepfbc0co3oap1r01qj8aepfbcg';
+      const response = await axios.get(
+        `https://finnhub.io/api/v1/news?category=general&token=${apiKey}`
+      );
+      const latestNews = (response.data || []).slice(0, 15).map((item: any, index: number) => {
+        const unixTimestamp = item.datetime || Math.floor(Date.now() / 1000);
+        return {
+          id: item.id ? `finnhub-${item.id}` : `google-${index}-${unixTimestamp}`,
+          headline: item.headline || item.title || 'Market News Update',
+          source: item.source || 'Finnhub',
+          datetime: unixTimestamp,
+          url: item.url || item.link || '#',
+          summary: item.summary || 'Click to read the full story.',
+          type: 'google',
+        };
+      });
+      res.json(latestNews);
+    } catch (fallbackError) {
+      console.error("Fallback news fetch failed:", fallbackError);
+      res.status(500).json({ error: "Failed to fetch Google News RSS" });
+    }
   }
 });
 

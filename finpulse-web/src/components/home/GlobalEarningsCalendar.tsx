@@ -211,7 +211,7 @@ function EarningsGrid({
         {Array.from({ length: 10 }).map((_, idx) => (
           <div
             key={idx}
-            className="w-[calc(50%-12px)] flex-shrink-0 snap-start glass-card flex flex-col justify-between p-5 border border-slate-200/20 dark:border-white/5 animate-pulse min-h-[220px]"
+            className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)] flex-shrink-0 snap-start glass-card flex flex-col justify-between p-5 border border-slate-200/20 dark:border-white/5 animate-pulse min-h-[220px]"
           >
             <div>
               <div className="flex items-start justify-between mb-4">
@@ -322,7 +322,7 @@ function EarningsGrid({
         {earnings.map((earning) => (
           <div
             key={earning.symbol}
-            className="w-[calc(50%-12px)] flex-shrink-0 snap-start"
+            className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)] flex-shrink-0 snap-start"
           >
             <EarningsCard
               earning={earning}

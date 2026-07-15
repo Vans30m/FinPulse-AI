@@ -176,7 +176,7 @@ function getDomain(symbol: string): string {
 }
 
 /**
- * Returns a high-quality stock logo URL using Clearbit Logo API, Groww CDN for Indian stocks, or custom special icons.
+ * Returns a high-quality stock logo URL using Clearbit Logo API, or custom special icons.
  */
 export function getStockLogoUrl(symbol: string): string {
   if (!symbol) return "";
@@ -185,28 +185,17 @@ export function getStockLogoUrl(symbol: string): string {
     return SPECIAL_ICONS[upper];
   }
   
-  const isIndian = upper.endsWith('.NS') || upper.endsWith('.BO') || upper.startsWith('CNX') || upper === 'NIFTY';
-  if (isIndian) {
-    const baseSymbol = upper.replace(".NS", "").replace(".BO", "");
-    return `https://assets-netstorage.groww.in/web-assets/stocks_data/logos/${baseSymbol}.png`;
-  }
-  
   return `https://logo.clearbit.com/${getDomain(symbol)}`;
 }
 
 /**
- * Returns a backup stock logo URL using Google's Favicon Service or Clearbit if Groww fails.
+ * Returns a backup stock logo URL using Google's Favicon Service.
  */
 export function getStockLogoFallbackUrl(symbol: string): string {
   if (!symbol) return "";
   const upper = symbol.toUpperCase();
   if (SPECIAL_ICONS[upper]) {
     return SPECIAL_ICONS[upper];
-  }
-  
-  const isIndian = upper.endsWith('.NS') || upper.endsWith('.BO') || upper.startsWith('CNX') || upper === 'NIFTY';
-  if (isIndian) {
-    return `https://logo.clearbit.com/${getDomain(symbol)}`;
   }
   
   return `https://www.google.com/s2/favicons?sz=128&domain=${getDomain(symbol)}`;

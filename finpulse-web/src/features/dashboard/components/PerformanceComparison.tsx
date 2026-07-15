@@ -754,7 +754,7 @@ export default function PerformanceComparison() {
                       }}>
                         Weight <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
                       </th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                      <th className="py-3 px-2 cursor-pointer hover:text-white hidden sm:table-cell" onClick={() => {
                         setSortField("price");
                         setSortDirection(prev => prev === "desc" ? "asc" : "desc");
                       }}>
@@ -766,14 +766,14 @@ export default function PerformanceComparison() {
                       }}>
                         {benchmarkTimeframe} Return % <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
                       </th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                      <th className="py-3 px-2 cursor-pointer hover:text-white hidden sm:table-cell" onClick={() => {
                         setSortField("dailyChange");
                         setSortDirection(prev => prev === "desc" ? "asc" : "desc");
                       }}>
                         Daily Change % <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
                       </th>
-                      <th className="py-3 px-2">Sector</th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                      <th className="py-3 px-2 hidden md:table-cell">Sector</th>
+                      <th className="py-3 px-2 cursor-pointer hover:text-white hidden md:table-cell" onClick={() => {
                         setSortField("marketCap");
                         setSortDirection(prev => prev === "desc" ? "asc" : "desc");
                       }}>
@@ -800,19 +800,19 @@ export default function PerformanceComparison() {
                         <td className="py-3.5 px-2 font-mono font-bold text-slate-200">
                           {con.weight ? `${con.weight}%` : "—"}
                         </td>
-                        <td className="py-3.5 px-2 font-mono font-bold text-slate-200">
+                        <td className="py-3.5 px-2 font-mono font-bold text-slate-200 hidden sm:table-cell">
                           {con.price ? `$${con.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
                         </td>
                         <td className={`py-3.5 px-2 font-mono font-bold ${con.timeframeReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                           {con.timeframeReturn >= 0 ? "+" : ""}{con.timeframeReturn}%
                         </td>
-                        <td className={`py-3.5 px-2 font-mono font-bold ${con.dailyChange >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                        <td className={`py-3.5 px-2 font-mono font-bold ${con.dailyChange >= 0 ? "text-emerald-400" : "text-rose-400"} hidden sm:table-cell`}>
                           {con.dailyChange >= 0 ? "+" : ""}{con.dailyChange?.toFixed(2)}%
                         </td>
-                        <td className="py-3.5 px-2 text-slate-400 font-medium">
+                        <td className="py-3.5 px-2 text-slate-400 font-medium hidden md:table-cell">
                           {con.sector}
                         </td>
-                        <td className="py-3.5 px-2 font-mono font-medium text-slate-400">
+                        <td className="py-3.5 px-2 font-mono font-medium text-slate-400 hidden md:table-cell">
                           {con.marketCap ? `$${(con.marketCap / 1e9).toFixed(2)}B` : "—"}
                         </td>
  

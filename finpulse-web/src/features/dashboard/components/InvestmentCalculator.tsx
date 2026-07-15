@@ -2,10 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Calculator, TrendingUp, IndianRupee } from 'lucide-react';
 
 export default function InvestmentCalculator() {
-  const [isSip, setIsSip] = useState(true);
+  const [isSip] = useState(false);
   
   // Use string states to allow natural typing, clearing, and backspacing
-  const [amountStr, setAmountStr] = useState('5000');
+  const [amountStr, setAmountStr] = useState('25000');
   const [rateStr, setRateStr] = useState('12');
   const [yearsStr, setYearsStr] = useState('10');
 
@@ -104,41 +104,11 @@ export default function InvestmentCalculator() {
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
             <Calculator className="h-5.5 w-5.5 text-blue-600 dark:text-cyan-400" />
-            SIP & Lumpsum Calculator
+            Lumpsum Wealth Calculator
           </h2>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
             Project your wealth growth compounding with mutual funds.
           </p>
-        </div>
-        
-        {/* Toggle SIP / Lumpsum */}
-        <div className="flex bg-slate-100 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 w-full sm:w-auto shadow-inner self-start sm:self-center">
-          <button
-            onClick={() => {
-              setIsSip(true);
-              setAmountStr('25000');
-            }}
-            className={`flex-1 sm:flex-none text-center px-6 py-2 text-xs font-black rounded-xl transition-all ${
-              isSip 
-                ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-md border border-slate-200/30 dark:border-white/5' 
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            SIP
-          </button>
-          <button
-            onClick={() => {
-              setIsSip(false);
-              setAmountStr('100000');
-            }}
-            className={`flex-1 sm:flex-none text-center px-6 py-2 text-xs font-black rounded-xl transition-all ${
-              !isSip 
-                ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-md border border-slate-200/30 dark:border-white/5' 
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Lumpsum
-          </button>
         </div>
       </div>
 

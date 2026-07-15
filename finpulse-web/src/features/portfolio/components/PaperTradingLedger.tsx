@@ -54,11 +54,11 @@ export default function PaperTradingLedger({
           <table className="w-full text-left border-collapse table-auto">
             <thead>
               <tr className="sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-night-900">
-                <th className="py-4 px-6">Timestamp</th>
+                <th className="py-4 px-6 hidden md:table-cell">Timestamp</th>
                 <th className="py-4 px-4">Asset</th>
                 <th className="py-4 px-4 text-center">Type</th>
-                <th className="py-4 px-4 text-right">Shares / Qty</th>
-                <th className="py-4 px-4 text-right">Execution Price</th>
+                <th className="py-4 px-4 text-right hidden sm:table-cell">Shares / Qty</th>
+                <th className="py-4 px-4 text-right hidden md:table-cell">Execution Price</th>
                 <th className="py-4 px-6 text-right">Total Order Value</th>
               </tr>
             </thead>
@@ -94,7 +94,7 @@ export default function PaperTradingLedger({
 
                 return (
                   <tr key={tx.id} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle font-mono">
-                    <td className="py-4 px-6 text-xs text-slate-500">
+                    <td className="py-4 px-6 text-xs text-slate-500 hidden md:table-cell">
                       {new Date(tx.timestamp).toLocaleString()}
                     </td>
                     <td className="py-4 px-4">
@@ -117,10 +117,10 @@ export default function PaperTradingLedger({
                         {tx.type}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-right text-xs text-slate-600 dark:text-slate-300">
+                    <td className="py-4 px-4 text-right text-xs text-slate-600 dark:text-slate-300 hidden sm:table-cell">
                       {tx.shares.toLocaleString()}
                     </td>
-                    <td className="py-4 px-4 text-right text-xs text-slate-600 dark:text-slate-300">
+                    <td className="py-4 px-4 text-right text-xs text-slate-600 dark:text-slate-300 hidden md:table-cell">
                       {activeCurrency}{convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-6 text-right text-xs font-bold text-slate-900 dark:text-white">
