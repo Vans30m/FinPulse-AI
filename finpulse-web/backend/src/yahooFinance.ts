@@ -1,18 +1,5 @@
 import YahooFinance from 'yahoo-finance2';
 import axios from 'axios';
-import { ProxyAgent, setGlobalDispatcher } from 'undici';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-
-const proxyUrl = process.env.PROXY_URL;
-
-let axiosAgent: HttpsProxyAgent<string> | undefined;
-
-if (proxyUrl) {
-  const undiciDispatcher = new ProxyAgent(proxyUrl);
-  setGlobalDispatcher(undiciDispatcher);
-  axiosAgent = new HttpsProxyAgent(proxyUrl);
-  console.log('[Yahoo Service] Routing traffic through outbound proxy:', proxyUrl.replace(/:[^:@]+@/, ':****@'));
-}
 
 export const yahooFinance = new YahooFinance({
   suppressNotices: ['yahooSurvey'],
@@ -54,7 +41,6 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         },
-        ...(axiosAgent ? { httpsAgent: axiosAgent, proxy: false } : {}),
         timeout: 10000
       });
 
@@ -62,12 +48,12 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
       return symbols.map(symbol => {
         const spark = data[symbol];
         if (!spark) return null;
-        
+
         const price = spark.close?.[spark.close.length - 1] || 0;
         const prevClose = spark.chartPreviousClose || price;
         const change = price - prevClose;
         const changePercent = prevClose ? (change / prevClose) * 100 : 0;
-        
+
         return {
           symbol,
           regularMarketPrice: price,
