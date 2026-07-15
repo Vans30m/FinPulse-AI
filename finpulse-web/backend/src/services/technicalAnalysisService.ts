@@ -426,7 +426,7 @@ export async function getAIScore(
       return5y = price5y ? (currentPrice - price5y) / price5y : 0;
 
       const closes = quotes.map(q => q.close).filter((c): c is number => typeof c === 'number');
-      const sma200 = closes.length >= 200 ? closes.slice(-200).reduce((a,b) => a+b, 0) / 200 : currentPrice;
+      const sma200 = closes.length >= 200 ? closes.slice(-200).reduce((a, b) => a + b, 0) / 200 : currentPrice;
 
       if (currentPrice < sma200) trendModifier -= 15;
       else trendModifier += 10;

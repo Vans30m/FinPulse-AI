@@ -1,5 +1,18 @@
 import YahooFinance from 'yahoo-finance2';
 import axios from 'axios';
+import { ProxyAgent } from 'undici';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+
+const proxyUrl = process.env.PROXY_URL;
+
+let undiciDispatcher: ProxyAgent | undefined;
+let axiosAgent: HttpsProxyAgent<string> | undefined;
+
+if (proxyUrl) {
+  undiciDispatcher = new ProxyAgent(proxyUrl);
+  axiosAgent = new HttpsProxyAgent(proxyUrl);
+  console.log('[Yahoo Service] Routing traffic through outbound proxy:', proxyUrl.replace(/:[^:@]+@/, ':****@'));
+}
 
 export const yahooFinance = new YahooFinance({
   suppressNotices: ['yahooSurvey'],
@@ -7,6 +20,7 @@ export const yahooFinance = new YahooFinance({
     logErrors: false
   },
   fetchOptions: {
+    ...(undiciDispatcher ? { dispatcher: undiciDispatcher as any } : {}),
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
     }
@@ -41,6 +55,7 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         },
+        ...(axiosAgent ? { httpsAgent: axiosAgent, proxy: false } : {}),
         timeout: 10000
       });
 
