@@ -1,4 +1,4 @@
-import { yahooFinance } from '../yahooFinance.js';
+import { yahooFinance, fetchQuotesResilient } from '../yahooFinance.js';
 import { GLOBAL_INDICES } from '../config/markets.js';
 
 export async function getGlobalMarketQuote(
@@ -7,9 +7,10 @@ export async function getGlobalMarketQuote(
   region: string
 ) {
   try {
-    const quote = await yahooFinance.quote(symbol);
+    const quotes = await fetchQuotesResilient([symbol]);
+    const quote = quotes[0];
 
-    if (!quote.regularMarketPrice) {
+    if (!quote || !quote.regularMarketPrice) {
       return null;
     }
 
@@ -52,7 +53,7 @@ export async function getGlobalMarketQuote(
 export async function getAllGlobalMarkets() {
   try {
     const symbols = GLOBAL_INDICES.map(m => m.symbol);
-    const quotes = await yahooFinance.quote(symbols);
+    const quotes = await fetchQuotesResilient(symbols);
 
     const quoteMap = new Map(quotes.map(q => [q.symbol, q]));
 
@@ -112,8 +113,9 @@ export async function getAllGlobalMarkets() {
 export async function getIndexSummary(
   symbol: string
 ) {
-  const quote =
-    await yahooFinance.quote(symbol);
+  const quotes = await fetchQuotesResilient([symbol]);
+  const quote = quotes[0];
+  if (!quote) throw new Error("Index data unavailable");
 
   return {
     current: quote.regularMarketPrice,

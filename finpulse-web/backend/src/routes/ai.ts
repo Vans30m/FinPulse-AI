@@ -16,9 +16,15 @@ async function getRecentNewsHeadlines(): Promise<string[]> {
   
   // 1. Fetch from Google News RSS
   try {
-    const feed = await rssParser.parseURL(
-      'https://news.google.com/rss/search?q=stock+market+finance+economy+geopolitics+ceasefire+when:1d&hl=en-US&gl=US&ceid=US:en'
+    const response = await axios.get(
+      'https://news.google.com/rss/search?q=stock+market+finance+economy+geopolitics+ceasefire+when:1d&hl=en-US&gl=US&ceid=US:en',
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        }
+      }
     );
+    const feed = await rssParser.parseString(response.data);
     if (feed && feed.items) {
       feed.items.slice(0, 15).forEach(item => {
         if (item.title) headlines.push(item.title);

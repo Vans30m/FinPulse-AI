@@ -1,4 +1,5 @@
 import YahooFinance from 'yahoo-finance2';
+import axios from 'axios';
 
 export const yahooFinance = new YahooFinance({
   suppressNotices: ['yahooSurvey'],
@@ -22,3 +23,55 @@ const originalModuleExec = (yahooFinance as any)._moduleExec;
   opts.moduleOptions.validateResult = false;
   return originalModuleExec.call(this, opts);
 };
+
+export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
+  try {
+    const quotes = await yahooFinance.quote(symbols);
+    return Array.isArray(quotes) ? quotes : [quotes];
+  } catch (err: any) {
+    console.warn(`[Yahoo Service] Quote fetch failed, falling back to spark/chart:`, err.message);
+    try {
+      const url = 'https://query2.finance.yahoo.com/v8/finance/spark';
+      const response = await axios.get(url, {
+        params: {
+          symbols: symbols.join(','),
+          range: '1d',
+          interval: '1d'
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        },
+        timeout: 10000
+      });
+
+      const data = response.data || {};
+      return symbols.map(symbol => {
+        const spark = data[symbol];
+        if (!spark) return null;
+        
+        const price = spark.close?.[spark.close.length - 1] || 0;
+        const prevClose = spark.chartPreviousClose || price;
+        const change = price - prevClose;
+        const changePercent = prevClose ? (change / prevClose) * 100 : 0;
+        
+        return {
+          symbol,
+          regularMarketPrice: price,
+          regularMarketChange: change,
+          regularMarketChangePercent: changePercent,
+          regularMarketVolume: 0,
+          currency: 'USD',
+          regularMarketOpen: price,
+          regularMarketDayHigh: price,
+          regularMarketDayLow: price,
+          fiftyTwoWeekHigh: price,
+          fiftyTwoWeekLow: price,
+          shortName: symbol.split('.')[0]
+        };
+      }).filter(Boolean);
+    } catch (fallbackErr: any) {
+      console.error(`[Yahoo Service] Resilient spark fallback failed:`, fallbackErr.message);
+      throw err;
+    }
+  }
+}

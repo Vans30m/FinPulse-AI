@@ -1,4 +1,4 @@
-import { yahooFinance } from '../yahooFinance.js';
+import { yahooFinance, fetchQuotesResilient } from '../yahooFinance.js';
 import { DOMESTIC_INDICES, MARKET_UNIVERSE } from '../config/markets.js';
 import { getAllGlobalMarkets } from './globalMarketService.js';
 import NodeCache from 'node-cache';
@@ -55,7 +55,7 @@ export async function getDomesticScreener(
 
   let stocks: any[] = [];
   try {
-    const quotes = await yahooFinance.quote(DOMESTIC_INDICES);
+    const quotes = await fetchQuotesResilient(DOMESTIC_INDICES);
     stocks = quotes
       .filter((q: any) => q && q.symbol)
       .map((quote: any) => ({
@@ -67,43 +67,7 @@ export async function getDomesticScreener(
         volume: quote.regularMarketVolume || 0,
       }));
   } catch (err: any) {
-    console.warn("Failed to batch fetch domestic screener quotes via quote API. Falling back to spark endpoint.", err.message);
-    try {
-      const url = 'https://query2.finance.yahoo.com/v8/finance/spark';
-      const response = await axios.get(url, {
-        params: {
-          symbols: DOMESTIC_INDICES.join(','),
-          range: '1d',
-          interval: '1d'
-        },
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-        },
-        timeout: 10000
-      });
-
-      const data = response.data || {};
-      stocks = DOMESTIC_INDICES.map(symbol => {
-        const spark = data[symbol];
-        if (!spark) return null;
-        
-        const price = spark.close?.[spark.close.length - 1] || 0;
-        const prevClose = spark.chartPreviousClose || price;
-        const change = price - prevClose;
-        const changePercent = prevClose ? (change / prevClose) * 100 : 0;
-        
-        return {
-          symbol,
-          name: symbol.split('.')[0],
-          price,
-          change,
-          changePercent,
-          volume: 0 // spark doesn't return volume
-        };
-      }).filter(Boolean);
-    } catch (fallbackErr: any) {
-      console.error("Failed fallback spark fetch for domestic screener:", fallbackErr.message);
-    }
+    console.error("Failed to fetch domestic screener quotes:", err.message);
   }
 
   if (type === "gainers") {
