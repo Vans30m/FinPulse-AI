@@ -20,6 +20,18 @@ export default function AlertsTimeline({
 }: AlertsTimelineProps) {
   const [liveNews, setLiveNews] = useState<LiveNewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const displayedNews = isMobile ? liveNews.slice(0, 10) : liveNews;
 
   useEffect(() => {
     const fetchAllNews = async () => {
@@ -122,7 +134,7 @@ ${fullPage ? "h-full" : "max-h-[1300px]"}`}>
           ) : liveNews.length === 0 ? (
             <div className="text-center py-10 text-sm text-slate-500">No recent news available.</div>
           ) : (
-            liveNews.map((article) => (
+            displayedNews.map((article) => (
               <a
                 key={article.id}
                 href={article.url}

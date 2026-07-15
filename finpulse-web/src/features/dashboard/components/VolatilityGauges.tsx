@@ -71,7 +71,7 @@ export default function VolatilityGauges() {
     return (
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-4 font-display">Volatility Indicators</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
                 {gauges.map((gauge, idx) => (
                     <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
                         <span className="text-[11px] font-bold text-slate-400 block mb-1">{gauge.name}</span>

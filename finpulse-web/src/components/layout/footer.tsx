@@ -171,7 +171,7 @@ export default function Footer() {
                 required
                 value={email}
                 disabled={status === 'loading' || status === 'success'}
-                placeholder="Enter corporate email address"
+                placeholder="Enter Your Email Address"
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 pr-32 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 transition-colors"
               />

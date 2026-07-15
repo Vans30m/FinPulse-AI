@@ -101,21 +101,23 @@ const EarningsCard = memo(function EarningsCard({
       <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-500" />
 
       <div>
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <StockLogo symbol={earning.symbol} name={earning.name} className="h-11 w-11" imgSizeClass="w-8 h-8" />
+        <div className="flex items-start justify-between gap-2 mb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <StockLogo symbol={earning.symbol} name={earning.name} className="h-11 w-11 shrink-0" imgSizeClass="w-8 h-8" />
 
-            <div className="flex flex-col">
-              <span className="font-mono text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+            <div className="hidden sm:flex flex-col min-w-0">
+              <span className="font-mono text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight truncate block" title={earning.symbol}>
                 {earning.symbol}
               </span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mt-0.5 truncate block">
                 {earning.exchange}
               </span>
             </div>
           </div>
 
-          <CountdownBadge earningsDate={earning.earningsDate} />
+          <div className="shrink-0">
+            <CountdownBadge earningsDate={earning.earningsDate} />
+          </div>
         </div>
 
         <div className="mb-4">
@@ -130,11 +132,11 @@ const EarningsCard = memo(function EarningsCard({
         <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-white/5 pt-3 pb-3 mb-3">
           <div>
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Price ({earning.currency})</span>
-            <div className="flex items-baseline gap-1 mt-0.5">
+            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 mt-0.5">
               <span className="font-mono text-lg font-black tracking-tight text-slate-800 dark:text-slate-100">
                 {earning.price !== undefined ? `${earning.price.toFixed(2)}` : "N/A"}
               </span>
-              <span className={`inline-flex items-center gap-0.5 text-xs font-bold font-mono ${isPositive ? 'text-green-600 dark:text-cyan-400' : 'text-red-500'}`}>
+              <span className={`inline-flex items-center gap-0.5 text-xs font-bold font-mono ${isPositive ? 'text-emerald-650 dark:text-emerald-400' : 'text-rose-500'}`}>
                 {isPositive ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                 {isPositive ? "+" : ""}{earning.changePercent ? earning.changePercent.toFixed(2) : "0.00"}%
               </span>

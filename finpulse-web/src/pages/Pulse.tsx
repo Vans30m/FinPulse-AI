@@ -63,14 +63,14 @@ export default function Pulse() {
             />
 
             <TrendingSectorStreaks />
-            <VolatilityGauges />
+            <AIPickOfTheDay />
           </div>
 
           {/* Right Column (1 col wide on desktop) */}
           <div className="space-y-6 sm:space-y-8">
             <GlobalMarketClock />
             <FearGreedIndex />
-            <AIPickOfTheDay />
+            <VolatilityGauges />
           </div>
         </div>
 
@@ -86,10 +86,10 @@ export default function Pulse() {
 
         {/* Bottom Full-width Row: Calculator & Live News side-by-side with equal height */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8 items-stretch">
-          <div className="h-[600px]">
+          <div className="h-auto lg:h-[600px]">
             <InvestmentCalculator />
           </div>
-          <div className="h-[600px]">
+          <div className="h-auto lg:h-[600px]">
             <AlertsTimeline fullPage={true} />
           </div>
         </div>
