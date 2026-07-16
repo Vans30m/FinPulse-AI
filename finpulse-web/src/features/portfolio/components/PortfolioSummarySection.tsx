@@ -102,15 +102,27 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
                 <div className="relative space-y-3">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">{metric.title}</p>
-                    <div className="mt-2 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                      {metric.format === "currency" ? (
-                        <AnimatedNumber value={metric.value} prefix={currencySymbol} decimals={2} className="font-black" />
-                      ) : metric.format === "percent" ? (
-                        <AnimatedNumber value={metric.value} suffix="%" decimals={2} className="font-black" />
-                      ) : (
-                        <AnimatedNumber value={metric.value} decimals={0} className="font-black" />
-                      )}
-                    </div>
+                    {(() => {
+                      const isPLMetric = ["today-pnl", "total-pnl", "overall-return"].includes(metric.id);
+                      const colorClass = isPLMetric
+                        ? metric.isPositive
+                          ? "text-emerald-650 dark:text-emerald-400"
+                          : "text-rose-600 dark:text-rose-500"
+                        : "text-slate-900 dark:text-white";
+                      const signPrefix = isPLMetric ? (metric.isPositive ? "+" : "-") : "";
+
+                      return (
+                        <div className={`mt-2 text-2xl font-black tracking-tight ${colorClass}`}>
+                          {metric.format === "currency" ? (
+                            <AnimatedNumber value={metric.value} prefix={signPrefix + currencySymbol} decimals={2} className="font-black" />
+                          ) : metric.format === "percent" ? (
+                            <AnimatedNumber value={metric.value} prefix={signPrefix} suffix="%" decimals={2} className="font-black" />
+                          ) : (
+                            <AnimatedNumber value={metric.value} prefix={signPrefix} decimals={0} className="font-black" />
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">{metric.helperText}</p>

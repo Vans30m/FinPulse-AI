@@ -3,7 +3,7 @@ import { Calculator, TrendingUp, IndianRupee } from 'lucide-react';
 
 export default function InvestmentCalculator() {
   const [isSip] = useState(false);
-  
+
   // Use string states to allow natural typing, clearing, and backspacing
   const [amountStr, setAmountStr] = useState('25000');
   const [rateStr, setRateStr] = useState('12');
@@ -40,7 +40,7 @@ export default function InvestmentCalculator() {
 
     const estimatedReturns = Math.max(totalValue - totalInvested, 0);
     const total = Math.max(totalValue, totalInvested);
-    
+
     const investedPercentage = total > 0 ? (totalInvested / total) * 100 : 100;
     const returnsPercentage = total > 0 ? (estimatedReturns / total) * 100 : 0;
 
@@ -98,7 +98,7 @@ export default function InvestmentCalculator() {
         }
       `}</style>
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.01] via-transparent to-cyan-500/[0.02] pointer-events-none" />
-      
+
       {/* Header Row */}
       <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-100 dark:border-slate-800/60">
         <div>
@@ -201,7 +201,7 @@ export default function InvestmentCalculator() {
         {/* Right Side: Results Card with SVG Doughnut Visualizer */}
         <div className="lg:col-span-5 h-full bg-slate-50/70 dark:bg-[#0c1220]/60 rounded-3xl p-6 border border-slate-200/50 dark:border-white/5 flex flex-col items-center justify-between shadow-xl relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.01] via-transparent to-transparent pointer-events-none" />
-          
+
           {/* Doughnut SVG */}
           <div className="relative w-40 h-40 flex-shrink-0 flex items-center justify-center mt-2">
             <svg width="150" height="150" viewBox="0 0 150 150" className="transform -rotate-90 filter drop-shadow-md">
