@@ -115,10 +115,12 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
       animate={{
         height: isScrolled ? "56px" : "64px",
         backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0.95)",
-        boxShadow: isScrolled ? "0 4px 20px -5px rgba(0, 0, 0, 0.05)" : "0 0px 0px rgba(0, 0, 0, 0)"
+        boxShadow: isScrolled 
+          ? "0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02), 0 8px 30px -15px rgba(99, 102, 241, 0.08)" 
+          : "0 0px 0px rgba(0, 0, 0, 0)"
       }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-white/[0.06] backdrop-blur-xl dark:!bg-night-950/80 transition-colors duration-300 flex items-center"
+      className="sticky top-0 z-40 w-full backdrop-blur-xl dark:!bg-night-950/80 transition-colors duration-300 flex items-center"
     >
       <div className="mx-auto flex w-full max-w-none items-center justify-between px-4 sm:px-8">
 
@@ -408,6 +410,10 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Ambient Gradient Glow Line at the bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-600 to-transparent dark:via-cyan-400 opacity-90 dark:opacity-100 pointer-events-none" />
+      {/* Blurred secondary glow layer for light and dark mode ambient radiance */}
+      <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent dark:via-cyan-500/30 blur-[2px] pointer-events-none" />
     </motion.header>
   );
 }

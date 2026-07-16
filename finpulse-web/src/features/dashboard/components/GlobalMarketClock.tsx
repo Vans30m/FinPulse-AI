@@ -15,7 +15,11 @@ const MARKETS_CONFIG: MarketClock[] = [
   { name: "NYSE / NASDAQ", city: "New York", timeZone: "America/New_York", openTime: "09:30", closeTime: "16:00" },
   { name: "NSE / BSE", city: "Mumbai", timeZone: "Asia/Kolkata", openTime: "09:15", closeTime: "15:30" },
   { name: "LSE", city: "London", timeZone: "Europe/London", openTime: "08:00", closeTime: "16:30" },
-  { name: "TSE", city: "Tokyo", timeZone: "Asia/Tokyo", openTime: "09:00", closeTime: "15:00", lunchStart: "11:30", lunchEnd: "12:30" }
+  { name: "TSE", city: "Tokyo", timeZone: "Asia/Tokyo", openTime: "09:00", closeTime: "15:00", lunchStart: "11:30", lunchEnd: "12:30" },
+  { name: "ASX", city: "Sydney", timeZone: "Australia/Sydney", openTime: "10:00", closeTime: "16:00" },
+  { name: "FSX", city: "Frankfurt", timeZone: "Europe/Berlin", openTime: "09:00", closeTime: "17:30" },
+  { name: "TSX", city: "Toronto", timeZone: "America/Toronto", openTime: "09:30", closeTime: "16:00" },
+  { name: "SGX", city: "Singapore", timeZone: "Asia/Singapore", openTime: "09:00", closeTime: "17:00", lunchStart: "12:00", lunchEnd: "13:00" }
 ];
 
 export const GlobalMarketClock = memo(function GlobalMarketClock() {
@@ -140,19 +144,23 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
       <div className="space-y-3.5">
         {MARKETS_CONFIG.map((config) => {
           const status = getMarketStatus(config);
-          
+
           // Flag Mapping
           const getMarketFlag = (city: string) => {
             if (city.includes("New York")) return "🇺🇸";
             if (city.includes("Mumbai")) return "🇮🇳";
             if (city.includes("London")) return "🇬🇧";
             if (city.includes("Tokyo")) return "🇯🇵";
+            if (city.includes("Sydney")) return "🇦🇺";
+            if (city.includes("Frankfurt")) return "🇩🇪";
+            if (city.includes("Toronto")) return "🇨🇦";
+            if (city.includes("Singapore")) return "🇸🇬";
             return "🌐";
           };
 
           return (
-            <div 
-              key={config.name} 
+            <div
+              key={config.name}
               className="p-3.5 rounded-xl border border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-850/35 transition-all duration-300 hover:border-indigo-500/20"
             >
               <div className="flex items-center justify-between">
@@ -195,13 +203,12 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
                       </span>
                     )}
 
-                    <span className={`text-[9px] font-black uppercase tracking-wider ${
-                      status.isOpen 
-                        ? "text-emerald-600 dark:text-emerald-400" 
+                    <span className={`text-[9px] font-black uppercase tracking-wider ${status.isOpen
+                        ? "text-emerald-600 dark:text-emerald-400"
                         : status.isLunch
                           ? "text-amber-600 dark:text-amber-400"
                           : "text-rose-600 dark:text-rose-400"
-                    }`}>
+                      }`}>
                       {status.isOpen ? "Open" : status.isLunch ? "Lunch" : "Closed"}
                     </span>
                   </div>
@@ -215,7 +222,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
               {/* Session Progress bar (only visible when open) */}
               {status.isOpen && (
                 <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-1 mt-3 overflow-hidden">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000"
                     style={{ width: `${status.progressPercent}%` }}
                   />

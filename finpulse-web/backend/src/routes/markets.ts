@@ -73,6 +73,33 @@ technicalRoutes.get("/:symbol", async (req, res) => {
 
 // 4. fundamentalsRoutes handles /api/fundamentals
 const fundamentalsRoutes = express.Router();
+
+fundamentalsRoutes.get("/batch/list", async (req, res) => {
+  try {
+    const symbolsQuery = req.query.symbols;
+    if (!symbolsQuery) {
+      return res.status(400).json({ error: "Missing symbols parameter" });
+    }
+    const symbols = String(symbolsQuery).split(",");
+    const { fetchQuotesResilient } = await import("../yahooFinance.js");
+    const quotes = await fetchQuotesResilient(symbols);
+    
+    const result = quotes.map(quote => {
+      if (!quote) return null;
+      return {
+        symbol: quote.symbol,
+        price: quote.regularMarketPrice ?? 0,
+        changePercent: quote.regularMarketChangePercent ?? 0
+      };
+    }).filter(Boolean);
+
+    res.json(result);
+  } catch (error: any) {
+    console.error("Error in batch list fundamentals:", error);
+    res.status(500).json({ error: "Failed to fetch batch fundamentals" });
+  }
+});
+
 fundamentalsRoutes.get("/:symbol", async (req, res) => {
   try {
     const data = await getFundamentals(req.params.symbol);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getFundamentals } from "../../../services/marketService";
+import { getFundamentalsBatch } from "../../../services/marketService";
 
 interface RibbonItem {
   pair: string;
@@ -30,34 +30,38 @@ export default function ForexCryptoRibbon() {
   useEffect(() => {
     async function fetchTickerData() {
       try {
-        const data = await Promise.all(
-          TICKER_MAP.map(async (t) => {
-            try {
-              const fundamentals = await getFundamentals(t.symbol);
-              const isCrypto = t.symbol.endsWith("-USD");
-              const decimalPlaces = isCrypto ? 2 : 4;
-              
-              const formattedPrice = fundamentals.price.toLocaleString(undefined, {
-                minimumFractionDigits: decimalPlaces,
-                maximumFractionDigits: decimalPlaces,
-              });
+        const symbols = TICKER_MAP.map((t) => t.symbol);
+        const batchData = await getFundamentalsBatch(symbols);
 
-              const isUp = fundamentals.changePercent >= 0;
-              const formattedChange = `${isUp ? "+" : ""}${fundamentals.changePercent.toFixed(2)}%`;
+        const mapped = TICKER_MAP.map((t) => {
+          const matched = batchData.find((item) => item && item.symbol === t.symbol);
+          if (!matched) {
+            return { pair: t.pair, price: "N/A", change: "0.00%", up: true };
+          }
 
-              return {
-                pair: t.pair,
-                price: formattedPrice,
-                change: formattedChange,
-                up: isUp,
-              };
-            } catch (err) {
-              console.error(`Failed to fetch for ticker ${t.symbol}:`, err);
-              return { pair: t.pair, price: "N/A", change: "0.00%", up: true };
-            }
-          })
-        );
-        setItems(data);
+          const priceVal = Number(matched.price) || 0;
+          const changeVal = Number(matched.changePercent) || 0;
+
+          const isCrypto = t.symbol.endsWith("-USD");
+          const decimalPlaces = isCrypto ? 2 : 4;
+
+          const formattedPrice = priceVal.toLocaleString(undefined, {
+            minimumFractionDigits: decimalPlaces,
+            maximumFractionDigits: decimalPlaces,
+          });
+
+          const isUp = changeVal >= 0;
+          const formattedChange = `${isUp ? "+" : ""}${changeVal.toFixed(2)}%`;
+
+          return {
+            pair: t.pair,
+            price: formattedPrice,
+            change: formattedChange,
+            up: isUp,
+          };
+        });
+
+        setItems(mapped);
       } catch (err) {
         console.error("Failed to fetch ribbon data:", err);
       }
