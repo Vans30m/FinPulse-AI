@@ -15,7 +15,8 @@ import { useChart } from "../../../context/ChartContext";
 
 export default function Watchlist() {
   const { openAsset } = useChart();
-  const { data: watchlists = [], isLoading } = useWatchlists();
+  const { data: watchlistsData, isLoading } = useWatchlists();
+  const watchlists = useMemo(() => Array.isArray(watchlistsData) ? watchlistsData : [], [watchlistsData]);
   const createListMutation = useCreateWatchlist();
   const deleteListMutation = useDeleteWatchlist();
   const addItemMutation = useAddWatchlistItem();
@@ -218,22 +219,25 @@ export default function Watchlist() {
   const { data: aiRankingsData, isLoading: aiRankingsLoading, isError: aiRankingsError } = useWatchlistAIRankings(activeListId);
 
   const rankedAssets = useMemo(() => {
-    if (!aiRankingsData) return [];
+    if (!Array.isArray(aiRankingsData)) return [];
     return aiRankingsData
       .slice(0, 5)
       .map((item) => ({ symbol: item.symbol, score: item.score, verdict: item.reason }));
   }, [aiRankingsData]);
 
   const stats = useMemo(() => {
-    const items = activeWatchlist.items || [];
+    const items = activeWatchlist?.items || [];
     let gainers = 0, losers = 0, sumChange = 0;
-    items.forEach((item: any) => {
-      const change = parseFloat(String(item.changePercent || "0").replace(/[^0-9.-]+/g, ""));
-      if (change > 0) gainers++; else if (change < 0) losers++;
-      sumChange += change;
-    });
-    return { total: items.length, gainers, losers, avgChange: `${(sumChange / (items.length || 1)).toFixed(2)}%` };
-  }, [activeWatchlist.items]);
+    if (Array.isArray(items)) {
+      items.forEach((item: any) => {
+        const change = parseFloat(String(item.changePercent || "0").replace(/[^0-9.-]+/g, ""));
+        if (change > 0) gainers++; else if (change < 0) losers++;
+        sumChange += change;
+      });
+    }
+    const totalCount = Array.isArray(items) ? items.length : 0;
+    return { total: totalCount, gainers, losers, avgChange: `${(sumChange / (totalCount || 1)).toFixed(2)}%` };
+  }, [activeWatchlist]);
 
   return (
     <div className="w-full space-y-6">
