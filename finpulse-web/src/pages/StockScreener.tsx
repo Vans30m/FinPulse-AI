@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { 
+import {
   Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, FileText, Check, ChevronDown, MessageSquare, X
 } from 'lucide-react';
 import StockSearch from '../components/ui/StockSearch';
@@ -117,7 +117,7 @@ const getResultDate = (symbol: string) => {
   if (sym.includes('AAPL') || sym.includes('APPLE')) return '29 October 2026';
   if (sym.includes('MSFT') || sym.includes('MICROSOFT')) return '24 October 2026';
   if (sym.includes('NVDA') || sym.includes('NVIDIA')) return '18 November 2026';
-  
+
   // Deterministic calculation
   const day = 10 + (sym.charCodeAt(0) % 20);
   const months = ['July', 'August', 'September', 'October', 'November'];
@@ -130,6 +130,8 @@ const getDynamicQuarters = () => {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
+
+
 
   let yr = currentYear;
   let qIndex = 0;
@@ -179,7 +181,7 @@ const getInsightsYears = () => {
 export default function StockScreener() {
   const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chart' | 'analysis' | 'peers' | 'quarters' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'ratios' | 'insights' | 'shareholding' | 'documents'>('chart');
+  const [activeTab, setActiveTab] = useState<'analysis' | 'workbook' | 'shareholding' | 'documents'>('analysis');
   const [timeframe, setTimeframe] = useState<'1mo' | '3mo' | '1yr' | 'max'>('1yr');
   const [shareholdingPeriod, setShareholdingPeriod] = useState<'quarterly' | 'yearly'>('quarterly');
   const [workbookTab, setWorkbookTab] = useState<'peers' | 'quarters' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'ratios' | 'insights'>('quarters');
@@ -211,7 +213,7 @@ ${selectedStock.about}
 
 This report was dynamically generated and aggregated from the FinPulse AI terminal.
 ==================================================`;
-    
+
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -254,7 +256,7 @@ Slide Outline:
 - Expecting stable demand conditions.
 - Capital expenditure targets outlined for the remainder of the fiscal year.
 ==================================================`;
-    
+
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -279,7 +281,7 @@ Slide Outline:
 [Analyst]: Could you share color on segment demand and the margin outlook?
 
 [Managing Director]: Segment demand is robust. We expect margin stability to hold through the next two quarters as supply chains normalize.`;
-    
+
     setActiveDocumentModal({
       type: 'transcript',
       title: `${selectedStock.symbol} Concall Transcript - ${date}`,
@@ -303,7 +305,7 @@ Slide Outline:
 #### ⚠️ Watchouts & Risks:
 1. Short-term headwinds from raw material pricing.
 2. Premium valuations (P/E ratio of **${selectedStock.peRatio.toFixed(1)}x** is premium relative to peers).`;
-    
+
     setActiveDocumentModal({
       type: 'summary',
       title: `🤖 AI Concall Summary - ${selectedStock.symbol} (${date})`,
@@ -333,7 +335,7 @@ Slide Outline:
 
   const handleFollowToggle = async () => {
     if (!selectedStock) return;
-    
+
     if (isFollowing) {
       removeWatchlistItemMutation.mutate(watchlistItem.id, {
         onSuccess: () => {
@@ -369,56 +371,56 @@ Slide Outline:
   // Shareholding Pattern calculation
   const shareholdingData = useMemo(() => {
     if (!selectedStock) return null;
-    
+
     const quarters = [
       'Jun 2023', 'Sep 2023', 'Dec 2023', 'Mar 2024',
       'Jun 2024', 'Sep 2024', 'Dec 2024', 'Mar 2025',
       'Jun 2025', 'Sep 2025', 'Dec 2025', 'Mar 2026'
     ];
-    
+
     let hash = 0;
     for (let i = 0; i < selectedStock.symbol.length; i++) {
       hash = selectedStock.symbol.charCodeAt(i) + ((hash << 5) - hash);
     }
     const seed = Math.abs(hash) % 100;
-    
-    const initialPromoters = 35 + (seed % 35); 
-    const initialFIIs = 5 + ((seed * 7) % 20); 
-    const initialDIIs = 5 + ((seed * 3) % 15); 
+
+    const initialPromoters = 35 + (seed % 35);
+    const initialFIIs = 5 + ((seed * 7) % 20);
+    const initialDIIs = 5 + ((seed * 3) % 15);
     const initialPublic = 100 - (initialPromoters + initialFIIs + initialDIIs);
-    
+
     const promotersValues: number[] = [];
     const fiiValues: number[] = [];
     const diiValues: number[] = [];
     const publicValues: number[] = [];
     const shareholdersValues: number[] = [];
-    
+
     let p = initialPromoters;
     let f = initialFIIs;
     let d = initialDIIs;
     let pub = initialPublic;
-    let sh = 15000 + (seed * 2000); 
-    
+    let sh = 15000 + (seed * 2000);
+
     for (let i = 0; i < quarters.length; i++) {
       const driftSeed = Math.sin(seed + i);
       const dp = parseFloat((driftSeed * 0.15).toFixed(2));
       const df = parseFloat((Math.cos(seed + i) * 0.2).toFixed(2));
       const dd = parseFloat((Math.sin(seed * 2 + i) * 0.1).toFixed(2));
-      
+
       p = parseFloat(Math.max(10, Math.min(95, p + dp)).toFixed(2));
       f = parseFloat(Math.max(0, Math.min(50, f + df)).toFixed(2));
       d = parseFloat(Math.max(0, Math.min(50, d + dd)).toFixed(2));
       pub = parseFloat((100 - (p + f + d)).toFixed(2));
-      
+
       sh = Math.round(sh * (1 + (Math.sin(i * 1.5) * 0.05)));
-      
+
       promotersValues.push(p);
       fiiValues.push(f);
       diiValues.push(d);
       publicValues.push(pub);
       shareholdersValues.push(sh);
     }
-    
+
     return {
       quarters,
       rows: [
@@ -465,7 +467,7 @@ Slide Outline:
 
   const downloadQuarterlyReport = (quarter: string, index: number) => {
     if (!selectedStock) return;
-    
+
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
@@ -474,10 +476,10 @@ Slide Outline:
 
     const rowsHTML = quarterlyResults.map(row => {
       const val = row.values[index];
-      const displayVal = row.isPercent 
-        ? `${val.toFixed(1)}%` 
-        : row.label.startsWith('EPS') 
-          ? `${currency}${val.toFixed(2)}` 
+      const displayVal = row.isPercent
+        ? `${val.toFixed(1)}%`
+        : row.label.startsWith('EPS')
+          ? `${currency}${val.toFixed(2)}`
           : `${currency}${val.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
       return `
         <tr style="${row.bold ? 'font-weight: bold; background-color: #f8fafc;' : ''}">
@@ -587,7 +589,7 @@ Slide Outline:
   // Compute DMA50, DMA200, and mock volumes
   const chartData = useMemo(() => {
     if (!selectedStock) return [];
-    
+
     const raw = selectedStock.history.map((item) => ({
       time: item.time,
       price: item.price,
@@ -618,11 +620,11 @@ Slide Outline:
   // Compute dynamic Quarterly Results based on stock fundamentals
   const quarterlyResults = useMemo(() => {
     if (!selectedStock) return [];
-    
+
     // Scale base quarterly sales by market cap
     const baseSales = selectedStock.marketCap / 12;
     const quarters = getDynamicQuarters();
-    
+
     // Deterministic hash seed based on company symbol
     const getHashSeed = (str: string) => {
       let hash = 0;
@@ -632,7 +634,7 @@ Slide Outline:
       return Math.abs(hash);
     };
     const seed = getHashSeed(selectedStock.symbol);
-    
+
     const sales: number[] = [];
     const expenses: number[] = [];
     const opProfit: number[] = [];
@@ -648,21 +650,21 @@ Slide Outline:
     quarters.forEach((_q, idx) => {
       const multiplier = 0.85 + ((seed * (idx + 1)) % 30) / 100;
       const qSales = baseSales * multiplier;
-      
+
       const expenseRatio = 0.70 + ((seed * (idx + 5)) % 15) / 100;
       const qExpenses = qSales * expenseRatio;
-      
+
       const qOpProfit = qSales - qExpenses;
       const qOpm = (qOpProfit / qSales) * 100;
-      
+
       const qOtherIncome = qSales * 0.005;
       const qInterest = qSales * 0.015;
       const qDepreciation = qSales * 0.025;
-      
+
       const qPbt = qOpProfit + qOtherIncome - qInterest - qDepreciation;
       const qTaxRate = 25 + ((seed * (idx + 8)) % 10);
       const qNetProfit = qPbt * (1 - qTaxRate / 100);
-      
+
       const sharesOutstanding = selectedStock.marketCap / selectedStock.price;
       const qEps = qNetProfit / sharesOutstanding;
 
@@ -738,21 +740,21 @@ Slide Outline:
 
       const multiplier = 0.90 + ((seed * (idx + 3)) % 20) / 100;
       const yrSales = baseAnnualSales * scale * multiplier;
-      
+
       const expenseRatio = 0.72 + ((seed * (idx + 7)) % 12) / 100;
       const yrExpenses = yrSales * expenseRatio;
-      
+
       const yrOpProfit = yrSales - yrExpenses;
       const yrOpm = (yrOpProfit / yrSales) * 100;
-      
+
       const yrOtherIncome = yrSales * 0.008;
       const yrInterest = yrSales * 0.012;
       const yrDepreciation = yrSales * 0.02;
-      
+
       const yrPbt = yrOpProfit + yrOtherIncome - yrInterest - yrDepreciation;
       const yrTaxRate = 22 + ((seed * (idx + 11)) % 10);
       const yrNetProfit = yrPbt * (1 - yrTaxRate / 100);
-      
+
       const sharesOutstanding = selectedStock.marketCap / selectedStock.price;
       const yrEps = yrNetProfit / sharesOutstanding;
       const yrDivPayout = 5 + ((seed * (idx + 13)) % 35); // 5-40%
@@ -934,7 +936,7 @@ Slide Outline:
 
       const multiplier = 0.90 + ((seed * (idx + 3)) % 20) / 100;
       const yrSales = baseAnnualSales * scale * multiplier;
-      
+
       const expenseRatio = 0.72 + ((seed * (idx + 7)) % 12) / 100;
       const yrExpenses = yrSales * expenseRatio;
       const yrOpProfit = yrSales - yrExpenses;
@@ -942,7 +944,7 @@ Slide Outline:
       const cfoVal = Math.round(yrOpProfit * (0.80 + ((seed * (idx + 9)) % 15) / 100));
       const cfiVal = -Math.round(cfoVal * (0.50 + ((seed * (idx + 10)) % 20) / 100));
       const cffVal = Math.round(cfoVal * (-0.30 + ((seed * (idx + 11)) % 40) / 100));
-      
+
       const netVal = cfoVal + cfiVal + cffVal;
       const fcfVal = cfoVal + cfiVal;
       const cfoOpPercent = (cfoVal / (yrOpProfit || 1)) * 100;
@@ -992,7 +994,7 @@ Slide Outline:
       const db = 40 + ((seed * (idx + 2)) % 95);
       const inv = 30 + ((seed * (idx + 5)) % 320);
       const pay = 20 + ((seed * (idx + 7)) % 110);
-      
+
       const ccc = db + inv - pay;
       const wc = Math.round(ccc * 0.35 + ((seed * (idx + 9)) % 45));
       const rocVal = 8 + ((seed * (idx + 12)) % 40);
@@ -1069,32 +1071,32 @@ Slide Outline:
 
   const creditRatings = useMemo(() => {
     if (!selectedStock) return [];
-    
+
     // Hash-based seed
     let hash = 0;
     for (let i = 0; i < selectedStock.symbol.length; i++) {
       hash = selectedStock.symbol.charCodeAt(i) + ((hash << 5) - hash);
     }
     const seed = Math.abs(hash);
-    
+
     const isIndian = selectedStock.symbol.endsWith('.NS');
-    const agencies = isIndian 
-      ? ['CRISIL Ltd', 'ICRA Ltd', 'CARE Ratings', 'India Ratings', 'SMERA Ratings'] 
+    const agencies = isIndian
+      ? ['CRISIL Ltd', 'ICRA Ltd', 'CARE Ratings', 'India Ratings', 'SMERA Ratings']
       : ['S&P Global', 'Moody\'s', 'Fitch Ratings', 'DBRS Morningstar'];
-      
+
     const ratings = [];
     const baseYears = [2026, 2025, 2024, 2023];
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+
     for (let i = 0; i < 4; i++) {
       const year = baseYears[i];
       const monthIdx = (seed + i * 3) % 12;
       const month = months[monthIdx];
       const day = 1 + ((seed + i * 7) % 28);
       const date = `${day} ${month} ${year}`;
-      
+
       const agency = agencies[(seed + i) % agencies.length];
-      
+
       // Upgrade or Downgrade based on financials
       const health = selectedStock.roce + selectedStock.roe;
       let label = 'Rating update';
@@ -1106,10 +1108,10 @@ Slide Outline:
         label = 'Rating downgrade';
         status = 'Negative';
       }
-      
+
       ratings.push({ label, date, agency, status });
     }
-    
+
     return ratings;
   }, [selectedStock]);
 
@@ -1173,34 +1175,71 @@ Slide Outline:
     }
   }, [timeframe]);
 
+  // Scroll Spy state and listener
+  useEffect(() => {
+    if (!selectedStock) return;
 
+    const handleScroll = () => {
+      // Check if we are at the bottom of the page
+      const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50;
+
+      const sections = [
+        { id: 'screener-analysis', tab: 'analysis' },
+        { id: 'screener-workbook', tab: 'workbook' },
+        { id: 'screener-shareholding', tab: 'shareholding' },
+        { id: 'screener-documents', tab: 'documents' }
+      ];
+
+      if (isAtBottom) {
+        setActiveTab('documents');
+        return;
+      }
+
+      // Otherwise, find the section closest to the top of the viewport
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sections[i].id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 150) {
+            setActiveTab(sections[i].tab as any);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    // Initial check
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [selectedStock]);
 
   return (
-    <div className="min-h-[85vh] bg-[#f8f9fa] dark:bg-night-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 rounded-3xl p-3 sm:p-4 md:p-8 relative">
-      
+    <div className="min-h-[85vh] bg-[#090d16] text-slate-200 font-sans transition-colors duration-300 relative w-full p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl border border-white/5">
+
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-white/50 dark:bg-night-950/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-3xl">
+        <div className="absolute inset-0 bg-white/50 dark:bg-night-900/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-3xl">
           <div className="h-10 w-10 border-4 border-blue-600 dark:border-cyan-400 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       {/* 1. LANDING SEARCH VIEW */}
       {!selectedStock ? (
-        <div className="min-h-[70vh] flex flex-col justify-center items-center max-w-2xl mx-auto text-center space-y-8 py-12">
+        <div className="min-h-[70vh] flex flex-col justify-center items-center max-w-2xl mx-auto text-center space-y-8 py-12 px-4 sm:px-6 bg-[#f8f9fa] dark:bg-night-950 rounded-3xl border border-slate-200 dark:border-white/5 mt-8 shadow-sm">
           {/* Logo & Subtitle */}
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-2">
               <span className="text-slate-800 dark:text-white font-extrabold text-5xl tracking-tight">
                 screener
               </span>
-              <svg 
-                className="h-10 w-10 text-emerald-500 dark:text-emerald-450" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="3.2" 
-                strokeLinecap="round" 
+              <svg
+                className="h-10 w-10 text-emerald-500 dark:text-emerald-450"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3.2"
+                strokeLinecap="round"
                 strokeLinejoin="round"
               >
                 <line x1="18" y1="20" x2="18" y2="10" />
@@ -1215,7 +1254,7 @@ Slide Outline:
 
           {/* Search bar wrapper */}
           <div className="w-full bg-white dark:bg-night-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200/50 dark:border-white/5 p-2">
-            <StockSearch 
+            <StockSearch
               placeholder="Search for a company"
               onSelect={(asset) => handleSelectStock(asset.symbol)}
             />
@@ -1238,108 +1277,66 @@ Slide Outline:
           </div>
         </div>
       ) : (
-        
+
         // 2. DETAILED ANALYSIS VIEW
         <div className="space-y-6 animate-fadeIn relative">
           {/* Ambient background glows for glassmorphic elements */}
           <div className="absolute top-10 left-1/4 w-72 h-72 bg-blue-400/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-400/10 dark:bg-purple-650/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-20 left-1/3 w-96 h-96 bg-blue-300/5 dark:bg-blue-900/5 rounded-full blur-3xl pointer-events-none" />
-          
-          {/* Header Row: Back, mini search */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/5 pb-4">
-            <button 
-              onClick={() => setSelectedStock(null)}
-              className="flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:hover:text-cyan-400 font-bold text-sm transition-colors"
-            >
-              <ArrowLeft className="h-4.5 w-4.5" /> Back to Search
-            </button>
 
-            <div className="w-full md:w-80 bg-white dark:bg-night-900 rounded-xl border border-slate-200 dark:border-white/5 p-1 shadow-sm">
-              <StockSearch 
-                placeholder="Search for another company"
-                onSelect={(asset) => handleSelectStock(asset.symbol)}
-              />
+          {/* Streamlined Combined Company Header Row */}
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/5 pb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setSelectedStock(null)}
+                className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white font-bold text-xs transition-colors shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Search</span>
+              </button>
+
+              <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 hidden sm:block shrink-0" />
+
+              <div className="flex items-center gap-2.5 min-w-0">
+                <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight truncate leading-none">
+                  {selectedStock.name}
+                </h1>
+                <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-cyan-500/10 text-blue-700 dark:text-cyan-400 text-[9px] font-black uppercase rounded tracking-wider shrink-0 leading-none">
+                  {selectedStock.symbol}
+                </span>
+              </div>
+
+              <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 shrink-0" />
+
+              <div className="flex items-baseline gap-2 shrink-0">
+                <span className="font-mono text-sm font-black text-slate-900 dark:text-white leading-none">
+                  {currencySymbol}{selectedStock.price.toFixed(2)}
+                </span>
+                <span className={`font-mono text-[10px] font-black leading-none ${selectedStock.changePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {selectedStock.changePercent >= 0 ? '+' : ''}{selectedStock.changePercent.toFixed(2)}%
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Tab Selection Navigation Bar */}
-          <div className="flex items-center gap-1 bg-slate-100/70 dark:bg-white/[0.02] backdrop-blur-md p-1 rounded-full border border-slate-200/50 dark:border-white/5 shadow-inner mt-2 w-full overflow-x-auto scrollbar-none">
-            <div className="flex items-center gap-1 min-w-max">
-              {[
-                { id: 'screener-chart', label: 'Chart', tab: 'chart' },
-                { id: 'screener-analysis', label: 'Analysis', tab: 'analysis' },
-                { id: 'screener-peers', label: 'Peers', tab: 'peers' },
-                { id: 'screener-quarters', label: 'Quarters', tab: 'quarters' },
-                { id: 'screener-pnl', label: 'P&L', tab: 'pnl' },
-                { id: 'screener-balance-sheet', label: 'Balance Sheet', tab: 'balance-sheet' },
-                { id: 'screener-cash-flow', label: 'Cash Flow', tab: 'cash-flow' },
-                { id: 'screener-ratios', label: 'Ratios', tab: 'ratios' },
-                { id: 'screener-insights', label: 'Insights', tab: 'insights' },
-                { id: 'screener-shareholding', label: 'Holdings', tab: 'shareholding' },
-                { id: 'screener-documents', label: 'Docs', tab: 'documents' },
-              ].map((tab) => (
-                <button
-                  key={tab.tab}
-                  onClick={() => {
-                    setActiveTab(tab.tab as any);
-                    if (['peers', 'quarters', 'pnl', 'balance-sheet', 'cash-flow', 'ratios', 'insights'].includes(tab.tab)) {
-                      setWorkbookTab(tab.tab as any);
-                      const el = document.getElementById('screener-workbook');
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    } else {
-                      const el = document.getElementById(tab.id);
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }
-                  }}
-                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-full transition-all duration-300 whitespace-nowrap ${
-                    activeTab === tab.tab
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 dark:from-cyan-400 dark:to-teal-400 dark:text-slate-950 dark:shadow-cyan-400/20 transform scale-105'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-white/5'
-                  }`}
-                  title={tab.label}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Company Title Info Section */}
-          <div className="bg-white dark:bg-night-900 border border-slate-200/60 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col gap-3">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight leading-tight break-words">{selectedStock.name}</h1>
-                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-cyan-500/10 text-blue-700 dark:text-cyan-400 text-[10px] font-black uppercase rounded-md tracking-wider shrink-0">
-                    {selectedStock.symbol}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-baseline gap-2 mt-1.5">
-                  <span className="font-mono text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{currencySymbol}{selectedStock.price.toFixed(2)}</span>
-                  <span className={`font-mono text-sm font-extrabold ${selectedStock.changePercent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-450'}`}>
-                    {selectedStock.changePercent >= 0 ? '+' : ''}{selectedStock.changePercent.toFixed(2)}%
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Live Price</span>
-                </div>
+            <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
+              <div className="w-full sm:w-60 bg-white dark:bg-night-900 rounded-xl border border-slate-200 dark:border-white/5 p-0.5 shadow-sm">
+                <StockSearch
+                  placeholder="Search another company"
+                  onSelect={(asset) => handleSelectStock(asset.symbol)}
+                />
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <button className="flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all shadow-sm whitespace-nowrap">
-                  <Download className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Export</span> Excel
+                <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all shadow-sm whitespace-nowrap">
+                  <Download className="h-3.5 w-3.5" /> Export Excel
                 </button>
                 <button
                   onClick={handleFollowToggle}
                   disabled={addWatchlistItemMutation.isPending || removeWatchlistItemMutation.isPending || createWatchlistMutation.isPending}
-                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md whitespace-nowrap ${
-                    isFollowing
-                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 border border-emerald-500/30'
-                      : 'bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm whitespace-nowrap ${isFollowing
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 border border-emerald-500/30'
+                    : 'bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950'
+                    }`}
                 >
                   {isFollowing ? (
                     <>
@@ -1354,981 +1351,1027 @@ Slide Outline:
               </div>
             </div>
           </div>
-                  {/* Content Layout Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Left Column: Chart & Key Metrics Grid */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Chart Card */}
-              <div id="screener-chart" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-4 sm:space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
-                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
-                      <TrendingUp className="h-4.5 w-4.5" />
-                    </span>
-                    Share Price & Volume
-                  </h3>
-                  
-                  {/* Timeframe Selectors */}
-                  <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 shadow-inner">
-                    {(['1mo', '3mo', '1yr', 'max'] as const).map((tf) => (
-                      <button
-                        key={tf}
-                        onClick={() => setTimeframe(tf)}
-                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${
-                          timeframe === tf 
-                            ? 'bg-white text-slate-855 dark:bg-white/10 dark:text-white shadow-sm' 
-                            : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                        }`}
-                      >
-                        {tf}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Composed Chart Container */}
-                <div className="h-72 w-full font-mono text-xs">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" className="dark:stroke-white/5" />
-                      <XAxis dataKey="time" stroke="#888888" tickLine={false} axisLine={false} />
-                      
-                      {/* Left Axis for Volume */}
-                      <YAxis yAxisId="left" stroke="#888888" tickLine={false} axisLine={false} orientation="left" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                      
-                      {/* Right Axis for Price */}
-                      <YAxis yAxisId="right" stroke="#888888" tickLine={false} axisLine={false} orientation="right" domain={['auto', 'auto']} tickFormatter={(v) => `${currencySymbol}${v}`} />
-                      
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(9, 13, 26, 0.95)', 
-                          borderRadius: '16px', 
-                          border: '1px solid rgba(255,255,255,0.1)', 
-                          color: '#fff' 
-                        }} 
-                      />
-
-                      {/* Render Volume Bars */}
-                      {showVolume && (
-                        <Bar yAxisId="left" dataKey="volume" fill="#93c5fd" opacity={0.35} barSize={8} radius={[2, 2, 0, 0]} />
-                      )}
-
-                      {/* Render Price Line */}
-                      {showPrice && (
-                        <Line yAxisId="right" type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2.2} dot={false} name="Price" />
-                      )}
-
-                      {/* Render 50 DMA */}
-                      {showDMA50 && (
-                        <Line yAxisId="right" type="monotone" dataKey="dma50" stroke="#f59e0b" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="50 DMA" />
-                      )}
-
-                      {/* Render 200 DMA */}
-                      {showDMA200 && (
-                        <Line yAxisId="right" type="monotone" dataKey="dma200" stroke="#ef4444" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="200 DMA" />
-                      )}
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Checkboxes Legend Row at the bottom */}
-                <div className="flex flex-wrap items-center justify-center gap-6 pt-4 border-t border-slate-100 dark:border-white/5 text-xs font-bold text-slate-655 dark:text-slate-350">
-                  <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
-                    <input type="checkbox" checked={showPrice} onChange={(e) => setShowPrice(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
-                    <span>Price on {isIndian ? 'NSE' : 'NASDAQ'}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
-                    <input type="checkbox" checked={showDMA50} onChange={(e) => setShowDMA50(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
-                    <span>50 DMA</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
-                    <input type="checkbox" checked={showDMA200} onChange={(e) => setShowDMA200(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
-                    <span>200 DMA</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
-                    <input type="checkbox" checked={showVolume} onChange={(e) => setShowVolume(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
-                    <span>Volume</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Key Financial Ratios */}
-              <div id="screener-key-ratios" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-                <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4 sm:mb-5 pb-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
-                    <Bookmark className="h-4 w-4" />
-                  </span>
-                  Key Financial Ratios
-                </h3>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                  {[
-                    { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}`, desc: 'Total market value', icon: '💰' },
-                    { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price', icon: '📈' },
-                    { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}`, desc: '52-week stock range', icon: '↕️' },
-                    { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x`, desc: 'Price-to-earnings multiple', icon: '📊' },
-                    { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}`, desc: 'Net asset value per share', icon: '📕' },
-                    { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%`, desc: 'Annual dividend return', icon: '💸' },
-                    { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%`, desc: 'Capital deployment return', icon: '⚡' },
-                    { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%`, desc: 'Return on equity', icon: '🎯' },
-                    { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}`, desc: 'Par value per share', icon: '💎' },
-                  ].map((ratio) => (
-                    <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
-                      <span className="text-lg sm:text-xl pt-0.5 shrink-0">{ratio.icon}</span>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{ratio.label}</span>
-                        <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{ratio.value}</span>
-                        <span className="text-[8px] text-slate-400 mt-1 font-semibold leading-tight">{ratio.desc}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Right Column: AI Advisor & Profile */}
-            <div className="lg:col-span-1 space-y-6">
-              
-              {/* AI Strength & Risk Advisor */}
-              <div id="screener-analysis" className="bg-gradient-to-br from-slate-900 via-night-950 to-indigo-950 text-white border border-slate-800 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-4 sm:space-y-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
-                
-                {/* Score Header */}
-                <div className="flex items-center gap-4 border-b border-white/10 pb-4">
-                  {/* Circular Progress Ring */}
-                  <div className="relative h-16 w-16 shrink-0 flex items-center justify-center">
-                    <svg className="absolute transform -rotate-90 w-16 h-16">
-                      <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.06)" strokeWidth="4" fill="transparent" />
-                      <circle cx="32" cy="32" r="28" stroke="url(#healthGrad)" strokeWidth="4" fill="transparent" strokeDasharray={176} strokeDashoffset={176 - (176 * healthScore) / 100} strokeLinecap="round" />
-                      <defs>
-                        <linearGradient id="healthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#22c55e" />
-                          <stop offset="100%" stopColor="#06b6d4" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <span className="font-mono text-base font-black text-white">{healthScore}</span>
-                  </div>
-                  
-                  <div>
-                    <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 animate-pulse" /> AI Health Index
-                    </span>
-                    <h3 className="text-sm font-extrabold text-white mt-0.5">
-                      {healthScore >= 75 ? 'Excellent Health' : healthScore >= 60 ? 'Strong Performance' : 'Stable Outlook'}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Pros List */}
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" /> Strategic Strengths
-                  </h4>
-                  <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="text-emerald-400 font-black">✓</span>
-                      <span>Healthy dividend payout ratio maintained.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-emerald-400 font-black">✓</span>
-                      <span>High capital efficiency (ROCE of {selectedStock.roce.toFixed(2)}%).</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-emerald-400 font-black">✓</span>
-                      <span>Consistent historical growth trajectory.</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Cons List */}
-                <div className="space-y-3 pt-3 border-t border-white/10">
-                  <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-rose-455" /> Risk Factors
-                  </h4>
-                  <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="text-rose-400 font-black">✗</span>
-                      <span>Trading high relative to book value ({(selectedStock.price / selectedStock.bookValue).toFixed(1)}x).</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-rose-400 font-black">✗</span>
-                      <span>P/E ratio of {selectedStock.peRatio.toFixed(1)}x is premium.</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-5 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-4">
-                <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
-                  <Globe className="h-4 w-4 text-blue-600 dark:text-cyan-400" /> Company Profile
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed line-clamp-4" title={selectedStock.about}>
-                  {selectedStock.about}
-                </p>
-                <div className="pt-2.5 border-t border-slate-100 dark:border-white/5">
-                  <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Key Drivers</h4>
-                  <ul className="space-y-2 text-xs text-slate-500 dark:text-slate-400 font-semibold mb-3">
-                    <li className="flex items-center gap-2 min-w-0">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                      <span>{selectedStock.roce > 18 ? 'High capital efficiency with' : 'Stable'} ROCE of {selectedStock.roce.toFixed(2)}%</span>
-                    </li>
-                    <li className="flex items-center gap-2 min-w-0">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                      <span>{selectedStock.peRatio > 25 ? 'Premium valuation multiple' : 'Reasonable pricing'} at {selectedStock.peRatio.toFixed(1)}x P/E</span>
-                    </li>
-                    <li className="flex items-center gap-2 min-w-0">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                      <span>Strong return on equity (ROE) of {selectedStock.roe.toFixed(2)}%</span>
-                    </li>
-                    {selectedStock.dividendYield > 0.5 && (
-                      <li className="flex items-center gap-2 min-w-0">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                        <span>Consistent dividend yield of {selectedStock.dividendYield.toFixed(2)}%</span>
-                      </li>
-                    )}
-                    <li className="flex items-center gap-2 min-w-0">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                      <span>52-Week Range: {currencySymbol}{selectedStock.low52w.toFixed(0)} - {currencySymbol}{selectedStock.high52w.toFixed(0)}</span>
-                    </li>
-                  </ul>
-                  <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 dark:border-white/5">
-                    <button className="flex-1 text-center py-1.5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-300 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
-                      Related Party
-                    </button>
-                    <button className="flex-1 text-center py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-600 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
-                      Product Segments
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Technical Indicator Summary */}
-              {technicals && (
-                <div className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-5 shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
-                      <TrendingUp className="h-3.5 w-3.5 text-emerald-500" /> Technical Summary
-                    </h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-xs">
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
-                      <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">RSI</span>
-                      <span className="font-mono text-[10px] sm:text-xs font-black text-slate-800 dark:text-white mt-1">{technicals.rsi.toFixed(0)}</span>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
-                      <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">Beta</span>
-                      <span className="font-mono text-[10px] sm:text-xs font-black text-slate-800 dark:text-white mt-1">{technicals.beta.toFixed(1)}x</span>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
-                      <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">MACD</span>
-                      <span className={`font-black text-[8px] sm:text-[9px] mt-1 ${technicals.macd.includes('Bullish') ? 'text-emerald-500' : 'text-rose-500'}`}>{technicals.macd.split(' ')[0]}</span>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
-                      <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">Trend</span>
-                      <span className="font-black text-[8px] sm:text-[9px] text-slate-800 dark:text-white mt-1 truncate w-full">{technicals.trend.split(' ').pop()}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Unified Financial Statements Workbook Terminal */}
-          <div id="screener-workbook" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6 mt-6 w-full relative">
-            
-            {/* Terminal Header */}
-            <div className="flex flex-col gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
-                      <FileText className="h-4.5 w-4.5" />
-                    </span>
-                    Financial Workbook
-                  </h3>
-                  <p className="text-xs text-slate-400 font-bold mt-1">
-                    Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Workbook Tabs */}
-              <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 text-[10px] font-black uppercase tracking-wider overflow-x-auto custom-scrollbar w-full">
-                {[
-                  { id: 'peers', label: 'Peers' },
-                  { id: 'quarters', label: 'Quarters' },
-                  { id: 'pnl', label: 'P&L' },
-                  { id: 'balance-sheet', label: 'Bal. Sheet' },
-                  { id: 'cash-flow', label: 'Cash Flow' },
-                  { id: 'ratios', label: 'Ratios' },
-                  { id: 'insights', label: 'AI Insights' }
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setWorkbookTab(t.id as any)}
-                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all font-bold shrink-0 ${
-                      workbookTab === t.id
-                        ? 'bg-white text-blue-600 dark:bg-white/10 dark:text-cyan-400 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
+          {/* Main content wrapper with sticky left sidebar */}
+          <div className="flex flex-col lg:flex-row gap-6 items-start w-full relative mt-4">
+            {/* Sticky Left Sidebar Navbar */}
+            <div className="hidden lg:flex lg:flex-col gap-1.5 w-52 shrink-0 sticky top-24 self-start bg-transparent p-0 z-20">
+              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">Sections</div>
+              {[
+                { id: 'screener-analysis', label: 'Analysis', tab: 'analysis' },
+                { id: 'screener-workbook', label: 'Financial Workbook', tab: 'workbook' },
+                { id: 'screener-shareholding', label: 'Shareholding Pattern', tab: 'shareholding' },
+                { id: 'screener-documents', label: 'Document Hub', tab: 'documents' },
+              ].map((tab) => (
+                <button
+                  key={tab.tab}
+                  onClick={() => {
+                    setActiveTab(tab.tab as any);
+                    const el = document.getElementById(tab.id);
+                    if (el) {
+                      const headerOffset = 90; // Adjust for sticky header height
+                      const elementPosition = el.getBoundingClientRect().top;
+                      const offsetPosition = elementPosition + window.scrollY - headerOffset;
+                      window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }}
+                  className={`px-3 py-2 text-[10px] font-black uppercase tracking-wider transition-all duration-200 text-left w-full ${activeTab === tab.tab
+                    ? 'border-l-2 border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400 pl-4 font-black bg-slate-50/50 dark:bg-white/[0.01]'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white border-l border-transparent pl-3 hover:bg-slate-50/30 dark:hover:bg-white/[0.005]'
                     }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
+                  title={tab.label}
+                >
+                  {tab.label}
+                </button>
+              ))}   {/* ERROR WAS COMING (FIX)*/}
             </div>
 
-            {/* Workbook Content Panel */}
-            <div className="w-full">
-              
-              {/* Tab 1: Peer Comparison */}
-              {workbookTab === 'peers' && peerData && (
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold text-slate-450 uppercase tracking-wider">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span>Industry:</span>
-                      {peerData.category.map((cat, idx) => (
-                        <span key={cat} className="flex items-center gap-1">
-                          {idx > 0 && <span className="text-slate-300 dark:text-slate-700 font-normal">&gt;</span>}
-                          <span className={idx === peerData.category.length - 1 ? "text-blue-600 dark:text-cyan-400 font-black" : ""}>{cat}</span>
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-blue-650 bg-blue-50 dark:text-cyan-400 dark:bg-cyan-950/20 px-2.5 py-1 rounded-lg">
-                      Part of {isIndian ? 'BSE Industrials' : 'NASDAQ 105'}
-                    </span>
-                  </div>
-
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
-                          <th className="py-2.5 px-3 w-8 text-center font-sans">S.No.</th>
-                          <th className="py-2.5 px-3 w-40 text-left font-sans">Name</th>
-                          <th className="py-2.5 px-3 text-right font-sans">Price {currencySymbol}</th>
-                          <th className="py-2.5 px-3 text-right font-sans">P/E</th>
-                          <th className="py-2.5 px-3 text-right font-sans">Mar Cap {isIndian ? 'Cr.' : 'M'}</th>
-                          <th className="py-2.5 px-3 text-right font-sans">Div Yield %</th>
-                          <th className="py-2.5 px-3 text-right font-sans">NP Qtr {isIndian ? 'Cr.' : 'M'}</th>
-                          <th className="py-2.5 px-3 text-right font-sans">Qtr Profit Var %</th>
-                          <th className="py-2.5 px-3 text-right font-sans">Sales Qtr {isIndian ? 'Cr.' : 'M'}</th>
-                          <th className="py-2.5 px-3 text-right font-sans">Qtr Sales Var %</th>
-                          <th className="py-2.5 px-3 text-right font-sans">ROCE %</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
-                        {peerData.peers.map((peer, idx) => {
-                          const isSelf = peer.symbol.toUpperCase() === selectedStock.symbol.toUpperCase();
-                          const displayPrice = isSelf ? selectedStock.price : peer.price;
-                          const displayPE = isSelf ? selectedStock.peRatio : peer.pe;
-                          const displayMCap = isSelf ? selectedStock.marketCap : peer.mCap;
-                          const displayDiv = isSelf ? selectedStock.dividendYield : peer.div;
-                          const displayROCE = isSelf ? selectedStock.roce : peer.roce;
-
-                          return (
-                            <tr 
-                              key={peer.symbol} 
-                              onClick={() => !isSelf && handleSelectStock(peer.symbol)}
-                              className={`hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer ${isSelf ? 'bg-blue-500/5 font-black text-slate-900 dark:text-white border-y border-blue-500/20' : ''}`}
-                            >
-                              <td className="py-3 px-3 text-center">{idx + 1}</td>
-                              <td className="py-3 px-3 font-sans text-left font-bold text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
-                                {peer.name}
-                                {isSelf && <span className="text-[8px] bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 font-black uppercase px-1 rounded">YOU</span>}
-                              </td>
-                              <td className="py-3 px-3 text-right">{displayPrice.toFixed(2)}</td>
-                              <td className="py-3 px-3 text-right">{displayPE.toFixed(2)}</td>
-                              <td className="py-3 px-3 text-right">{displayMCap.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                              <td className="py-3 px-3 text-right">{displayDiv.toFixed(2)}%</td>
-                              <td className="py-3 px-3 text-right">{peer.npQtr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                              <td className={`py-3 px-3 text-right font-bold ${peer.qtrProfitVar >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                {peer.qtrProfitVar >= 0 ? '+' : ''}{peer.qtrProfitVar.toFixed(1)}%
-                              </td>
-                              <td className="py-3 px-3 text-right">{peer.salesQtr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                              <td className={`py-3 px-3 text-right font-bold ${peer.qtrSalesVar >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                {peer.qtrSalesVar >= 0 ? '+' : ''}{peer.qtrSalesVar.toFixed(1)}%
-                              </td>
-                              <td className="py-3 px-3 text-right font-bold">{displayROCE.toFixed(2)}%</td>
-                            </tr>
-                          );
-                        })}
-                        
-                        {/* Median Row */}
-                        <tr className="bg-slate-50/50 dark:bg-white/[0.01] border-t-2 border-slate-200 dark:border-white/10 font-bold text-slate-900 dark:text-white">
-                          <td className="py-3 px-3 font-sans"></td>
-                          <td className="py-3 px-3 font-sans text-left text-[9px] uppercase tracking-wider text-slate-400">Median ({peerData.peers.length} Co.)</td>
-                          <td className="py-3 px-3 text-right">
-                            {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.price : p.price), 0) / peerData.peers.length).toFixed(2)}
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.peRatio : p.pe), 0) / peerData.peers.length).toFixed(2)}
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.marketCap : p.mCap), 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.dividendYield : p.div), 0) / peerData.peers.length).toFixed(2)}%
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            {(peerData.peers.reduce((acc, p) => acc + p.npQtr, 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </td>
-                          <td className="py-3 px-3 text-right text-emerald-500">
-                            +{(peerData.peers.reduce((acc, p) => acc + p.qtrProfitVar, 0) / peerData.peers.length).toFixed(1)}%
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            {(peerData.peers.reduce((acc, p) => acc + p.salesQtr, 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </td>
-                          <td className="py-3 px-3 text-right text-emerald-500">
-                            +{(peerData.peers.reduce((acc, p) => acc + p.qtrSalesVar, 0) / peerData.peers.length).toFixed(1)}%
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.roce : p.roce), 0) / peerData.peers.length).toFixed(2)}%
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 2: Quarterly Results */}
-              {workbookTab === 'quarters' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-2 shrink-0">
-                    <span className="text-xs font-bold text-slate-450 uppercase tracking-wider">Statement of Operations (13 Quarters)</span>
-                    <button className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-cyan-950/20 text-blue-650 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
-                      Product Segments
+            {/* Right main content container */}
+            <div className="flex-1 min-w-0 space-y-6 w-full">
+              {/* Tab Selection Navigation Bar (Mobile / Tablet only) */}
+              <div className="lg:hidden flex items-center gap-1 bg-slate-100/70 dark:bg-white/[0.02] backdrop-blur-md p-1 rounded-full border border-slate-200/50 dark:border-white/5 shadow-inner mt-2 w-full overflow-x-auto scrollbar-none">
+                <div className="flex items-center gap-1 min-w-max">
+                  {[
+                    { id: 'screener-analysis', label: 'Analysis', tab: 'analysis' },
+                    { id: 'screener-workbook', label: 'Financial Workbook', tab: 'workbook' },
+                    { id: 'screener-shareholding', label: 'Shareholding Pattern', tab: 'shareholding' },
+                    { id: 'screener-documents', label: 'Document Hub', tab: 'documents' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.tab}
+                      onClick={() => {
+                        setActiveTab(tab.tab as any);
+                        const el = document.getElementById(tab.id);
+                        if (el) {
+                          const headerOffset = 90; // Adjust for sticky header height
+                          const elementPosition = el.getBoundingClientRect().top;
+                          const offsetPosition = elementPosition + window.scrollY - headerOffset;
+                          window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                          });
+                        }
+                      }}
+                      className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-full transition-all duration-300 whitespace-nowrap ${activeTab === tab.tab
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 dark:from-cyan-400 dark:to-teal-400 dark:text-slate-950 dark:shadow-cyan-400/20 transform scale-105'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-white/5'
+                        }`}
+                      title={tab.label}
+                    >
+                      {tab.label}
                     </button>
-                  </div>
-
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
-                          <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
-                          {getDynamicQuarters().map((q) => (
-                            <th key={q} className="py-2.5 px-1 text-right font-mono">{q.replace(' 20', ' ')}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
-                        {quarterlyResults.map((row) => (
-                          <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
-                            <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
-                            {row.values.map((v, i) => (
-                              <td key={i} className="py-2.5 px-1 text-right">
-                                {row.isPercent ? v.toFixed(1) + '%' : v.toFixed(1)}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                        
-                        {/* Raw PDF Row */}
-                        <tr className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors text-slate-400">
-                          <td className="py-2.5 px-3 text-left font-sans">Raw PDF</td>
-                          {getDynamicQuarters().map((quarter, i) => (
-                            <td key={i} className="py-2.5 px-1 text-right">
-                              <button 
-                                onClick={() => downloadQuarterlyReport(quarter, i)}
-                                className="inline-flex items-center justify-center text-red-500 hover:text-red-600 transition-colors cursor-pointer"
-                                title={`Download PDF Report for ${quarter}`}
-                              >
-                                <FileText className="h-3.5 w-3.5" />
-                              </button>
-                            </td>
-                          ))}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  {/* Result Notification Badge */}
-                  <div className="pt-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50/80 dark:bg-blue-950/20 text-blue-755 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-bold shadow-sm">
-                      Upcoming result date: {getResultDate(selectedStock.symbol)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 3: Profit & Loss */}
-              {workbookTab === 'pnl' && (
-                <div className="space-y-4">
-                  <span className="text-xs font-bold text-slate-450 uppercase tracking-wider block">Annual Profit & Loss Statement (Historical)</span>
-                  
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
-                          <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
-                          {getDynamicYears().map((q) => (
-                            <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
-                        {pnlResults.rows.map((row) => (
-                          <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
-                            <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
-                            {row.values.map((v, i) => (
-                              <td key={i} className="py-2.5 px-1 text-right">
-                                {row.isPercent ? v.toFixed(0) + '%' : v.toLocaleString()}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Growth indicators */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
-                    <div className="bg-slate-50 dark:bg-white/[0.01] p-3 sm:p-4 rounded-2xl border border-slate-100 dark:border-white/5">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Compounded Sales Growth</span>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 text-[10px] sm:text-xs font-bold font-mono">
-                        <div>10Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y10}</span></div>
-                        <div>5Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y5}</span></div>
-                        <div>3Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y3}</span></div>
-                        {pnlResults?.growth?.sales?.ttm !== undefined && (
-                          <div>TTM: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.ttm}</span></div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-white/[0.01] p-3 sm:p-4 rounded-2xl border border-slate-100 dark:border-white/5">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Compounded Profit Growth</span>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 text-[10px] sm:text-xs font-bold font-mono">
-                        <div>10Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y10}</span></div>
-                        <div>5Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y5}</span></div>
-                        <div>3Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y3}</span></div>
-                        {pnlResults?.growth?.profit?.ttm !== undefined && (
-                          <div>TTM: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.ttm}</span></div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 4: Balance Sheet */}
-              {workbookTab === 'balance-sheet' && (
-                <div className="space-y-4">
-                  <span className="text-xs font-bold text-slate-450 uppercase tracking-wider block">Annual Balance Sheet (Assets & Liabilities)</span>
-                  
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
-                          <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
-                          {getDynamicYears().map((q) => (
-                            <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
-                        {balanceSheetResults.map((row) => (
-                          <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
-                            <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
-                            {row.values.map((v, i) => (
-                              <td key={i} className="py-2.5 px-1 text-right">
-                                {v.toLocaleString()}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 5: Cash Flow */}
-              {workbookTab === 'cash-flow' && (
-                <div className="space-y-4">
-                  <span className="text-xs font-bold text-slate-450 uppercase tracking-wider block">Statement of Cash Flows (Annual)</span>
-                  
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
-                          <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
-                          {getDynamicYears().map((q) => (
-                            <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
-                        {cashFlowResults.map((row) => (
-                          <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
-                            <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
-                            {row.values.map((v, i) => (
-                              <td key={i} className="py-2.5 px-1 text-right">
-                                {row.isPercent ? v.toFixed(0) + '%' : v.toLocaleString()}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 6: Ratios */}
-              {workbookTab === 'ratios' && (
-                <div className="space-y-4">
-                  <span className="text-xs font-bold text-slate-450 uppercase tracking-wider block">Financial Performance Ratios</span>
-                  
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
-                          <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
-                          {getDynamicYears().map((q) => (
-                            <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
-                        {ratiosResults.map((row) => (
-                          <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
-                            <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
-                            {row.values.map((v, i) => (
-                              <td key={i} className="py-2.5 px-1 text-right font-semibold">
-                                {row.isPercent ? v.toFixed(0) + '%' : v.toLocaleString()}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 7: AI Insights */}
-              {workbookTab === 'insights' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-2 shrink-0">
-                    <span className="text-xs font-bold text-slate-450 uppercase tracking-wider">AI Calculated Business Metrics</span>
-                    <span className="text-[10px] text-slate-500 font-bold hover:underline cursor-pointer">Flag error</span>
-                  </div>
-
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
-                      <thead>
-                        <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
-                          <th className="py-2.5 px-3 w-60 text-left font-sans">Features</th>
-                          {getInsightsYears().map((q) => (
-                            <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-bold text-slate-900 dark:text-slate-100">
-                        {insightsResults.map((row) => (
-                          <tr key={row.label} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
-                            <td className="py-3 px-3 text-left font-sans">
-                              <div className="font-extrabold text-slate-955 dark:text-white truncate">{row.label}</div>
-                              <div className="text-[9px] text-slate-500 dark:text-slate-450 mt-0.5">{row.desc}</div>
-                            </td>
-                            {row.values.map((v, i) => (
-                              <td key={i} className="py-3 px-1 text-right font-semibold">
-                                {row.isPercent ? v.toFixed(2) + '%' : v.toLocaleString()}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-
-          <div id="screener-shareholding" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 space-y-4 sm:space-y-6 mt-6 w-full relative overflow-hidden">
-            {/* Header Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10">
-                    <TrendingUp className="h-4 w-4" />
-                  </span>
-                  Shareholding Pattern
-                </h3>
-                <p className="text-xs text-slate-400 font-bold mt-1">Numbers in percentages</p>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                {/* Quarterly/Yearly Switcher */}
-                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 text-[10px] font-black uppercase tracking-wider shadow-inner">
-                  <button 
-                    onClick={() => setShareholdingPeriod('quarterly')}
-                    className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-all font-bold ${shareholdingPeriod === 'quarterly' ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
-                  >
-                    Quarterly
-                  </button>
-                  <button 
-                    onClick={() => setShareholdingPeriod('yearly')}
-                    className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-all font-bold ${shareholdingPeriod === 'yearly' ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
-                  >
-                    Yearly
-                  </button>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Visual stacked bar for latest shareholding */}
-            {shareholdingData && (
-              <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-150/40 dark:border-white/5 p-5 rounded-2xl space-y-3.5 shadow-inner">
-                <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-450">
-                  <span>Latest Distribution (Mar 2026)</span>
-                  <span className="font-mono text-slate-800 dark:text-white">100.00%</span>
-                </div>
-                
-                {/* Horizontal Progress Bar */}
-                <div className="w-full h-5 rounded-full flex overflow-hidden shadow-sm">
-                  <div style={{ width: `${shareholdingData.rows[0].values[shareholdingData.rows[0].values.length - 1]}%` }} className="bg-gradient-to-r from-indigo-500 to-blue-500 hover:opacity-90 transition-opacity" title={`Promoters: ${shareholdingData.rows[0].values[shareholdingData.rows[0].values.length - 1]}%`} />
-                  <div style={{ width: `${shareholdingData.rows[1].values[shareholdingData.rows[1].values.length - 1]}%` }} className="bg-gradient-to-r from-teal-400 to-emerald-400 hover:opacity-90 transition-opacity" title={`FIIs: ${shareholdingData.rows[1].values[shareholdingData.rows[1].values.length - 1]}%`} />
-                  <div style={{ width: `${shareholdingData.rows[2].values[shareholdingData.rows[2].values.length - 1]}%` }} className="bg-gradient-to-r from-amber-400 to-orange-500 hover:opacity-90 transition-opacity" title={`DIIs: ${shareholdingData.rows[2].values[shareholdingData.rows[2].values.length - 1]}%`} />
-                  <div style={{ width: `${shareholdingData.rows[3].values[shareholdingData.rows[3].values.length - 1]}%` }} className="bg-gradient-to-r from-rose-400 to-pink-500 hover:opacity-90 transition-opacity" title={`Public: ${shareholdingData.rows[3].values[shareholdingData.rows[3].values.length - 1]}%`} />
-                </div>
-
-                {/* Legend with percentages */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-blue-500 shrink-0" />
-                    <div>
-                      <div className="text-[9px] font-black uppercase text-slate-400">Promoters</div>
-                      <div className="font-mono text-xs font-bold text-slate-800 dark:text-white">{(shareholdingData.rows[0].values[shareholdingData.rows[0].values.length - 1]).toFixed(2)}%</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-teal-400 shrink-0" />
-                    <div>
-                      <div className="text-[9px] font-black uppercase text-slate-400">FIIs</div>
-                      <div className="font-mono text-xs font-bold text-slate-800 dark:text-white">{(shareholdingData.rows[1].values[shareholdingData.rows[1].values.length - 1]).toFixed(2)}%</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-amber-400 shrink-0" />
-                    <div>
-                      <div className="text-[9px] font-black uppercase text-slate-400">DIIs</div>
-                      <div className="font-mono text-xs font-bold text-slate-800 dark:text-white">{(shareholdingData.rows[2].values[shareholdingData.rows[2].values.length - 1]).toFixed(2)}%</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-rose-400 shrink-0" />
-                    <div>
-                      <div className="text-[9px] font-black uppercase text-slate-400">Public</div>
-                      <div className="font-mono text-xs font-bold text-slate-800 dark:text-white">{(shareholdingData.rows[3].values[shareholdingData.rows[3].values.length - 1]).toFixed(2)}%</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Scrollable Table */}
-            <div className="w-full overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
-                    <th className="py-2.5 px-3.5 w-44 sm:w-52 md:w-60 text-left font-sans">Sector</th>
-                    {(shareholdingPeriod === 'quarterly' ? shareholdingData?.quarters : shareholdingData?.quarters.filter((_, i) => i % 4 === 3))?.map((q) => (
-                      <th key={q} className="py-2.5 px-2.5 text-right font-mono">{q}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-bold text-slate-900 dark:text-slate-100">
-                  {shareholdingData?.rows.map((row) => (
-                    <tr key={row.label} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 px-3.5 text-left font-sans font-extrabold text-slate-950 dark:text-white flex items-center gap-1.5">
-                        {row.label.includes('Promoters') && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />}
-                        {row.label.includes('FIIs') && <span className="h-2 w-2 rounded-full bg-teal-400 shrink-0" />}
-                        {row.label.includes('DIIs') && <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />}
-                        {row.label.includes('Public') && <span className="h-2 w-2 rounded-full bg-rose-400 shrink-0" />}
-                        {row.label.includes('Shareholders') && <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />}
-                        {row.label}
-                      </td>
-                      {(shareholdingPeriod === 'quarterly' ? row.values : row.values.filter((_, i) => i % 4 === 3)).map((v, i) => (
-                        <td key={i} className="py-3 px-2.5 text-right font-semibold">
-                          {row.isPercent ? v.toFixed(2) + '%' : v.toLocaleString()}
-                        </td>
-                      ))}
-                    </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Full Width Documents Card */}
-          <div id="screener-documents" className="bg-white/70 dark:bg-night-900/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-3xl p-4 sm:p-6 shadow-xl shadow-slate-100/30 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 mt-6 w-full relative">
-            <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 pb-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
-              <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/10">
-                <FileText className="h-4 w-4" />
-              </span>
-              Documents Hub
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-              {/* Column 1: Announcements */}
-              <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-emerald-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300 group">
-                <div className="flex flex-col gap-2.5 mb-3 shrink-0">
-                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                    <TrendingUp className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                    <h4 className="text-xs font-black uppercase tracking-wider">Announcements</h4>
+                {/* Left Column: Chart & Key Metrics Grid */}
+                <div className="lg:col-span-2 space-y-6">
+
+                  {/* Chart Section */}
+                  <div id="screener-chart" className="border-b border-slate-200/60 dark:border-white/10 pb-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
+                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                        <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
+                          <TrendingUp className="h-4.5 w-4.5" />
+                        </span>
+                        Share Price & Volume
+                      </h3>
+
+                      {/* Timeframe Selectors */}
+                      <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 shadow-inner">
+                        {(['1mo', '3mo', '1yr', 'max'] as const).map((tf) => (
+                          <button
+                            key={tf}
+                            onClick={() => setTimeframe(tf)}
+                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${timeframe === tf
+                              ? 'bg-white text-slate-855 dark:bg-white/10 dark:text-white shadow-sm'
+                              : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                              }`}
+                          >
+                            {tf}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Composed Chart Container */}
+                    <div className="h-72 w-full font-mono text-xs">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" className="dark:stroke-white/5" />
+                          <XAxis dataKey="time" stroke="#888888" tickLine={false} axisLine={false} />
+
+                          {/* Left Axis for Volume */}
+                          <YAxis yAxisId="left" stroke="#888888" tickLine={false} axisLine={false} orientation="left" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+
+                          {/* Right Axis for Price */}
+                          <YAxis yAxisId="right" stroke="#888888" tickLine={false} axisLine={false} orientation="right" domain={['auto', 'auto']} tickFormatter={(v) => `${currencySymbol}${v}`} />
+
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'rgba(9, 13, 26, 0.95)',
+                              borderRadius: '16px',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              color: '#fff'
+                            }}
+                          />
+
+                          {/* Render Volume Bars */}
+                          {showVolume && (
+                            <Bar yAxisId="left" dataKey="volume" fill="#93c5fd" opacity={0.35} barSize={8} radius={[2, 2, 0, 0]} />
+                          )}
+
+                          {/* Render Price Line */}
+                          {showPrice && (
+                            <Line yAxisId="right" type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2.2} dot={false} name="Price" />
+                          )}
+
+                          {/* Render 50 DMA */}
+                          {showDMA50 && (
+                            <Line yAxisId="right" type="monotone" dataKey="dma50" stroke="#f59e0b" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="50 DMA" />
+                          )}
+
+                          {/* Render 200 DMA */}
+                          {showDMA200 && (
+                            <Line yAxisId="right" type="monotone" dataKey="dma200" stroke="#ef4444" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="200 DMA" />
+                          )}
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Checkboxes Legend Row at the bottom */}
+                    <div className="flex flex-wrap items-center justify-center gap-6 pt-4 border-t border-slate-100 dark:border-white/5 text-xs font-bold text-slate-655 dark:text-slate-350">
+                      <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+                        <input type="checkbox" checked={showPrice} onChange={(e) => setShowPrice(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
+                        <span>Price on {isIndian ? 'NSE' : 'NASDAQ'}</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+                        <input type="checkbox" checked={showDMA50} onChange={(e) => setShowDMA50(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
+                        <span>50 DMA</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+                        <input type="checkbox" checked={showDMA200} onChange={(e) => setShowDMA200(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
+                        <span>200 DMA</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+                        <input type="checkbox" checked={showVolume} onChange={(e) => setShowVolume(e.target.checked)} className="rounded text-blue-650 focus:ring-blue-500 accent-blue-600 dark:accent-cyan-400 h-4 w-4" />
+                        <span>Volume</span>
+                      </label>
+                    </div>
                   </div>
+
+                  {/* Key Financial Ratios */}
+                  <div id="screener-key-ratios" className="border-b border-slate-200/60 dark:border-white/10 pb-8 mt-6">
+                    <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4 sm:mb-5 pb-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
+                        <Bookmark className="h-4 w-4" />
+                      </span>
+                      Key Financial Ratios
+                    </h3>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                      {[
+                        { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}`, desc: 'Total market value', icon: '💰' },
+                        { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price', icon: '📈' },
+                        { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}`, desc: '52-week stock range', icon: '↕️' },
+                        { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x`, desc: 'Price-to-earnings multiple', icon: '📊' },
+                        { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}`, desc: 'Net asset value per share', icon: '📕' },
+                        { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%`, desc: 'Annual dividend return', icon: '💸' },
+                        { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%`, desc: 'Capital deployment return', icon: '⚡' },
+                        { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%`, desc: 'Return on equity', icon: '🎯' },
+                        { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}`, desc: 'Par value per share', icon: '💎' },
+                      ].map((ratio) => (
+                        <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
+                          <span className="text-lg sm:text-xl pt-0.5 shrink-0">{ratio.icon}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{ratio.label}</span>
+                            <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{ratio.value}</span>
+                            <span className="text-[8px] text-slate-400 mt-1 font-semibold leading-tight">{ratio.desc}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                 </div>
 
-                <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-[10px] md:text-xs max-h-[250px] custom-scrollbar">
-                  {companyNews.length > 0 ? (
-                    companyNews.map((item, index) => {
-                      const timeStr = item.providerPublishTime
-                        ? new Date(item.providerPublishTime).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })
-                        : 'Recent';
-                      return (
-                        <a
-                          key={item.uuid || index}
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block space-y-1 group/item cursor-pointer"
-                        >
-                          <div className="font-extrabold text-slate-800 dark:text-slate-200 group-hover/item:text-emerald-650 dark:group-hover/item:text-emerald-400 leading-snug transition-colors">
-                            {item.title}
-                          </div>
-                          <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            {timeStr} • {item.publisher || 'News Source'}
-                          </div>
-                        </a>
-                      );
-                    })
-                  ) : (
-                    <div className="text-slate-450 text-[10px] font-bold text-center py-8">
-                      No recent announcements or news found.
+                {/* Right Column: AI Advisor & Profile */}
+                <div className="lg:col-span-1 space-y-6">
+
+                  {/* AI Strength & Risk Advisor */}
+                  <div id="screener-analysis" className="scroll-mt-28 border-b border-slate-200/60 dark:border-white/10 pb-8 space-y-6 relative overflow-hidden text-slate-800 dark:text-white">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                    {/* Score Header */}
+                    <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                      {/* Circular Progress Ring */}
+                      <div className="relative h-16 w-16 shrink-0 flex items-center justify-center">
+                        <svg className="absolute transform -rotate-90 w-16 h-16">
+                          <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.06)" strokeWidth="4" fill="transparent" />
+                          <circle cx="32" cy="32" r="28" stroke="url(#healthGrad)" strokeWidth="4" fill="transparent" strokeDasharray={176} strokeDashoffset={176 - (176 * healthScore) / 100} strokeLinecap="round" />
+                          <defs>
+                            <linearGradient id="healthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#22c55e" />
+                              <stop offset="100%" stopColor="#06b6d4" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        <span className="font-mono text-base font-black text-white">{healthScore}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1">
+                          <Sparkles className="h-3 w-3 animate-pulse" /> AI Health Index
+                        </span>
+                        <h3 className="text-sm font-extrabold text-white mt-0.5">
+                          {healthScore >= 75 ? 'Excellent Health' : healthScore >= 60 ? 'Strong Performance' : 'Stable Outlook'}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Pros List */}
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" /> Strategic Strengths
+                      </h4>
+                      <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-400 font-black">✓</span>
+                          <span>Healthy dividend payout ratio maintained.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-400 font-black">✓</span>
+                          <span>High capital efficiency (ROCE of {selectedStock.roce.toFixed(2)}%).</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-400 font-black">✓</span>
+                          <span>Consistent historical growth trajectory.</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Cons List */}
+                    <div className="space-y-3 pt-3 border-t border-white/10">
+                      <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-455" /> Risk Factors
+                      </h4>
+                      <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
+                        <li className="flex items-start gap-2">
+                          <span className="text-rose-400 font-black">✗</span>
+                          <span>Trading high relative to book value ({(selectedStock.price / selectedStock.bookValue).toFixed(1)}x).</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-rose-400 font-black">✗</span>
+                          <span>P/E ratio of {selectedStock.peRatio.toFixed(1)}x is premium.</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Company Profile Section */}
+                  <div className="border-b border-slate-200/60 dark:border-white/10 pb-8 space-y-4 mt-6">
+                    <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
+                      <Globe className="h-4 w-4 text-blue-600 dark:text-cyan-400" /> Company Profile
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed line-clamp-4" title={selectedStock.about}>
+                      {selectedStock.about}
+                    </p>
+                    <div className="pt-2.5 border-t border-slate-100 dark:border-white/5">
+                      <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Key Drivers</h4>
+                      <ul className="space-y-2 text-xs text-slate-500 dark:text-slate-400 font-semibold mb-3">
+                        <li className="flex items-center gap-2 min-w-0">
+                          <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                          <span>{selectedStock.roce > 18 ? 'High capital efficiency with' : 'Stable'} ROCE of {selectedStock.roce.toFixed(2)}%</span>
+                        </li>
+                        <li className="flex items-center gap-2 min-w-0">
+                          <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                          <span>{selectedStock.peRatio > 25 ? 'Premium valuation multiple' : 'Reasonable pricing'} at {selectedStock.peRatio.toFixed(1)}x P/E</span>
+                        </li>
+                        <li className="flex items-center gap-2 min-w-0">
+                          <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                          <span>Strong return on equity (ROE) of {selectedStock.roe.toFixed(2)}%</span>
+                        </li>
+                        {selectedStock.dividendYield > 0.5 && (
+                          <li className="flex items-center gap-2 min-w-0">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                            <span>Consistent dividend yield of {selectedStock.dividendYield.toFixed(2)}%</span>
+                          </li>
+                        )}
+                        <li className="flex items-center gap-2 min-w-0">
+                          <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                          <span>52-Week Range: {currencySymbol}{selectedStock.low52w.toFixed(0)} - {currencySymbol}{selectedStock.high52w.toFixed(0)}</span>
+                        </li>
+                      </ul>
+                      <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 dark:border-white/5">
+                        <button className="flex-1 text-center py-1.5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-300 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+                          Related Party
+                        </button>
+                        <button className="flex-1 text-center py-1.5 bg-blue-50 dark:bg-cyan-950/20 text-blue-600 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+                          Product Segments
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Technical Indicator Summary */}
+                  {technicals && (
+                    <div className="space-y-3 mt-6 pb-8">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
+                          <TrendingUp className="h-3.5 w-3.5 text-emerald-500" /> Technical Summary
+                        </h3>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-xs">
+                        <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
+                          <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">RSI</span>
+                          <span className="font-mono text-[10px] sm:text-xs font-black text-slate-800 dark:text-white mt-1">{technicals.rsi.toFixed(0)}</span>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
+                          <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">Beta</span>
+                          <span className="font-mono text-[10px] sm:text-xs font-black text-slate-800 dark:text-white mt-1">{technicals.beta.toFixed(1)}x</span>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
+                          <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">MACD</span>
+                          <span className={`font-black text-[8px] sm:text-[9px] mt-1 ${technicals.macd.includes('Bullish') ? 'text-emerald-500' : 'text-rose-500'}`}>{technicals.macd.split(' ')[0]}</span>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-2 sm:p-2.5 rounded-2xl flex flex-col justify-center items-center text-center">
+                          <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-wider">Trend</span>
+                          <span className="font-black text-[8px] sm:text-[9px] text-slate-800 dark:text-white mt-1 truncate w-full">{technicals.trend.split(' ').pop()}</span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Column 2: Annual reports */}
-              <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-blue-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-blue-500/30 transition-all duration-300 group">
-                <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400 mb-4 shrink-0">
-                  <Globe className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-                  <h4 className="text-xs font-black uppercase tracking-wider">Annual reports</h4>
-                </div>
-                <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
-                  {['2026', '2025', '2024', '2023'].map((yr) => (
-                    <div 
-                      key={yr} 
-                      onClick={() => handleDownloadAnnualReport(yr)}
-                      className="group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-blue-500/10"
-                    >
-                      <div className="font-extrabold text-blue-600 dark:text-cyan-400 flex items-center justify-between">
-                        <span>Financial Year {yr}</span>
-                        <Download className="h-3 w-3 opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                      </div>
-                      <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">Report aggregated from {isIndian ? 'bse' : 'sec filing'}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Unified Financial Statements Workbook Terminal */}
+              <div id="screener-workbook" className="scroll-mt-28 border-b border-slate-200/60 dark:border-white/10 pb-8 mt-6 w-full relative">
 
-              {/* Column 3: Credit ratings */}
-              <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-amber-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-amber-500/30 transition-all duration-300 group">
-                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-4 shrink-0">
-                  <Bookmark className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <h4 className="text-xs font-black uppercase tracking-wider">Credit ratings</h4>
-                </div>
-                <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
-                  {creditRatings.map((r, idx) => (
-                    <a 
-                      key={idx} 
-                      href={`https://www.google.com/search?q=${encodeURIComponent(selectedStock.name + ' ' + r.agency + ' ' + r.label + ' ' + r.date)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-amber-500/10"
-                    >
-                      <div className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                        <span>{r.label}</span>
-                        <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${
-                          r.status === 'Positive' 
-                            ? 'bg-emerald-500/10 text-emerald-500' 
-                            : r.status === 'Negative'
-                            ? 'bg-rose-500/10 text-rose-500'
-                            : 'bg-blue-500/10 text-blue-500'
-                        }`}>
-                          {r.status}
+                {/* Terminal Header */}
+                <div className="flex flex-col gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                        <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
+                          <FileText className="h-4.5 w-4.5" />
                         </span>
-                      </div>
-                      <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">{r.date} • {r.agency}</div>
-                    </a>
-                  ))}
-                </div>
-              </div>
+                        Financial Workbook
+                      </h3>
+                      <p className="text-xs text-slate-400 font-bold mt-1">
+                        Consolidated Figures in {isIndian ? 'Rs. Crores' : 'USD Millions'}
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Column 4: Concalls */}
-              <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-purple-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-purple-500/30 transition-all duration-300 group">
-                <div className="flex items-center gap-2 mb-4 shrink-0">
-                  <div className="flex items-center gap-2 text-purple-650 dark:text-purple-400">
-                    <MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                    <h4 className="text-xs font-black uppercase tracking-wider">Concalls</h4>
+                  {/* Workbook Tabs */}
+                  <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 text-[10px] font-black uppercase tracking-wider overflow-x-auto custom-scrollbar w-full">
+                    {[
+                      { id: 'peers', label: 'Peers' },
+                      { id: 'quarters', label: 'Quarters' },
+                      { id: 'pnl', label: 'P&L' },
+                      { id: 'balance-sheet', label: 'Bal. Sheet' },
+                      { id: 'cash-flow', label: 'Cash Flow' },
+                      { id: 'ratios', label: 'Ratios' },
+                      { id: 'insights', label: 'AI Insights' }
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setWorkbookTab(t.id as any)}
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all font-bold shrink-0 ${workbookTab === t.id
+                          ? 'bg-white text-blue-600 dark:bg-white/10 dark:text-cyan-400 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
+                          }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                
-                <div className="flex-1 space-y-3.5 pr-1 text-[10px] md:text-xs">
-                  {[
-                    { date: 'Jun 2026', ppt: false },
-                    { date: 'Jun 2025', ppt: true },
-                    { date: 'May 2024', ppt: true },
-                    { date: 'May 2023', ppt: true },
-                    { date: 'May 2022', ppt: true }
-                  ].map((c) => (
-                    <div key={c.date} className="flex flex-wrap items-center justify-between gap-1.5 py-1 border-b border-slate-100/50 dark:border-white/[0.02] last:border-0 pb-1.5">
-                      <span className="font-bold text-slate-700 dark:text-slate-350 font-mono text-[10px]">{c.date}</span>
-                      <div className="flex flex-wrap gap-1 shrink-0">
-                        <button 
-                          onClick={() => showTranscript(c.date)}
-                          className="px-2 py-0.5 border border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10 rounded text-[8px] font-black tracking-wider transition-all"
-                        >
-                          Transcript
-                        </button>
-                        <button 
-                          onClick={() => showAISummary(c.date)}
-                          className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white dark:from-purple-500 dark:to-indigo-500 rounded text-[8px] font-black tracking-wider shadow-sm transition-all"
-                        >
-                          AI Summary
-                        </button>
-                        <button 
-                          disabled={!c.ppt}
-                          onClick={() => c.ppt && handleDownloadPPT(c.date)}
-                          className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider transition-all border ${c.ppt ? 'border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10' : 'border-slate-200 dark:border-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}
-                        >
-                          PPT
-                        </button>
+
+                {/* Workbook Content Panel */}
+                <div className="w-full">
+
+                  {/* Tab 1: Peer Comparison */}
+                  {workbookTab === 'peers' && peerData && (
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold text-slate-450 uppercase tracking-wider">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span>Industry:</span>
+                          {peerData.category.map((cat, idx) => (
+                            <span key={cat} className="flex items-center gap-1">
+                              {idx > 0 && <span className="text-slate-300 dark:text-slate-700 font-normal">&gt;</span>}
+                              <span className={idx === peerData.category.length - 1 ? "text-blue-600 dark:text-cyan-400 font-black" : ""}>{cat}</span>
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-blue-650 bg-blue-50 dark:text-cyan-400 dark:bg-cyan-950/20 px-2.5 py-1 rounded-lg">
+                          Part of {isIndian ? 'BSE Industrials' : 'NASDAQ 105'}
+                        </span>
+                      </div>
+
+                      <div className="w-full overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
+                          <thead>
+                            <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
+                              <th className="py-2.5 px-3 w-8 text-center font-sans">S.No.</th>
+                              <th className="py-2.5 px-3 w-40 text-left font-sans">Name</th>
+                              <th className="py-2.5 px-3 text-right font-sans">Price {currencySymbol}</th>
+                              <th className="py-2.5 px-3 text-right font-sans">P/E</th>
+                              <th className="py-2.5 px-3 text-right font-sans">Mar Cap {isIndian ? 'Cr.' : 'M'}</th>
+                              <th className="py-2.5 px-3 text-right font-sans">Div Yield %</th>
+                              <th className="py-2.5 px-3 text-right font-sans">NP Qtr {isIndian ? 'Cr.' : 'M'}</th>
+                              <th className="py-2.5 px-3 text-right font-sans">Qtr Profit Var %</th>
+                              <th className="py-2.5 px-3 text-right font-sans">Sales Qtr {isIndian ? 'Cr.' : 'M'}</th>
+                              <th className="py-2.5 px-3 text-right font-sans">Qtr Sales Var %</th>
+                              <th className="py-2.5 px-3 text-right font-sans">ROCE %</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                            {peerData.peers.map((peer, idx) => {
+                              const isSelf = peer.symbol.toUpperCase() === selectedStock.symbol.toUpperCase();
+                              const displayPrice = isSelf ? selectedStock.price : peer.price;
+                              const displayPE = isSelf ? selectedStock.peRatio : peer.pe;
+                              const displayMCap = isSelf ? selectedStock.marketCap : peer.mCap;
+                              const displayDiv = isSelf ? selectedStock.dividendYield : peer.div;
+                              const displayROCE = isSelf ? selectedStock.roce : peer.roce;
+
+                              return (
+                                <tr
+                                  key={peer.symbol}
+                                  onClick={() => !isSelf && handleSelectStock(peer.symbol)}
+                                  className={`hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer ${isSelf ? 'bg-blue-500/5 font-black text-slate-900 dark:text-white border-y border-blue-500/20' : ''}`}
+                                >
+                                  <td className="py-3 px-3 text-center">{idx + 1}</td>
+                                  <td className="py-3 px-3 font-sans text-left font-bold text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
+                                    {peer.name}
+                                    {isSelf && <span className="text-[8px] bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 font-black uppercase px-1 rounded">YOU</span>}
+                                  </td>
+                                  <td className="py-3 px-3 text-right">{displayPrice.toFixed(2)}</td>
+                                  <td className="py-3 px-3 text-right">{displayPE.toFixed(2)}</td>
+                                  <td className="py-3 px-3 text-right">{displayMCap.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                  <td className="py-3 px-3 text-right">{displayDiv.toFixed(2)}%</td>
+                                  <td className="py-3 px-3 text-right">{peer.npQtr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                  <td className={`py-3 px-3 text-right font-bold ${peer.qtrProfitVar >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                    {peer.qtrProfitVar >= 0 ? '+' : ''}{peer.qtrProfitVar.toFixed(1)}%
+                                  </td>
+                                  <td className="py-3 px-3 text-right">{peer.salesQtr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                  <td className={`py-3 px-3 text-right font-bold ${peer.qtrSalesVar >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                    {peer.qtrSalesVar >= 0 ? '+' : ''}{peer.qtrSalesVar.toFixed(1)}%
+                                  </td>
+                                  <td className="py-3 px-3 text-right font-bold">{displayROCE.toFixed(2)}%</td>
+                                </tr>
+                              );
+                            })}
+
+                            {/* Median Row */}
+                            <tr className="bg-slate-50/50 dark:bg-white/[0.01] border-t-2 border-slate-200 dark:border-white/10 font-bold text-slate-900 dark:text-white">
+                              <td className="py-3 px-3 font-sans"></td>
+                              <td className="py-3 px-3 font-sans text-left text-[9px] uppercase tracking-wider text-slate-400">Median ({peerData.peers.length} Co.)</td>
+                              <td className="py-3 px-3 text-right">
+                                {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.price : p.price), 0) / peerData.peers.length).toFixed(2)}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.peRatio : p.pe), 0) / peerData.peers.length).toFixed(2)}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.marketCap : p.mCap), 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.dividendYield : p.div), 0) / peerData.peers.length).toFixed(2)}%
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                {(peerData.peers.reduce((acc, p) => acc + p.npQtr, 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                              </td>
+                              <td className="py-3 px-3 text-right text-emerald-500">
+                                +{(peerData.peers.reduce((acc, p) => acc + p.qtrProfitVar, 0) / peerData.peers.length).toFixed(1)}%
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                {(peerData.peers.reduce((acc, p) => acc + p.salesQtr, 0) / peerData.peers.length).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                              </td>
+                              <td className="py-3 px-3 text-right text-emerald-500">
+                                +{(peerData.peers.reduce((acc, p) => acc + p.qtrSalesVar, 0) / peerData.peers.length).toFixed(1)}%
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                {(peerData.peers.reduce((acc, p) => acc + (p.symbol.toUpperCase() === selectedStock.symbol.toUpperCase() ? selectedStock.roce : p.roce), 0) / peerData.peers.length).toFixed(2)}%
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Tab 2: Quarterly Results */}
+                  {workbookTab === 'quarters' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-2 shrink-0">
+                        <span className="text-xs font-bold text-slate-450 uppercase tracking-wider">Statement of Operations (13 Quarters)</span>
+                        <button className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-cyan-950/20 text-blue-650 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm">
+                          Product Segments
+                        </button>
+                      </div>
+
+                      <div className="w-full overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
+                          <thead>
+                            <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
+                              <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
+                              {getDynamicQuarters().map((q) => (
+                                <th key={q} className="py-2.5 px-1 text-right font-mono">{q.replace(' 20', ' ')}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                            {quarterlyResults.map((row) => (
+                              <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                                <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
+                                {row.values.map((v, i) => (
+                                  <td key={i} className="py-2.5 px-1 text-right">
+                                    {row.isPercent ? v.toFixed(1) + '%' : v.toFixed(1)}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+
+                            {/* Raw PDF Row */}
+                            <tr className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors text-slate-400">
+                              <td className="py-2.5 px-3 text-left font-sans">Raw PDF</td>
+                              {getDynamicQuarters().map((quarter, i) => (
+                                <td key={i} className="py-2.5 px-1 text-right">
+                                  <button
+                                    onClick={() => downloadQuarterlyReport(quarter, i)}
+                                    className="inline-flex items-center justify-center cursor-pointer"
+                                    title={`Download PDF Report for ${quarter}`}
+                                  >
+                                    <FileText className="h-3.5 w-3.5" />
+                                  </button>
+                                </td>
+                              ))}
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Result Notification Badge */}
+                      <div className="pt-1">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50/80 dark:bg-blue-950/20 text-blue-755 dark:text-cyan-400 border border-blue-100 dark:border-cyan-900/30 rounded-xl text-[10px] font-bold shadow-sm">
+                          Upcoming result date: {getResultDate(selectedStock.symbol)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 3: Profit & Loss */}
+                  {workbookTab === 'pnl' && (
+                    <div className="space-y-4">
+                      <span className="text-xs font-bold text-slate-450 uppercase tracking-wider block">Annual Profit & Loss Statement (Historical)</span>
+
+                      <div className="w-full overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
+                          <thead>
+                            <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
+                              <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
+                              {getDynamicYears().map((q) => (
+                                <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                            {pnlResults.rows.map((row) => (
+                              <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                                <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
+                                {row.values.map((v, i) => (
+                                  <td key={i} className="py-2.5 px-1 text-right">
+                                    {row.isPercent ? v.toFixed(0) + '%' : v.toLocaleString()}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Growth indicators */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
+                        <div className="bg-slate-50 dark:bg-white/[0.01] p-3 sm:p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Compounded Sales Growth</span>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 text-[10px] sm:text-xs font-bold font-mono">
+                            <div>10Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y10}</span></div>
+                            <div>5Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y5}</span></div>
+                            <div>3Y: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.y3}</span></div>
+                            {pnlResults?.growth?.sales?.ttm !== undefined && (
+                              <div>TTM: <span className="text-emerald-500">+{pnlResults?.growth?.sales?.ttm}</span></div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-white/[0.01] p-3 sm:p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Compounded Profit Growth</span>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 text-[10px] sm:text-xs font-bold font-mono">
+                            <div>10Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y10}</span></div>
+                            <div>5Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y5}</span></div>
+                            <div>3Y: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.y3}</span></div>
+                            {pnlResults?.growth?.profit?.ttm !== undefined && (
+                              <div>TTM: <span className="text-emerald-500">+{pnlResults?.growth?.profit?.ttm}</span></div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 4: Balance Sheet */}
+                  {workbookTab === 'balance-sheet' && (
+                    <div className="space-y-4">
+                      <span className="text-xs font-bold text-slate-450 uppercase tracking-wider block">Annual Balance Sheet (Assets & Liabilities)</span>
+
+                      <div className="w-full overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
+                          <thead>
+                            <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
+                              <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
+                              {getDynamicYears().map((q) => (
+                                <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                            {balanceSheetResults.map((row) => (
+                              <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                                <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
+                                {row.values.map((v, i) => (
+                                  <td key={i} className="py-2.5 px-1 text-right">
+                                    {v.toLocaleString()}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 5: Cash Flow */}
+                  {workbookTab === 'cash-flow' && (
+                    <div className="space-y-4">
+                      <span className="text-xs font-bold text-slate-450 uppercase tracking-wider block">Statement of Cash Flows (Annual)</span>
+
+                      <div className="w-full overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
+                          <thead>
+                            <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
+                              <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
+                              {getDynamicYears().map((q) => (
+                                <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                            {cashFlowResults.map((row) => (
+                              <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                                <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
+                                {row.values.map((v, i) => (
+                                  <td key={i} className="py-2.5 px-1 text-right">
+                                    {row.isPercent ? v.toFixed(0) + '%' : v.toLocaleString()}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 6: Ratios */}
+                  {workbookTab === 'ratios' && (
+                    <div className="space-y-4">
+                      <span className="text-xs font-bold text-slate-450 uppercase tracking-wider block">Financial Performance Ratios</span>
+
+                      <div className="w-full overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
+                          <thead>
+                            <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
+                              <th className="py-2.5 px-3 w-40 text-left font-sans">Features</th>
+                              {getDynamicYears().map((q) => (
+                                <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-medium text-slate-700 dark:text-slate-350">
+                            {ratiosResults.map((row) => (
+                              <tr key={row.label} className={`hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors ${row.bold ? 'font-bold bg-slate-50/20 dark:bg-white/[0.01] text-slate-900 dark:text-white' : ''}`}>
+                                <td className="py-2.5 px-3 text-left font-sans truncate">{row.label}</td>
+                                {row.values.map((v, i) => (
+                                  <td key={i} className="py-2.5 px-1 text-right font-semibold">
+                                    {row.isPercent ? v.toFixed(0) + '%' : v.toLocaleString()}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 7: AI Insights */}
+                  {workbookTab === 'insights' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-2 shrink-0">
+                        <span className="text-xs font-bold text-slate-450 uppercase tracking-wider">AI Calculated Business Metrics</span>
+                        <span className="text-[10px] text-slate-500 font-bold hover:underline cursor-pointer">Flag error</span>
+                      </div>
+
+                      <div className="w-full overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[1000px]">
+                          <thead>
+                            <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-455 tracking-wider">
+                              <th className="py-2.5 px-3 w-60 text-left font-sans">Features</th>
+                              {getInsightsYears().map((q) => (
+                                <th key={q} className="py-2.5 px-1 text-right font-mono">{q}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-bold text-slate-900 dark:text-slate-100">
+                            {insightsResults.map((row) => (
+                              <tr key={row.label} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
+                                <td className="py-3 px-3 text-left font-sans">
+                                  <div className="font-extrabold text-slate-955 dark:text-white truncate">{row.label}</div>
+                                  <div className="text-[9px] text-slate-500 dark:text-slate-450 mt-0.5">{row.desc}</div>
+                                </td>
+                                {row.values.map((v, i) => (
+                                  <td key={i} className="py-3 px-1 text-right font-semibold">
+                                    {row.isPercent ? v.toFixed(2) + '%' : v.toLocaleString()}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
-            </div>
-          </div>
+
+              <div id="screener-shareholding" className="scroll-mt-28 border-b border-slate-200/60 dark:border-white/10 pb-8 mt-6 w-full relative overflow-hidden">
+                {/* Header Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10">
+                        <TrendingUp className="h-4 w-4" />
+                      </span>
+                      Shareholding Pattern
+                    </h3>
+                    <p className="text-xs text-slate-400 font-bold mt-1">Numbers in percentages</p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {/* Quarterly/Yearly Switcher */}
+                    <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 text-[10px] font-black uppercase tracking-wider shadow-inner">
+                      <button
+                        onClick={() => setShareholdingPeriod('quarterly')}
+                        className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-all font-bold ${shareholdingPeriod === 'quarterly' ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
+                      >
+                        Quarterly
+                      </button>
+                      <button
+                        onClick={() => setShareholdingPeriod('yearly')}
+                        className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-all font-bold ${shareholdingPeriod === 'yearly' ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'}`}
+                      >
+                        Yearly
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Visual stacked bar for latest shareholding */}
+                {shareholdingData && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pb-4 mt-4">
+                    {[
+                      { label: 'Promoters', value: shareholdingData.rows[0].values[shareholdingData.rows[0].values.length - 1], color: 'from-blue-500 to-indigo-600' },
+                      { label: 'FIIs', value: shareholdingData.rows[1].values[shareholdingData.rows[1].values.length - 1], color: 'from-teal-400 to-emerald-500' },
+                      { label: 'DIIs', value: shareholdingData.rows[2].values[shareholdingData.rows[2].values.length - 1], color: 'from-amber-400 to-orange-500' },
+                      { label: 'Public', value: shareholdingData.rows[3].values[shareholdingData.rows[3].values.length - 1], color: 'from-rose-400 to-pink-500' }
+                    ].map((item) => (
+                      <div key={item.label} className="bg-slate-50/50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl flex flex-col gap-2">
+                        <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-400">
+                          <span>{item.label}</span>
+                          <span className="font-mono text-slate-900 dark:text-white font-black">{item.value.toFixed(2)}%</span>
+                        </div>
+                        <div className="w-full h-2.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                          <div style={{ width: `${item.value}%` }} className={`h-full rounded-full bg-gradient-to-r ${item.color}`} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Scrollable Table */}
+                <div className="w-full overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left border-collapse table-fixed text-[9px] md:text-[10px] xl:text-xs min-w-[900px]">
+                    <thead>
+                      <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] font-black uppercase text-slate-450 tracking-wider">
+                        <th className="py-2.5 px-3.5 w-44 sm:w-52 md:w-60 text-left font-sans">Sector</th>
+                        {(shareholdingPeriod === 'quarterly' ? shareholdingData?.quarters : shareholdingData?.quarters.filter((_, i) => i % 4 === 3))?.map((q) => (
+                          <th key={q} className="py-2.5 px-2.5 text-right font-mono">{q}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-bold text-slate-900 dark:text-slate-100">
+                      {shareholdingData?.rows.map((row) => (
+                        <tr key={row.label} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors">
+                          <td className="py-3 px-3.5 text-left font-sans font-extrabold text-slate-950 dark:text-white flex items-center gap-1.5">
+                            {row.label.includes('Promoters') && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />}
+                            {row.label.includes('FIIs') && <span className="h-2 w-2 rounded-full bg-teal-400 shrink-0" />}
+                            {row.label.includes('DIIs') && <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />}
+                            {row.label.includes('Public') && <span className="h-2 w-2 rounded-full bg-rose-400 shrink-0" />}
+                            {row.label.includes('Shareholders') && <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />}
+                            {row.label}
+                          </td>
+                          {(shareholdingPeriod === 'quarterly' ? row.values : row.values.filter((_, i) => i % 4 === 3)).map((v, i) => (
+                            <td key={i} className="py-3 px-2.5 text-right font-semibold">
+                              {row.isPercent ? v.toFixed(2) + '%' : v.toLocaleString()}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Full Width Documents Card */}
+              <div id="screener-documents" className="scroll-mt-28 pb-8 mt-6 w-full relative">
+                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 pb-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/10">
+                    <FileText className="h-4 w-4" />
+                  </span>
+                  Documents Hub
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {/* Column 1: Announcements */}
+                  <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-emerald-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300 group">
+                    <div className="flex flex-col gap-2.5 mb-3 shrink-0">
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                        <TrendingUp className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        <h4 className="text-xs font-black uppercase tracking-wider">Announcements</h4>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-[10px] md:text-xs max-h-[250px] custom-scrollbar">
+                      {companyNews.length > 0 ? (
+                        companyNews.map((item, index) => {
+                          const timeStr = item.providerPublishTime
+                            ? new Date(item.providerPublishTime).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                            : 'Recent';
+                          return (
+                            <a
+                              key={item.uuid || index}
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block space-y-1 group/item cursor-pointer"
+                            >
+                              <div className="font-extrabold text-slate-800 dark:text-slate-200 group-hover/item:text-emerald-650 dark:group-hover/item:text-emerald-400 leading-snug transition-colors">
+                                {item.title}
+                              </div>
+                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                {timeStr} • {item.publisher || 'News Source'}
+                              </div>
+                            </a>
+                          );
+                        })
+                      ) : (
+                        <div className="text-slate-450 text-[10px] font-bold text-center py-8">
+                          No recent announcements or news found.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 2: Annual reports */}
+                  <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-blue-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-blue-500/30 transition-all duration-300 group">
+                    <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400 mb-4 shrink-0">
+                      <Globe className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Annual reports</h4>
+                    </div>
+                    <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
+                      {['2026', '2025', '2024', '2023'].map((yr) => (
+                        <div
+                          key={yr}
+                          onClick={() => handleDownloadAnnualReport(yr)}
+                          className="group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-blue-500/10"
+                        >
+                          <div className="font-extrabold text-blue-600 dark:text-cyan-400 flex items-center justify-between">
+                            <span>Financial Year {yr}</span>
+                            <Download className="h-3 w-3 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                          </div>
+                          <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">Report aggregated from {isIndian ? 'bse' : 'sec filing'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Column 3: Credit ratings */}
+                  <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-amber-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-amber-500/30 transition-all duration-300 group">
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-4 shrink-0">
+                      <Bookmark className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Credit ratings</h4>
+                    </div>
+                    <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
+                      {creditRatings.map((r, idx) => (
+                        <a
+                          key={idx}
+                          href={`https://www.google.com/search?q=${encodeURIComponent(selectedStock.name + ' ' + r.agency + ' ' + r.label + ' ' + r.date)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-amber-500/10"
+                        >
+                          <div className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                            <span>{r.label}</span>
+                            <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${r.status === 'Positive'
+                              ? 'bg-emerald-500/10 text-emerald-500'
+                              : r.status === 'Negative'
+                                ? 'bg-rose-500/10 text-rose-500'
+                                : 'bg-blue-500/10 text-blue-500'
+                              }`}>
+                              {r.status}
+                            </span>
+                          </div>
+                          <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">{r.date} • {r.agency}</div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Column 4: Concalls */}
+                  <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-purple-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-purple-500/30 transition-all duration-300 group">
+                    <div className="flex items-center gap-2 mb-4 shrink-0">
+                      <div className="flex items-center gap-2 text-purple-650 dark:text-purple-400">
+                        <MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        <h4 className="text-xs font-black uppercase tracking-wider">Concalls</h4>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-3.5 pr-1 text-[10px] md:text-xs">
+                      {[
+                        { date: 'Jun 2026', ppt: false },
+                        { date: 'Jun 2025', ppt: true },
+                        { date: 'May 2024', ppt: true },
+                        { date: 'May 2023', ppt: true },
+                        { date: 'May 2022', ppt: true }
+                      ].map((c) => (
+                        <div key={c.date} className="flex flex-wrap items-center justify-between gap-1.5 py-1 border-b border-slate-100/50 dark:border-white/[0.02] last:border-0 pb-1.5">
+                          <span className="font-bold text-slate-700 dark:text-slate-350 font-mono text-[10px]">{c.date}</span>
+                          <div className="flex flex-wrap gap-1 shrink-0">
+                            <button
+                              onClick={() => showTranscript(c.date)}
+                              className="px-2 py-0.5 border border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10 rounded text-[8px] font-black tracking-wider transition-all"
+                            >
+                              Transcript
+                            </button>
+                            <button
+                              onClick={() => showAISummary(c.date)}
+                              className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white dark:from-purple-500 dark:to-indigo-500 rounded text-[8px] font-black tracking-wider shadow-sm transition-all"
+                            >
+                              AI Summary
+                            </button>
+                            <button
+                              disabled={!c.ppt}
+                              onClick={() => c.ppt && handleDownloadPPT(c.date)}
+                              className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider transition-all border ${c.ppt ? 'border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10' : 'border-slate-200 dark:border-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}
+                            >
+                              PPT
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div> {/* Closes Right main content container */}
+          </div> {/* Closes Main content wrapper with sticky left sidebar */}
         </div>
       )}
 
@@ -2339,7 +2382,7 @@ Slide Outline:
             {/* Ambient glows */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-            
+
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 z-10">
               <h3 className="text-sm font-extrabold tracking-tight flex items-center gap-2">
@@ -2348,22 +2391,22 @@ Slide Outline:
                 </span>
                 {activeDocumentModal.title}
               </h3>
-              <button 
+              <button
                 onClick={() => setActiveDocumentModal(null)}
                 className="p-1 hover:bg-white/10 rounded-lg transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             {/* Content */}
             <div className="p-6 overflow-y-auto flex-1 font-mono text-xs leading-relaxed z-10 max-h-[50vh] whitespace-pre-wrap selection:bg-purple-500/30">
               {activeDocumentModal.content}
             </div>
-            
+
             {/* Footer */}
             <div className="border-t border-white/10 px-6 py-4 flex justify-end gap-3 bg-slate-950/40 z-10">
-              <button 
+              <button
                 onClick={() => {
                   const filename = `${activeDocumentModal.title.replace(/[\s-]/g, '_')}.txt`;
                   const blob = new Blob([activeDocumentModal.content], { type: 'text/plain;charset=utf-8;' });
@@ -2380,7 +2423,7 @@ Slide Outline:
               >
                 <Download className="h-3.5 w-3.5" /> Download TXT
               </button>
-              <button 
+              <button
                 onClick={() => setActiveDocumentModal(null)}
                 className="px-4 py-2 border border-white/10 hover:bg-white/5 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
               >

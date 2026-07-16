@@ -249,6 +249,12 @@ export async function getFundamentals(symbol: string): Promise<FundamentalData> 
   return response.json();
 }
 
+export async function getFundamentalsBatch(symbols: string[]): Promise<any[]> {
+  const response = await fetch(`${API_BASE_URL}/api/fundamentals/batch/list?symbols=${symbols.join(",")}`);
+  if (!response.ok) throw new Error("Failed to fetch batch fundamentals");
+  return response.json();
+}
+
 export async function getUnifiedAssetDetails(symbol: string): Promise<any> {
   const response = await fetch(`${API_BASE_URL}/api/asset-details/${encodeURIComponent(symbol)}`);
   if (!response.ok) throw new Error("Failed to fetch asset details");
