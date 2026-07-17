@@ -5,10 +5,56 @@ import { yahooFinance } from "../yahooFinance.js";
 import { prisma } from "../prisma.js";
 import jwt from "jsonwebtoken";
 import Parser from "rss-parser";
-import NodeCache from "node-cache";
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 const rssParser = new Parser();
-const aiCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache TTL
+import { getCachedData, setCachedData } from "../services/cacheService.js";
+
+async function callGeminiWithOllamaFallback(prompt: string, jsonMode = false): Promise<string> {
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+  
+  try {
+    const response = await axios.post(geminiUrl, {
+      contents: [{
+        parts: [{ text: prompt }]
+      }],
+      generationConfig: jsonMode ? { responseMimeType: "application/json" } : undefined
+    }, { timeout: 15000 });
+    
+    if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return response.data.candidates[0].content.parts[0].text;
+    }
+    throw new Error("Invalid response structure from Gemini API");
+  } catch (error: any) {
+    const status = error.response?.status;
+    const isRateLimit = status === 429 || 
+                        (error.message && error.message.includes("429")) || 
+                        (error.response?.data?.error?.message && error.response.data.error.message.includes("quota"));
+    
+    console.warn(`Gemini API call failed${isRateLimit ? " due to rate limit/quota" : ""}. Trying Ollama fallback... Error: ${error.message}`);
+    
+    try {
+      const ollamaUrl = process.env.OLLAMA_API_URL || "http://localhost:11434/api/generate";
+      const ollamaModel = process.env.OLLAMA_MODEL || "llama3";
+      
+      const response = await axios.post(ollamaUrl, {
+        model: ollamaModel,
+        prompt: prompt,
+        stream: false,
+        format: jsonMode ? "json" : undefined
+      }, { timeout: 30000 });
+      
+      if (response.data?.response) {
+        console.log(`Successfully fetched fallback response from Ollama (${ollamaModel})`);
+        return response.data.response;
+      }
+      throw new Error("Invalid response structure from Ollama API");
+    } catch (ollamaError: any) {
+      console.error("Ollama fallback failed:", ollamaError.message);
+      throw error;
+    }
+  }
+}
+
 
 
 async function getRecentNewsHeadlines(): Promise<string[]> {
@@ -254,7 +300,7 @@ const marketBriefRoutes = express.Router();
 
 marketBriefRoutes.get("/market-brief", async (req, res) => {
   const cacheKey = "market-brief";
-  const cached = aiCache.get(cacheKey);
+  const cached = await getCachedData(cacheKey);
   if (cached) {
     return res.json(cached);
   }
@@ -350,16 +396,7 @@ Output ONLY valid JSON. Match this schema exactly. Do NOT wrap it in any markdow
 
     let result;
     try {
-      const geminiResponse = await axios.post(geminiUrl, {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+      const responseText = await callGeminiWithOllamaFallback(prompt, true);
       result = JSON.parse(responseText.trim());
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Market Brief:", geminiError);
@@ -417,7 +454,7 @@ Output ONLY valid JSON. Match this schema exactly. Do NOT wrap it in any markdow
 
     // Inject generatedAt
     result.generatedAt = new Date().toISOString();
-    aiCache.set(cacheKey, result);
+    await setCachedData(cacheKey, result, 300);
 
     res.json(result);
   } catch (error: any) {
@@ -431,7 +468,7 @@ marketBriefRoutes.get("/portfolio-advisor", async (req, res) => {
   try {
     const user = await getOrCreateDefaultUser(req);
     const cacheKey = `portfolio-advisor-${user.id}`;
-    const cached = aiCache.get(cacheKey);
+    const cached = await getCachedData(cacheKey);
     if (cached) {
       return res.json(cached);
     }
@@ -643,15 +680,7 @@ Generate personalized recommendations. Return ONLY valid JSON matching this sche
 
     let result;
     try {
-      const geminiResponse = await axios.post(geminiUrl, {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-      const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+      const responseText = await callGeminiWithOllamaFallback(prompt, true);
       result = JSON.parse(responseText.trim());
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Portfolio Advisor:", geminiError);
@@ -718,7 +747,7 @@ Generate personalized recommendations. Return ONLY valid JSON matching this sche
     }
 
     result.generatedAt = new Date().toISOString();
-    aiCache.set(cacheKey, result);
+    await setCachedData(cacheKey, result, 300);
     res.json(result);
   } catch (error: any) {
     console.error("Failed to generate portfolio advisor report:", error);
@@ -728,7 +757,7 @@ Generate personalized recommendations. Return ONLY valid JSON matching this sche
 
 marketBriefRoutes.get("/market-drivers", async (req, res) => {
   const cacheKey = "market-drivers";
-  const cached = aiCache.get(cacheKey);
+  const cached = await getCachedData(cacheKey);
   if (cached) {
     return res.json(cached);
   }
@@ -808,16 +837,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
     let result;
     try {
-      const geminiResponse = await axios.post(geminiUrl, {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+      const responseText = await callGeminiWithOllamaFallback(prompt, true);
       result = JSON.parse(responseText.trim());
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Market Drivers:", geminiError);
@@ -871,7 +891,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     }
 
     result.generatedAt = new Date().toISOString();
-    aiCache.set(cacheKey, result);
+    await setCachedData(cacheKey, result, 300);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate market drivers:", error);
@@ -881,7 +901,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
 marketBriefRoutes.get("/global-market-pulse", async (req, res) => {
   const cacheKey = "global-market-pulse";
-  const cached = aiCache.get(cacheKey);
+  const cached = await getCachedData(cacheKey);
   if (cached) {
     return res.json(cached);
   }
@@ -954,16 +974,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
     let result;
     try {
-      const geminiResponse = await axios.post(geminiUrl, {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+      const responseText = await callGeminiWithOllamaFallback(prompt, true);
       result = JSON.parse(responseText.trim());
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Global Market Pulse:", geminiError);
@@ -1001,7 +1012,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     }
 
     result.generatedAt = new Date().toISOString();
-    aiCache.set(cacheKey, result);
+    await setCachedData(cacheKey, result, 300);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate global market pulse:", error);
@@ -1011,7 +1022,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
 marketBriefRoutes.get("/fear-greed", async (req, res) => {
   const cacheKey = "fear-greed";
-  const cached = aiCache.get(cacheKey);
+  const cached = await getCachedData(cacheKey);
   if (cached) {
     return res.json(cached);
   }
@@ -1121,16 +1132,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
     let result;
     try {
-      const geminiResponse = await axios.post(geminiUrl, {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+      const responseText = await callGeminiWithOllamaFallback(prompt, true);
       result = JSON.parse(responseText.trim());
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Fear & Greed index:", geminiError);
@@ -1159,7 +1161,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     if (!result.lastMonth) result.lastMonth = Math.max(0, Math.min(100, calculatedScore - 12));
     
     result.generatedAt = new Date().toISOString();
-    aiCache.set(cacheKey, result);
+    await setCachedData(cacheKey, result, 300);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate fear-greed index:", error);
@@ -1169,7 +1171,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
 marketBriefRoutes.get("/pick-of-the-day", async (req, res) => {
   const cacheKey = "pick-of-the-day";
-  const cached = aiCache.get(cacheKey);
+  const cached = await getCachedData(cacheKey);
   if (cached) {
     return res.json(cached);
   }
@@ -1288,16 +1290,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
     let result;
     try {
-      const geminiResponse = await axios.post(geminiUrl, {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+      const responseText = await callGeminiWithOllamaFallback(prompt, true);
       result = JSON.parse(responseText.trim());
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Pick of the Day:", geminiError);
@@ -1327,7 +1320,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     }
 
     result.generatedAt = new Date().toISOString();
-    aiCache.set(cacheKey, result);
+    await setCachedData(cacheKey, result, 300);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate pick of the day:", error);
@@ -1337,7 +1330,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
 marketBriefRoutes.get("/sector-momentum", async (req, res) => {
   const cacheKey = "sector-momentum";
-  const cached = aiCache.get(cacheKey);
+  const cached = await getCachedData(cacheKey);
   if (cached) {
     return res.json(cached);
   }
@@ -1437,16 +1430,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
 
     let result;
     try {
-      const geminiResponse = await axios.post(geminiUrl, {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+      const responseText = await callGeminiWithOllamaFallback(prompt, true);
       result = JSON.parse(responseText.trim());
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Sector Momentum:", geminiError);
@@ -1484,7 +1468,7 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     }
 
     result.generatedAt = new Date().toISOString();
-    aiCache.set(cacheKey, result);
+    await setCachedData(cacheKey, result, 300);
     res.json(result);
   } catch (error) {
     console.error("Failed to generate sector momentum:", error);
@@ -1740,16 +1724,7 @@ Please output a valid JSON matching this schema exactly. Output ONLY JSON, do NO
 
     let result;
     try {
-      const geminiResponse = await axios.post(geminiUrl, {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+      const responseText = await callGeminiWithOllamaFallback(prompt, true);
       result = JSON.parse(responseText.trim());
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Portfolio Advisor:", geminiError);

@@ -2,7 +2,7 @@ services:
   - type: web
     name: finpulse-backend
     env: node
-    region: oregon
+    region: ohio
     plan: free
     rootDir: finpulse-web/backend
     buildCommand: npm install && npm run build
