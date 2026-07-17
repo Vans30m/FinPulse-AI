@@ -39,12 +39,38 @@ def ask_finpulse(user_query):
     context = "\n".join(context_chunks) if context_chunks else "No relevant context found."
 
     # 3. Pass the structural database facts to Gemini to generate the UI statement
-    ai_response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=f"You are FinPulse AI, a precise financial assistant. Answer the user's question accurately using ONLY this background context facts:\n{context}\n\nQuestion: {user_query}"
-    )
-    
-    return ai_response.text
+    try:
+        ai_response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"You are FinPulse AI, a precise financial assistant. Answer the user's question accurately using ONLY this background context facts:\n{context}\n\nQuestion: {user_query}"
+        )
+        return ai_response.text
+    except Exception as e:
+        print(f"Gemini API call failed, falling back to Ollama: {e}")
+        try:
+            import urllib.request
+            import json
+            ollama_url = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
+            ollama_model = os.getenv("OLLAMA_MODEL", "llama3")
+            
+            data = json.dumps({
+                "model": ollama_model,
+                "prompt": f"You are FinPulse AI, a precise financial assistant. Answer the user's question accurately using ONLY this background context facts:\n{context}\n\nQuestion: {user_query}",
+                "stream": False
+            }).encode("utf-8")
+            
+            req = urllib.request.Request(
+                ollama_url,
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=30) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                return res_data.get("response", "Ollama fallback failed to return response text.")
+        except Exception as ollama_err:
+            print(f"Ollama fallback also failed: {ollama_err}")
+            raise e
 
 if __name__ == "__main__":
     prompt = "How much did NVIDIA make in their data center business?"
