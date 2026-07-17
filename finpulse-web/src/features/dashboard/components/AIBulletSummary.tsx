@@ -97,36 +97,37 @@ export default function AIBulletSummary() {
   const getSentimentColors = (sentiment: string) => {
     const s = (sentiment || "").toLowerCase();
     if (s === "bullish") {
-      return "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-350/20";
+      return "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400";
     }
     if (s === "bearish") {
-      return "bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-450 border-rose-350/20";
+      return "bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-450";
     }
-    return "bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border-amber-350/20";
+    return "bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400";
   };
 
   return (
     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
       {/* Top Header */}
-      <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+      <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
-          <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-extrabold rounded-md uppercase tracking-wider border border-indigo-200/20">
-            AI Insight
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
           </span>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Global Market Pulse</h3>
         </div>
 
         {/* Sentiment Badge */}
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border tracking-wider ${getSentimentColors(pulse.sentiment)}`}>
+        <div className="flex items-center gap-2.5">
+          <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${getSentimentColors(pulse.sentiment)}`}>
             {pulse.sentiment}
           </span>
           <button
             onClick={() => fetchPulse(true)}
-            className="p-1 rounded-lg border border-slate-200/50 dark:border-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            className="p-2 rounded-xl bg-slate-50/50 dark:bg-white/[0.02] text-slate-400 hover:text-slate-700 dark:text-slate-350 dark:hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md group"
             title="Refresh AI Pulse"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
+            <RotateCcw className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-180" />
           </button>
         </div>
       </div>

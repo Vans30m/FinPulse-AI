@@ -151,10 +151,10 @@ export default function FearGreedIndex() {
         </div>
         <button
           onClick={() => fetchIndex(true)}
-          className="p-1 rounded-lg border border-slate-200/50 dark:border-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+          className="p-2 rounded-xl border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] text-slate-400 hover:text-slate-700 dark:text-slate-350 dark:hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 group"
           title="Refresh Fear & Greed"
         >
-          <RotateCcw className="h-3.5 w-3.5" />
+          <RotateCcw className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-180" />
         </button>
       </div>
 
