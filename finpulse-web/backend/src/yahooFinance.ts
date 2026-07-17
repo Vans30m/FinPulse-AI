@@ -46,7 +46,7 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
 
       const data = response.data || {};
       const results = data.spark?.result || [];
-      const resultMap = new Map(results.map((r: any) => [r.symbol, r]));
+      const resultMap = new Map<string, any>(results.map((r: any) => [r.symbol, r] as [string, any]));
 
       return symbols.map(symbol => {
         const spark = resultMap.get(symbol);
@@ -74,7 +74,7 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
           fiftyTwoWeekLow: meta.fiftyTwoWeekLow || price,
           shortName: symbol.split('.')[0]
         };
-      }).filter(Boolean);
+      }).filter(Boolean) as any[];
     } catch (fallbackErr: any) {
       console.error(`[Yahoo Service] Resilient spark fallback failed:`, fallbackErr.message);
       throw err;
