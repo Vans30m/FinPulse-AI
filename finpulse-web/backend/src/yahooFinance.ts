@@ -45,12 +45,18 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
       });
 
       const data = response.data || {};
-      return symbols.map(symbol => {
-        const spark = data[symbol];
-        if (!spark) return null;
+      const results = data.spark?.result || [];
+      const resultMap = new Map(results.map((r: any) => [r.symbol, r]));
 
-        const price = spark.close?.[spark.close.length - 1] || 0;
-        const prevClose = spark.chartPreviousClose || price;
+      return symbols.map(symbol => {
+        const spark = resultMap.get(symbol);
+        if (!spark || !spark.response?.[0]) return null;
+
+        const resp = spark.response[0];
+        const meta = resp.meta || {};
+        const close = resp.indicators?.quote?.[0]?.close || [];
+        const price = meta.regularMarketPrice || close[close.length - 1] || 0;
+        const prevClose = meta.chartPreviousClose || price;
         const change = price - prevClose;
         const changePercent = prevClose ? (change / prevClose) * 100 : 0;
 
@@ -59,13 +65,13 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
           regularMarketPrice: price,
           regularMarketChange: change,
           regularMarketChangePercent: changePercent,
-          regularMarketVolume: 0,
-          currency: 'USD',
-          regularMarketOpen: price,
-          regularMarketDayHigh: price,
-          regularMarketDayLow: price,
-          fiftyTwoWeekHigh: price,
-          fiftyTwoWeekLow: price,
+          regularMarketVolume: meta.regularMarketVolume || 0,
+          currency: meta.currency || 'USD',
+          regularMarketOpen: meta.regularMarketOpen || price,
+          regularMarketDayHigh: meta.regularMarketDayHigh || price,
+          regularMarketDayLow: meta.regularMarketDayLow || price,
+          fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh || price,
+          fiftyTwoWeekLow: meta.fiftyTwoWeekLow || price,
           shortName: symbol.split('.')[0]
         };
       }).filter(Boolean);
