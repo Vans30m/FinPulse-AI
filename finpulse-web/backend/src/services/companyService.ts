@@ -83,6 +83,27 @@ export async function getFundamentals(symbol: string) {
     const name = quote.longName || quote.shortName || quote.displayName || symbol;
     const resolvedPrice = quote.regularMarketPrice ?? (quote as any).regularMarketOpen ?? (quote as any).previousClose ?? 0;
 
+    let bookValue = quote.bookValue;
+    let dividendYield = quote.dividendYield;
+    let roe: number | undefined = (quote as any).returnOnEquity;
+    let roce: number | undefined = (quote as any).returnOnAssets;
+    let about = "";
+
+    try {
+      const summary = await yahooFinance.quoteSummary(symbol, {
+        modules: ["defaultKeyStatistics", "financialData", "summaryProfile"]
+      });
+      if (summary) {
+        bookValue = summary.defaultKeyStatistics?.bookValue ?? bookValue;
+        dividendYield = summary.defaultKeyStatistics?.dividendYield ?? dividendYield;
+        roe = summary.financialData?.returnOnEquity ?? roe;
+        roce = summary.financialData?.returnOnAssets ?? roce;
+        about = summary.summaryProfile?.longBusinessSummary ?? "";
+      }
+    } catch (e) {
+      console.error(`Failed to fetch quoteSummary in getFundamentals for ${symbol}:`, e);
+    }
+
     const now = new Date();
     const startDate = new Date();
     startDate.setFullYear(now.getFullYear() - 5);
@@ -137,7 +158,12 @@ export async function getFundamentals(symbol: string) {
       marketState: quote.marketState,
       peRatio: quote.trailingPE,
       eps: quote.trailingEps,
-      performance: historyReturns
+      performance: historyReturns,
+      bookValue,
+      dividendYield,
+      roe,
+      roce,
+      about
     };
   } catch (error) {
     console.error(`Error fetching fundamentals for ${symbol}:`, error);

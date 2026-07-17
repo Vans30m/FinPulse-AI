@@ -101,7 +101,7 @@ const RAW_DOMESTIC_INDICES = [
 ];
 
 const RAW_GLOBAL_INDICES = [
-  // INDIA (24)
+  // INDIA (34)
   { symbol: "^NSEI", name: "NIFTY 50", region: "India" },
   { symbol: "^BSESN", name: "SENSEX", region: "India" },
   { symbol: "^NSEBANK", name: "NIFTY BANK", region: "India" },
@@ -114,6 +114,10 @@ const RAW_GLOBAL_INDICES = [
   { symbol: "NIFTYMIDCAP150.NS", name: "NIFTY MIDCAP 150", region: "India" },
   { symbol: "^CNXSC", name: "NIFTY SMALLCAP 100", region: "India" },
   { symbol: "NIFTYSMLCAP250.NS", name: "NIFTY SMALLCAP 250", region: "India" },
+  { symbol: "^CNXSMLCAP50", name: "NIFTY SMALLCAP 50", region: "India" },
+  { symbol: "^INDIAVIX", name: "INDIA VIX", region: "India" },
+  { symbol: "^CNXCMDT", name: "NIFTY COMMODITIES", region: "India" },
+  { symbol: "^CNXCPSE", name: "NIFTY CPSE", region: "India" },
   { symbol: "^CNXIT", name: "NIFTY IT", region: "India" },
   { symbol: "^CNXAUTO", name: "NIFTY AUTO", region: "India" },
   { symbol: "^CNXPHARMA", name: "NIFTY PHARMA", region: "India" },
@@ -126,34 +130,73 @@ const RAW_GLOBAL_INDICES = [
   { symbol: "^CNXMEDIA", name: "NIFTY MEDIA", region: "India" },
   { symbol: "^CNXINFRA", name: "NIFTY INFRASTRUCTURE", region: "India" },
   { symbol: "^CNXCONSUM", name: "NIFTY CONSUMPTION", region: "India" },
+  { symbol: "NIFTYMICROCAP250.NS", name: "NIFTY MICROCAP 250", region: "India" },
+  { symbol: "NIFTY_PVT_BANK.NS", name: "NIFTY PRIVATE BANK", region: "India" },
+  { symbol: "^CNXMNC", name: "NIFTY MNC", region: "India" },
+  { symbol: "^CNXDIVOP", name: "NIFTY DIVIDEND OP 50", region: "India" },
+  { symbol: "^CNXPSE", name: "NIFTY PSE", region: "India" },
+  { symbol: "^CNXSERVICE", name: "NIFTY SERVICES SECTOR", region: "India" },
 
-  // USA (6)
+  // USA (10)
   { symbol: "^GSPC", name: "S&P 500", region: "US" },
   { symbol: "^IXIC", name: "NASDAQ", region: "US" },
   { symbol: "^DJI", name: "Dow Jones", region: "US" },
   { symbol: "^RUT", name: "Russell 2000", region: "US" },
   { symbol: "^NDX", name: "NASDAQ 100", region: "US" },
   { symbol: "^VIX", name: "VIX", region: "US" },
+  { symbol: "^DJT", name: "Dow Jones Transport", region: "US" },
+  { symbol: "^DJU", name: "Dow Jones Utility", region: "US" },
+  { symbol: "^NYA", name: "NYSE Composite", region: "US" },
+  { symbol: "^TNX", name: "Treasury Yield 10 Years", region: "US" },
 
-  // EUROPE (5)
+  // EUROPE (10)
   { symbol: "^GDAXI", name: "DAX", region: "Europe" },
   { symbol: "^FCHI", name: "CAC 40", region: "Europe" },
   { symbol: "^FTSE", name: "FTSE 100", region: "Europe" },
   { symbol: "^STOXX50E", name: "EURO STOXX 50", region: "Europe" },
   { symbol: "^SSMI", name: "Swiss Market", region: "Europe" },
+  { symbol: "^FTSEMIB", name: "FTSE MIB", region: "Europe" },
+  { symbol: "^IBEX", name: "IBEX 35", region: "Europe" },
+  { symbol: "^BFX", name: "BEL 20", region: "Europe" },
+  { symbol: "^AEX", name: "AEX Index", region: "Europe" },
+  { symbol: "^OMXSP", name: "OMX Stockholm 30", region: "Europe" },
 
-  // JAPAN
+  // CANADA
+  { symbol: "^GSPTSE", name: "S&P/TSX Composite", region: "Canada" },
+
+  // AUSTRALIA
+  { symbol: "^AXJO", name: "S&P/ASX 200", region: "Australia" },
+
+  // CHINA
+  { symbol: "000001.SS", name: "SSE Composite", region: "China" },
+  { symbol: "399001.SZ", name: "Shenzhen Component", region: "China" },
+
+  // BRAZIL
+  { symbol: "^BVSP", name: "IBOVESPA", region: "Brazil" },
+
+  // MEXICO
+  { symbol: "^MXX", name: "IPC Index", region: "Mexico" },
+
+  // SINGAPORE
+  { symbol: "^STI", name: "Straits Times Index", region: "Singapore" },
+
+  // JAPAN (3)
   { symbol: "^N225", name: "Nikkei 225", region: "Japan" },
+  { symbol: "^TOPX", name: "TOPIX Index", region: "Japan" },
+  { symbol: "^JQINDEX", name: "JASDAQ Index", region: "Japan" },
 
-  // HONG KONG
+  // HONG KONG (3)
   { symbol: "^HSI", name: "Hang Seng", region: "Hong Kong" },
   { symbol: "^HSCE", name: "China Enterprises", region: "Hong Kong" },
+  { symbol: "^HSTECH", name: "Hang Seng Tech", region: "Hong Kong" },
 
-  // TAIWAN
+  // TAIWAN (2)
   { symbol: "^TWII", name: "TAIEX", region: "Taiwan" },
+  { symbol: "^TWOII", name: "Taiwan OTC Index", region: "Taiwan" },
 
-  // SOUTH KOREA
+  // SOUTH KOREA (2)
   { symbol: "^KS11", name: "KOSPI", region: "South Korea" },
+  { symbol: "^KQ11", name: "KOSDAQ Index", region: "South Korea" },
 
   // CRYPTO (16)
   { symbol: "BTC-USD", name: "Bitcoin", region: "Crypto" },
@@ -171,7 +214,7 @@ const RAW_GLOBAL_INDICES = [
   { symbol: "HBAR-USD", name: "Hedera", region: "Crypto" },
   { symbol: "SHIB-USD", name: "Shiba Inu", region: "Crypto" },
   { symbol: "ATOM-USD", name: "Cosmos", region: "Crypto" },
-  { symbol: "ETC-USD", name: "Ethereum Classic", region: "Crypto" },
+  { symbol: "ETC-USD", name: "Ethereum", region: "Crypto" },
 
   // FOREX (14)
   { symbol: "EURUSD=X", name: "EUR/USD", region: "Forex" },

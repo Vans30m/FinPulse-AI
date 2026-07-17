@@ -1,78 +1,31 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
-import MarketHeatmap from "../components/markets/MarketHeatmap";
 import MarketStatusBar from "../features/dashboard/components/MarketStatusBar";
 import { Search, X, Activity } from "lucide-react";
-import API_BASE_URL from "../config/api";
 import { useChart } from "../context/ChartContext";
 
-function Sparkline({ data, isPositive }: { data: { value: number }[]; isPositive: boolean }) {
-  const gradientId = useMemo(() => `sparkline-grad-${Math.random().toString(36).substring(2, 9)}`, []);
-  if (!data || data.length === 0) return null;
-  
-  const values = data.map(d => d.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min === 0 ? 1 : max - min;
-  
-  const height = 40;
-  const width = 100;
-  const padding = 2;
-  
-  const points = data.map((d, index) => {
-    const x = padding + (index / (data.length - 1)) * (width - 2 * padding);
-    const y = height - padding - ((d.value - min) / range) * (height - 2 * padding);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  
-  const pathD = `M ${points.join(" L ")}`;
-  const areaD = `${pathD} L ${width - padding},${height} L ${padding},${height} Z`;
-  const strokeColor = isPositive ? "#10b981" : "#f43f5e";
-
-  return (
-    <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`}>
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
-        </linearGradient>
-      </defs>
-      <path
-        d={areaD}
-        fill={`url(#${gradientId})`}
-      />
-      <path
-        d={pathD}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function MarketCard({ market }: { market: any }) {
+function MarketHeatmapTile({ market }: { market: any }) {
   const { openAsset } = useChart();
-  const [history, setHistory] = useState<any[]>([]);
   const changePercent = parseFloat(market.changePercent) || 0;
   const change = parseFloat(market.change) || 0;
   const price = parseFloat(market.price) || 0;
   const isPositive = changePercent >= 0;
 
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/global-markets/history/${encodeURIComponent(market.symbol)}?range=1mo`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setHistory(data.map((c: any) => ({ time: c.date, value: c.price || c.close || c.value })));
-        }
-      })
-      .catch(err => console.error(err));
-  }, [market.symbol]);
-
-  const sparklineData = history.length > 0 ? history : [{ time: new Date().toISOString(), value: price }];
+  const getHeatmapStyle = (val: number) => {
+    if (val >= 1.5) {
+      return "bg-emerald-700 dark:bg-emerald-800 text-white border-emerald-600/40 hover:bg-emerald-650 dark:hover:bg-emerald-750";
+    }
+    if (val > 0) {
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15";
+    }
+    if (val === 0) {
+      return "bg-slate-50 text-slate-400 border-slate-200 dark:bg-white/[0.01] dark:text-slate-500 dark:border-white/5 hover:bg-slate-100/50 dark:hover:bg-white/[0.02]";
+    }
+    if (val <= -1.0) {
+      return "bg-rose-700 dark:bg-rose-800 text-white border-rose-600/40 hover:bg-rose-650 dark:hover:bg-rose-750";
+    }
+    return "bg-rose-50/50 dark:bg-rose-950/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-50/80 dark:hover:bg-rose-950/15";
+  };
 
   return (
     <div
@@ -82,66 +35,38 @@ function MarketCard({ market }: { market: any }) {
           yahooSymbol: market.symbol,
           name: market.name,
           exchange: market.region,
-          type: "Index",
-          price: parseFloat(market.price) || 0,
-          change: parseFloat(market.change) || 0,
-          changePercent: parseFloat(market.changePercent) || 0,
+          type: market.region === "Crypto" ? "Crypto" : market.region === "Forex" ? "Forex" : market.region === "Commodities" ? "Commodities" : "Index",
+          price: price,
+          change: change,
+          changePercent: changePercent,
         })
       }
-      className="
-        relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-6 
-        backdrop-blur-sm transition-all duration-300 ease-out shadow-sm
-        hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/5 
-        dark:border-night-800 dark:bg-night-900/80 dark:hover:border-night-600
-      "
+      className={`
+        group relative flex aspect-[1.1] cursor-pointer flex-col items-center justify-center 
+        rounded-2xl border p-3 text-center transition-all duration-300 ease-out 
+        hover:-translate-y-1 hover:scale-[1.02] hover:shadow-md
+        ${getHeatmapStyle(changePercent)}
+      `}
     >
-      <div className="flex items-start justify-between gap-3 relative z-10">
-        <div>
-          <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 line-clamp-1 leading-tight">
-            {market.name}
-          </h3>
-        </div>
-        <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-night-800 dark:text-slate-400">
-          {market.region}
-        </span>
-      </div>
+      {/* Symbol */}
+      <span className="text-[10px] font-black tracking-wider uppercase opacity-75">
+        {market.symbol.replace("=X", "").replace("-USD", "").replace("=F", "")}
+      </span>
 
-      <div className="mt-6 flex items-end justify-between relative z-10">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-baseline gap-1.5">
-            <p className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
-              {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-          </div>
+      {/* Market Name */}
+      <h4 className="line-clamp-2 text-xs font-extrabold leading-tight tracking-tight mt-1 px-1">
+        {market.name}
+      </h4>
 
-          <div
-            className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${
-              isPositive ? "text-emerald-500" : "text-rose-500"
-            }`}
-          >
-            <span className="flex items-center justify-center rounded-full bg-current/10 p-0.5">
-              {isPositive ? (
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                </svg>
-              ) : (
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" />
-                </svg>
-              )}
-            </span>
-            <span>{Math.abs(change).toFixed(2)}</span>
-            <span>({isPositive ? "+" : ""}{changePercent.toFixed(2)}%)</span>
-          </div>
-        </div>
+      {/* Price */}
+      <span className="text-[10px] font-bold opacity-80 mt-1.5 tabular-nums">
+        {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </span>
 
-        <div className="h-14 w-28 opacity-75 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-          <Sparkline
-            data={sparklineData}
-            isPositive={isPositive}
-          />
-        </div>
-      </div>
+      {/* Percentage Change */}
+      <span className="text-xs font-black tabular-nums tracking-tighter mt-1">
+        {isPositive ? "+" : ""}{changePercent.toFixed(2)}%
+      </span>
     </div>
   );
 }
@@ -153,7 +78,7 @@ export default function Markets() {
   const { data: markets = [], isLoading } = useGlobalMarkets();
 
   const categories = [
-    "All", "India", "US", "Europe", "Japan", "Taiwan", "Hong Kong", "South Korea",
+    "All", "India", "US", "Europe", "Japan", "Taiwan", "Hong Kong", "South Korea", "Canada", "Australia", "China", "Brazil", "Mexico", "Singapore", "Crypto", "Forex", "Commodities"
   ];
 
   const REGION_FLAGS = {
@@ -164,6 +89,15 @@ export default function Markets() {
     "Hong Kong": "🇭🇰",
     Taiwan: "🇹🇼",
     "South Korea": "🇰🇷",
+    Canada: "🇨🇦",
+    Australia: "🇦🇺",
+    China: "🇨🇳",
+    Brazil: "🇧🇷",
+    Mexico: "🇲🇽",
+    Singapore: "🇸🇬",
+    Crypto: "🪙",
+    Forex: "💱",
+    Commodities: "🛢"
   };
 
   const groupedMarkets = useMemo(() => {
@@ -177,6 +111,15 @@ export default function Markets() {
       "Hong Kong": markets.filter((m: any) => m.region === "Hong Kong"),
       Taiwan: markets.filter((m: any) => m.region === "Taiwan"),
       "South Korea": markets.filter((m: any) => m.region === "South Korea"),
+      Canada: markets.filter((m: any) => m.region === "Canada"),
+      Australia: markets.filter((m: any) => m.region === "Australia"),
+      China: markets.filter((m: any) => m.region === "China"),
+      Brazil: markets.filter((m: any) => m.region === "Brazil"),
+      Mexico: markets.filter((m: any) => m.region === "Mexico"),
+      Singapore: markets.filter((m: any) => m.region === "Singapore"),
+      Crypto: markets.filter((m: any) => m.region === "Crypto"),
+      Forex: markets.filter((m: any) => m.region === "Forex"),
+      Commodities: markets.filter((m: any) => m.region === "Commodities"),
     };
 
     Object.keys(groups).forEach((region) => {
@@ -228,13 +171,7 @@ export default function Markets() {
         <MarketStatusBar />
       </div>
 
-      {/* 4. Heatmap */}
-      <div className="rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm dark:border-night-800 dark:bg-night-900/50">
-        <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-500">Market Heatmap</h3>
-        <MarketHeatmap markets={markets} />
-      </div>
-
-      {/* 5. Control Center */}
+      {/* Control Center */}
       <div className="sticky top-0 z-20 -mx-4 flex flex-col gap-4 border-y border-slate-200/60 bg-slate-50/80 px-4 py-4 backdrop-blur-xl dark:border-night-800 dark:bg-night-900/80 md:mx-0 md:flex-row md:items-center md:justify-between md:rounded-2xl md:border">
         {/* Region Filters */}
         <div className="overflow-x-auto w-full md:w-auto scrollbar-none">
@@ -272,7 +209,7 @@ export default function Markets() {
         </div>
       </div>
 
-      {/* 6. Markets Grid */}
+      {/* Markets Grid */}
       <div className="space-y-10 pt-2">
         {Object.entries(groupedMarkets).map(([region, regionMarkets]: any) => {
           if (activeCategory !== "All" && activeCategory !== region) return null;
@@ -284,7 +221,10 @@ export default function Markets() {
                 <div className="flex items-center gap-4 flex-1">
                   <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
                     <span className="mr-2 opacity-90">{REGION_FLAGS[region as keyof typeof REGION_FLAGS]}</span>
-                    {region}
+                    {region} {region === "Crypto" || region === "Forex" || region === "Commodities" ? "" : "Indices"}
+                    <span className="ml-2 text-xs font-semibold text-slate-400 dark:text-slate-500 normal-case">
+                      ({regionMarkets.length} assets)
+                    </span>
                   </h2>
                   <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent dark:from-night-800"></div>
                 </div>
@@ -296,7 +236,7 @@ export default function Markets() {
                   </span>
                   <input
                     type="text"
-                    placeholder={`Search ${region} indices...`}
+                    placeholder={`Search ${region} assets...`}
                     value={searchQueries[region] || ""}
                     onChange={(e) => setSearchQueries(prev => ({ ...prev, [region]: e.target.value }))}
                     className="w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/50 dark:bg-white/5 py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none shadow-sm transition-all duration-300 hover:bg-slate-200/40 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 focus:bg-white dark:focus:bg-night-950 focus:border-blue-600 dark:focus:border-cyan-400 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-cyan-400/10 focus:shadow-[0_0_20px_rgba(6,182,212,0.15)]"
@@ -322,15 +262,15 @@ export default function Markets() {
                 if (filteredMarkets.length === 0) {
                   return (
                     <div className="rounded-2xl border border-slate-200/60 bg-white/50 dark:border-night-800 dark:bg-night-900/50 p-8 text-center text-slate-400 dark:text-slate-500">
-                      No indices match "{query}" in this region.
+                      No assets match "{query}" in this section.
                     </div>
                   );
                 }
 
                 return (
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
                     {filteredMarkets.map((market: any) => (
-                      <MarketCard
+                      <MarketHeatmapTile
                         key={market.symbol}
                         market={market}
                       />

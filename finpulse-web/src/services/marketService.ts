@@ -21,6 +21,11 @@ export interface FundamentalData {
   peRatio?: number;
   eps?: number;
   performance?: any;
+  bookValue?: number;
+  dividendYield?: number;
+  roe?: number;
+  roce?: number;
+  about?: string;
 }
 
 export const TIMEFRAME_MAPPS: Record<string, { range: string; interval: string }> = {
@@ -50,10 +55,10 @@ export interface AdvancedTimeframeConfig {
 }
 
 export const ADVANCED_TIMEFRAME_MAPPS: Record<string, AdvancedTimeframeConfig> = {
-  "1 min": { interval: "1m", range: "1d" },
-  "5 mins": { interval: "5m", range: "5d" },
-  "15 mins": { interval: "15m", range: "5d" },
-  "30 mins": { interval: "30m", range: "5d" },
+  "1 min": { interval: "1m", range: "7d" },
+  "5 mins": { interval: "5m", range: "60d" },
+  "15 mins": { interval: "15m", range: "60d" },
+  "30 mins": { interval: "30m", range: "60d" },
   "1 hour": { interval: "1h", range: "3mo" },
   "4 hours": { interval: "1h", range: "6mo", aggregateType: "index", aggregateFactor: 4 },
   "1 day": { interval: "1d", range: "5y" },
