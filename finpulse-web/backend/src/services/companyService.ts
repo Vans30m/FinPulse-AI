@@ -30,7 +30,7 @@ function calculateHistoryReturns(history: any[], currentPrice: number, changePer
   const getReturnForDays = (days: number) => {
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() - days);
-    
+
     let closest = validHistory[0];
     let minDiff = Math.abs(new Date(closest.date).getTime() - targetDate.getTime());
     for (let i = 1; i < validHistory.length; i++) {
