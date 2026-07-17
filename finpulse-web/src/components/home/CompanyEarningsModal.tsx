@@ -2,6 +2,7 @@ import type { UpcomingEarning } from '../../types/earnings';
 import { X, Globe, Calendar, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StockLogo } from '../../utils/logo';
+import { useProfile } from '../../profile/hooks/useProfile';
 
 interface Props {
   earning: UpcomingEarning | null;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function CompanyEarningsModal({ earning, onClose }: Props) {
+  const { data: profile } = useProfile();
   if (!earning) return null;
 
   const formatLargeNum = (val?: number) => {
@@ -21,12 +23,22 @@ export default function CompanyEarningsModal({ earning, onClose }: Props) {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "N/A";
-    return new Date(dateStr).toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    try {
+      return new Date(dateStr).toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: profile?.timezone || undefined
+      });
+    } catch (e) {
+      return new Date(dateStr).toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
   };
 
 

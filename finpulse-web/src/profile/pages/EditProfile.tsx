@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useProfile, useUpdateProfile, useAvatarUpload } from '../hooks/useProfile';
 import AvatarUploader from '../components/AvatarUploader';
-import { Layout, Save, ArrowLeft } from 'lucide-react';
+import { Layout, Save, ArrowLeft, Globe, Clock, Coins } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const COUNTRIES_MAPPING = [
+  { name: 'India', flag: '🇮🇳', timezone: 'Asia/Kolkata', currency: 'INR (₹)' },
+  { name: 'United States', flag: '🇺🇸', timezone: 'America/New_York', currency: 'USD ($)' },
+  { name: 'United Kingdom', flag: '🇬🇧', timezone: 'Europe/London', currency: 'GBP (£)' },
+  { name: 'Japan', flag: '🇯🇵', timezone: 'Asia/Tokyo', currency: 'JPY (¥)' },
+  { name: 'Germany', flag: '🇩🇪', timezone: 'Europe/Berlin', currency: 'EUR (€)' },
+  { name: 'France', flag: '🇫🇷', timezone: 'Europe/Paris', currency: 'EUR (€)' },
+  { name: 'Canada', flag: '🇨🇦', timezone: 'America/Toronto', currency: 'CAD ($)' },
+  { name: 'Australia', flag: '🇦🇺', timezone: 'Australia/Sydney', currency: 'AUD ($)' },
+  { name: 'Singapore', flag: '🇸🇬', timezone: 'Asia/Singapore', currency: 'SGD ($)' },
+  { name: 'Brazil', flag: '🇧🇷', timezone: 'America/Sao_Paulo', currency: 'BRL (R$)' },
+  { name: 'South Africa', flag: '🇿🇦', timezone: 'Africa/Johannesburg', currency: 'ZAR (R)' },
+  { name: 'United Arab Emirates', flag: '🇦🇪', timezone: 'Asia/Dubai', currency: 'AED (د.إ)' }
+];
 
 export default function EditProfile() {
   const { data: profile, isLoading } = useProfile();
@@ -40,6 +55,24 @@ export default function EditProfile() {
       ...prev,
       [e.target.name]: e.target.value
     }));
+  };
+
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedCountry = e.target.value;
+    const mapping = COUNTRIES_MAPPING.find(c => c.name === selectedCountry);
+    if (mapping) {
+      setFormData(prev => ({
+        ...prev,
+        country: selectedCountry,
+        timezone: mapping.timezone,
+        currency: mapping.currency
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        country: selectedCountry
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -131,46 +164,32 @@ export default function EditProfile() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Country</label>
-            <input
-              type="text"
+            <select
               name="country"
               value={formData.country}
-              onChange={handleChange}
-              className="w-full bg-slate-100 dark:bg-night-800/80 px-4 py-2.5 text-xs rounded-xl border border-transparent focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-cyan-400 text-slate-900 dark:text-white transition-all"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Timezone</label>
-            <select
-              name="timezone"
-              value={formData.timezone}
-              onChange={handleChange}
-              className="w-full bg-slate-100 dark:bg-night-800/80 px-4 py-2.5 text-xs rounded-xl border border-transparent focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-cyan-400 text-slate-900 dark:text-white transition-all"
+              onChange={handleCountryChange}
+              className="w-full bg-slate-100 dark:bg-night-800/80 px-4 py-2.5 text-xs rounded-xl border border-transparent focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-cyan-400 text-slate-900 dark:text-white transition-all cursor-pointer font-semibold"
             >
-              <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-              <option value="America/New_York">America/New_York (EST)</option>
-              <option value="UTC">UTC</option>
-              <option value="Europe/London">Europe/London (GMT)</option>
+              {COUNTRIES_MAPPING.map(c => (
+                <option key={c.name} value={c.name}>
+                  {c.flag} {c.name}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Currency</label>
-            <select
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Currency (Auto-Mapped)</label>
+            <input
+              type="text"
               name="currency"
               value={formData.currency}
-              onChange={handleChange}
-              className="w-full bg-slate-100 dark:bg-night-800/80 px-4 py-2.5 text-xs rounded-xl border border-transparent focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-cyan-400 text-slate-900 dark:text-white transition-all"
-            >
-              <option value="INR (₹)">INR (₹)</option>
-              <option value="USD ($)">USD ($)</option>
-              <option value="EUR (€)">EUR (€)</option>
-              <option value="GBP (£)">GBP (£)</option>
-            </select>
+              readOnly
+              className="w-full bg-slate-50 dark:bg-night-800/40 px-4 py-2.5 text-xs rounded-xl border border-transparent text-slate-500 dark:text-slate-400 cursor-not-allowed select-none"
+            />
           </div>
         </div>
 

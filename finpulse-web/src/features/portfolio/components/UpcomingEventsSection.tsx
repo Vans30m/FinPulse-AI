@@ -2,6 +2,7 @@ import { memo, useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import API_BASE_URL from "../../../config/api";
+import { useProfile } from "../../../profile/hooks/useProfile";
 import { 
   CalendarClock, ChevronRight, CircleDot, Clock3, Search, SlidersHorizontal, 
   ArrowUpDown, ExternalLink, RefreshCw, X, 
@@ -48,6 +49,7 @@ const sortOptions = [
 ];
 
 function UpcomingEventsSection() {
+  const { data: profile } = useProfile();
   const [events, setEvents] = useState<PortfolioEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -63,6 +65,19 @@ function UpcomingEventsSection() {
 
   // Active Detail Modal
   const [selectedEvent, setSelectedEvent] = useState<PortfolioEvent | null>(null);
+
+  const formatEventDate = (dateStr: string, options?: Intl.DateTimeFormatOptions) => {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "TBD";
+    try {
+      return date.toLocaleDateString(undefined, {
+        ...options,
+        timeZone: profile?.timezone || undefined
+      });
+    } catch (e) {
+      return date.toLocaleDateString(undefined, options);
+    }
+  };
 
 
 
@@ -518,7 +533,7 @@ function UpcomingEventsSection() {
                         <div className="flex flex-col">
                           <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Event Horizon</span>
                           <div className="flex items-center gap-1 mt-0.5">
-                            <span className="text-[10px] font-bold text-slate-700 dark:text-slate-350">{new Date(event.eventDate).toLocaleDateString(undefined, { month: 'short', day: '2-digit' })}</span>
+                            <span className="text-[10px] font-bold text-slate-700 dark:text-slate-350">{formatEventDate(event.eventDate, { month: 'short', day: '2-digit' })}</span>
                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
                               getCountdownLabel(event.eventDate) === "Expired" 
                                 ? "bg-slate-500/10 text-slate-500" 
@@ -589,7 +604,7 @@ function UpcomingEventsSection() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
                   <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
                     <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">Event Horizon</span>
-                    <span className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-white">{new Date(selectedEvent.eventDate).toLocaleDateString()}</span>
+                    <span className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-white">{formatEventDate(selectedEvent.eventDate)}</span>
                   </div>
                   <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
                     <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">Importance</span>

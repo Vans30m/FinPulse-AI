@@ -4,6 +4,7 @@ import type { UpcomingEarning } from '../../types/earnings';
 import { Sparkles, TrendingUp, TrendingDown, Calendar, ChevronLeft, ChevronRight, AlertCircle, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { StockLogo } from '../../utils/logo';
+import { useProfile } from '../../profile/hooks/useProfile';
 
 // Lazy load modal
 const CompanyEarningsModal = lazy(() => import('./CompanyEarningsModal'));
@@ -76,6 +77,7 @@ const EarningsCard = memo(function EarningsCard({
   earning: UpcomingEarning;
   onClick: (earning: UpcomingEarning) => void;
 }) {
+  const { data: profile } = useProfile();
   const isPositive = earning.changePercent >= 0;
 
   const formatMarketCap = (val: number) => {
@@ -88,11 +90,20 @@ const EarningsCard = memo(function EarningsCard({
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "N/A";
-    return new Date(dateStr).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    try {
+      return new Date(dateStr).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: profile?.timezone || undefined
+      });
+    } catch (e) {
+      return new Date(dateStr).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
   };
 
 

@@ -71,13 +71,6 @@ export default function Profile() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Timezone</span>
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-0.5">
-                  <Clock className="h-3.5 w-3.5 text-slate-400" /> {profile.timezone || 'UTC'}
-                </p>
-              </div>
-
-              <div>
                 <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Country</span>
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-0.5">
                   <MapPin className="h-3.5 w-3.5 text-slate-400" /> {profile.country || 'India'}

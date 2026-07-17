@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, X, Coins, PieChart, TrendingUp, Loader2, History } from 'lucide-react';
 import { useChart } from "../../context/ChartContext";
 import { StockLogo } from '../../utils/logo';
@@ -19,6 +19,7 @@ export default function CommandPalette() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Local Storage recent searches
   const [recentSearches, setRecentSearches] = useState<SearchResult[]>(() => {
@@ -133,6 +134,18 @@ export default function CommandPalette() {
     setSelectedIndex(-1);
   }, [query, isOpen]);
 
+  useEffect(() => {
+    if (selectedIndex >= 0 && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const activeElement = container.querySelector('.search-result-active') as HTMLElement;
+      if (activeElement) {
+        activeElement.scrollIntoView({
+          block: 'nearest',
+        });
+      }
+    }
+  }, [selectedIndex]);
+
   if (!isOpen) return null;
 
   // Helper function to assign icons based on Finnhub's asset types
@@ -177,12 +190,12 @@ export default function CommandPalette() {
 
       {/* Blurred Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm transition-opacity z-0"
         onClick={() => setIsOpen(false)}
       />
 
       {/* Palette Container */}
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
 
         {/* Search Input Area */}
         <div className="flex items-center border-b border-slate-100 dark:border-white/5 px-4">
@@ -213,7 +226,7 @@ export default function CommandPalette() {
               onClick={() => setActiveTab(tab)}
               className={`whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${activeTab === tab
                   ? 'bg-blue-600 text-white dark:bg-cyan-500 dark:text-night-950'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10'
+                  : 'bg-slate-100 text-slate-655 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10'
                 }`}
             >
               {tab}
@@ -222,7 +235,7 @@ export default function CommandPalette() {
         </div>
 
         {/* Search Results Area */}
-        <div className="max-h-[50vh] overflow-y-auto p-2 custom-scrollbar">
+        <div ref={scrollContainerRef} className="max-h-[50vh] overflow-y-auto p-2 custom-scrollbar">
           {!query ? (
             recentSearches.length > 0 ? (
               <div className="space-y-1">
@@ -243,7 +256,7 @@ export default function CommandPalette() {
                     <button
                       key={`recent-${item.symbol}-${idx}`}
                       className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors group ${
-                        isHighlighted ? "bg-slate-50 dark:bg-white/10" : "hover:bg-slate-50 dark:hover:bg-white/5"
+                        isHighlighted ? "bg-slate-50 dark:bg-white/10 search-result-active" : "hover:bg-slate-50 dark:hover:bg-white/5"
                       }`}
                       onClick={() => handleSelect(item)}
                     >
@@ -289,7 +302,7 @@ export default function CommandPalette() {
                   <button
                     key={`${item.symbol}-${item.exchange}`}
                     className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-colors group ${
-                      isHighlighted ? "bg-slate-50 dark:bg-white/10" : "hover:bg-slate-50 dark:hover:bg-white/5"
+                      isHighlighted ? "bg-slate-50 dark:bg-white/10 search-result-active" : "hover:bg-slate-50 dark:hover:bg-white/5"
                     }`}
                     onClick={() => handleSelect(item)}
                   >
@@ -301,7 +314,7 @@ export default function CommandPalette() {
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
                           {item.symbol}
                         </h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <p className="text-xs text-slate-555 dark:text-slate-400">
                           {item.name}
                         </p>
                       </div>

@@ -35,10 +35,37 @@ import SecurityCard from "../components/profile/SecurityCard";
 import toast from "react-hot-toast";
 import API_BASE_URL from "../config/api";
 
+const MODAL_COUNTRIES_MAPPING = [
+  { name: 'India', flag: '🇮🇳', timezone: 'Asia/Kolkata', currency: 'INR (₹)' },
+  { name: 'United States', flag: '🇺🇸', timezone: 'America/New_York', currency: 'USD ($)' },
+  { name: 'United Kingdom', flag: '🇬🇧', timezone: 'Europe/London', currency: 'GBP (£)' },
+  { name: 'Germany', flag: '🇩🇪', timezone: 'Europe/Berlin', currency: 'EUR (€)' },
+  { name: 'Japan', flag: '🇯🇵', timezone: 'Asia/Tokyo', currency: 'JPY (¥)' },
+  { name: 'Hong Kong', flag: '🇭🇰', timezone: 'Asia/Hong_Kong', currency: 'HKD ($)' },
+  { name: 'Taiwan', flag: '🇹🇼', timezone: 'Asia/Taipei', currency: 'TWD (NT$)' },
+  { name: 'South Korea', flag: '🇰🇷', timezone: 'Asia/Seoul', currency: 'KRW (₩)' }
+];
 
 export default function Profile() {
   const { user, setUser } = useAppData();
   const { theme, setTheme } = useTheme();
+
+  const handleCountryChange = (selectedCountry: string) => {
+    const mapping = MODAL_COUNTRIES_MAPPING.find(c => c.name === selectedCountry);
+    if (mapping) {
+      setEditForm(prev => ({
+        ...prev,
+        country: selectedCountry,
+        timezone: mapping.timezone,
+        currency: mapping.currency
+      }));
+    } else {
+      setEditForm(prev => ({
+        ...prev,
+        country: selectedCountry
+      }));
+    }
+  };
 
   // Profile data from backend
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
@@ -723,51 +750,30 @@ export default function Profile() {
                   <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Country</label>
                   <select
                     value={editForm.country}
-                    onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-night-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500"
+                    onChange={(e) => handleCountryChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-night-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                   >
-                    <option value="India" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">India</option>
-                    <option value="United States" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">United States</option>
-                    <option value="United Kingdom" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">United Kingdom</option>
-                    <option value="Germany" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Germany</option>
-                    <option value="Japan" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Japan</option>
-                    <option value="Hong Kong" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Hong Kong</option>
-                    <option value="Taiwan" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Taiwan</option>
-                    <option value="South Korea" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">South Korea</option>
+                    {MODAL_COUNTRIES_MAPPING.map(c => (
+                      <option key={c.name} value={c.name} className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">
+                        {c.flag} {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Timezone</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Preferred Currency (Auto-Mapped)</label>
                   <select
-                    value={editForm.timezone}
-                    onChange={(e) => setEditForm({ ...editForm, timezone: e.target.value })}
+                    value={editForm.currency}
+                    onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-night-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500"
                   >
-                    <option value="Asia/Kolkata" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Asia/Kolkata</option>
-                    <option value="America/New_York" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">America/New_York</option>
-                    <option value="Europe/London" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Europe/London</option>
-                    <option value="Europe/Berlin" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Europe/Berlin</option>
-                    <option value="Asia/Tokyo" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Asia/Tokyo</option>
-                    <option value="Asia/Hong_Kong" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Asia/Hong_Kong</option>
-                    <option value="Asia/Taipei" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Asia/Taipei</option>
-                    <option value="Asia/Seoul" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">Asia/Seoul</option>
+                    <option value="INR (₹)" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">INR (₹)</option>
+                    <option value="USD ($)" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">USD ($)</option>
+                    <option value="EUR (€)" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">EUR (€)</option>
+                    <option value="GBP (£)" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">GBP (£)</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Preferred Currency</label>
-                <select
-                  value={editForm.currency}
-                  onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-night-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="INR (₹)" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">INR (₹)</option>
-                  <option value="USD ($)" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">USD ($)</option>
-                  <option value="EUR (€)" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">EUR (€)</option>
-                  <option value="GBP (£)" className="bg-white dark:bg-night-900 text-slate-800 dark:text-white">GBP (£)</option>
-                </select>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
