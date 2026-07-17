@@ -31,6 +31,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
   const [resetPasswordOtp, setResetPasswordOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -48,31 +49,31 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
           const backendRes = await apiFetch(`${API_BASE_URL}/api/auth/google-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: userInfo.email,
-              name: userInfo.name,
-              avatar: userInfo.picture,
-              providerId: userInfo.sub
-            })
+            body: JSON.stringify({ token: tokenResponse.access_token }),
           });
 
           if (backendRes.ok) {
             const data = await backendRes.json();
+            localStorage.setItem('finpulse_token', data.token);
+            localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+            setUser(data.user);
+
             if (data.hasPin) {
-              setStep('enter-pin');
+              sessionStorage.setItem('finpulse_pin_verified', 'true');
+              onLoginSuccess();
             } else {
               setStep('set-pin');
             }
           } else {
             const errData = await backendRes.json();
-            setError(errData.error || 'Failed to authenticate with backend.');
+            setError(errData.error || 'Google Login database error.');
           }
         } else {
           setError('Failed to retrieve user email from Google.');
         }
       } catch (err) {
-        console.error("Google user profile load failed:", err);
-        setError(err instanceof ApiRequestError ? err.message : 'Failed to load Google profile.');
+        console.error("Google authentication failed:", err);
+        setError(err instanceof ApiRequestError ? err.message : 'Google authentication failed.');
       } finally {
         setGoogleLoading(false);
       }
@@ -116,6 +117,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
       setResetPasswordOtp('');
       setNewPassword('');
       setLoading(false);
+      setIsSuccess(false);
       setGoogleLoading(false);
     }
   }, [isOpen]);
@@ -390,7 +392,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
   if (!isOpen) return null;
 
   const handlePinChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (loading) return;
+    if (loading || isSuccess) return;
     // Only allow numbers
     const val = e.target.value.replace(/\D/g, '');
     if (val.length <= 6) {
@@ -400,55 +402,64 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
 
     // Auto-submit when 6 digits are entered
     if (val.length === 6) {
-      setLoading(true);
-      try {
-        if (step === 'set-pin') {
-          const res = await apiFetch(`${API_BASE_URL}/api/auth/set-pin`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, pin: val })
-          });
+      // Delay slightly to let the 6th digit render on the screen
+      setTimeout(async () => {
+        setLoading(true);
+        try {
+          if (step === 'set-pin') {
+            const res = await apiFetch(`${API_BASE_URL}/api/auth/set-pin`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, pin: val })
+            });
 
-          if (res.ok) {
-            const data = await res.json();
-            localStorage.setItem('finpulse_token', data.token);
-            localStorage.setItem('finpulse-user', JSON.stringify(data.user));
-            setUser(data.user);
-            sessionStorage.setItem('finpulse_pin_verified', 'true');
-            setProfileUserId(data.user.id);
-            setStep('profile-setup');
-          } else {
-            const errData = await res.json();
-            setError(errData.error || 'Failed to save PIN.');
-            setPin('');
-          }
-        } else if (step === 'enter-pin') {
-          const res = await apiFetch(`${API_BASE_URL}/api/auth/verify-pin`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, pin: val })
-          });
+            if (res.ok) {
+              const data = await res.json();
+              localStorage.setItem('finpulse_token', data.token);
+              localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+              setUser(data.user);
+              sessionStorage.setItem('finpulse_pin_verified', 'true');
+              setIsSuccess(true);
+              // Wait 800ms for verification success animation to show
+              await new Promise(resolve => setTimeout(resolve, 800));
+              setProfileUserId(data.user.id);
+              setStep('profile-setup');
+            } else {
+              const errData = await res.json();
+              setError(errData.error || 'Failed to save PIN.');
+              setPin('');
+            }
+          } else if (step === 'enter-pin') {
+            const res = await apiFetch(`${API_BASE_URL}/api/auth/verify-pin`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, pin: val })
+            });
 
-          if (res.ok) {
-            const data = await res.json();
-            localStorage.setItem('finpulse_token', data.token);
-            localStorage.setItem('finpulse-user', JSON.stringify(data.user));
-            setUser(data.user);
-            sessionStorage.setItem('finpulse_pin_verified', 'true');
-            onLoginSuccess();
-          } else {
-            const errData = await res.json();
-            setError(errData.error || 'Incorrect PIN. Please try again.');
-            setPin('');
+            if (res.ok) {
+              const data = await res.json();
+              localStorage.setItem('finpulse_token', data.token);
+              localStorage.setItem('finpulse-user', JSON.stringify(data.user));
+              setUser(data.user);
+              sessionStorage.setItem('finpulse_pin_verified', 'true');
+              setIsSuccess(true);
+              // Wait 800ms for verification success animation to show
+              await new Promise(resolve => setTimeout(resolve, 800));
+              onLoginSuccess();
+            } else {
+              const errData = await res.json();
+              setError(errData.error || 'Incorrect PIN. Please try again.');
+              setPin('');
+            }
           }
+        } catch (err) {
+          console.error("PIN authentication failed:", err);
+          setError(err instanceof ApiRequestError ? err.message : 'Connection error. Please try again.');
+          setPin('');
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        console.error("PIN authentication failed:", err);
-        setError(err instanceof ApiRequestError ? err.message : 'Connection error. Please try again.');
-        setPin('');
-      } finally {
-        setLoading(false);
-      }
+      }, 250);
     }
   };
 
@@ -1013,14 +1024,15 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
 
                 {/* The clever hidden input & visible boxes trick */}
                 <div className="relative mb-8">
-                  {loading ? (
-                    <div className="flex flex-col items-center justify-center py-4 space-y-3">
-                      <svg className="animate-spin h-8 w-8 text-blue-600 dark:text-cyan-400" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 animate-pulse">
-                        Verifying secure access...
+                  {isSuccess ? (
+                    <div className="flex flex-col items-center justify-center py-2 space-y-2 animate-in zoom-in-95 duration-300">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 border-2 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                        <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-bold text-emerald-500 dark:text-emerald-400">
+                        Securely Verified
                       </p>
                     </div>
                   ) : (
@@ -1031,31 +1043,48 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                         inputMode="numeric"
                         maxLength={6}
                         value={pin}
+                        disabled={loading}
                         onChange={handlePinChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-text z-20"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-text z-20 disabled:cursor-not-allowed"
                       />
 
                       <div className="flex gap-3 justify-between pointer-events-none">
-                        {[...Array(6)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`flex h-14 w-12 items-center justify-center rounded-xl border-2 text-xl font-bold transition-colors ${pin.length === i
-                              ? 'border-blue-600 dark:border-cyan-400 text-slate-900 dark:text-white'
-                              : pin.length > i
-                                ? 'border-blue-500 dark:border-cyan-400/80 text-blue-600 dark:text-cyan-400 bg-blue-50/20 dark:bg-cyan-500/5'
-                                : 'border-slate-200 dark:border-white/10 text-slate-900 dark:text-white'
+                        {[...Array(6)].map((_, i) => {
+                          const isFocused = pin.length === i && !loading;
+                          const isFilled = pin.length > i;
+                          return (
+                            <div
+                              key={i}
+                              className={`flex h-14 w-12 items-center justify-center rounded-xl border-2 text-xl font-bold transition-all duration-200 ${
+                                loading
+                                  ? 'border-blue-600/40 dark:border-cyan-400/40 text-blue-600/40 dark:text-cyan-400/40 bg-slate-50/50 dark:bg-white/[0.01] scale-95'
+                                  : isFocused
+                                  ? 'border-blue-600 dark:border-cyan-400 text-slate-900 dark:text-white scale-105 shadow-md shadow-blue-500/10'
+                                  : isFilled
+                                  ? 'border-blue-500 dark:border-cyan-400/80 text-blue-600 dark:text-cyan-400 bg-blue-50/20 dark:bg-cyan-500/5'
+                                  : 'border-slate-200 dark:border-white/10 text-slate-900 dark:text-white'
                               }`}
-                          >
-                            {pin.length > i ? '•' : ''}
-                          </div>
-                        ))}
+                            >
+                              {isFilled ? '•' : ''}
+                            </div>
+                          );
+                        })}
                       </div>
+
+                      {loading && (
+                        <div className="absolute -bottom-6 left-0 right-0 flex items-center justify-center">
+                          <svg className="animate-spin h-4 w-4 text-blue-600 dark:text-cyan-400" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
 
                 {error && (
-                  <p className="text-sm text-rose-500 font-medium text-center animate-pulse">{error}</p>
+                  <p className="text-sm text-rose-500 font-medium text-center animate-in fade-in duration-200">{error}</p>
                 )}
 
                 {step === 'enter-pin' && (

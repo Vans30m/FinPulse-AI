@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import { yahooFinance } from '../index.js';
+import crypto from 'crypto';
 
 const router = Router();
 
@@ -350,8 +351,7 @@ router.post('/set-pin', async (req: any, res: any) => {
       return res.status(400).json({ error: 'Email and a 6-digit PIN are required' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPin = await bcrypt.hash(pin, salt);
+    const hashedPin = crypto.createHmac('sha256', JWT_SECRET).update(pin).digest('hex');
 
     const user = await prisma.user.update({
       where: { email },
@@ -399,7 +399,22 @@ router.post('/verify-pin', async (req: any, res: any) => {
       return res.status(400).json({ error: 'User or PIN not set up' });
     }
 
-    const isMatch = await bcrypt.compare(pin, user.devicePin);
+    let isMatch = false;
+    if (user.devicePin.startsWith('$2a$') || user.devicePin.startsWith('$2b$')) {
+      isMatch = await bcrypt.compare(pin, user.devicePin);
+      if (isMatch) {
+        // Upgrade PIN to fast hash asynchronously
+        const newFastHash = crypto.createHmac('sha256', JWT_SECRET).update(pin).digest('hex');
+        prisma.user.update({
+          where: { email },
+          data: { devicePin: newFastHash }
+        }).catch(err => console.error("Error migrating PIN hash:", err));
+      }
+    } else {
+      const hash = crypto.createHmac('sha256', JWT_SECRET).update(pin).digest('hex');
+      isMatch = (hash === user.devicePin);
+    }
+
     if (!isMatch) {
       return res.status(400).json({ error: 'Incorrect PIN' });
     }
@@ -731,8 +746,7 @@ router.post('/reset-pin-with-otp', async (req: any, res: any) => {
     }
 
     // 2. Hash new PIN and update user
-    const salt = await bcrypt.genSalt(10);
-    const hashedPin = await bcrypt.hash(newPin, salt);
+    const hashedPin = crypto.createHmac('sha256', JWT_SECRET).update(newPin).digest('hex');
 
     const user = await prisma.user.update({
       where: { email },

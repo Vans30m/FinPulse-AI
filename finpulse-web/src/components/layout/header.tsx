@@ -161,28 +161,28 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                     end={item.id === "pulse"}
                     onMouseEnter={() => setHoveredTab(item.id)}
                     className={({ isActive }) =>
-                      `relative px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-300 z-10 ${isActive
-                        ? "text-white dark:text-night-950"
+                      `relative px-4 py-2 text-sm font-semibold transition-colors duration-300 z-10 ${isActive
+                        ? "text-blue-600 dark:text-cyan-400"
                         : "text-slate-500 hover:text-slate-900 dark:text-slate-450 dark:hover:text-white"
                       }`
                     }
                   >
                     {({ isActive }) => (
-                      <span className="relative z-10 flex items-center justify-center">
+                      <span className="relative z-10 flex items-center justify-center py-1">
                         {/* Hover Pill Background */}
                         {hoveredTab === item.id && !isActive && (
                           <motion.span
                             layoutId="navbarHoverPill"
-                            className="absolute inset-0 -mx-1.5 -my-1 rounded-xl bg-slate-100/70 dark:bg-white/[0.04] -z-20"
+                            className="absolute inset-0 -mx-1.5 -my-0.5 rounded-xl bg-slate-100/70 dark:bg-white/[0.04] -z-20"
                             transition={{ type: "spring", stiffness: 350, damping: 28 }}
                           />
                         )}
 
-                        {/* Active Selection Sliding Indicator */}
+                        {/* Active Selection Sliding Indicator (Minimalist Underline) */}
                         {isActive && (
                           <motion.span
                             layoutId="activeNavIndicator"
-                            className="absolute inset-0 -mx-1.5 -my-1 bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 rounded-xl shadow-lg shadow-cyan-500/20 dark:shadow-cyan-400/10 -z-30"
+                            className="absolute bottom-[-6px] left-0 right-0 h-[2.5px] bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-500 rounded-full shadow-[0_1px_4px_rgba(6,182,212,0.4)]"
                             transition={{ type: "spring", stiffness: 380, damping: 30 }}
                           />
                         )}

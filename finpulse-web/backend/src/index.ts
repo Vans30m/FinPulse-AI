@@ -7,6 +7,9 @@ import cors from 'cors';
 import axios from 'axios';
 import { prisma } from './prisma.js';
 import Parser from 'rss-parser';
+import NodeCache from 'node-cache';
+
+const searchCache = new NodeCache({ stdTTL: 3600 }); // Cache search queries for 1 hour
 
 import { yahooFinance } from './yahooFinance.js';
 export { yahooFinance };
@@ -174,6 +177,11 @@ app.get("/api/search", async (req: Request, res: Response) => {
       return res.json([]);
     }
 
+    const cachedResults = searchCache.get(q);
+    if (cachedResults) {
+      return res.json(cachedResults);
+    }
+
     const yahooResults = await yahooFinance.search(q);
 
     const results =
@@ -194,6 +202,7 @@ app.get("/api/search", async (req: Request, res: Response) => {
           };
         }) || [];
 
+    searchCache.set(q, results);
     res.json(results);
   } catch (error) {
     console.error("Yahoo Search Error", error);

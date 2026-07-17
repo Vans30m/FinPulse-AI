@@ -1,5 +1,10 @@
 import express from "express";
 import axios from "axios";
+import NodeCache from "node-cache";
+
+const marketsCache = new NodeCache({ stdTTL: 15 }); // 15 seconds cache for real-time market data
+const explanationCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache for macro market explanation
+
 import {
   getAllGlobalMarkets,
   getMarketHistory,
@@ -15,7 +20,12 @@ import {
 const globalMarketsRoutes = express.Router();
 globalMarketsRoutes.get("/", async (req, res) => {
   try {
+    const cachedData = marketsCache.get("global-markets-all");
+    if (cachedData) {
+      return res.json(cachedData);
+    }
     const data = await getAllGlobalMarkets();
+    marketsCache.set("global-markets-all", data);
     res.json(data);
   } catch (err: any) {
     res.status(500).json(err);
@@ -153,6 +163,11 @@ const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 
 marketExplanationRoutes.get("/", async (req, res) => {
   try {
+    const cachedData = explanationCache.get("market-explanation");
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const response = await axios.get("https://www.alphavantage.co/query", {
       params: {
         function: "NEWS_SENTIMENT",
@@ -188,7 +203,7 @@ marketExplanationRoutes.get("/", async (req, res) => {
       macro = "Inflation data remains a key market focus";
     }
 
-    res.json({
+    const result = {
       domestic: {
         index: "NIFTY 50",
         change: "+0.64%",
@@ -200,7 +215,10 @@ marketExplanationRoutes.get("/", async (req, res) => {
         reasons: global.length > 0 ? global : ["Global sentiment remains positive"]
       },
       macro
-    });
+    };
+
+    explanationCache.set("market-explanation", result);
+    res.json(result);
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ error: "Failed to generate market explanation" });
