@@ -24,8 +24,14 @@ function CountdownBadge({ earningsDate }: { earningsDate: string | null }) {
   localToday.setHours(0, 0, 0, 0);
 
   const targetDate = new Date(earningsDate);
-  const diffTime = targetDate.getTime() - localToday.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const targetLocal = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate()
+  );
+
+  const diffTime = targetLocal.getTime() - localToday.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) {
     return (

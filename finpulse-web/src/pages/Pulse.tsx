@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Activity } from "lucide-react";
 import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
 import { useUpcomingEarnings } from "../hooks/useUpcomingEarnings";
-import { useMarketScreener } from "../hooks/useMarketScreeners";
 
 import ForexCryptoRibbon from "../features/dashboard/components/ForexCryptoRibbon";
 import AIMarketSentiment from "../features/dashboard/components/AIMarketSentiment";
@@ -26,9 +25,9 @@ export default function Pulse() {
   // Fetch the data at the page level to sync the global loading screen
   const { isLoading: marketsLoading } = useGlobalMarkets();
   const { isLoading: earningsLoading } = useUpcomingEarnings("india");
-  const { isLoading: screenerLoading } = useMarketScreener(marketRegion, "gainers");
 
-  const isLoading = marketsLoading || earningsLoading || screenerLoading;
+  // Keep page interactive when changing screener regions (which has its own inner skeleton loaders)
+  const isLoading = marketsLoading || earningsLoading;
 
   if (isLoading) {
     return (

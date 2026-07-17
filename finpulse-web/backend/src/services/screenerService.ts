@@ -11,36 +11,60 @@ export async function getMarketScreener(
   market: string,
   type: string
 ) {
-  const data =
-    await getAllGlobalMarkets();
+  const cacheKey = `market-screener-${market}-${type}`;
+  const cached = screenerCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
 
-  const filtered =
-    data.filter((item: any) => {
+  let filtered: any[] = [];
+
+  if (market === "us") {
+    try {
+      const symbols = MARKET_UNIVERSE.usa || [];
+      const quotes = await fetchQuotesResilient(symbols);
+      filtered = quotes
+        .filter((q: any) => q && q.symbol)
+        .map((quote: any) => ({
+          symbol: quote.symbol,
+          name: quote.shortName || quote.longName || quote.symbol,
+          price: quote.regularMarketPrice || 0,
+          change: quote.regularMarketChange || 0,
+          changePercent: quote.regularMarketChangePercent || 0,
+          volume: quote.regularMarketVolume || 0,
+        }));
+    } catch (err: any) {
+      console.error("Failed to fetch US screener quotes:", err.message);
+    }
+  } else {
+    const data = await getAllGlobalMarkets();
+    filtered = data.filter((item: any) => {
       if (market === "india") {
         return item.region === "India";
       }
-      if (market === "us") {
-        return item.region === "US";
-      }
       return true;
     });
+  }
 
+  let result: any[] = [];
   if (type === "gainers") {
-    return filtered
+    result = filtered
       .sort((a: any, b: any) => b.changePercent - a.changePercent)
       .slice(0, 10);
-  }
-  if (type === "losers") {
-    return filtered
+  } else if (type === "losers") {
+    result = filtered
       .sort((a: any, b: any) => a.changePercent - b.changePercent)
       .slice(0, 10);
-  }
-  if (type === "active") {
-    return filtered
+  } else if (type === "active") {
+    result = filtered
       .sort((a: any, b: any) => b.volume - a.volume)
       .slice(0, 10);
+  } else {
+    result = filtered;
   }
-  return filtered;
+
+  screenerCache.set(cacheKey, result);
+  return result;
 }
 
 export async function getDomesticScreener(
