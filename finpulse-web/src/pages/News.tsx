@@ -2,6 +2,8 @@ import { Newspaper, Calendar, Loader2 } from "lucide-react";
 import { useEffect, useState, memo, useMemo } from "react";
 import AlertsTimeline from "../features/dashboard/components/AlertsTimeline";
 import API_BASE_URL from "../config/api";
+import { pageCache } from "../utils/cache";
+import PageLoader from "../components/ui/PageLoader";
 
 interface EconomicEvent {
   time: string;
@@ -15,8 +17,6 @@ interface EconomicEvent {
 
 function CustomEconomicCalendar() {
   const [activeTab, setActiveTab] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
-  const [events, setEvents] = useState<EconomicEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   const selectedDate = useMemo(() => {
     const d = new Date();
@@ -31,6 +31,11 @@ function CustomEconomicCalendar() {
     return `${year}-${month}-${day}`;
   }, [activeTab]);
 
+  const cacheKey = `economicCalendar-${selectedDate}`;
+  const cachedCalendar = pageCache.get(cacheKey);
+  const [events, setEvents] = useState<EconomicEvent[]>(cachedCalendar || []);
+  const [isLoading, setIsLoading] = useState(!cachedCalendar);
+
   useEffect(() => {
     const fetchCalendar = async () => {
       try {
@@ -39,6 +44,7 @@ function CustomEconomicCalendar() {
         if (res.ok) {
           const data = await res.json();
           setEvents(data || []);
+          pageCache.set(cacheKey, data || []);
         }
       } catch (err) {
         console.error("Failed to load economic events:", err);
@@ -47,7 +53,7 @@ function CustomEconomicCalendar() {
       }
     };
     fetchCalendar();
-  }, [selectedDate]);
+  }, [selectedDate, cacheKey]);
 
   const getImpactBadge = (impact: string) => {
     switch (impact.toLowerCase()) {
@@ -66,7 +72,7 @@ function CustomEconomicCalendar() {
     const forecastVal = parseFloat(forecastStr.replace(/[^\d.-]/g, ''));
     if (isNaN(actualVal) || isNaN(forecastVal)) return "text-slate-700 dark:text-slate-350";
     if (actualVal > forecastVal) return "text-emerald-600 dark:text-emerald-400 font-bold";
-    if (actualVal < forecastVal) return "text-rose-600 dark:text-rose-450 font-bold";
+    if (actualVal < forecastVal) return "text-rose-600 dark:text-rose-455 font-bold";
     return "text-slate-700 dark:text-slate-350";
   };
 
@@ -98,7 +104,7 @@ function CustomEconomicCalendar() {
 
       {/* Events Table Container */}
       <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar pr-1">
-        {isLoading ? (
+        {isLoading && events.length === 0 ? (
           <div className="flex justify-center items-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-cyan-400" />
           </div>
@@ -143,9 +149,42 @@ function CustomEconomicCalendar() {
 const MemoizedCustomEconomicCalendar = memo(CustomEconomicCalendar);
 
 export default function News() {
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const cachedNews = pageCache.get('liveNews');
+  const cachedCalendar = pageCache.get(`economicCalendar-${todayStr}`);
+  const [showLoader, setShowLoader] = useState(!cachedNews || !cachedCalendar);
+
+  useEffect(() => {
+    if (cachedNews && cachedCalendar) {
+      setShowLoader(false);
+      return;
+    }
+
+    const checkInterval = setInterval(() => {
+      const news = pageCache.get('liveNews');
+      const calendar = pageCache.get(`economicCalendar-${todayStr}`);
+      if (news && calendar) {
+        setShowLoader(false);
+        clearInterval(checkInterval);
+      }
+    }, 150);
+
+    return () => clearInterval(checkInterval);
+  }, [todayStr, cachedNews, cachedCalendar]);
+
+  if (showLoader) {
+    return <PageLoader title="Market Intelligence Center" message="Syncing premium news networks and economic calendar feeds..." />;
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
 
       {/* Real-time Header Row */}
       <div className="flex items-center gap-4 pb-6 border-b border-slate-200/50 dark:border-white/5 pt-2">
@@ -160,7 +199,7 @@ export default function News() {
           <h1 className="text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
             Market Intelligence
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1.5 max-w-xl">
+          <p className="text-xs text-slate-555 dark:text-slate-400 font-semibold mt-1.5 max-w-xl">
             Real-time global coverage aggregated from premium networks and macroeconomic schedules.
           </p>
         </div>

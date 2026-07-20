@@ -12,11 +12,34 @@ import AIRankingCard from "./AIRankingCard";
 import toast from "react-hot-toast";
 import API_BASE_URL from "../../../config/api";
 import { useChart } from "../../../context/ChartContext";
+import { pageCache } from "../../../utils/cache";
+import PageLoader from "../../../components/ui/PageLoader";
 
 export default function Watchlist() {
   const { openAsset } = useChart();
   const { data: watchlistsData, isLoading } = useWatchlists();
-  const watchlists = useMemo(() => Array.isArray(watchlistsData) ? watchlistsData : [], [watchlistsData]);
+  
+  // Cache check for instant load
+  const cachedData = pageCache.get('watchlists');
+  const [showLoader, setShowLoader] = useState(!cachedData && isLoading);
+
+  useEffect(() => {
+    if (watchlistsData) {
+      pageCache.set('watchlists', watchlistsData);
+    }
+  }, [watchlistsData]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowLoader(false);
+    }
+  }, [isLoading]);
+
+  const watchlists = useMemo(() => {
+    const activeData = watchlistsData || cachedData;
+    return Array.isArray(activeData) ? activeData : [];
+  }, [watchlistsData, cachedData]);
+
   const createListMutation = useCreateWatchlist();
   const deleteListMutation = useDeleteWatchlist();
   const addItemMutation = useAddWatchlistItem();
@@ -25,12 +48,8 @@ export default function Watchlist() {
 
   const [activeListId, setActiveListId] = useState<string>("");
 
-  if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Activity className="h-8 w-8 text-blue-500 animate-spin" />
-      </div>
-    );
+  if (showLoader) {
+    return <PageLoader title="Security Watchlists" message="Analyzing watchlists and active tickers..." />;
   }
 
   const [isCreatingList, setIsCreatingList] = useState(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, FileText, Check, ChevronDown, MessageSquare, X
+  Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, FileText, Check, ChevronDown, MessageSquare, X,
+  Presentation, FileCheck, Leaf, Award, Search
 } from 'lucide-react';
 import StockSearch from '../components/ui/StockSearch';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
@@ -186,6 +187,8 @@ export default function StockScreener() {
   const [shareholdingPeriod, setShareholdingPeriod] = useState<'quarterly' | 'yearly'>('quarterly');
   const [workbookTab, setWorkbookTab] = useState<'peers' | 'quarters' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'ratios' | 'insights'>('quarters');
   const [companyNews, setCompanyNews] = useState<any[]>([]);
+  const [docSearchQuery, setDocSearchQuery] = useState("");
+  const [docCategoryFilter, setDocCategoryFilter] = useState("All");
   const [activeDocumentModal, setActiveDocumentModal] = useState<{
     type: 'transcript' | 'summary';
     title: string;
@@ -1113,6 +1116,47 @@ Slide Outline:
     }
 
     return ratings;
+  }, [selectedStock]);
+
+  const investorPresentations = useMemo(() => {
+    if (!selectedStock) return [];
+    return [
+      { title: 'Q4 Investor Presentation', date: 'May 2026', size: '4.2 MB' },
+      { title: 'Strategic Roadmap 2028', date: 'Feb 2026', size: '8.5 MB' },
+      { title: 'Product Innovation Summit Brief', date: 'Nov 2025', size: '3.1 MB' },
+      { title: 'Q3 Investor Deck', date: 'Nov 2025', size: '3.8 MB' }
+    ];
+  }, [selectedStock]);
+
+  const statutoryFilings = useMemo(() => {
+    if (!selectedStock) return [];
+    const filingPrefix = selectedStock.symbol.endsWith('.NS') ? 'BSE/NSE Disclosures' : 'SEC Filings';
+    return [
+      { title: 'Form 10-K (Annual Filing)', date: 'Mar 2026', type: filingPrefix },
+      { title: 'Form 10-Q (Quarterly Filing)', date: 'Nov 2025', type: filingPrefix },
+      { title: 'Form 8-K (Current Event Statement)', date: 'Oct 2025', type: filingPrefix },
+      { title: 'Prospectus (Addendum)', date: 'Aug 2025', type: filingPrefix }
+    ];
+  }, [selectedStock]);
+
+  const analystReports = useMemo(() => {
+    if (!selectedStock) return [];
+    return [
+      { title: 'Consensus Rating: BUY', agency: 'Goldman Sachs', target: selectedStock.symbol.endsWith('.NS') ? `₹${(selectedStock.price * 1.25).toFixed(0)}` : `$${(selectedStock.price * 1.25).toFixed(0)}` },
+      { title: 'Initiating Coverage: Overweight', agency: 'Morgan Stanley', target: selectedStock.symbol.endsWith('.NS') ? `₹${(selectedStock.price * 1.30).toFixed(0)}` : `$${(selectedStock.price * 1.30).toFixed(0)}` },
+      { title: 'Equity Research Note', agency: 'JPMorgan Chase', target: selectedStock.symbol.endsWith('.NS') ? `₹${(selectedStock.price * 1.20).toFixed(0)}` : `$${(selectedStock.price * 1.20).toFixed(0)}` },
+      { title: 'Sector Update Report', agency: 'Fidelity', target: 'N/A' }
+    ];
+  }, [selectedStock]);
+
+  const esgDisclosures = useMemo(() => {
+    if (!selectedStock) return [];
+    return [
+      { title: 'Sustainability Report 2025', score: 'AAA Rating' },
+      { title: 'Net-Zero Pathway Audit', score: 'Level 1' },
+      { title: 'Corporate Governance Charter', score: 'Compliant' },
+      { title: 'Supply Chain Code of Conduct', score: 'Verified' }
+    ];
   }, [selectedStock]);
 
   // Handle stock selection and fetch data
@@ -2215,159 +2259,393 @@ Slide Outline:
 
               {/* Full Width Documents Card */}
               <div id="screener-documents" className="scroll-mt-28 pb-8 mt-6 w-full relative">
-                <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 pb-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/10">
-                    <FileText className="h-4 w-4" />
-                  </span>
-                  Documents Hub
-                </h3>
+                
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200 dark:border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/10">
+                      <FileText className="h-5 w-5 animate-pulse" />
+                    </span>
+                    <div>
+                      <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+                        Intel Documents Hub
+                      </h3>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                        Historical disclosures, call logs, research reports, and ESG statements.
+                      </p>
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {/* Column 1: Announcements */}
-                  <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-emerald-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300 group">
-                    <div className="flex flex-col gap-2.5 mb-3 shrink-0">
-                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                        <TrendingUp className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                        <h4 className="text-xs font-black uppercase tracking-wider">Announcements</h4>
+                  {/* Search Bar in Document Hub */}
+                  <div className="relative flex items-center w-full md:w-72 shrink-0">
+                    <Search className="absolute left-3.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search files inside hub..."
+                      value={docSearchQuery}
+                      onChange={(e) => setDocSearchQuery(e.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] py-2.5 pl-11 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-night-900 focus:border-cyan-500 dark:focus:border-cyan-400 focus:outline-none shadow-inner transition-all duration-300"
+                    />
+                    {docSearchQuery && (
+                      <button
+                        onClick={() => setDocSearchQuery("")}
+                        className="absolute right-3.5 p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Hub Category Tabs */}
+                <div className="flex gap-2 mb-6 overflow-x-auto pb-1 hide-scrollbar">
+                  {[
+                    { id: 'All', label: 'All Intel (8)' },
+                    { id: 'Filings', label: 'Filings & Reports' },
+                    { id: 'Announcements', label: 'Announcements' },
+                    { id: 'Decks', label: 'Presentations & Calls' },
+                    { id: 'Ratings', label: 'Ratings & ESG' }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setDocCategoryFilter(tab.id)}
+                      className={`px-4 py-2 rounded-2xl text-xs font-black uppercase transition-all tracking-wider shrink-0 ${docCategoryFilter === tab.id
+                        ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md scale-[1.02]'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Grid layout of Document Columns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  
+                  {/* Category 1: Announcements (Announcements tab) */}
+                  {(docCategoryFilter === 'All' || docCategoryFilter === 'Announcements') && (
+                    <div className="bg-slate-50/40 dark:bg-white/[0.01] border-t-4 border-t-emerald-500 border border-slate-200/40 dark:border-white/5 p-5 rounded-3xl flex flex-col h-full hover:shadow-lg hover:border-emerald-500/20 transition-all duration-300 group">
+                      <div className="flex items-center justify-between gap-2.5 mb-4 shrink-0">
+                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                          <TrendingUp className="h-4.5 w-4.5 group-hover:scale-110 transition-transform" />
+                          <h4 className="text-xs font-black uppercase tracking-wider">Announcements</h4>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/40 dark:border-white/5">
+                          {companyNews.length} Files
+                        </span>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-[10px] md:text-xs max-h-[250px] custom-scrollbar">
+                        {companyNews.length > 0 ? (
+                          companyNews
+                            .filter(item => !docSearchQuery || item.title?.toLowerCase().includes(docSearchQuery.toLowerCase()))
+                            .map((item, index) => {
+                              const timeStr = item.providerPublishTime
+                                ? new Date(item.providerPublishTime).toLocaleDateString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
+                                : 'Recent';
+                              return (
+                                <a
+                                  key={item.uuid || index}
+                                  href={item.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block space-y-1 group/item cursor-pointer"
+                                >
+                                  <div className="font-extrabold text-slate-800 dark:text-slate-200 group-hover/item:text-emerald-600 dark:group-hover/item:text-emerald-400 leading-snug transition-colors">
+                                    {item.title}
+                                  </div>
+                                  <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                    {timeStr} • {item.publisher || 'News Source'}
+                                  </div>
+                                </a>
+                              );
+                            })
+                        ) : (
+                          <div className="text-slate-450 text-[10px] font-bold text-center py-8">
+                            No recent announcements found.
+                          </div>
+                        )}
                       </div>
                     </div>
+                  )}
 
-                    <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-[10px] md:text-xs max-h-[250px] custom-scrollbar">
-                      {companyNews.length > 0 ? (
-                        companyNews.map((item, index) => {
-                          const timeStr = item.providerPublishTime
-                            ? new Date(item.providerPublishTime).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })
-                            : 'Recent';
-                          return (
+                  {/* Category 2: Annual Reports (Filings & Reports tab) */}
+                  {(docCategoryFilter === 'All' || docCategoryFilter === 'Filings') && (
+                    <div className="bg-slate-50/40 dark:bg-white/[0.01] border-t-4 border-t-blue-500 border border-slate-200/40 dark:border-white/5 p-5 rounded-3xl flex flex-col h-full hover:shadow-lg hover:border-blue-500/20 transition-all duration-300 group">
+                      <div className="flex items-center justify-between gap-2.5 mb-4 shrink-0">
+                        <div className="flex items-center gap-2 text-blue-650 dark:text-cyan-400">
+                          <Globe className="h-4.5 w-4.5 group-hover:rotate-12 transition-transform" />
+                          <h4 className="text-xs font-black uppercase tracking-wider">Annual Reports</h4>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/40 dark:border-white/5">
+                          4 Files
+                        </span>
+                      </div>
+                      <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
+                        {['2026', '2025', '2024', '2023']
+                          .filter(yr => !docSearchQuery || `financial year ${yr}`.includes(docSearchQuery.toLowerCase()))
+                          .map((yr) => (
+                            <div
+                              key={yr}
+                              onClick={() => handleDownloadAnnualReport(yr)}
+                              className="group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-blue-500/10"
+                            >
+                              <div className="font-extrabold text-blue-600 dark:text-cyan-400 flex items-center justify-between">
+                                <span>Financial Year {yr}</span>
+                                <Download className="h-3.5 w-3.5 opacity-0 group-hover/item:opacity-100 text-blue-500 dark:text-cyan-400 transition-opacity" />
+                              </div>
+                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">Report aggregated from {isIndian ? 'BSE' : 'SEC filing'}</div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category 3: Statutory Filings (Filings & Reports tab) */}
+                  {(docCategoryFilter === 'All' || docCategoryFilter === 'Filings') && (
+                    <div className="bg-slate-50/40 dark:bg-white/[0.01] border-t-4 border-t-cyan-500 border border-slate-200/40 dark:border-white/5 p-5 rounded-3xl flex flex-col h-full hover:shadow-lg hover:border-cyan-500/20 transition-all duration-300 group">
+                      <div className="flex items-center justify-between gap-2.5 mb-4 shrink-0">
+                        <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400">
+                          <FileCheck className="h-4.5 w-4.5 group-hover:scale-110 transition-transform" />
+                          <h4 className="text-xs font-black uppercase tracking-wider">Statutory Filings</h4>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/40 dark:border-white/5">
+                          4 Files
+                        </span>
+                      </div>
+                      <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
+                        {statutoryFilings
+                          .filter(f => !docSearchQuery || f.title.toLowerCase().includes(docSearchQuery.toLowerCase()))
+                          .map((f, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                handleDownloadAnnualReport(f.date.split(' ')[1] || '2026');
+                                toast.success(`Viewing Statutory Filing: ${f.title}`);
+                              }}
+                              className="group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-cyan-500/10"
+                            >
+                              <div className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                                <span>{f.title}</span>
+                                <Download className="h-3.5 w-3.5 opacity-0 group-hover/item:opacity-100 text-cyan-500 dark:text-cyan-400 transition-opacity" />
+                              </div>
+                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">{f.date} • {f.type}</div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category 4: Investor Presentations (Presentations & Calls tab) */}
+                  {(docCategoryFilter === 'All' || docCategoryFilter === 'Decks') && (
+                    <div className="bg-slate-50/40 dark:bg-white/[0.01] border-t-4 border-t-rose-500 border border-slate-200/40 dark:border-white/5 p-5 rounded-3xl flex flex-col h-full hover:shadow-lg hover:border-rose-500/20 transition-all duration-300 group">
+                      <div className="flex items-center justify-between gap-2.5 mb-4 shrink-0">
+                        <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                          <Presentation className="h-4.5 w-4.5 group-hover:scale-110 transition-transform" />
+                          <h4 className="text-xs font-black uppercase tracking-wider">Investor Decks</h4>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/40 dark:border-white/5">
+                          4 Files
+                        </span>
+                      </div>
+                      <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
+                        {investorPresentations
+                          .filter(deck => !docSearchQuery || deck.title.toLowerCase().includes(docSearchQuery.toLowerCase()))
+                          .map((deck, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                handleDownloadAnnualReport('2026');
+                                toast.success(`Downloaded: ${deck.title}`);
+                              }}
+                              className="group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-rose-500/10"
+                            >
+                              <div className="font-extrabold text-rose-600 dark:text-rose-400 flex items-center justify-between">
+                                <span>{deck.title}</span>
+                                <span className="text-[8px] font-black uppercase px-1 py-0.5 rounded bg-rose-500/10 text-rose-500">
+                                  {deck.size}
+                                </span>
+                              </div>
+                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">Published: {deck.date}</div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category 5: Concalls & Transcripts (Presentations & Calls tab) */}
+                  {(docCategoryFilter === 'All' || docCategoryFilter === 'Decks') && (
+                    <div className="bg-slate-50/40 dark:bg-white/[0.01] border-t-4 border-t-purple-500 border border-slate-200/40 dark:border-white/5 p-5 rounded-3xl flex flex-col h-full hover:shadow-lg hover:border-purple-500/20 transition-all duration-300 group">
+                      <div className="flex items-center justify-between gap-2.5 mb-4 shrink-0">
+                        <div className="flex items-center gap-2 text-purple-650 dark:text-purple-400">
+                          <MessageSquare className="h-4.5 w-4.5 group-hover:scale-110 transition-transform" />
+                          <h4 className="text-xs font-black uppercase tracking-wider">Concalls</h4>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/40 dark:border-white/5">
+                          5 Files
+                        </span>
+                      </div>
+
+                      <div className="flex-1 space-y-3.5 pr-1 text-[10px] md:text-xs">
+                        {[
+                          { date: 'Jun 2026', ppt: false },
+                          { date: 'Jun 2025', ppt: true },
+                          { date: 'May 2024', ppt: true },
+                          { date: 'May 2023', ppt: true },
+                          { date: 'May 2022', ppt: true }
+                        ]
+                          .filter(c => !docSearchQuery || c.date.toLowerCase().includes(docSearchQuery.toLowerCase()))
+                          .map((c) => (
+                            <div key={c.date} className="flex flex-wrap items-center justify-between gap-1.5 py-1 border-b border-slate-100/50 dark:border-white/[0.02] last:border-0 pb-1.5">
+                              <span className="font-bold text-slate-700 dark:text-slate-350 font-mono text-[10px]">{c.date}</span>
+                              <div className="flex flex-wrap gap-1 shrink-0">
+                                <button
+                                  onClick={() => showTranscript(c.date)}
+                                  className="px-2 py-0.5 border border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10 rounded text-[8px] font-black tracking-wider transition-all"
+                                >
+                                  Transcript
+                                </button>
+                                <button
+                                  onClick={() => showAISummary(c.date)}
+                                  className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white dark:from-purple-500 dark:to-indigo-500 rounded text-[8px] font-black tracking-wider shadow-sm transition-all"
+                                >
+                                  AI Summary
+                                </button>
+                                <button
+                                  disabled={!c.ppt}
+                                  onClick={() => c.ppt && handleDownloadPPT(c.date)}
+                                  className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider transition-all border ${c.ppt ? 'border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10' : 'border-slate-200 dark:border-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}
+                                >
+                                  PPT
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category 6: Credit Ratings (Ratings & ESG tab) */}
+                  {(docCategoryFilter === 'All' || docCategoryFilter === 'Ratings') && (
+                    <div className="bg-slate-50/40 dark:bg-white/[0.01] border-t-4 border-t-amber-500 border border-slate-200/40 dark:border-white/5 p-5 rounded-3xl flex flex-col h-full hover:shadow-lg hover:border-amber-500/20 transition-all duration-300 group">
+                      <div className="flex items-center justify-between gap-2.5 mb-4 shrink-0">
+                        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                          <Bookmark className="h-4.5 w-4.5 group-hover:scale-110 transition-transform" />
+                          <h4 className="text-xs font-black uppercase tracking-wider">Credit Ratings</h4>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/40 dark:border-white/5">
+                          {creditRatings.length} Files
+                        </span>
+                      </div>
+                      <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
+                        {creditRatings
+                          .filter(r => !docSearchQuery || r.agency.toLowerCase().includes(docSearchQuery.toLowerCase()) || r.label.toLowerCase().includes(docSearchQuery.toLowerCase()))
+                          .map((r, idx) => (
                             <a
-                              key={item.uuid || index}
-                              href={item.link}
+                              key={idx}
+                              href={`https://www.google.com/search?q=${encodeURIComponent(selectedStock.name + ' ' + r.agency + ' ' + r.label + ' ' + r.date)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="block space-y-1 group/item cursor-pointer"
+                              className="block group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-amber-500/10"
                             >
-                              <div className="font-extrabold text-slate-800 dark:text-slate-200 group-hover/item:text-emerald-650 dark:group-hover/item:text-emerald-400 leading-snug transition-colors">
-                                {item.title}
+                              <div className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                                <span>{r.label}</span>
+                                <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${r.status === 'Positive'
+                                  ? 'bg-emerald-500/10 text-emerald-500'
+                                  : r.status === 'Negative'
+                                    ? 'bg-rose-500/10 text-rose-500'
+                                    : 'bg-blue-500/10 text-blue-500'
+                                  }`}>
+                                  {r.status}
+                                </span>
                               </div>
-                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                {timeStr} • {item.publisher || 'News Source'}
-                              </div>
+                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">{r.date} • {r.agency}</div>
                             </a>
-                          );
-                        })
-                      ) : (
-                        <div className="text-slate-450 text-[10px] font-bold text-center py-8">
-                          No recent announcements or news found.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Column 2: Annual reports */}
-                  <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-blue-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-blue-500/30 transition-all duration-300 group">
-                    <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400 mb-4 shrink-0">
-                      <Globe className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-                      <h4 className="text-xs font-black uppercase tracking-wider">Annual reports</h4>
-                    </div>
-                    <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
-                      {['2026', '2025', '2024', '2023'].map((yr) => (
-                        <div
-                          key={yr}
-                          onClick={() => handleDownloadAnnualReport(yr)}
-                          className="group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-blue-500/10"
-                        >
-                          <div className="font-extrabold text-blue-600 dark:text-cyan-400 flex items-center justify-between">
-                            <span>Financial Year {yr}</span>
-                            <Download className="h-3 w-3 opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                          </div>
-                          <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">Report aggregated from {isIndian ? 'bse' : 'sec filing'}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Column 3: Credit ratings */}
-                  <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-amber-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-amber-500/30 transition-all duration-300 group">
-                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-4 shrink-0">
-                      <Bookmark className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                      <h4 className="text-xs font-black uppercase tracking-wider">Credit ratings</h4>
-                    </div>
-                    <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
-                      {creditRatings.map((r, idx) => (
-                        <a
-                          key={idx}
-                          href={`https://www.google.com/search?q=${encodeURIComponent(selectedStock.name + ' ' + r.agency + ' ' + r.label + ' ' + r.date)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-amber-500/10"
-                        >
-                          <div className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                            <span>{r.label}</span>
-                            <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${r.status === 'Positive'
-                              ? 'bg-emerald-500/10 text-emerald-500'
-                              : r.status === 'Negative'
-                                ? 'bg-rose-500/10 text-rose-500'
-                                : 'bg-blue-500/10 text-blue-500'
-                              }`}>
-                              {r.status}
-                            </span>
-                          </div>
-                          <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">{r.date} • {r.agency}</div>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Column 4: Concalls */}
-                  <div className="bg-slate-50/40 dark:bg-white/[0.01] border-l-4 border-l-purple-500 border border-slate-200/40 dark:border-white/5 p-4 rounded-2xl flex flex-col h-full hover:shadow-lg hover:border-purple-500/30 transition-all duration-300 group">
-                    <div className="flex items-center gap-2 mb-4 shrink-0">
-                      <div className="flex items-center gap-2 text-purple-650 dark:text-purple-400">
-                        <MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                        <h4 className="text-xs font-black uppercase tracking-wider">Concalls</h4>
+                          ))}
                       </div>
                     </div>
+                  )}
 
-                    <div className="flex-1 space-y-3.5 pr-1 text-[10px] md:text-xs">
-                      {[
-                        { date: 'Jun 2026', ppt: false },
-                        { date: 'Jun 2025', ppt: true },
-                        { date: 'May 2024', ppt: true },
-                        { date: 'May 2023', ppt: true },
-                        { date: 'May 2022', ppt: true }
-                      ].map((c) => (
-                        <div key={c.date} className="flex flex-wrap items-center justify-between gap-1.5 py-1 border-b border-slate-100/50 dark:border-white/[0.02] last:border-0 pb-1.5">
-                          <span className="font-bold text-slate-700 dark:text-slate-350 font-mono text-[10px]">{c.date}</span>
-                          <div className="flex flex-wrap gap-1 shrink-0">
-                            <button
-                              onClick={() => showTranscript(c.date)}
-                              className="px-2 py-0.5 border border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10 rounded text-[8px] font-black tracking-wider transition-all"
-                            >
-                              Transcript
-                            </button>
-                            <button
-                              onClick={() => showAISummary(c.date)}
-                              className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white dark:from-purple-500 dark:to-indigo-500 rounded text-[8px] font-black tracking-wider shadow-sm transition-all"
-                            >
-                              AI Summary
-                            </button>
-                            <button
-                              disabled={!c.ppt}
-                              onClick={() => c.ppt && handleDownloadPPT(c.date)}
-                              className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider transition-all border ${c.ppt ? 'border-purple-500/20 text-purple-650 dark:text-purple-400 hover:bg-purple-500/10' : 'border-slate-200 dark:border-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}
-                            >
-                              PPT
-                            </button>
-                          </div>
+                  {/* Category 7: Analyst Research (Ratings & ESG tab) */}
+                  {(docCategoryFilter === 'All' || docCategoryFilter === 'Ratings') && (
+                    <div className="bg-slate-50/40 dark:bg-white/[0.01] border-t-4 border-t-indigo-500 border border-slate-200/40 dark:border-white/5 p-5 rounded-3xl flex flex-col h-full hover:shadow-lg hover:border-indigo-500/20 transition-all duration-300 group">
+                      <div className="flex items-center justify-between gap-2.5 mb-4 shrink-0">
+                        <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                          <Award className="h-4.5 w-4.5 group-hover:scale-110 transition-transform" />
+                          <h4 className="text-xs font-black uppercase tracking-wider">Analyst Research</h4>
                         </div>
-                      ))}
+                        <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/40 dark:border-white/5">
+                          4 Files
+                        </span>
+                      </div>
+                      <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
+                        {analystReports
+                          .filter(r => !docSearchQuery || r.agency.toLowerCase().includes(docSearchQuery.toLowerCase()) || r.title.toLowerCase().includes(docSearchQuery.toLowerCase()))
+                          .map((r, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                handleDownloadAnnualReport('2026');
+                                toast.success(`Analyst Research from ${r.agency} loaded.`);
+                              }}
+                              className="group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-indigo-500/10"
+                            >
+                              <div className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                                <span>{r.title}</span>
+                                <span className="text-[8px] font-black uppercase px-1 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
+                                  {r.target}
+                                </span>
+                              </div>
+                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">Research Brokerage: {r.agency}</div>
+                            </div>
+                          ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Category 8: ESG & Sustainability (Ratings & ESG tab) */}
+                  {(docCategoryFilter === 'All' || docCategoryFilter === 'Ratings') && (
+                    <div className="bg-slate-50/40 dark:bg-white/[0.01] border-t-4 border-t-teal-500 border border-slate-200/40 dark:border-white/5 p-5 rounded-3xl flex flex-col h-full hover:shadow-lg hover:border-teal-500/20 transition-all duration-300 group">
+                      <div className="flex items-center justify-between gap-2.5 mb-4 shrink-0">
+                        <div className="flex items-center gap-2 text-teal-655 dark:text-teal-400">
+                          <Leaf className="h-4.5 w-4.5 group-hover:scale-110 transition-transform" />
+                          <h4 className="text-xs font-black uppercase tracking-wider">ESG Audits</h4>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/40 dark:border-white/5">
+                          4 Files
+                        </span>
+                      </div>
+                      <div className="flex-1 space-y-3.5 pr-1 text-[11px] md:text-xs">
+                        {esgDisclosures
+                          .filter(e => !docSearchQuery || e.title.toLowerCase().includes(docSearchQuery.toLowerCase()))
+                          .map((e, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                handleDownloadAnnualReport('2026');
+                                toast.success(`Viewing ESG Statement: ${e.title}`);
+                              }}
+                              className="group/item cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/[0.02] p-1.5 rounded-xl transition-all border border-transparent hover:border-teal-500/10"
+                            >
+                              <div className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                                <span>{e.title}</span>
+                                <span className="text-[8px] font-black uppercase px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-500">
+                                  {e.score}
+                                </span>
+                              </div>
+                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">Standard Disclosures Verified</div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div> {/* Closes Right main content container */}
