@@ -297,244 +297,37 @@ export async function getUpcomingEarningsForMarket(market: string) {
   const top6Quotes = validQuotes.slice(0, 6);
   const targetSymbols = top6Quotes.map(q => q.symbol);
 
-  // 6. Concurrently fetch full profile details for ONLY the top 6 stocks
-  const detailPromises = targetSymbols.map(async (symbol) => {
-    try {
-      const data = await getUpcomingEarnings(symbol);
-      return {
-        ...data,
-        country: market
-      };
-    } catch (err) {
-      console.error(`[Earnings Calendar] Failed to fetch full details for ${symbol}:`, err);
-
-      // Resilient fallback: build a minimal structure from the quote object
-      const q = top6Quotes.find(item => item.symbol === symbol);
-      if (!q) return null;
-
-      const estEPS = q.epsCurrentYear || q.epsTrailingTwelveMonths || null;
-      return {
-        symbol: q.symbol,
-        name: q.longName || q.shortName || q.symbol,
-        exchange: q.exchange || "N/A",
-        sector: "N/A",
-        industry: "N/A",
-        currency: q.currency || "USD",
-        marketCap: q.marketCap || 0,
-        price: q.regularMarketPrice || 0,
-        change: q.regularMarketChange || 0,
-        changePercent: q.regularMarketChangePercent || 0,
-        earningsDate: q.earningsTimestamp ? new Date(q.earningsTimestamp).toISOString() : null,
-        estimatedEPS: estEPS,
-        logo: `https://logo.clearbit.com/${(q.symbol.split(".")[0]).toLowerCase()}.com`,
-        summary: "Detailed company overview is currently unavailable.",
-        weekHigh52: q.fiftyTwoWeekHigh || 0,
-        weekLow52: q.fiftyTwoWeekLow || 0,
-        dividendYield: q.trailingAnnualDividendYield || 0,
-        peRatio: q.trailingPE || null,
-        eps: q.epsTrailingTwelveMonths || null,
-        website: "",
-        previousEPS: null,
-        revenue: 0,
-        country: market
-      };
-    }
+  // 6. Map to the final structure directly from the quote objects (extremely fast, avoids slow concurrent quoteSummary queries)
+  const cleanFinalResults = top6Quotes.map((q) => {
+    const estEPS = q.epsCurrentYear || q.epsTrailingTwelveMonths || null;
+    return {
+      symbol: q.symbol,
+      name: q.longName || q.shortName || q.symbol,
+      exchange: q.exchange || "N/A",
+      sector: "N/A",
+      industry: "N/A",
+      currency: q.currency || "USD",
+      marketCap: q.marketCap || 0,
+      price: q.regularMarketPrice || 0,
+      change: q.regularMarketChange || 0,
+      changePercent: q.regularMarketChangePercent || 0,
+      earningsDate: q.earningsTimestamp ? new Date(q.earningsTimestamp).toISOString() : null,
+      estimatedEPS: estEPS,
+      logo: `https://logo.clearbit.com/${(q.symbol.split(".")[0]).toLowerCase()}.com`,
+      summary: "Detailed company overview is currently unavailable.",
+      weekHigh52: q.fiftyTwoWeekHigh || 0,
+      weekLow52: q.fiftyTwoWeekLow || 0,
+      dividendYield: q.trailingAnnualDividendYield || 0,
+      peRatio: q.trailingPE || null,
+      eps: q.epsTrailingTwelveMonths || null,
+      website: "",
+      previousEPS: null,
+      revenue: 0,
+      country: market
+    };
   });
 
-  const finalResults = await Promise.all(detailPromises);
-  let cleanFinalResults = finalResults.filter((item): item is NonNullable<typeof item> => item !== null);
 
-  if (cleanFinalResults.length === 0) {
-    console.log(`[Earnings Calendar] No real earnings found. Using resilient fallback mocks for market: ${normalizedMarket}`);
-    const mockDates = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() + 2 + i);
-      return d.toISOString();
-    });
-
-    if (normalizedMarket === "india") {
-      cleanFinalResults = [
-        {
-          symbol: "TCS.NS",
-          name: "Tata Consultancy Services Limited",
-          exchange: "NSE",
-          sector: "Technology",
-          industry: "Information Technology Services",
-          currency: "INR",
-          marketCap: 14500000000000,
-          price: 4120.50,
-          change: 15.20,
-          changePercent: 0.37,
-          earningsDate: mockDates[0],
-          estimatedEPS: 30.5,
-          logo: "https://logo.clearbit.com/tcs.com",
-          summary: "Tata Consultancy Services Limited is an IT services, consulting and business solutions organization.",
-          weekHigh52: 4250.00,
-          weekLow52: 3100.00,
-          dividendYield: 1.15,
-          peRatio: 30.5,
-          eps: 135.2,
-          website: "https://www.tcs.com",
-          previousEPS: 28.9,
-          revenue: 2400000000000,
-          country: "india"
-        },
-        {
-          symbol: "RELIANCE.NS",
-          name: "Reliance Industries Limited",
-          exchange: "NSE",
-          sector: "Energy",
-          industry: "Oil & Gas Refining & Marketing",
-          currency: "INR",
-          marketCap: 18500000000000,
-          price: 2450.00,
-          change: -5.40,
-          changePercent: -0.22,
-          earningsDate: mockDates[1],
-          estimatedEPS: 22.4,
-          logo: "https://logo.clearbit.com/ril.com",
-          summary: "Reliance Industries Limited operates oil refinery, petrochemicals, retail, and telecommunication businesses worldwide.",
-          weekHigh52: 2650.00,
-          weekLow52: 2100.00,
-          dividendYield: 0.37,
-          peRatio: 26.8,
-          eps: 91.5,
-          website: "https://www.ril.com",
-          previousEPS: 20.8,
-          revenue: 8900000000000,
-          country: "india"
-        },
-        {
-          symbol: "INFY.NS",
-          name: "Infosys Limited",
-          exchange: "NSE",
-          sector: "Technology",
-          industry: "Information Technology Services",
-          currency: "INR",
-          marketCap: 6500000000000,
-          price: 1560.25,
-          change: 8.90,
-          changePercent: 0.57,
-          earningsDate: mockDates[2],
-          estimatedEPS: 18.2,
-          logo: "https://logo.clearbit.com/infosys.com",
-          summary: "Infosys Limited provides consulting, technology, outsourcing, and next-generation digital services globally.",
-          weekHigh52: 1750.00,
-          weekLow52: 1200.00,
-          dividendYield: 2.25,
-          peRatio: 24.5,
-          eps: 63.8,
-          website: "https://www.infosys.com",
-          previousEPS: 16.5,
-          revenue: 1500000000000,
-          country: "india"
-        },
-        {
-          symbol: "HDFCBANK.NS",
-          name: "HDFC Bank Limited",
-          exchange: "NSE",
-          sector: "Financial Services",
-          industry: "Private Banks",
-          currency: "INR",
-          marketCap: 12000000000000,
-          price: 1620.00,
-          change: -12.30,
-          changePercent: -0.75,
-          earningsDate: mockDates[3],
-          estimatedEPS: 19.5,
-          logo: "https://logo.clearbit.com/hdfcbank.com",
-          summary: "HDFC Bank Limited provides a range of banking and financial services to individuals and businesses in India.",
-          weekHigh52: 1780.00,
-          weekLow52: 1350.00,
-          dividendYield: 1.20,
-          peRatio: 18.9,
-          eps: 85.4,
-          website: "https://www.hdfcbank.com",
-          previousEPS: 17.2,
-          revenue: 2000000000000,
-          country: "india"
-        }
-      ];
-    } else {
-      cleanFinalResults = [
-        {
-          symbol: "AAPL",
-          name: "Apple Inc.",
-          exchange: "NASDAQ",
-          sector: "Technology",
-          industry: "Consumer Electronics",
-          currency: "USD",
-          marketCap: 3000000000000,
-          price: 180.50,
-          change: 1.25,
-          changePercent: 0.70,
-          earningsDate: mockDates[0],
-          estimatedEPS: 1.58,
-          logo: "https://logo.clearbit.com/apple.com",
-          summary: "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories.",
-          weekHigh52: 198.23,
-          weekLow52: 164.08,
-          dividendYield: 0.52,
-          peRatio: 29.5,
-          eps: 6.12,
-          website: "https://www.apple.com",
-          previousEPS: 1.52,
-          revenue: 383000000000,
-          country: "us"
-        },
-        {
-          symbol: "MSFT",
-          name: "Microsoft Corporation",
-          exchange: "NASDAQ",
-          sector: "Technology",
-          industry: "Software - Infrastructure",
-          currency: "USD",
-          marketCap: 3100000000000,
-          price: 415.60,
-          change: -2.40,
-          changePercent: -0.57,
-          earningsDate: mockDates[1],
-          estimatedEPS: 2.64,
-          logo: "https://logo.clearbit.com/microsoft.com",
-          summary: "Microsoft Corporation develops, licenses, and supports software, services, devices, and solutions worldwide.",
-          weekHigh52: 430.82,
-          weekLow52: 315.18,
-          dividendYield: 0.72,
-          peRatio: 36.2,
-          eps: 11.48,
-          website: "https://www.microsoft.com",
-          previousEPS: 2.58,
-          revenue: 227000000000,
-          country: "us"
-        },
-        {
-          symbol: "NVDA",
-          name: "NVIDIA Corporation",
-          exchange: "NASDAQ",
-          sector: "Technology",
-          industry: "Semiconductors",
-          currency: "USD",
-          marketCap: 2200000000000,
-          price: 875.12,
-          change: 22.40,
-          changePercent: 2.63,
-          earningsDate: mockDates[2],
-          estimatedEPS: 5.58,
-          logo: "https://logo.clearbit.com/nvidia.com",
-          summary: "NVIDIA Corporation focuses on personal computer graphics, graphics processing units, and also artificial intelligence solutions.",
-          weekHigh52: 974.00,
-          weekLow52: 262.20,
-          dividendYield: 0.02,
-          peRatio: 75.4,
-          eps: 11.60,
-          website: "https://www.nvidia.com",
-          previousEPS: 4.93,
-          revenue: 60900000000,
-          country: "us"
-        }
-      ];
-    }
-  }
 
   // 7. Log metrics for development tracking
   console.log(`[Earnings Calendar] Scanned symbols count: ${symbols.length}`);

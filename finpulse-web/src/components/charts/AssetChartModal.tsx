@@ -1196,11 +1196,11 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                 </div>
 
                                 {/* Current Price Pointer */}
-                                <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${currentPct}%` }}>
-                                  <span className="text-[9px] font-black text-slate-900 bg-white px-1.5 py-0.5 rounded uppercase shadow-md leading-none tracking-wider">Current</span>
-                                  <span className="text-[10px] font-black text-white font-mono mt-0.5">{formatVal(current, true)}</span>
-                                  <div className="w-0.5 h-3.5 bg-white/70 my-0.5" />
+                                <div className="absolute top-12 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${currentPct}%` }}>
                                   <div className="w-2.5 h-4 bg-white border border-slate-950 shadow-md shadow-white/50 rounded-full" />
+                                  <div className="w-0.5 h-3.5 bg-white/70 my-0.5" />
+                                  <span className="text-[9px] font-black text-slate-900 bg-white px-1.5 py-0.5 rounded uppercase shadow-md leading-none tracking-wider mt-0.5">Current</span>
+                                  <span className="text-[10px] font-black text-white font-mono mt-0.5">{formatVal(current, true)}</span>
                                 </div>
                               </div>
                             );
