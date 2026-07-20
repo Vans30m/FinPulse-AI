@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Newspaper, Clock, ExternalLink } from 'lucide-react';
 import API_BASE_URL from "../../../config/api";
+import { pageCache } from '../../../utils/cache';
 
 interface LiveNewsItem {
   id: number | string; // Updated to allow string IDs from Google
@@ -18,8 +19,9 @@ interface AlertsTimelineProps {
 export default function AlertsTimeline({
   fullPage = false,
 }: AlertsTimelineProps) {
-  const [liveNews, setLiveNews] = useState<LiveNewsItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedNews = pageCache.get('liveNews');
+  const [liveNews, setLiveNews] = useState<LiveNewsItem[]>(cachedNews || []);
+  const [isLoading, setIsLoading] = useState(!cachedNews);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -73,6 +75,7 @@ export default function AlertsTimeline({
         });
 
         setLiveNews(combinedNews);
+        pageCache.set('liveNews', combinedNews);
       } catch (error) {
         console.error("Failed to fetch dual news feeds:", error);
       } finally {

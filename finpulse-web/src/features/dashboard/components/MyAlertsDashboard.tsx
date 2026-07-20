@@ -3,16 +3,49 @@ import { Bell, CheckCircle2, Plus, X, Target, Loader2, Play, Pause, Trash2, Sear
 import toast from 'react-hot-toast';
 import { useAlerts, useCreateAlert, useDeleteAlert, useToggleAlertStatus, useAlertHistory } from '../../../hooks/useDashboard';
 import API_BASE_URL from "../../../config/api";
+import { pageCache } from "../../../utils/cache";
+import PageLoader from "../../../components/ui/PageLoader";
 
 export default function MyAlertsDashboard() {
-  const { data: myAlerts = [], isLoading } = useAlerts();
-  const { data: history = [] } = useAlertHistory();
+  const { data: rawAlertsData = [], isLoading } = useAlerts();
+  const { data: rawHistoryData = [] } = useAlertHistory();
+  
+  const cachedAlerts = pageCache.get('alerts');
+  const cachedHistory = pageCache.get('alertsHistory');
+  
+  const [showLoader, setShowLoader] = useState((!cachedAlerts || !cachedHistory) && isLoading);
+
+  useEffect(() => {
+    if (rawAlertsData && rawAlertsData.length > 0) {
+      pageCache.set('alerts', rawAlertsData);
+    }
+  }, [rawAlertsData]);
+
+  useEffect(() => {
+    if (rawHistoryData && rawHistoryData.length > 0) {
+      pageCache.set('alertsHistory', rawHistoryData);
+    }
+  }, [rawHistoryData]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowLoader(false);
+    }
+  }, [isLoading]);
+
+  const myAlerts = rawAlertsData.length > 0 ? rawAlertsData : (cachedAlerts || []);
+  const history = rawHistoryData.length > 0 ? rawHistoryData : (cachedHistory || []);
+
   const createAlertMutation = useCreateAlert();
   const deleteAlertMutation = useDeleteAlert();
   const toggleStatusMutation = useToggleAlertStatus();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'alerts' | 'history'>('alerts');
+
+  if (showLoader) {
+    return <PageLoader title="Security Alerts Hub" message="Syncing price targets and active monitors..." />;
+  }
 
   // Form & Creation States
   const [newTicker, setNewTicker] = useState('');

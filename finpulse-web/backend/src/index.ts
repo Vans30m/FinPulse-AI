@@ -176,13 +176,12 @@ app.get("/api/search", async (req: Request, res: Response) => {
     if (!q) {
       return res.json([]);
     }
-
     const cachedResults = searchCache.get(q);
     if (cachedResults) {
       return res.json(cachedResults);
     }
 
-    const yahooResults = await yahooFinance.search(q);
+    const yahooResults = await yahooFinance.search(q, { quotesCount: 20 });
 
     const results =
       yahooResults.quotes
