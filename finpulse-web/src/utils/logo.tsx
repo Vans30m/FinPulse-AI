@@ -152,7 +152,7 @@ const SPECIAL_ICONS: { [key: string]: string } = {
   'GC=F': 'https://cdn-icons-png.flaticon.com/128/272/272535.png',   // Gold
   'SI=F': 'https://cdn-icons-png.flaticon.com/128/4433/4433100.png',  // Silver
   'NG=F': 'https://cdn-icons-png.flaticon.com/128/9203/9203714.png',  // Natural Gas
-  
+
   // Cryptos
   'BTC-USD': 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
   'ETH-USD': 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
@@ -184,7 +184,7 @@ export function getStockLogoUrl(symbol: string): string {
   if (SPECIAL_ICONS[upper]) {
     return SPECIAL_ICONS[upper];
   }
-  
+
   return `https://logo.clearbit.com/${getDomain(symbol)}`;
 }
 
@@ -197,7 +197,7 @@ export function getStockLogoFallbackUrl(symbol: string): string {
   if (SPECIAL_ICONS[upper]) {
     return SPECIAL_ICONS[upper];
   }
-  
+
   return `https://www.google.com/s2/favicons?sz=128&domain=${getDomain(symbol)}`;
 }
 

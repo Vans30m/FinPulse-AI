@@ -3,6 +3,7 @@ import { X, Globe, Calendar, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StockLogo } from '../../utils/logo';
 import { useProfile } from '../../profile/hooks/useProfile';
+import { getCurrencySymbol } from './GlobalEarningsCalendar';
 
 interface Props {
   earning: UpcomingEarning | null;
@@ -98,7 +99,7 @@ export default function CompanyEarningsModal({ earning, onClose }: Props) {
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Current Value</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="font-mono text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                {earning.price !== undefined ? `${earning.price.toFixed(2)}` : "N/A"}
+                {earning.price !== undefined ? `${getCurrencySymbol(earning.currency)}${earning.price.toFixed(2)}` : "N/A"}
               </span>
               <span className={`font-mono text-xs font-bold ${earning.changePercent >= 0 ? 'text-green-600 dark:text-cyan-400' : 'text-red-500'}`}>
                 {earning.changePercent >= 0 ? "+" : ""}{earning.changePercent ? earning.changePercent.toFixed(2) : "0.00"}%
@@ -157,13 +158,13 @@ export default function CompanyEarningsModal({ earning, onClose }: Props) {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-400 font-medium">Estimated EPS Consensus</span>
                 <span className="font-mono font-black text-slate-800 dark:text-slate-100">
-                  {earning.estimatedEPS !== null ? `$${earning.estimatedEPS.toFixed(2)}` : "N/A"}
+                  {earning.estimatedEPS !== null ? `${getCurrencySymbol(earning.currency)}${earning.estimatedEPS.toFixed(2)}` : "N/A"}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-400 font-medium">Previous Reported EPS</span>
                 <span className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {earning.previousEPS !== null && earning.previousEPS !== undefined ? `$${earning.previousEPS.toFixed(2)}` : "N/A"}
+                  {earning.previousEPS !== null && earning.previousEPS !== undefined ? `${getCurrencySymbol(earning.currency)}${earning.previousEPS.toFixed(2)}` : "N/A"}
                 </span>
               </div>
             </div>
@@ -186,13 +187,13 @@ export default function CompanyEarningsModal({ earning, onClose }: Props) {
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-medium">TTM EPS</span>
                 <span className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {earning.eps ? `$${earning.eps.toFixed(2)}` : "N/A"}
+                  {earning.eps ? `${getCurrencySymbol(earning.currency)}${earning.eps.toFixed(2)}` : "N/A"}
                 </span>
               </div>
               <div className="flex justify-between items-center col-span-2 border-t border-slate-200/40 dark:border-white/5 pt-3.5">
                 <span className="text-slate-400 font-medium">52-Week Range</span>
                 <span className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {earning.weekLow52?.toFixed(2)} - {earning.weekHigh52?.toFixed(2)}
+                  {getCurrencySymbol(earning.currency)}{earning.weekLow52?.toFixed(2)} - {getCurrencySymbol(earning.currency)}{earning.weekHigh52?.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-center col-span-2">

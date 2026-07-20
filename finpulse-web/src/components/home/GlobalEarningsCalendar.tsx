@@ -67,6 +67,16 @@ function CountdownBadge({ earningsDate }: { earningsDate: string | null }) {
   }
 }
 
+export const getCurrencySymbol = (currency: string) => {
+  if (!currency) return '$';
+  const c = currency.toUpperCase();
+  if (c === 'INR' || c === 'RS') return '₹';
+  if (c === 'EUR') return '€';
+  if (c === 'GBP') return '£';
+  if (c === 'JPY') return '¥';
+  return '$';
+};
+
 // ----------------------------------------------------
 // 2. EARNINGS CARD COMPONENT
 // ----------------------------------------------------
@@ -182,7 +192,7 @@ const EarningsCard = memo(function EarningsCard({
         <div className="text-right">
           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Est. EPS</span>
           <span className="font-mono text-xs font-black text-slate-800 dark:text-slate-200 mt-0.5 block">
-            {earning.estimatedEPS !== null ? `$${earning.estimatedEPS.toFixed(2)}` : "N/A"}
+            {earning.estimatedEPS !== null ? `${getCurrencySymbol(earning.currency)}${earning.estimatedEPS.toFixed(2)}` : "N/A"}
           </span>
         </div>
       </div>
