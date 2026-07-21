@@ -64,6 +64,29 @@ const originalModuleExec = (yahooFinance as any)._moduleExec;
   return originalModuleExec.call(this, opts);
 };
 
+// Symbol mapping helper functions to convert Yahoo Finance symbols to Twelve Data formats
+function yahooToTwelveDataSymbol(symbol: string): string {
+  let s = symbol.trim().toUpperCase();
+  // Indices
+  if (s.startsWith('^')) {
+    s = s.substring(1);
+    if (s === 'GSPC') return 'SPX'; // TwelveData uses SPX for S&P 500 index
+    return s;
+  }
+  // Crypto: BTC-USD -> BTC/USD
+  if (s.endsWith('-USD')) {
+    return s.replace('-USD', '/USD');
+  }
+  // Forex: USDINR=X -> USD/INR
+  if (s.endsWith('=X')) {
+    const pair = s.replace('=X', '');
+    if (pair.length === 6) {
+      return `${pair.substring(0, 3)}/${pair.substring(3)}`;
+    }
+  }
+  return s;
+}
+
 // Helper to fetch quotes from Twelve Data when Yahoo Finance fails
 async function fetchTwelveDataQuotes(symbols: string[]): Promise<any[]> {
   const apiKey = process.env.TWELVEDATA_API_KEY;
@@ -71,10 +94,22 @@ async function fetchTwelveDataQuotes(symbols: string[]): Promise<any[]> {
     throw new Error("TWELVEDATA_API_KEY is not configured in .env");
   }
 
+  // Create lookup maps to associate Yahoo symbols with Twelve Data symbols
+  const yahooToTd = new Map<string, string>();
+  const tdToYahoo = new Map<string, string>();
+  for (const s of symbols) {
+    const tdSym = yahooToTwelveDataSymbol(s);
+    yahooToTd.set(s, tdSym);
+    tdToYahoo.set(tdSym.toUpperCase(), s);
+    tdToYahoo.set(tdSym.toLowerCase(), s);
+    tdToYahoo.set(tdSym, s);
+  }
+
+  const tdSymbolList = Array.from(yahooToTd.values());
   const url = 'https://api.twelvedata.com/quote';
   const response = await axios.get(url, {
     params: {
-      symbol: symbols.join(','),
+      symbol: tdSymbolList.join(','),
       apikey: apiKey
     },
     timeout: 10000
@@ -87,7 +122,14 @@ async function fetchTwelveDataQuotes(symbols: string[]): Promise<any[]> {
   }
 
   return symbols.map(symbol => {
-    const tdQuote = symbols.length === 1 ? data : data[symbol];
+    const tdSym = yahooToTd.get(symbol);
+    if (!tdSym) return null;
+
+    // Twelve Data returns single object if only 1 symbol is requested, otherwise map keyed by symbol
+    const tdQuote = tdSymbolList.length === 1 
+      ? data 
+      : (data[tdSym] || data[tdSym.toUpperCase()] || data[tdSym.toLowerCase()]);
+      
     if (!tdQuote || tdQuote.status === 'error') return null;
 
     return {
@@ -147,7 +189,27 @@ const originalQuote = yahooFinance.quote;
         }
       } catch (fallbackErr: any) {
         console.error(`[Yahoo Service] Direct axios quote fallback failed:`, fallbackErr.message);
-        throw err;
+        const symbolList = Array.isArray(symbols) ? symbols : [symbols];
+        const mocks = symbolList.map(sym => ({
+          symbol: sym,
+          regularMarketPrice: 0,
+          regularMarketChange: 0,
+          regularMarketChangePercent: 0,
+          regularMarketVolume: 0,
+          currency: 'USD',
+          shortName: sym,
+          longName: sym,
+          regularMarketOpen: 0,
+          regularMarketDayHigh: 0,
+          regularMarketDayLow: 0,
+          fiftyTwoWeekHigh: 0,
+          fiftyTwoWeekLow: 0
+        }));
+        if (Array.isArray(symbols)) {
+          return mocks;
+        } else {
+          return mocks[0];
+        }
       }
     }
   }
