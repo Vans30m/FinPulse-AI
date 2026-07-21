@@ -64,6 +64,40 @@ const originalModuleExec = (yahooFinance as any)._moduleExec;
   return originalModuleExec.call(this, opts);
 };
 
+// Monkey-patch yahooFinance.quote to use a resilient axios fallback on failure (crumb 429 errors)
+const originalQuote = yahooFinance.quote;
+(yahooFinance as any).quote = async function (symbols: string | string[], options?: any) {
+  try {
+    return await originalQuote.call(this, symbols, options);
+  } catch (err: any) {
+    console.warn(`[Yahoo Service] yahooFinance.quote failed, falling back to direct axios query:`, err.message);
+    try {
+      const symbolList = Array.isArray(symbols) ? symbols : [symbols];
+      const url = 'https://query1.finance.yahoo.com/v7/finance/quote';
+      const response = await axios.get(url, {
+        params: {
+          symbols: symbolList.join(',')
+        },
+        headers: {
+          'User-Agent': getRandomUserAgent()
+        },
+        httpsAgent: proxyAgent,
+        timeout: 10000
+      });
+
+      const results = response.data?.quoteResponse?.result || [];
+      if (Array.isArray(symbols)) {
+        return results;
+      } else {
+        return results[0] || null;
+      }
+    } catch (fallbackErr: any) {
+      console.error(`[Yahoo Service] Direct axios quote fallback failed:`, fallbackErr.message);
+      throw err;
+    }
+  }
+};
+
 // Monkey-patch yahooFinance.chart to use a resilient axios fallback on failure
 const originalChart = yahooFinance.chart;
 (yahooFinance as any).chart = async function (symbol: string, options: any) {
