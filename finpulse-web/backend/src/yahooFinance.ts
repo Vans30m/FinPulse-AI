@@ -31,7 +31,7 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
   } catch (err: any) {
     console.warn(`[Yahoo Service] Quote fetch failed, falling back to spark/chart:`, err.message);
     try {
-      const url = 'https://query2.finance.yahoo.com/v8/finance/spark';
+      const url = 'https://query1.finance.yahoo.com/v7/finance/spark';
       const response = await axios.get(url, {
         params: {
           symbols: symbols.join(','),
