@@ -1,4 +1,4 @@
-import { yahooFinance } from '../yahooFinance.js';
+import { yahooFinance, fetchQuotesResilient } from '../yahooFinance.js';
 
 export async function getCompanyNews(
   symbol: string
@@ -79,7 +79,9 @@ function calculateHistoryReturns(history: any[], currentPrice: number, changePer
 
 export async function getFundamentals(symbol: string) {
   try {
-    const quote = await yahooFinance.quote(symbol);
+    const quotes = await fetchQuotesResilient([symbol]);
+    const quote = quotes[0];
+    if (!quote) throw new Error(`No quote found for symbol: ${symbol}`);
     const name = quote.longName || quote.shortName || quote.displayName || symbol;
     const resolvedPrice = quote.regularMarketPrice ?? (quote as any).regularMarketOpen ?? (quote as any).previousClose ?? 0;
 

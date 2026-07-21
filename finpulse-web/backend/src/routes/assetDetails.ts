@@ -1,5 +1,5 @@
 import express from "express";
-import { yahooFinance } from "../yahooFinance.js";
+import { yahooFinance, fetchQuotesResilient } from "../yahooFinance.js";
 import NodeCache from "node-cache";
 import axios from "axios";
 import { getFundamentals } from "../services/companyService.js";
@@ -209,8 +209,8 @@ router.get("/:symbol", async (req, res) => {
     // 1. Fetch Quote and Summary Details
     let quoteData: any = quoteCache.get(symbol);
     if (!quoteData) {
-      const [quote, summary] = await Promise.all([
-        yahooFinance.quote(symbol).catch(() => null),
+      const [quotes, summary] = await Promise.all([
+        fetchQuotesResilient([symbol]).catch(() => []),
         yahooFinance.quoteSummary(symbol, {
           modules: [
             "assetProfile",
@@ -224,6 +224,7 @@ router.get("/:symbol", async (req, res) => {
           ]
         }).catch(() => null)
       ]);
+      const quote = quotes[0] || null;
       quoteData = { quote, summary };
       quoteCache.set(symbol, quoteData);
     }
