@@ -53,8 +53,6 @@ services:
   - type: web
     name: finpulse-frontend
     runtime: static
-    region: ohio
-    plan: free
     rootDir: finpulse-web
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
