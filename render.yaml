@@ -65,4 +65,4 @@ services:
         fromService:
           name: finpulse-backend
           type: web
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
