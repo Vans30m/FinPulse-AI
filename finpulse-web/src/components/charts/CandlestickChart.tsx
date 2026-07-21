@@ -976,7 +976,7 @@ export default function CandlestickChart({
       if (!entries.length || !active) return;
       const newWidth = entries[0].contentRect.width;
       if (Math.abs(newWidth - lastWidth) > 3) {
-        chart.applyOptions({ width: newWidth });
+        chart.resize(newWidth, height);
         lastWidth = newWidth;
       }
     });
