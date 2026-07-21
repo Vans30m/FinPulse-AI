@@ -1,5 +1,30 @@
 import YahooFinance from 'yahoo-finance2';
 import axios from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+
+// Define rotating standard desktop User-Agents to mimic real browsers
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 OPR/109.0.0.0',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0'
+];
+
+export function getRandomUserAgent(): string {
+  const index = Math.floor(Math.random() * USER_AGENTS.length);
+  return USER_AGENTS[index];
+}
+
+// Set up optional Proxy Agent to route all traffic (Vercel/Render resilience)
+const proxyUrl = process.env.PROXY_URL || process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+const proxyAgent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+
+if (proxyAgent) {
+  console.log(`[Yahoo Service] Initialized HttpsProxyAgent with proxy configuration.`);
+}
 
 export const yahooFinance = new YahooFinance({
   suppressNotices: ['yahooSurvey'],
@@ -8,19 +33,34 @@ export const yahooFinance = new YahooFinance({
   },
   fetchOptions: {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      'User-Agent': getRandomUserAgent()
     }
   }
-});
+} as any);
 
-// Monkey-patch _moduleExec to globally disable result schema validation.
-// This prevents FailedYahooValidationError from crashing the backend when Yahoo's API response structure varies.
+// Monkey-patch _moduleExec to globally disable result schema validation and inject rotating User-Agents & Proxy Agent
 const originalModuleExec = (yahooFinance as any)._moduleExec;
 (yahooFinance as any)._moduleExec = function (opts: any) {
   if (!opts.moduleOptions) {
     opts.moduleOptions = {};
   }
   opts.moduleOptions.validateResult = false;
+
+  if (!opts.fetchOptions) {
+    opts.fetchOptions = {};
+  }
+  if (!opts.fetchOptions.headers) {
+    opts.fetchOptions.headers = {};
+  }
+
+  // Rotate User-Agent per request
+  opts.fetchOptions.headers['User-Agent'] = getRandomUserAgent();
+
+  // Attach proxy agent if configured
+  if (proxyAgent) {
+    opts.fetchOptions.agent = proxyAgent;
+  }
+
   return originalModuleExec.call(this, opts);
 };
 
@@ -50,8 +90,9 @@ const originalChart = yahooFinance.chart;
       const response = await axios.get(url, {
         params,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+          'User-Agent': getRandomUserAgent()
         },
+        httpsAgent: proxyAgent,
         timeout: 10000
       });
 
@@ -110,8 +151,9 @@ const originalHistorical = yahooFinance.historical;
       const response = await axios.get(url, {
         params,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+          'User-Agent': getRandomUserAgent()
         },
+        httpsAgent: proxyAgent,
         timeout: 10000
       });
 
@@ -136,7 +178,7 @@ const originalHistorical = yahooFinance.historical;
       throw err;
     }
   }
-} as any;
+};
 
 export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
   try {
@@ -153,8 +195,9 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
           interval: '1d'
         },
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+          'User-Agent': getRandomUserAgent()
         },
+        httpsAgent: proxyAgent,
         timeout: 10000
       });
 

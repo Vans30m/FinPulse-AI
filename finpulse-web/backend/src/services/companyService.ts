@@ -89,19 +89,26 @@ export async function getFundamentals(symbol: string) {
     let roce: number | undefined = (quote as any).returnOnAssets;
     let about = "";
 
-    try {
-      const summary = await yahooFinance.quoteSummary(symbol, {
-        modules: ["defaultKeyStatistics", "financialData", "summaryProfile"]
-      });
-      if (summary) {
-        bookValue = summary.defaultKeyStatistics?.bookValue ?? bookValue;
-        dividendYield = summary.defaultKeyStatistics?.dividendYield ?? dividendYield;
-        roe = summary.financialData?.returnOnEquity ?? roe;
-        roce = summary.financialData?.returnOnAssets ?? roce;
-        about = summary.summaryProfile?.longBusinessSummary ?? "";
+    const isCurrency = symbol.includes('=X');
+    const isIndex = symbol.startsWith('^');
+    const isCrypto = symbol.includes('-USD') || symbol.endsWith('BTC') || symbol.endsWith('ETH');
+    const hasNoFundamentals = isCurrency || isIndex || isCrypto;
+
+    if (!hasNoFundamentals) {
+      try {
+        const summary = await yahooFinance.quoteSummary(symbol, {
+          modules: ["defaultKeyStatistics", "financialData", "summaryProfile"]
+        });
+        if (summary) {
+          bookValue = summary.defaultKeyStatistics?.bookValue ?? bookValue;
+          dividendYield = summary.defaultKeyStatistics?.dividendYield ?? dividendYield;
+          roe = summary.financialData?.returnOnEquity ?? roe;
+          roce = summary.financialData?.returnOnAssets ?? roce;
+          about = summary.summaryProfile?.longBusinessSummary ?? "";
+        }
+      } catch (e: any) {
+        console.warn(`Failed to fetch quoteSummary in getFundamentals for ${symbol}:`, e.message);
       }
-    } catch (e) {
-      console.error(`Failed to fetch quoteSummary in getFundamentals for ${symbol}:`, e);
     }
 
     const now = new Date();

@@ -348,17 +348,74 @@ router.get("/:symbol", async (req, res) => {
     // 2. Fetch Financial Statements (Income, Balance, CashFlow - Quarterly & Annual)
     let financialsData: any = financialsCache.get(symbol);
     if (!financialsData) {
-      const financialStatements = await yahooFinance.quoteSummary(symbol, {
-        modules: [
-          "incomeStatementHistory",
-          "incomeStatementHistoryQuarterly",
-          "balanceSheetHistory",
-          "balanceSheetHistoryQuarterly",
-          "cashflowStatementHistory",
-          "cashflowStatementHistoryQuarterly"
-        ]
-      }).catch(() => null);
-      financialsData = financialStatements || {};
+      try {
+        const now = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(now.getFullYear() - 4); // Fetch 4 years of history
+
+        const [annual, quarterly] = await Promise.all([
+          (yahooFinance as any).fundamentalsTimeSeries(symbol, {
+            period1: startDate,
+            period2: now,
+            type: 'annual',
+            module: 'all'
+          }).catch(() => []),
+          (yahooFinance as any).fundamentalsTimeSeries(symbol, {
+            period1: startDate,
+            period2: now,
+            type: 'quarterly',
+            module: 'all'
+          }).catch(() => [])
+        ]);
+
+        const sortByDateDesc = (arr: any[]) => {
+          return [...arr]
+            .filter(item => item && item.date)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .map((item: any) => {
+              const dateStr = item.date instanceof Date ? item.date.toISOString() : item.date;
+              const { TYPE, periodType, ...rest } = item;
+              return {
+                ...rest,
+                date: dateStr,
+                endDate: dateStr
+              };
+            });
+        };
+
+        const annualStatements = sortByDateDesc(annual);
+        const quarterlyStatements = sortByDateDesc(quarterly);
+
+        financialsData = {
+          incomeStatementHistory: {
+            incomeStatementHistory: annualStatements,
+            statements: annualStatements
+          },
+          incomeStatementHistoryQuarterly: {
+            incomeStatementHistory: quarterlyStatements,
+            statements: quarterlyStatements
+          },
+          balanceSheetHistory: {
+            balanceSheetHistory: annualStatements,
+            statements: annualStatements
+          },
+          balanceSheetHistoryQuarterly: {
+            balanceSheetHistory: quarterlyStatements,
+            statements: quarterlyStatements
+          },
+          cashflowStatementHistory: {
+            cashflowStatements: annualStatements,
+            statements: annualStatements
+          },
+          cashflowStatementHistoryQuarterly: {
+            cashflowStatements: quarterlyStatements,
+            statements: quarterlyStatements
+          }
+        };
+      } catch (err) {
+        console.error(`Failed to construct financials via fundamentalsTimeSeries for ${symbol}:`, err);
+        financialsData = {};
+      }
       financialsCache.set(symbol, financialsData);
     }
 
