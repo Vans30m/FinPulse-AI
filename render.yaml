@@ -22,7 +22,7 @@ services:
       - key: FRONTEND_URL
         fromService:
           name: finpulse-frontend
-          type: static
+          type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: GEMINI_API_KEY
         sync: false
