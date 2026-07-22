@@ -279,7 +279,25 @@ function queueResetPasswordEmail(email: string, code: string) {
 // 1. Google Login Check
 router.post('/google-login', async (req: any, res: any) => {
   try {
-    const { email, name, avatar, providerId } = req.body;
+    let { email, name, avatar, providerId, token } = req.body;
+
+    if (token) {
+      try {
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (userInfoResponse.ok) {
+          const userInfo: any = await userInfoResponse.json();
+          email = userInfo.email;
+          name = userInfo.name;
+          avatar = userInfo.picture;
+          providerId = userInfo.sub;
+        }
+      } catch (err: any) {
+        console.error('Failed to verify Google OAuth token on backend:', err.message);
+      }
+    }
+
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
@@ -333,7 +351,22 @@ router.post('/google-login', async (req: any, res: any) => {
       }
     }
 
+    // Generate JWT token for immediate login
+    const jwtToken = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
     res.json({
+      token: jwtToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+      },
       hasPin: !!user.devicePin,
       email: user.email,
     });
@@ -342,6 +375,7 @@ router.post('/google-login', async (req: any, res: any) => {
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
+
 
 // 2. Set 6-Digit PIN
 router.post('/set-pin', async (req: any, res: any) => {

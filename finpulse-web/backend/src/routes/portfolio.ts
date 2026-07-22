@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../prisma.js';
 import { yahooFinance } from '../index.js';
+import { fetchQuotesResilient } from '../yahooFinance.js';
 import jwt from 'jsonwebtoken';
 
 const portfolioRoutes = express.Router();
@@ -36,7 +37,7 @@ async function getOrCreateDefaultUser(req?: any) {
 const getHoldingColorClass = (marketId: string, ticker: string) => {
   const mid = (marketId || '').toLowerCase();
   const tick = (ticker || '').toUpperCase();
-  
+
   if (mid === 'domestic' || tick.endsWith('.NS') || tick.endsWith('.BO')) {
     return { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/50 dark:border-blue-900/50' };
   }
@@ -68,72 +69,70 @@ portfolioRoutes.get('/holdings', async (req, res) => {
 
     const liveQuotes: Record<string, { price: number; change: number }> = {};
 
-    // Query Yahoo Finance for live prices
-    const enrichedHoldings = await Promise.all(holdings.map(async (h) => {
+    // Collect all tickers to fetch quotes in a single batch
+    const dbTickers = holdings.map(h => h.ticker.toUpperCase());
+    const extraTickers = virtualTickers.filter(t => !dbTickers.includes(t));
+    const allTickers = Array.from(new Set([...dbTickers, ...extraTickers]));
+
+    let quotes: any[] = [];
+    if (allTickers.length > 0) {
       try {
-        const quote = await yahooFinance.quote(h.ticker);
-        const currentPrice = quote.regularMarketPrice ?? h.avgCost;
-        const change = quote.regularMarketChange ?? 0;
-        const marketValue = h.shares * currentPrice;
-        const costBasis = h.shares * h.avgCost;
-        const totalGain = marketValue - costBasis;
-        const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
-        const dailyGain = h.shares * change;
-
-        // Record live quote details
-        liveQuotes[h.ticker.toUpperCase()] = { price: currentPrice, change };
-
-        const colorClass = getHoldingColorClass(h.marketId, h.ticker);
-
-        return {
-          id: h.id,
-          ticker: h.ticker,
-          name: h.name,
-          shares: h.shares,
-          avgCost: h.avgCost,
-          currentPrice,
-          marketValue,
-          totalGain,
-          gainPercent,
-          dailyGain,
-          bookedPL: (h as any).bookedPL,
-          colorClass,
-          sector: h.marketId === 'crypto' ? 'Crypto' : 'Technology'
-        };
+        quotes = await fetchQuotesResilient(allTickers);
       } catch (err) {
-        liveQuotes[h.ticker.toUpperCase()] = { price: h.avgCost, change: 0 };
-        return {
-          id: h.id,
-          ticker: h.ticker,
-          name: h.name,
-          shares: h.shares,
-          avgCost: h.avgCost,
-          currentPrice: h.avgCost,
-          marketValue: h.shares * h.avgCost,
-          totalGain: 0,
-          gainPercent: 0,
-          dailyGain: 0,
-          bookedPL: (h as any).bookedPL,
-          colorClass: getHoldingColorClass(h.marketId, h.ticker),
-          sector: 'Technology'
-        };
+        console.error('Failed to fetch batch quotes in holdings route:', err);
       }
-    }));
+    }
+
+    const quotesMap = new Map<string, any>(
+      quotes.filter(Boolean).map(q => [q.symbol.toUpperCase(), q])
+    );
+
+    // Enrich holdings
+    const enrichedHoldings = holdings.map((h) => {
+      const tickerUpper = h.ticker.toUpperCase();
+      const quote = quotesMap.get(tickerUpper);
+      const currentPrice = quote?.regularMarketPrice ?? h.avgCost;
+      const change = quote?.regularMarketChange ?? 0;
+      const marketValue = h.shares * currentPrice;
+      const costBasis = h.shares * h.avgCost;
+      const totalGain = marketValue - costBasis;
+      const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
+      const dailyGain = h.shares * change;
+
+      // Record live quote details
+      liveQuotes[tickerUpper] = { price: currentPrice, change };
+
+      const colorClass = getHoldingColorClass(h.marketId, h.ticker);
+
+      return {
+        id: h.id,
+        ticker: h.ticker,
+        name: h.name,
+        shares: h.shares,
+        avgCost: h.avgCost,
+        currentPrice,
+        marketValue,
+        totalGain,
+        gainPercent,
+        dailyGain,
+        bookedPL: h.bookedPL,
+        colorClass,
+        sector: h.marketId === 'crypto' ? 'Crypto' : 'Technology'
+      };
+    });
 
     // Fetch live quotes for additional virtual tickers not in holdings
-    const dbTickers = new Set(holdings.map(h => h.ticker.toUpperCase()));
-    const extraTickers = virtualTickers.filter(t => !dbTickers.has(t));
-
-    await Promise.all(extraTickers.map(async (ticker) => {
-      try {
-        const quote = await yahooFinance.quote(ticker);
-        const price = quote.regularMarketPrice ?? 0;
-        const change = quote.regularMarketChange ?? 0;
-        liveQuotes[ticker] = { price, change };
-      } catch (err) {
-        console.error(`Failed to fetch extra ticker quote for ${ticker}:`, err);
+    for (const ticker of extraTickers) {
+      const quote = quotesMap.get(ticker);
+      if (quote) {
+        liveQuotes[ticker] = {
+          price: quote.regularMarketPrice,
+          change: quote.regularMarketChange
+        };
+      } else {
+        liveQuotes[ticker] = { price: 0, change: 0 };
       }
-    }));
+    }
 
     const sections = [
       { id: 'domestic', title: 'Indian Market', region: 'India', holdings: enrichedHoldings.filter(h => holdings.find(db => db.id === h.id)?.marketId === 'domestic') },
@@ -405,8 +404,8 @@ portfolioRoutes.get('/events', async (req, res) => {
           aiRecommendation: expectedImpact === 'Bullish'
             ? 'Consider holding or modestly adding to your position ahead of the earnings release.'
             : expectedImpact === 'Bearish'
-            ? 'Consider reducing exposure or using protective strategies ahead of the report.'
-            : 'Maintain current allocation and closely monitor guidance metrics post-release.',
+              ? 'Consider reducing exposure or using protective strategies ahead of the report.'
+              : 'Maintain current allocation and closely monitor guidance metrics post-release.',
           thingsToWatch: [
             'EPS vs analyst consensus estimate',
             'Revenue growth guidance for next quarter',
@@ -556,7 +555,7 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
     res.json({ series, kpis, portfolioValues });
   } catch (error: any) {
     console.error("Error in rolling-cagr, generating high-fidelity fallback series:", error);
-    
+
     const timeframe = (req.query.timeframe as string) || '1Y';
     let length = 12;
     if (timeframe === '3Y') length = 36;
@@ -570,7 +569,7 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
       const d = new Date();
       d.setMonth(now.getMonth() - i);
       const label = d.toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
-      
+
       const factor = (length - i) / length;
       series.push({
         period: label,
@@ -1325,7 +1324,7 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
     let usdinrHistory: any[] = [];
     try {
       usdinrHistory = await yahooFinance.historical('USDINR=X', { period1: startDate, period2: endDate, interval: interval as any });
-    } catch (err) {}
+    } catch (err) { }
 
     // 3. Fetch holdings history
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {
@@ -1478,11 +1477,11 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
       try {
         const quote = await yahooFinance.quote(c.symbol);
         const hist = await yahooFinance.historical(c.symbol, { period1: startDate, period2: endDate, interval: '1mo' }).catch(() => []);
-        
+
         const initial = hist[0]?.close ?? hist[0]?.adjClose ?? quote.regularMarketPreviousClose ?? 1;
         const current = quote.regularMarketPrice ?? initial;
         const timeframeReturn = ((current - initial) / initial) * 100;
-        
+
         const logo = `https://assets.financialmodelingprep.com/imgs/symbol/${quote.symbol}.png`;
 
         return {
