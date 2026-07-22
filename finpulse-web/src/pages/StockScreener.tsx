@@ -1400,13 +1400,6 @@ Slide Outline:
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
-              <div className="w-full sm:w-80">
-                <StockSearch
-                  placeholder="Search another company"
-                  onSelect={(asset) => handleSelectStock(asset.symbol)}
-                />
-              </div>
-
               <div className="flex items-center gap-2 shrink-0">
                 <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all shadow-sm whitespace-nowrap">
                   <Download className="h-3.5 w-3.5" /> Export Excel
@@ -2215,19 +2208,19 @@ Slide Outline:
 
                 {/* Visual stacked bar for latest shareholding */}
                 {shareholdingData && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pb-4 mt-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-4 mt-4">
                     {[
                       { label: 'Promoters', value: shareholdingData.rows[0].values[shareholdingData.rows[0].values.length - 1], color: 'from-blue-500 to-indigo-600' },
                       { label: 'FIIs', value: shareholdingData.rows[1].values[shareholdingData.rows[1].values.length - 1], color: 'from-teal-400 to-emerald-500' },
                       { label: 'DIIs', value: shareholdingData.rows[2].values[shareholdingData.rows[2].values.length - 1], color: 'from-amber-400 to-orange-500' },
                       { label: 'Public', value: shareholdingData.rows[3].values[shareholdingData.rows[3].values.length - 1], color: 'from-rose-400 to-pink-500' }
                     ].map((item) => (
-                      <div key={item.label} className="bg-slate-50/50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl flex flex-col gap-2">
-                        <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-400">
+                      <div key={item.label} className="bg-slate-50/50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 p-3 sm:p-4 rounded-2xl flex flex-col gap-1.5 sm:gap-2">
+                        <div className="flex justify-between items-center text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
                           <span>{item.label}</span>
-                          <span className="font-mono text-slate-900 dark:text-white font-black">{item.value.toFixed(2)}%</span>
+                          <span className="font-mono text-slate-900 dark:text-white font-black text-xs sm:text-sm">{item.value.toFixed(2)}%</span>
                         </div>
-                        <div className="w-full h-2.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 sm:h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                           <div style={{ width: `${item.value}%` }} className={`h-full rounded-full bg-gradient-to-r ${item.color}`} />
                         </div>
                       </div>
@@ -2249,13 +2242,15 @@ Slide Outline:
                     <tbody className="divide-y divide-slate-100 dark:divide-white/[0.02] font-mono font-bold text-slate-900 dark:text-slate-100">
                       {shareholdingData?.rows.map((row) => (
                         <tr key={row.label} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors">
-                          <td className="py-3 px-3.5 text-left font-sans font-extrabold text-slate-950 dark:text-white flex items-center gap-1.5">
-                            {row.label.includes('Promoters') && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />}
-                            {row.label.includes('FIIs') && <span className="h-2 w-2 rounded-full bg-teal-400 shrink-0" />}
-                            {row.label.includes('DIIs') && <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />}
-                            {row.label.includes('Public') && <span className="h-2 w-2 rounded-full bg-rose-400 shrink-0" />}
-                            {row.label.includes('Shareholders') && <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />}
-                            {row.label}
+                          <td className="py-3 px-3.5 text-left font-sans font-extrabold text-slate-950 dark:text-white">
+                            <div className="flex items-center gap-1.5">
+                              {row.label.includes('Promoters') && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />}
+                              {row.label.includes('FIIs') && <span className="h-2 w-2 rounded-full bg-teal-400 shrink-0" />}
+                              {row.label.includes('DIIs') && <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />}
+                              {row.label.includes('Public') && <span className="h-2 w-2 rounded-full bg-rose-400 shrink-0" />}
+                              {row.label.includes('Shareholders') && <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />}
+                              {row.label}
+                            </div>
                           </td>
                           {(shareholdingPeriod === 'quarterly' ? row.values : row.values.filter((_, i) => i % 4 === 3)).map((v, i) => (
                             <td key={i} className="py-3 px-2.5 text-right font-semibold">

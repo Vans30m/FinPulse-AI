@@ -74,13 +74,28 @@ function MarketHeatmapTile({ market }: { market: any }) {
 export default function Markets() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("default");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [searchQueries, setSearchQueries] = useState<Record<string, string>>({});
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [localFilters, setLocalFilters] = useState<Record<string, "all" | "gainers" | "losers">>({});
   const { data: markets = [], isLoading } = useGlobalMarkets();
 
-  const categories = [
-    "All", "India", "US", "Europe", "Japan", "Taiwan", "Hong Kong", "South Korea", "Canada", "Australia", "China", "Brazil", "Mexico", "Singapore", "Crypto", "Forex", "Commodities"
+  const countries = [
+    { name: "India", flag: "🇮🇳" },
+    { name: "US", flag: "🇺🇸" },
+    { name: "Europe", flag: "🇪🇺" },
+    { name: "Japan", flag: "🇯🇵" },
+    { name: "Taiwan", flag: "🇹🇼" },
+    { name: "Hong Kong", flag: "🇭🇰" },
+    { name: "South Korea", flag: "🇰🇷" },
+    { name: "Canada", flag: "🇨🇦" },
+    { name: "Australia", flag: "🇦🇺" },
+    { name: "China", flag: "🇨🇳" },
+    { name: "Brazil", flag: "🇧🇷" },
+    { name: "Mexico", flag: "🇲🇽" },
+    { name: "Singapore", flag: "🇸🇬" }
   ];
+
+  const activeCountry = countries.find(c => c.name === activeCategory);
+  const isCountryActive = countries.some(c => c.name === activeCategory);
 
   const REGION_FLAGS = {
     India: "🇮🇳",
@@ -129,10 +144,10 @@ export default function Markets() {
         const bChange = parseFloat(b.changePercent) || 0;
         if (sortBy === "gainers") return bChange - aChange;
         if (sortBy === "losers") return aChange - bChange;
-        return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0); 
+        return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
       });
     });
-    
+
     return groups;
   }, [markets, sortBy]);
 
@@ -175,64 +190,119 @@ export default function Markets() {
       {/* Control Center */}
       <div className="sticky top-16 md:top-[72px] z-20 -mx-4 flex flex-col gap-4 border-y border-slate-200/60 bg-slate-50/80 px-4 py-4 backdrop-blur-xl dark:border-night-800 dark:bg-night-900/80 md:mx-0 md:flex-row md:items-center md:justify-between md:rounded-2xl md:border">
         {/* Region Filters */}
-        <div className="flex items-center justify-between gap-2 w-full md:w-auto">
-          {/* Mobile Categories Filter Button */}
-          <div className="relative md:hidden w-full">
-            <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="flex items-center justify-between w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm outline-none dark:border-night-700 dark:bg-night-800 dark:text-slate-300"
-            >
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
-                <span>Region: {activeCategory}</span>
-              </div>
-              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`} />
-            </button>
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none w-full md:w-auto py-1">
+          {/* All */}
+          <button
+            onClick={() => {
+              setActiveCategory("All");
+              setIsDropdownOpen(false);
+            }}
+            className={`
+              text-xs md:text-sm transition-all duration-200 whitespace-nowrap
+              ${activeCategory === "All"
+                ? "bg-white text-slate-900 shadow-sm border-transparent dark:bg-white dark:text-slate-950 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border"
+                : "bg-slate-100/50 hover:bg-slate-100 border-slate-200 dark:bg-night-800/40 dark:border-night-700/50 hover:dark:bg-night-800/85 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border transition-all duration-200"
+              }
+            `}
+          >
+            <span>🌐</span> All
+          </button>
 
-            {isFilterOpen && (
-              <div className="absolute left-0 right-0 mt-2 z-30 max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-night-700 dark:bg-night-900 custom-scrollbar">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => {
-                      setActiveCategory(category);
-                      setIsFilterOpen(false);
-                    }}
-                    className={`w-full text-left rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
-                      activeCategory === category
-                        ? "bg-blue-600 dark:bg-cyan-500/20 text-white dark:text-cyan-400"
-                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-white/5"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* Countries Indices Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className={`
+                text-xs md:text-sm transition-all duration-200 whitespace-nowrap
+                ${["All", "Crypto", "Forex", "Commodities"].includes(activeCategory)
+                  ? "bg-slate-100/50 hover:bg-slate-100 border-slate-200 dark:bg-night-800/40 dark:border-night-700/50 hover:dark:bg-night-800/85 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border transition-all duration-200"
+                  : "bg-white text-slate-900 shadow-sm border-transparent dark:bg-white dark:text-slate-950 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border"
+                }
+              `}
+            >
+              <span>{activeCountry ? activeCountry.flag : "🌍"}</span>
+              <span>{activeCountry ? activeCountry.name : "Countries Indices"}</span>
+              <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
           </div>
 
-          {/* Desktop Categories List */}
-          <div className="hidden md:block overflow-x-auto scrollbar-none">
-            <div className="flex items-center gap-1.5 rounded-xl bg-slate-200/50 p-1 dark:bg-night-800/50 min-w-max">
-              {categories.map((category) => (
+          {/* Crypto */}
+          <button
+            onClick={() => {
+              setActiveCategory("Crypto");
+              setIsDropdownOpen(false);
+            }}
+            className={`
+              text-xs md:text-sm transition-all duration-200 whitespace-nowrap
+              ${activeCategory === "Crypto"
+                ? "bg-white text-slate-900 shadow-sm border-transparent dark:bg-white dark:text-slate-950 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border"
+                : "bg-slate-100/50 hover:bg-slate-100 border-slate-200 dark:bg-night-800/40 dark:border-night-700/50 hover:dark:bg-night-800/85 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border transition-all duration-200"
+              }
+            `}
+          >
+            <span>🪙</span> Crypto
+          </button>
+
+          {/* Forex */}
+          <button
+            onClick={() => {
+              setActiveCategory("Forex");
+              setIsDropdownOpen(false);
+            }}
+            className={`
+              text-xs md:text-sm transition-all duration-200 whitespace-nowrap
+              ${activeCategory === "Forex"
+                ? "bg-white text-slate-900 shadow-sm border-transparent dark:bg-white dark:text-slate-950 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border"
+                : "bg-slate-100/50 hover:bg-slate-100 border-slate-200 dark:bg-night-800/40 dark:border-night-700/50 hover:dark:bg-night-800/85 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border transition-all duration-200"
+              }
+            `}
+          >
+            <span>💱</span> Forex
+          </button>
+
+          {/* Commodities & Metals */}
+          <button
+            onClick={() => {
+              setActiveCategory("Commodities");
+              setIsDropdownOpen(false);
+            }}
+            className={`
+              text-xs md:text-sm transition-all duration-200 whitespace-nowrap
+              ${activeCategory === "Commodities"
+                ? "bg-white text-slate-900 shadow-sm border-transparent dark:bg-white dark:text-slate-950 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border"
+                : "bg-slate-100/50 hover:bg-slate-100 border-slate-200 dark:bg-night-800/40 dark:border-night-700/50 hover:dark:bg-night-800/85 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-full flex items-center gap-1.5 border transition-all duration-200"
+              }
+            `}
+          >
+            <span>🛢</span> Commodities & Metals
+          </button>
+        </div>
+
+        {/* Dropdown Overlay (placed outside the scrollable area to prevent clipping) */}
+        {isDropdownOpen && (
+          <>
+            {/* Backdrop overlay */}
+            <div className="fixed inset-0 z-20" onClick={() => setIsDropdownOpen(false)} />
+            <div className="absolute left-10 md:left-24 top-[48px] md:top-[56px] z-30 w-52 max-h-60 overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-2 shadow-lg dark:border-night-700 dark:bg-night-900 custom-scrollbar">
+              {countries.map((country) => (
                 <button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
-                  className={`
-                    rounded-lg px-4 py-1.5 text-sm font-semibold transition-all duration-200 text-center whitespace-nowrap
-                    ${
-                      activeCategory === category
-                        ? "bg-white text-slate-900 shadow-sm dark:bg-night-700 dark:text-white"
-                        : "text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-night-700/50 dark:hover:text-white"
-                    }
-                  `}
+                  key={country.name}
+                  onClick={() => {
+                    setActiveCategory(country.name);
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`w-full text-left rounded-xl px-3 py-2 text-xs font-semibold transition-all flex items-center gap-2 ${activeCategory === country.name
+                      ? "bg-slate-100 dark:bg-night-800 text-slate-950 dark:text-white"
+                      : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-white/5"
+                    }`}
                 >
-                  {category}
+                  <span>{country.flag}</span>
+                  <span>{country.name}</span>
                 </button>
               ))}
             </div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Sorting tab buttons (instead of select dropdown) */}
         <div className="flex items-center gap-1 rounded-xl bg-slate-200/50 p-1 dark:bg-night-800/50 w-full md:w-auto overflow-x-auto scrollbar-none">
@@ -246,10 +316,9 @@ export default function Markets() {
               onClick={() => setSortBy(opt.value)}
               className={`
                 flex-1 md:flex-initial rounded-lg px-4 py-1.5 text-xs md:text-sm font-semibold transition-all duration-200 text-center whitespace-nowrap
-                ${
-                  sortBy === opt.value
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-night-700 dark:text-white"
-                    : "text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-night-700/50 dark:hover:text-white"
+                ${sortBy === opt.value
+                  ? "bg-white text-slate-900 shadow-sm dark:bg-night-700 dark:text-white"
+                  : "text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-night-700/50 dark:hover:text-white"
                 }
               `}
             >
@@ -279,40 +348,51 @@ export default function Markets() {
                   <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent dark:from-night-800"></div>
                 </div>
 
-                {/* Country-specific Search Bar */}
-                <div className="relative w-full sm:w-72 group">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                    <Search className={`h-4 w-4 transition-colors duration-300 ${searchQueries[region] ? "text-blue-600 dark:text-cyan-400" : "text-slate-400 dark:text-slate-500"}`} />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder={`Search ${region} assets...`}
-                    value={searchQueries[region] || ""}
-                    onChange={(e) => setSearchQueries(prev => ({ ...prev, [region]: e.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/50 dark:bg-white/5 py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none shadow-sm transition-all duration-300 hover:bg-slate-200/40 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 focus:bg-white dark:focus:bg-night-950 focus:border-blue-600 dark:focus:border-cyan-400 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-cyan-400/10 focus:shadow-[0_0_20px_rgba(6,182,212,0.15)]"
-                  />
-                  {searchQueries[region] && (
-                    <button
-                      onClick={() => setSearchQueries(prev => ({ ...prev, [region]: "" }))}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-7 w-7 rounded-xl text-slate-400 hover:bg-slate-200/80 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-200"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
+                {/* Local Filter Button Group: All / Gainers / Losers */}
+                <div className="flex items-center gap-1 rounded-xl bg-slate-200/50 p-1 dark:bg-night-800/50">
+                  {[
+                    { value: "all", label: "All" },
+                    { value: "gainers", label: "Gainers" },
+                    { value: "losers", label: "Losers" }
+                  ].map((opt) => {
+                    const isActive = (localFilters[region] || "all") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => setLocalFilters(prev => ({ ...prev, [region]: opt.value as any }))}
+                        className={`
+                          rounded-lg px-3 py-1 text-xs font-bold transition-all duration-200 text-center whitespace-nowrap
+                          ${isActive
+                            ? "bg-white text-slate-900 shadow-sm dark:bg-night-700 dark:text-white"
+                            : "text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-night-700/50 dark:hover:text-white"
+                          }
+                        `}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {(() => {
-                const query = (searchQueries[region] || "").toLowerCase().trim();
-                const filteredMarkets = regionMarkets.filter((market: any) =>
-                  (market.name || "").toLowerCase().includes(query) ||
-                  (market.symbol || "").toLowerCase().includes(query)
-                );
+                const currentFilter = localFilters[region] || "all";
+                let filteredMarkets = [...regionMarkets];
+
+                if (currentFilter === "gainers") {
+                  filteredMarkets = filteredMarkets
+                    .filter((m: any) => (parseFloat(m.changePercent) || 0) > 0)
+                    .sort((a: any, b: any) => (parseFloat(b.changePercent) || 0) - (parseFloat(a.changePercent) || 0));
+                } else if (currentFilter === "losers") {
+                  filteredMarkets = filteredMarkets
+                    .filter((m: any) => (parseFloat(m.changePercent) || 0) < 0)
+                    .sort((a: any, b: any) => (parseFloat(a.changePercent) || 0) - (parseFloat(b.changePercent) || 0));
+                }
 
                 if (filteredMarkets.length === 0) {
                   return (
                     <div className="rounded-2xl border border-slate-200/60 bg-white/50 dark:border-night-800 dark:bg-night-900/50 p-8 text-center text-slate-400 dark:text-slate-500">
-                      No assets match "{query}" in this section.
+                      No assets found matching this filter.
                     </div>
                   );
                 }

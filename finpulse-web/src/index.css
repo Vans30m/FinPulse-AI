@@ -169,7 +169,7 @@ html {
 }
 
 .animate-marquee {
-  animation: marquee 30s linear infinite;
+  animation: marquee 200s linear infinite;
 }
 
 @keyframes shimmer {
@@ -282,4 +282,45 @@ iframe[src*="tradingview.com"]+a {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.5);
+}
+
+/* Sticky first column for workbook and shareholding tables */
+#screener-workbook table thead tr th:first-child,
+#screener-workbook table tbody tr td:first-child,
+#screener-shareholding table thead tr th:first-child,
+#screener-shareholding table tbody tr td:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 10 !important;
+  background-color: #0b1020 !important; /* Matches dark theme background */
+}
+
+/* Light mode override for sticky column background */
+html:not(.dark) #screener-workbook table thead tr th:first-child,
+html:not(.dark) #screener-workbook table tbody tr td:first-child,
+html:not(.dark) #screener-shareholding table thead tr th:first-child,
+html:not(.dark) #screener-shareholding table tbody tr td:first-child {
+  background-color: #ffffff !important;
+}
+
+/* Zebra striping background for sticky column */
+#screener-workbook table tbody tr:nth-child(even) td:first-child,
+#screener-shareholding table tbody tr:nth-child(even) td:first-child {
+  background-color: #0d1222 !important;
+}
+
+html:not(.dark) #screener-workbook table tbody tr:nth-child(even) td:first-child,
+html:not(.dark) #screener-shareholding table tbody tr:nth-child(even) td:first-child {
+  background-color: #f8fafc !important;
+}
+
+/* Row hover highlight background for sticky column */
+#screener-workbook table tbody tr:hover td:first-child,
+#screener-shareholding table tbody tr:hover td:first-child {
+  background-color: #161f38 !important;
+}
+
+html:not(.dark) #screener-workbook table tbody tr:hover td:first-child,
+html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
+  background-color: #f1f5f9 !important;
 }

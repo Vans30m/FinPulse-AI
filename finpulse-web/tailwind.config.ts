@@ -57,7 +57,7 @@ const config: Config = {
       },
       animation: {
         // Added: 30s linear marquee animation configuration
-        marquee: 'marquee 30s linear infinite',
+        marquee: 'marquee 200s linear infinite',
         float: 'float 8s ease-in-out infinite',
         shimmer: 'shimmer 2.5s linear infinite',
         pulseLine: 'pulseLine 8s linear infinite',
