@@ -276,6 +276,36 @@ const originalQuote = yahooFinance.quote;
   }
 };
 
+// Monkey-patch yahooFinance.search to use direct axios on failure
+const originalSearch = yahooFinance.search;
+(yahooFinance as any).search = async function (query: string, searchOptions?: any) {
+  try {
+    return await originalSearch.call(this, query, searchOptions);
+  } catch (err: any) {
+    console.warn(`[Yahoo Service] yahooFinance.search failed, trying direct axios search fallback:`, err.message);
+    try {
+      const response = await axios.get('https://query2.finance.yahoo.com/v1/finance/search', {
+        params: {
+          q: query,
+          quotesCount: searchOptions?.quotesCount || 20,
+          newsCount: searchOptions?.newsCount || 0
+        },
+        headers: {
+          'User-Agent': getRandomUserAgent(),
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9'
+        },
+        httpsAgent: proxyAgent,
+        timeout: 10000
+      });
+      return response.data || { quotes: [] };
+    } catch (fallbackErr: any) {
+      console.error(`[Yahoo Service] Direct axios search fallback failed:`, fallbackErr.message);
+      throw err;
+    }
+  }
+};
+
 // Monkey-patch yahooFinance.chart to use a resilient axios fallback on failure
 const originalChart = yahooFinance.chart;
 (yahooFinance as any).chart = async function (symbol: string, options: any) {
