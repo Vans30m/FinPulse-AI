@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import CandlestickChart from "../../../components/charts/CandlestickChart";
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Wallet, TrendingDown, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -18,6 +18,31 @@ export default function PortfolioPerformanceChart({
   currencySymbol = "$",
 }: Props) {
   const hasNoData = !initialData || initialData.length === 0;
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Map month strings to sequential date strings for lightweight-charts compatibility
+  const mappedChartData = useMemo(() => {
+    return initialData.map((d, index) => {
+      // Increment months instead of days to avoid overlapping year/day labels on timescale
+      const date = new Date(2025, 0, 1);
+      date.setMonth(date.getMonth() + index);
+      const timeStr = date.toISOString().split("T")[0];
+      return {
+        time: timeStr,
+        invested: d.invested,
+        value: d.value
+      };
+    });
+  }, [initialData]);
 
   if (hasNoData) {
     return (
@@ -41,19 +66,6 @@ export default function PortfolioPerformanceChart({
   const profitPercentage = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
   const isProfit = totalProfit >= 0;
 
-  // Map month strings to sequential date strings for lightweight-charts compatibility
-  const mappedChartData = useMemo(() => {
-    return initialData.map((d, index) => {
-      const date = new Date("2026-01-01");
-      date.setDate(date.getDate() + index);
-      const timeStr = date.toISOString().split("T")[0];
-      return {
-        time: timeStr,
-        invested: d.invested,
-        value: d.value
-      };
-    });
-  }, [initialData]);
 
   const seriesKeys = useMemo(() => [
     { key: "invested", color: "#3b82f6" }, // Blue line for how much is invested
@@ -92,12 +104,12 @@ export default function PortfolioPerformanceChart({
         </div>
       </div>
 
-      <div className="h-[320px] w-full">
+      <div className="h-[220px] md:h-[320px] w-full">
         <CandlestickChart
           customMultiData={mappedChartData}
           seriesKeys={seriesKeys}
           chartType="multiline"
-          height={320}
+          height={isMobile ? 220 : 320}
           currencySymbol={currencySymbol}
         />
       </div>

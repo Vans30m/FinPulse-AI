@@ -43,10 +43,6 @@ export default function MyAlertsDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'alerts' | 'history'>('alerts');
 
-  if (showLoader) {
-    return <PageLoader title="Security Alerts Hub" message="Syncing price targets and active monitors..." />;
-  }
-
   // Form & Creation States
   const [newTicker, setNewTicker] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
@@ -87,6 +83,10 @@ export default function MyAlertsDashboard() {
     }, 300);
     return () => clearTimeout(timer);
   }, [newTicker, showSuggestions]);
+
+  if (showLoader) {
+    return <PageLoader title="Security Alerts Hub" message="Syncing price targets and active monitors..." />;
+  }
 
   // Actions
   const handleCreateAlert = async (e: React.FormEvent) => {
@@ -149,27 +149,33 @@ export default function MyAlertsDashboard() {
   const triggeredCount = myAlerts.filter((a: any) => a.isTriggered).length;
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-1 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-1 space-y-4 md:space-y-6">
       
       {/* 1. HEADER & STATISTICS */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-row justify-between items-center gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Smart Alerts System</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Automated technical price, RSI, SMA, volume indicators, and earnings alerts.</p>
+          <h1 className="text-xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Smart Alerts System</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden md:block">Automated technical price, RSI, SMA, volume indicators, and earnings alerts.</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white dark:text-night-900 shadow-md hover:scale-[1.02] transition-transform">
-          <Plus className="h-4 w-4" /> New Alert
+        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs md:px-5 md:py-2.5 md:text-sm font-bold text-white dark:text-night-900 shadow-md hover:scale-[1.02] transition-transform whitespace-nowrap">
+          <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New Alert</span><span className="sm:hidden">New</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 p-6 rounded-3xl flex items-center gap-4 shadow-sm">
-          <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-white/5 text-blue-600 dark:text-slate-400"><Target className="h-6 w-6" /></div>
-          <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Monitoring</p><h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{activeCount} Active</h3></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 p-3 rounded-2xl flex items-center gap-2.5 shadow-sm">
+          <div className="p-2 rounded-xl bg-blue-50 dark:bg-white/5 text-blue-600 dark:text-slate-400 shrink-0"><Target className="h-4 w-4 md:h-6 md:w-6" /></div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active</p>
+            <h3 className="text-sm md:text-2xl font-black text-slate-900 dark:text-white mt-0.5">{activeCount} Monitoring</h3>
+          </div>
         </div>
-        <div className="bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 p-6 rounded-3xl flex items-center gap-4 shadow-sm">
-          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-6 w-6" /></div>
-          <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Triggers Logged</p><h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{triggeredCount} Total</h3></div>
+        <div className="bg-white dark:bg-night-950 border border-slate-200 dark:border-white/10 p-3 rounded-2xl flex items-center gap-2.5 shadow-sm">
+          <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0"><CheckCircle2 className="h-4 w-4 md:h-6 md:w-6" /></div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Triggered</p>
+            <h3 className="text-sm md:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{triggeredCount} Total</h3>
+          </div>
         </div>
       </div>
 
@@ -184,27 +190,27 @@ export default function MyAlertsDashboard() {
         <div className="space-y-4">
           
           {/* Filters Bar */}
-          <div className="flex flex-wrap items-center gap-4 bg-white/70 dark:bg-night-900/70 p-4 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-2 w-full md:w-auto flex-1">
-              <Search className="h-4 w-4 text-slate-400" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white/70 dark:bg-night-900/70 p-3 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-2 flex-1 bg-slate-50 dark:bg-white/5 px-3 py-2 rounded-xl border border-slate-200/50 dark:border-white/5">
+              <Search className="h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search alert ticker..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="bg-transparent border-0 outline-none text-sm text-slate-900 dark:text-white w-full"
+                className="bg-transparent border-0 outline-none text-xs text-slate-900 dark:text-white w-full"
               />
             </div>
             
-            <div className="flex items-center gap-3">
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-2 text-xs rounded-xl outline-none text-slate-900 dark:text-white font-bold">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2.5 py-1.5 text-xs rounded-xl outline-none text-slate-900 dark:text-white font-bold whitespace-nowrap">
                 <option value="ALL">All Status</option>
                 <option value="ACTIVE">Active</option>
                 <option value="TRIGGERED">Triggered</option>
                 <option value="DISABLED">Paused</option>
               </select>
 
-              <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-2 text-xs rounded-xl outline-none text-slate-900 dark:text-white font-bold">
+              <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2.5 py-1.5 text-xs rounded-xl outline-none text-slate-900 dark:text-white font-bold whitespace-nowrap">
                 <option value="ALL">All Types</option>
                 <option value="PRICE">Price</option>
                 <option value="VOLUME">Volume Spike</option>
@@ -216,36 +222,36 @@ export default function MyAlertsDashboard() {
           {isLoading ? (
             <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-cyan-400"></div></div>
           ) : filteredAlerts.length === 0 ? (
-            <div className="text-center py-16 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
-              <Bell className="h-10 w-10 text-slate-350 dark:text-slate-650 mx-auto mb-4" />
-              <h3 className="text-slate-900 dark:text-white font-bold mb-1">No alerts match criteria</h3>
-              <p className="text-sm text-slate-500">Add customizable price trigger threshold fields above.</p>
+            <div className="text-center py-8 px-4 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
+              <Bell className="h-8 w-8 text-slate-350 dark:text-slate-650 mx-auto mb-3" />
+              <h3 className="text-slate-905 dark:text-white font-bold text-xs mb-1">No alerts match criteria</h3>
+              <p className="text-[11px] text-slate-500">Add customizable price trigger threshold fields above.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filteredAlerts.map((alert: any) => (
-                <div key={alert.id} className={`flex items-start justify-between p-5 rounded-2xl border transition-colors ${alert.isTriggered ? 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-200' : 'bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10'}`}>
-                  <div className="flex items-start gap-4">
+                <div key={alert.id} className={`flex items-center justify-between p-3 rounded-2xl border transition-colors ${alert.isTriggered ? 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-200' : 'bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10'}`}>
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => handleToggleStatus(alert.id, alert.enabled)}
-                      className={`p-2.5 rounded-xl border ${alert.enabled ? 'bg-blue-50 text-blue-600 dark:bg-white/5' : 'bg-slate-100 text-slate-400 dark:bg-white/5'}`}
+                      className={`w-11 h-11 flex items-center justify-center rounded-xl border shrink-0 ${alert.enabled ? 'bg-blue-50 text-blue-600 dark:bg-white/5' : 'bg-slate-100 text-slate-400 dark:bg-white/5'}`}
                     >
                       {alert.enabled ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </button>
                     <div>
-                      <div className="flex items-center gap-3">
-                        <h4 className="text-base font-bold text-slate-900 dark:text-white">{alert.ticker}</h4>
-                        <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded ${alert.isTriggered ? 'bg-emerald-250 text-emerald-800' : alert.enabled ? 'bg-blue-100 text-blue-800' : 'bg-slate-200 text-slate-500'}`}>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">{alert.ticker}</h4>
+                        <span className={`text-[8px] uppercase font-black px-1.5 py-0.2 rounded ${alert.isTriggered ? 'bg-emerald-250 text-emerald-800' : alert.enabled ? 'bg-blue-100 text-blue-800' : 'bg-slate-200 text-slate-500'}`}>
                           {alert.isTriggered ? 'Triggered' : alert.enabled ? 'Active' : 'Paused'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">Condition: {alert.direction} target price <strong className="font-mono">${alert.targetPrice.toFixed(2)}</strong></p>
-                      {alert.notes && <p className="text-[11px] text-slate-400 italic mt-1.5">Note: {alert.notes}</p>}
+                      <p className="text-[11px] text-slate-550 dark:text-slate-400 mt-0.5">Condition: {alert.direction} target price <strong className="font-mono">${alert.targetPrice.toFixed(2)}</strong></p>
+                      {alert.notes && <p className="text-[10px] text-slate-400 italic mt-0.5">Note: {alert.notes}</p>}
                     </div>
                   </div>
                   <button
                     onClick={() => handleDeleteAlert(alert.id)}
-                    className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-slate-150 transition-colors"
+                    className="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-150 transition-colors shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -257,23 +263,23 @@ export default function MyAlertsDashboard() {
       ) : (
         <div className="space-y-4">
           {history.length === 0 ? (
-            <div className="text-center py-16 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
-              <Clock className="h-10 w-10 text-slate-350 dark:text-slate-650 mx-auto mb-4" />
-              <h3 className="text-slate-900 dark:text-white font-bold mb-1">No history logs</h3>
-              <p className="text-sm text-slate-500">When your target alerts trigger, history logs will show here.</p>
+            <div className="text-center py-8 px-4 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
+              <Clock className="h-8 w-8 text-slate-350 dark:text-slate-650 mx-auto mb-3" />
+              <h3 className="text-slate-900 dark:text-white font-bold text-xs mb-1">No history logs</h3>
+              <p className="text-[11px] text-slate-500">When your target alerts trigger, history logs will show here.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {history.map((h: any) => (
-                <div key={h.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 flex justify-between items-center">
+                <div key={h.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 flex justify-between items-center">
                   <div>
-                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                       {h.alert?.ticker || 'ASSET'}
                       <span className="text-xs font-mono text-emerald-500">Triggered at ${h.triggeredPrice.toFixed(2)}</span>
                     </h4>
-                    <p className="text-xs text-slate-500 mt-1">Trigger condition reached on {new Date(h.triggeredAt).toLocaleString()}</p>
+                    <p className="text-[11px] text-slate-550 dark:text-slate-400 mt-0.5">Trigger condition reached on {new Date(h.triggeredAt).toLocaleString()}</p>
                   </div>
-                  <span className="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-xl">Success</span>
+                  <span className="text-[9px] uppercase font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg">Success</span>
                 </div>
               ))}
             </div>

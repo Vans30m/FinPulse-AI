@@ -48,10 +48,6 @@ export default function Watchlist() {
 
   const [activeListId, setActiveListId] = useState<string>("");
 
-  if (showLoader) {
-    return <PageLoader title="Security Watchlists" message="Analyzing watchlists and active tickers..." />;
-  }
-
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [newAssetSymbol, setNewAssetSymbol] = useState("");
@@ -104,6 +100,7 @@ export default function Watchlist() {
   const activeWatchlist = useMemo(() => {
     return watchlists.find((w) => w.id === activeListId) || watchlists[0] || { id: "", name: "Default List", items: [], watchlistTags: [] };
   }, [watchlists, activeListId]);
+
 
   const handleCreateWatchlist = (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,17 +255,21 @@ export default function Watchlist() {
     return { total: totalCount, gainers, losers, avgChange: `${(sumChange / (totalCount || 1)).toFixed(2)}%` };
   }, [activeWatchlist]);
 
+  if (showLoader) {
+    return <PageLoader title="Security Watchlists" message="Analyzing watchlists and active tickers..." />;
+  }
+
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4 md:space-y-6">
       {/* HEADER SECTION WITH EXPLANATORY LABELS */}
-      <div className="flex flex-col gap-1.5 p-1">
+      <div className="flex flex-col gap-1 p-1">
         <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
           Your Watchlists
           <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full dark:bg-blue-900/40 dark:text-blue-300">
             Realtime Trackers
           </span>
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl">
+        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl hidden md:block">
           Create custom watchlists to organize your investments, toggle favorites, pin important assets, view live price changes, add research notes, and see automated AI rankings.
         </p>
       </div>
@@ -279,109 +280,104 @@ export default function Watchlist() {
           <Info className="h-3.5 w-3.5" />
           <span>Watchlist Analytics Overview</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-3xl p-5 bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-xl">
-            <p className="text-xs opacity-75 uppercase font-bold">Total Assets</p>
-            <h2 className="text-3xl font-black mt-2">{stats.total}</h2>
-            <p className="text-[10px] opacity-60 mt-1">Number of tickers in active list</p>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          <div className="rounded-2xl md:rounded-3xl p-3.5 md:p-5 bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-xl">
+            <p className="text-[10px] md:text-xs opacity-75 uppercase font-bold">Total Assets</p>
+            <h2 className="text-xl md:text-3xl font-black mt-1 md:mt-2">{stats.total}</h2>
           </div>
-          <div className="rounded-3xl p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-xs text-slate-400 font-bold uppercase">Gainers</p>
-            <h2 className="text-3xl font-black mt-2 text-emerald-500 flex items-center gap-2">
-              <TrendingUp className="h-6 w-6" /> {stats.gainers}
-            </h2>
-            <p className="text-[10px] text-slate-400 mt-1">Stocks with positive change today</p>
+          <div className="rounded-2xl md:rounded-3xl p-3.5 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase flex items-center gap-1">
+              Gainers <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+            </p>
+            <h2 className="text-xl md:text-3xl font-black mt-1 md:mt-2 text-emerald-500">{stats.gainers}</h2>
           </div>
-          <div className="rounded-3xl p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-xs text-slate-400 font-bold uppercase">Losers</p>
-            <h2 className="text-3xl font-black mt-2 text-rose-500 flex items-center gap-2">
-              <TrendingDown className="h-6 w-6" /> {stats.losers}
-            </h2>
-            <p className="text-[10px] text-slate-400 mt-1">Stocks with negative change today</p>
+          <div className="rounded-2xl md:rounded-3xl p-3.5 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase flex items-center gap-1">
+              Losers <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
+            </p>
+            <h2 className="text-xl md:text-3xl font-black mt-1 md:mt-2 text-rose-500">{stats.losers}</h2>
           </div>
-          <div className="rounded-3xl p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-xs text-slate-400 font-bold uppercase">Avg Return</p>
-            <h2 className="text-3xl font-black mt-2 text-slate-800 dark:text-white">{stats.avgChange}</h2>
-            <p className="text-[10px] text-slate-400 mt-1">Weighted average performance</p>
+          <div className="rounded-2xl md:rounded-3xl p-3.5 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase">Avg Return</p>
+            <h2 className="text-xl md:text-3xl font-black mt-1 md:mt-2 text-slate-800 dark:text-white">{stats.avgChange}</h2>
           </div>
         </div>
       </div>
 
       {/* WATCHLIST SWITCHER & CONTROLS */}
-      <div className="relative z-30 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-5 rounded-3xl shadow-xl flex flex-col gap-5">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div className="relative z-30 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-4 md:p-5 rounded-3xl shadow-xl flex flex-col gap-4">
+        <div className="flex flex-row justify-between items-center gap-3 w-full">
           {/* List selection */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Active Watchlist Tab</label>
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex-1 overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-2">
               {isCreatingList ? (
                 <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2">
                   <input
                     autoFocus
                     type="text"
-                    placeholder="New list name..."
+                    placeholder="Name..."
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
-                    className="bg-slate-100 dark:bg-night-800 border dark:border-white/10 px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="bg-slate-100 dark:bg-night-800 border dark:border-white/10 px-3 py-1.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 w-28 text-slate-900 dark:text-white"
                   />
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all">Save</button>
-                  <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs px-2">Cancel</button>
+                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all">Save</button>
+                  <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-[10px] px-1">Cancel</button>
                 </form>
               ) : (
-                <>
+                <div className="flex items-center gap-1.5">
                   {watchlists.map((list) => (
                     <div
                       key={list.id}
                       onClick={() => setActiveListId(list.id)}
-                      className={`group relative flex items-center gap-2 pl-4 pr-3 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer border ${activeListId === list.id
-                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white shadow-md shadow-blue-500/20"
+                      className={`group relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all duration-200 cursor-pointer border whitespace-nowrap ${activeListId === list.id
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white shadow-sm"
                           : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300"
                         }`}
                     >
                       <span>{list.name}</span>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400"
+                      <span className={`text-[8px] px-1.5 py-0.2 rounded-full font-black ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400"
                         }`}>
                         {list.items?.length || 0}
                       </span>
                       {watchlists.length > 1 && (
                         <button
                           onClick={(e) => handleDeleteWatchlist(e, list.id, list.name)}
-                          className={`p-0.5 rounded transition-colors ${activeListId === list.id ? "text-white/60 hover:text-white hover:bg-white/10" : "text-slate-400 hover:text-rose-500 hover:bg-rose-500/10"
+                          className={`p-0.5 rounded transition-colors ${activeListId === list.id ? "text-white/60 hover:text-white" : "text-slate-400 hover:text-rose-500 hover:bg-rose-500/10"
                             }`}
                           title={`Delete watchlist "${list.name}"`}
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-2.5 w-2.5" />
                         </button>
                       )}
                     </div>
                   ))}
                   <button
                     onClick={() => setIsCreatingList(true)}
-                    className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all border border-transparent"
+                    className="p-2 rounded-xl bg-blue-55 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all border border-transparent shrink-0"
                     title="Create custom watchlist"
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-3 w-3" />
                   </button>
-                </>
+                </div>
               )}
             </div>
           </div>
 
           {/* Export & Actions */}
-          <div className="flex items-center gap-2 self-end lg:self-auto">
+          <div className="shrink-0">
             <button
               onClick={handleExportCSV}
-              className="px-4 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+              className="p-2.5 md:px-4 md:py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
               title="Download watchlist items as CSV file"
             >
-              <Download className="h-3.5 w-3.5" /> Export CSV
+              <Download className="h-3.5 w-3.5" /> <span className="hidden md:inline">Export CSV</span>
             </button>
           </div>
         </div>
 
         {/* ADD ASSET SEARCH BAR */}
-        <div className="relative mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
-          <form onSubmit={handleAddAsset} className="max-w-md">
+        <div className="relative pt-3 border-t border-slate-100 dark:border-white/5 w-full">
+          <form onSubmit={handleAddAsset} className="w-full">
             <div className="relative w-full">
               <input
                 type="text"
@@ -439,7 +435,7 @@ export default function Watchlist() {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
             <AnimatePresence>
               {processedItems.map((item: any) => {
                 const isPositive = parseFloat(String(item.changePercent || "0").replace(/[^0-9.-]+/g, "")) >= 0;
@@ -451,13 +447,13 @@ export default function Watchlist() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="group rounded-3xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-5 shadow-lg hover:shadow-xl hover:border-slate-300 dark:hover:border-white/20 transition-all flex flex-col justify-between"
+                    className="group rounded-3xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-3.5 md:p-5 shadow-lg hover:shadow-xl hover:border-slate-300 dark:hover:border-white/20 transition-all flex flex-col justify-between"
                   >
                     <div>
                       {/* Top bar with symbol, title, delete and pin buttons */}
                       <div className="flex justify-between items-start gap-3">
                         <div
-                          className="flex items-center gap-3 cursor-pointer"
+                          className="flex items-center gap-2 md:gap-3 cursor-pointer"
                           onClick={() => openAsset({
                             symbol: item.symbol,
                             yahooSymbol: item.symbol,
@@ -467,62 +463,60 @@ export default function Watchlist() {
                           })}
                           title="Click to view detailed asset profile page"
                         >
-                          <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${getAvatarColor(item.symbol)} flex items-center justify-center text-white text-sm font-black uppercase shadow-inner`}>
+                          <div className={`w-9 h-9 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br ${getAvatarColor(item.symbol)} flex items-center justify-center text-white text-xs md:text-sm font-black uppercase shadow-inner`}>
                             {item.symbol.slice(0, 2)}
                           </div>
                           <div>
-                            <h3 className="font-extrabold text-base text-slate-800 dark:text-white flex items-center gap-1.5">
+                            <h3 className="font-extrabold text-sm md:text-base text-slate-800 dark:text-white flex items-center gap-1.5">
                               {item.symbol}
                               {item.pinned && <span title="Pinned item"><Pin className="h-3 w-3 text-blue-500 fill-blue-500" /></span>}
                             </h3>
-                            <p className="text-xs text-slate-400 truncate max-w-[140px]">{item.name || "Stock Asset"}</p>
+                            <p className="text-[10px] md:text-xs text-slate-400 truncate max-w-[100px] md:max-w-[140px]">{item.name || "Stock Asset"}</p>
                           </div>
                         </div>
 
-                        {/* Control buttons */}
-                        <div className="flex items-center gap-1">
+                        {/* Control buttons - minimum 44x44px touch targets */}
+                        <div className="flex items-center gap-0.5">
                           {/* Pin Toggle */}
                           <button
                             onClick={() => handleTogglePin(item.id, item.pinned)}
-                            className={`p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${item.pinned ? "text-blue-500" : "text-slate-400"
+                            className={`w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${item.pinned ? "text-blue-500" : "text-slate-400"
                               }`}
                             title={item.pinned ? "Unpin stock from top" : "Pin stock to top"}
                           >
-                            <Pin className={`h-3.5 w-3.5 ${item.pinned ? "fill-blue-500" : ""}`} />
+                            <Pin className={`h-4 w-4 ${item.pinned ? "fill-blue-500" : ""}`} />
                           </button>
 
                           {/* Favorite Toggle */}
                           <button
                             onClick={() => handleToggleFavorite(item.id, item.favorite)}
-                            className={`p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${item.favorite ? "text-amber-500" : "text-slate-400"
+                            className={`w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${item.favorite ? "text-amber-500" : "text-slate-400"
                               }`}
                             title={item.favorite ? "Remove from Favorites" : "Mark as Favorite"}
                           >
-                            <Star className={`h-3.5 w-3.5 ${item.favorite ? "fill-amber-500 text-amber-500" : ""}`} />
+                            <Star className={`h-4 w-4 ${item.favorite ? "fill-amber-500 text-amber-500" : ""}`} />
                           </button>
 
                           {/* Delete Item */}
                           <button
                             onClick={() => handleRemoveAsset(item.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                            className="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
                             title="Remove stock from watchlist"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
                     </div>
                     {/* Price & Change details */}
-                    <div className="mt-5 pt-3 border-t border-slate-100 dark:border-white/5 flex items-end justify-between">
-                      <div>
-                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Live Price</p>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-xl font-black text-slate-800 dark:text-white">{item.price || "$0.00"}</span>
-                          <span className={`text-xs font-bold flex items-center ${isPositive ? "text-emerald-500" : "text-rose-500"}`}>
-                            {isPositive ? "+" : ""}{item.changePercent || "0.00%"}
-                          </span>
-                        </div>
+                    <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] md:text-[10px] text-slate-400 uppercase font-bold tracking-wider">Live Price:</span>
+                        <span className="text-base md:text-xl font-black text-slate-800 dark:text-white">{item.price || "$0.00"}</span>
                       </div>
+                      <span className={`text-xs font-bold flex items-center ${isPositive ? "text-emerald-500" : "text-rose-500"}`}>
+                        {isPositive ? "+" : ""}{item.changePercent || "0.00%"}
+                      </span>
                     </div>
                   </motion.div>
                 );

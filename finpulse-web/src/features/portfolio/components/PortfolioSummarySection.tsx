@@ -125,7 +125,7 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
                     })()}
                   </div>
 
-                  <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">{metric.helperText}</p>
+                  <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 hidden md:block">{metric.helperText}</p>
                 </div>
               </motion.article>
             );

@@ -58,11 +58,11 @@ function CustomEconomicCalendar() {
   const getImpactBadge = (impact: string) => {
     switch (impact.toLowerCase()) {
       case 'high':
-        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-red-500/10 text-red-500 border border-red-500/20">High</span>;
+        return <span className="px-2 py-0.5 rounded text-xs font-black uppercase bg-red-500/10 text-red-500 border border-red-500/20">High</span>;
       case 'medium':
-        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20">Med</span>;
+        return <span className="px-2 py-0.5 rounded text-xs font-black uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20">Med</span>;
       default:
-        return <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-slate-500/10 text-slate-500 border border-slate-500/10">Low</span>;
+        return <span className="px-2 py-0.5 rounded text-xs font-black uppercase bg-slate-500/10 text-slate-500 border border-slate-500/10">Low</span>;
     }
   };
 
@@ -77,21 +77,21 @@ function CustomEconomicCalendar() {
   };
 
   return (
-    <div className="glass-panel p-5 rounded-3xl border border-slate-200/50 dark:border-white/5 bg-white/60 dark:bg-white/[0.02] backdrop-blur-sm shadow-[0_8px_20px_-15px_rgba(15,23,42,0.3)] h-fit flex flex-col">
+    <div className="glass-panel p-4 md:p-5 rounded-3xl border border-slate-200/50 dark:border-white/5 bg-white/60 dark:bg-white/[0.02] backdrop-blur-sm shadow-[0_8px_20px_-15px_rgba(15,23,42,0.3)] h-fit flex flex-col">
       {/* Header and Day Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-slate-100 dark:border-white/5 pb-4 shrink-0">
+      <div className="flex flex-col gap-3 mb-5 border-b border-slate-100 dark:border-white/5 pb-4 shrink-0">
         <div>
           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Macro Analysis</span>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">Economic Calendar</h3>
         </div>
 
-        {/* Tabs */}
-        <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1">
+        {/* Tabs - Full Width on Mobile */}
+        <div className="flex w-full bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1 justify-between">
           {(['yesterday', 'today', 'tomorrow'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${activeTab === tab
+              className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${activeTab === tab
                 ? 'bg-blue-600 text-white dark:bg-cyan-500 dark:text-night-950 shadow-md'
                 : 'text-slate-655 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
@@ -102,7 +102,7 @@ function CustomEconomicCalendar() {
         </div>
       </div>
 
-      {/* Events Table Container */}
+      {/* Events Table / Card Container */}
       <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar pr-1">
         {isLoading && events.length === 0 ? (
           <div className="flex justify-center items-center py-20">
@@ -114,32 +114,42 @@ function CustomEconomicCalendar() {
             <span className="text-xs font-bold">No economic events scheduled.</span>
           </div>
         ) : (
-          <table className="w-full text-left border-collapse min-w-[500px]">
-            <thead>
-              <tr className="border-b border-slate-150 dark:border-white/5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                <th className="py-2.5 pr-2">Time</th>
-                <th className="py-2.5 px-2">Cur</th>
-                <th className="py-2.5 px-2 text-center">Impact</th>
-                <th className="py-2.5 px-2 w-[45%]">Event</th>
-                <th className="py-2.5 px-2 text-right">Actual</th>
-                <th className="py-2.5 px-2 text-right">Forecast</th>
-                <th className="py-2.5 pl-2 text-right">Previous</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            <div className="flex flex-col gap-2.5">
               {events.map((event, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors text-xs">
-                  <td className="py-3 pr-2 text-slate-400 font-medium whitespace-nowrap">{event.time}</td>
-                  <td className="py-3 px-2 font-mono font-black text-slate-700 dark:text-slate-330">{event.currency}</td>
-                  <td className="py-3 px-2 text-center">{getImpactBadge(event.impact)}</td>
-                  <td className="py-3 px-2 font-semibold text-slate-855 dark:text-slate-200 leading-snug">{event.event}</td>
-                  <td className={`py-3 px-2 text-right font-mono ${getComparisonClass(event.actual, event.forecast)}`}>{event.actual || "---"}</td>
-                  <td className="py-3 px-2 text-right font-mono text-slate-600 dark:text-slate-450">{event.forecast || "---"}</td>
-                  <td className="py-3 pl-2 text-right font-mono text-slate-655 dark:text-slate-400">{event.previous || "---"}</td>
-                </tr>
+                <div 
+                  key={idx} 
+                  className="p-3.5 rounded-2xl border border-slate-200/50 dark:border-white/5 bg-slate-55/30 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.03] transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group shadow-sm"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex-wrap gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mb-1">
+                      <span className="text-slate-900 dark:text-slate-300 font-semibold">{event.time}</span>
+                      <span>·</span>
+                      <span className="font-mono text-slate-655 dark:text-slate-400">{event.currency}</span>
+                      <span>·</span>
+                      {getImpactBadge(event.impact)}
+                    </div>
+                    <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                      {event.event}
+                    </h4>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 sm:self-center self-start text-[11px] font-mono shrink-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5 pt-2 sm:pt-0 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="text-right">
+                      <span className="block text-[8px] uppercase font-bold text-slate-400 dark:text-slate-500">Actual</span>
+                      <span className={getComparisonClass(event.actual, event.forecast)}>{event.actual || "---"}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[8px] uppercase font-bold text-slate-400 dark:text-slate-500">Forecast</span>
+                      <span className="text-slate-500 dark:text-slate-450">{event.forecast || "---"}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[8px] uppercase font-bold text-slate-400 dark:text-slate-500">Previous</span>
+                      <span className="text-slate-500 dark:text-slate-450">{event.previous || "---"}</span>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
         )}
       </div>
     </div>
@@ -157,37 +167,13 @@ export default function News() {
     return `${year}-${month}-${day}`;
   }, []);
 
-  const cachedNews = pageCache.get('liveNews');
-  const cachedCalendar = pageCache.get(`economicCalendar-${todayStr}`);
-  const [showLoader, setShowLoader] = useState(!cachedNews || !cachedCalendar);
 
-  useEffect(() => {
-    if (cachedNews && cachedCalendar) {
-      setShowLoader(false);
-      return;
-    }
-
-    const checkInterval = setInterval(() => {
-      const news = pageCache.get('liveNews');
-      const calendar = pageCache.get(`economicCalendar-${todayStr}`);
-      if (news && calendar) {
-        setShowLoader(false);
-        clearInterval(checkInterval);
-      }
-    }, 150);
-
-    return () => clearInterval(checkInterval);
-  }, [todayStr, cachedNews, cachedCalendar]);
-
-  if (showLoader) {
-    return <PageLoader title="Market Intelligence Center" message="Syncing premium news networks and economic calendar feeds..." />;
-  }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-300 px-4 py-6 md:px-6">
 
       {/* Real-time Header Row */}
-      <div className="flex items-center gap-4 pb-6 border-b border-slate-200/50 dark:border-white/5 pt-2">
+      <div className="flex items-center gap-4 pb-4 border-b border-slate-200/50 dark:border-white/5 pt-2">
         <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10 shrink-0 hidden sm:block">
           <Newspaper className="h-8 w-8" />
         </div>
@@ -196,17 +182,17 @@ export default function News() {
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
             Live Intel Feed
           </div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
             Market Intelligence
           </h1>
-          <p className="text-xs text-slate-555 dark:text-slate-400 font-semibold mt-1.5 max-w-xl">
+          <p className="text-xs text-slate-555 dark:text-slate-400 font-semibold mt-1.5 max-w-xl hidden md:block">
             Real-time global coverage aggregated from premium networks and macroeconomic schedules.
           </p>
         </div>
       </div>
 
       {/* Feed & Calendar Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
         <div className="lg:col-span-2 h-full">
           <AlertsTimeline fullPage />
         </div>

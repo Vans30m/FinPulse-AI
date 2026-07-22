@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React from 'react';
 
 const DOMAIN_MAP: { [key: string]: string } = {
   // US / Global Stocks
@@ -201,23 +201,15 @@ export function getStockLogoFallbackUrl(symbol: string): string {
   return `https://www.google.com/s2/favicons?sz=128&domain=${getDomain(symbol)}`;
 }
 
-/**
- * A beautiful, self-healing React component for displaying stock logos.
- * Handles primary (Clearbit) and fallback (Google Favicon, Initials) logic internally.
- */
 export function StockLogo({
   symbol,
-  name,
   className = "h-8 w-8",
-  imgSizeClass = "w-5.5 h-5.5"
 }: {
   symbol: string;
-  name: string;
+  name?: string;
   className?: string;
   imgSizeClass?: string;
 }) {
-  const [logoState, setLogoState] = useState<'primary' | 'fallback' | 'text'>('primary');
-
   const getLetterAvatarColor = (sym: string) => {
     const colors = [
       "from-blue-500 to-indigo-600",
@@ -230,28 +222,9 @@ export function StockLogo({
     return colors[index];
   };
 
-  if (logoState === 'text') {
-    return (
-      <div className={`${className} flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br ${getLetterAvatarColor(symbol)} text-white text-xs font-black uppercase shadow-sm select-none`}>
-        {symbol.slice(0, 2).replace("^", "")}
-      </div>
-    );
-  }
-
   return (
-    <div className={`${className} flex-shrink-0 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-night-800 border border-slate-200/40 dark:border-white/5 overflow-hidden relative shadow-sm`}>
-      <img
-        src={logoState === 'primary' ? getStockLogoUrl(symbol) : getStockLogoFallbackUrl(symbol)}
-        alt={name}
-        className={`${imgSizeClass} object-contain`}
-        onError={() => {
-          if (logoState === 'primary') {
-            setLogoState('fallback');
-          } else {
-            setLogoState('text');
-          }
-        }}
-      />
+    <div className={`${className} flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br ${getLetterAvatarColor(symbol)} text-white text-xs font-black uppercase shadow-sm select-none`}>
+      {symbol.slice(0, 2).replace("^", "")}
     </div>
   );
 }

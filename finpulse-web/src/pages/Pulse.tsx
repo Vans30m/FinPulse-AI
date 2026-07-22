@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Activity } from "lucide-react";
 import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
 import { useUpcomingEarnings } from "../hooks/useUpcomingEarnings";
+import PageLoader from "../components/ui/PageLoader";
 
 import ForexCryptoRibbon from "../features/dashboard/components/ForexCryptoRibbon";
 import AIMarketSentiment from "../features/dashboard/components/AIMarketSentiment";
@@ -30,11 +31,7 @@ export default function Pulse() {
   const isLoading = marketsLoading || earningsLoading;
 
   if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Activity className="h-8 w-8 text-blue-500 animate-spin" />
-      </div>
-    );
+    return <PageLoader title="FinPulse Market Hub" message="Evaluating global indices, macroeconomic sentiment indicators, and asset performance..." />;
   }
 
   return (

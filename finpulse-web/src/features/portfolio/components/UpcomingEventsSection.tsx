@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import API_BASE_URL from "../../../config/api";
 import { useProfile } from "../../../profile/hooks/useProfile";
+import { StockLogo } from "../../../utils/logo";
 import { 
   CalendarClock, ChevronRight, CircleDot, Clock3, Search, SlidersHorizontal, 
   ArrowUpDown, ExternalLink, RefreshCw, X, 
@@ -469,12 +470,8 @@ function UpcomingEventsSection() {
                         {/* Header: Company, Symbol, Exchange */}
                         <div className="flex justify-between items-start gap-2">
                           <div className="flex items-center gap-2.5">
-                            <img 
-                              src={event.logo} 
-                              alt={event.symbol}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = `https://assets.financialmodelingprep.com/imgs/symbol/${event.symbol}.png`;
-                              }}
+                            <StockLogo 
+                              symbol={event.symbol} 
                               className="h-9 w-9 rounded-xl border border-slate-200/50 dark:border-white/5 bg-white p-1 object-contain"
                             />
                             <div>
@@ -586,9 +583,8 @@ function UpcomingEventsSection() {
 
                 {/* Modal Header */}
                 <div className="flex items-center gap-4 mb-6 border-b border-slate-100 dark:border-white/5 pb-5">
-                  <img 
-                    src={selectedEvent.logo} 
-                    alt={selectedEvent.symbol}
+                  <StockLogo 
+                    symbol={selectedEvent.symbol} 
                     className="h-14 w-14 rounded-2xl border border-slate-200 dark:border-slate-800 p-1.5 bg-white object-contain shrink-0 shadow-sm"
                   />
                   <div>

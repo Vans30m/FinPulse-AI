@@ -31,32 +31,8 @@ export default function PortfolioAllocationChart({
     : null;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-6 shadow-[0_10px_30px_-22px_rgba(15,23,42,0.65)] group transition-all duration-300 hover:border-blue-500/20 dark:hover:border-cyan-500/20 hover:shadow-[0_18px_48px_-28px_rgba(6,182,212,0.38)]">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] via-transparent to-cyan-500/[0.04] pointer-events-none" />
-
-      <div className="relative flex items-start justify-between gap-4 mb-5">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <PieIcon className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Portfolio Allocation
-            </h2>
-          </div>
-          <p className="text-xs text-slate-400 dark:text-slate-500 max-w-lg">
-            Capital distribution across every active market bucket, optimized for quick allocation scanning.
-          </p>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-2 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.03] px-3 py-2">
-          <Layers3 className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
-          <div className="leading-tight">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Largest Slice</p>
-            <p className="text-sm font-bold text-slate-900 dark:text-white">{dominant ? dominant.name : "N/A"}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative h-[270px] pointer-events-none">
+    <div className="relative overflow-hidden p-1 transition-all duration-300">
+      <div className="relative h-[180px] pointer-events-none flex items-center justify-center">
         <ResponsiveContainer
           width="100%"
           height="100%"
@@ -66,8 +42,8 @@ export default function PortfolioAllocationChart({
               data={data}
               dataKey="value"
               nameKey="name"
-              outerRadius={95}
-              innerRadius={65}
+              outerRadius={75}
+              innerRadius={55}
               paddingAngle={4}
               labelLine={false}
               label={false}
@@ -92,9 +68,9 @@ export default function PortfolioAllocationChart({
         </ResponsiveContainer>
 
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="rounded-full border border-slate-200/60 dark:border-white/5 bg-white/80 dark:bg-[#0c1120]/80 px-5 py-3 text-center shadow-lg backdrop-blur-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Total Capital</p>
-            <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">${total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          <div className="rounded-full border border-slate-200/60 dark:border-white/5 bg-white/85 dark:bg-[#0c1120]/85 px-4 py-2 text-center shadow-md backdrop-blur-sm">
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Total Capital</p>
+            <p className="mt-0.5 text-base font-black text-slate-900 dark:text-white">${total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
           </div>
         </div>
       </div>

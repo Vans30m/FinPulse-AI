@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Twitter, 
-  Linkedin, 
-  Github, 
-  ArrowRight, 
-  ShieldAlert, 
-  CheckCircle2, 
-  Loader2 
+import {
+  Twitter,
+  Linkedin,
+  Github,
+  ArrowRight,
+  ShieldAlert,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 
 // Explicit interfaces for clean sitemap mapping
@@ -70,7 +70,7 @@ export default function Footer() {
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    
+
     setStatus('loading');
     try {
       const res = await fetch('/api/auth/subscribe', {
@@ -95,10 +95,10 @@ export default function Footer() {
   return (
     <footer className="w-full border-t border-slate-200 dark:border-slate-800/60 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md mt-auto transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-4 pt-16 pb-8 sm:px-6 lg:px-8">
-        
+
         {/* Upper Master Grid */}
         <div className="grid grid-cols-1 gap-12 pb-12 lg:grid-cols-6 lg:gap-8">
-          
+
           {/* Brand & Value Proposition Column */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center gap-2">
@@ -124,28 +124,28 @@ export default function Footer() {
           </div>
 
           {/* Dynamic Sitemap Navigation Links */}
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:col-span-4">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 lg:col-span-4">
             {sitemap.map((section) => (
               <div key={section.title} className="space-y-4">
                 <h3 className="text-xs font-bold tracking-wider uppercase text-slate-900 dark:text-slate-200">
                   {section.title}
                 </h3>
-                <ul className="space-y-2.5">
+                <ul className="space-y-1">
                   {section.links.map((link) => (
                     <li key={link.label}>
                       {link.isExternal ? (
-                        <a 
+                        <a
                           href={link.to}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-block text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-transform duration-200 hover:translate-x-1"
+                          className="inline-block py-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-transform duration-200 hover:translate-x-1"
                         >
                           {link.label}
                         </a>
                       ) : (
-                        <Link 
-                          to={link.to} 
-                          className="inline-block text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-transform duration-200 hover:translate-x-1"
+                        <Link
+                          to={link.to}
+                          className="inline-block py-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-transform duration-200 hover:translate-x-1"
                         >
                           {link.label}
                         </Link>
@@ -159,13 +159,13 @@ export default function Footer() {
         </div>
 
         {/* Middle Conversion Grid (Newsletter Subscription Banner) */}
-        <div className="border-y border-slate-200 dark:border-slate-800/60 py-10 my-4 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
+        <div className="border-y border-slate-200 dark:border-slate-800/60 py-8 my-4 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
           <div className="lg:col-span-1">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Subscribe to Intelligence Dispatches</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Get advanced sentiment alerts delivered directly to your workstation.</p>
+            <p className="text-xs text-slate-555 dark:text-slate-400 mt-1">Get advanced sentiment alerts delivered directly to your workstation.</p>
           </div>
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubscribe} className="relative flex max-w-md w-full sm:ml-auto">
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row max-w-md w-full gap-2.5 sm:ml-auto">
               <input
                 type="email"
                 required
@@ -173,12 +173,12 @@ export default function Footer() {
                 disabled={status === 'loading' || status === 'success'}
                 placeholder="Enter Your Email Address"
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 pr-32 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 transition-colors"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 transition-colors"
               />
               <button
                 type="submit"
                 disabled={status === 'loading' || status === 'success'}
-                className="absolute right-1 top-1 bottom-1 flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 dark:bg-cyan-500 px-4 py-1.5 text-xs font-bold text-white dark:text-slate-950 transition-all hover:bg-blue-700 dark:hover:bg-cyan-400 disabled:bg-emerald-600 disabled:text-white"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 dark:bg-cyan-500 px-5 py-2.5 text-xs font-bold text-white dark:text-slate-950 transition-all hover:bg-blue-700 dark:hover:bg-cyan-400 disabled:bg-emerald-600 disabled:text-white whitespace-nowrap min-h-[44px]"
               >
                 {status === 'loading' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {status === 'success' && <CheckCircle2 className="h-3.5 w-3.5" />}
@@ -199,14 +199,14 @@ export default function Footer() {
             <ShieldAlert className="h-5 w-5 text-amber-500 dark:text-amber-400/80 shrink-0 mt-0.5" />
             <div>
               <p>
-                <span className="font-bold text-slate-800 dark:text-slate-200">SEBI Regulatory Compliance Statement:</span> AI-driven computational insights, natural language sentiment processing metrics, and structural summaries displayed via FinPulse AI are computed for foundational educational informational indexes only. They do not comprise or signify SEBI-registered portfolio management or certified investment consultancy suggestions. 
+                <span className="font-bold text-slate-800 dark:text-slate-200">SEBI Regulatory Compliance Statement:</span> AI-driven computational insights, natural language sentiment processing metrics, and structural summaries displayed via FinPulse AI are computed for foundational educational informational indexes only. They do not comprise or signify SEBI-registered portfolio management or certified investment consultancy suggestions.
               </p>
               <p className="mt-1.5 font-medium text-slate-600 dark:text-slate-500">
                 Trading securities involves significant financial exposure. Past computational tracking behaviors are not continuous guarantees of positive forward iterations. Please check with an active certified investment advisor before trading assets.
               </p>
             </div>
           </div>
-          
+
           {/* Sub-Footer Meta Attributions */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 text-[11px] font-medium text-slate-400 dark:text-slate-500">
             <p>© {currentYear} FinPulse AI Technologies Inc. All configurations reserved.</p>
