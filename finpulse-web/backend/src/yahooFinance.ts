@@ -150,6 +150,56 @@ async function fetchTwelveDataQuotes(symbols: string[]): Promise<any[]> {
   }).filter(Boolean);
 }
 
+// Helper to fetch quotes from Yahoo Spark API
+async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
+  const url = 'https://query1.finance.yahoo.com/v7/finance/spark';
+  const response = await axios.get(url, {
+    params: {
+      symbols: symbols.join(','),
+      range: '1d',
+      interval: '1d'
+    },
+    headers: {
+      'User-Agent': getRandomUserAgent()
+    },
+    httpsAgent: proxyAgent,
+    timeout: 10000
+  });
+
+  const data = response.data || {};
+  const results = data.spark?.result || [];
+  const resultMap = new Map<string, any>(results.map((r: any) => [r.symbol, r] as [string, any]));
+
+  return symbols.map(symbol => {
+    const spark = resultMap.get(symbol);
+    if (!spark || !spark.response?.[0]) return null;
+
+    const resp = spark.response[0];
+    const meta = resp.meta || {};
+    const close = resp.indicators?.quote?.[0]?.close || [];
+    const price = meta.regularMarketPrice || close[close.length - 1] || 0;
+    const prevClose = meta.chartPreviousClose || price;
+    const change = price - prevClose;
+    const changePercent = prevClose ? (change / prevClose) * 100 : 0;
+
+    return {
+      symbol,
+      regularMarketPrice: price,
+      regularMarketChange: change,
+      regularMarketChangePercent: changePercent,
+      regularMarketVolume: meta.regularMarketVolume || 0,
+      currency: meta.currency || 'USD',
+      regularMarketOpen: meta.regularMarketOpen || price,
+      regularMarketDayHigh: meta.regularMarketDayHigh || price,
+      regularMarketDayLow: meta.regularMarketDayLow || price,
+      fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh || price,
+      fiftyTwoWeekLow: meta.fiftyTwoWeekLow || price,
+      shortName: meta.shortName || symbol.split('.')[0],
+      longName: meta.longName || symbol
+    };
+  }).filter(Boolean);
+}
+
 // Monkey-patch yahooFinance.quote to use a resilient axios fallback on failure (crumb 429 errors)
 const originalQuote = yahooFinance.quote;
 (yahooFinance as any).quote = async function (symbols: string | string[], options?: any) {
@@ -157,8 +207,8 @@ const originalQuote = yahooFinance.quote;
     return await originalQuote.call(this, symbols, options);
   } catch (err: any) {
     console.warn(`[Yahoo Service] yahooFinance.quote failed, trying Twelve Data fallback:`, err.message);
+    const symbolList = Array.isArray(symbols) ? symbols : [symbols];
     try {
-      const symbolList = Array.isArray(symbols) ? symbols : [symbols];
       const tdResults = await fetchTwelveDataQuotes(symbolList);
       if (Array.isArray(symbols)) {
         return tdResults;
@@ -166,49 +216,60 @@ const originalQuote = yahooFinance.quote;
         return tdResults[0] || null;
       }
     } catch (tdErr: any) {
-      console.warn(`[Yahoo Service] Twelve Data fallback failed: ${tdErr.message}. Trying direct axios Yahoo fallback.`);
+      console.warn(`[Yahoo Service] Twelve Data fallback failed: ${tdErr.message}. Trying direct axios Yahoo spark fallback.`);
       try {
-        const symbolList = Array.isArray(symbols) ? symbols : [symbols];
-        const url = 'https://query1.finance.yahoo.com/v7/finance/quote';
-        const response = await axios.get(url, {
-          params: {
-            symbols: symbolList.join(',')
-          },
-          headers: {
-            'User-Agent': getRandomUserAgent()
-          },
-          httpsAgent: proxyAgent,
-          timeout: 10000
-        });
-
-        const results = response.data?.quoteResponse?.result || [];
-        if (Array.isArray(symbols)) {
-          return results;
-        } else {
-          return results[0] || null;
+        const sparkResults = await fetchYahooSparkQuotes(symbolList);
+        if (sparkResults && sparkResults.length > 0) {
+          if (Array.isArray(symbols)) {
+            return sparkResults;
+          } else {
+            return sparkResults[0] || null;
+          }
         }
-      } catch (fallbackErr: any) {
-        console.error(`[Yahoo Service] Direct axios quote fallback failed:`, fallbackErr.message);
-        const symbolList = Array.isArray(symbols) ? symbols : [symbols];
-        const mocks = symbolList.map(sym => ({
-          symbol: sym,
-          regularMarketPrice: 0,
-          regularMarketChange: 0,
-          regularMarketChangePercent: 0,
-          regularMarketVolume: 0,
-          currency: 'USD',
-          shortName: sym,
-          longName: sym,
-          regularMarketOpen: 0,
-          regularMarketDayHigh: 0,
-          regularMarketDayLow: 0,
-          fiftyTwoWeekHigh: 0,
-          fiftyTwoWeekLow: 0
-        }));
-        if (Array.isArray(symbols)) {
-          return mocks;
-        } else {
-          return mocks[0];
+        throw new Error("No spark results returned");
+      } catch (sparkErr: any) {
+        console.warn(`[Yahoo Service] Yahoo spark fallback failed: ${sparkErr.message}. Trying direct axios Yahoo v7 quote fallback.`);
+        try {
+          const url = 'https://query1.finance.yahoo.com/v7/finance/quote';
+          const response = await axios.get(url, {
+            params: {
+              symbols: symbolList.join(',')
+            },
+            headers: {
+              'User-Agent': getRandomUserAgent()
+            },
+            httpsAgent: proxyAgent,
+            timeout: 10000
+          });
+
+          const results = response.data?.quoteResponse?.result || [];
+          if (Array.isArray(symbols)) {
+            return results;
+          } else {
+            return results[0] || null;
+          }
+        } catch (fallbackErr: any) {
+          console.error(`[Yahoo Service] Direct axios quote fallback failed:`, fallbackErr.message);
+          const mocks = symbolList.map(sym => ({
+            symbol: sym,
+            regularMarketPrice: 0,
+            regularMarketChange: 0,
+            regularMarketChangePercent: 0,
+            regularMarketVolume: 0,
+            currency: 'USD',
+            shortName: sym,
+            longName: sym,
+            regularMarketOpen: 0,
+            regularMarketDayHigh: 0,
+            regularMarketDayLow: 0,
+            fiftyTwoWeekHigh: 0,
+            fiftyTwoWeekLow: 0
+          }));
+          if (Array.isArray(symbols)) {
+            return mocks;
+          } else {
+            return mocks[0];
+          }
         }
       }
     }
@@ -334,7 +395,20 @@ const originalHistorical = yahooFinance.historical;
 export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
   try {
     const quotes = await yahooFinance.quote(symbols);
-    return Array.isArray(quotes) ? quotes : [quotes];
+    const quoteList = Array.isArray(quotes) ? quotes : [quotes];
+    const isMock = quoteList.every(q => !q || q.regularMarketPrice === 0);
+    if (isMock) {
+      console.warn(`[Yahoo Service] yahooFinance.quote returned mocks, trying spark fallback directly in fetchQuotesResilient.`);
+      try {
+        const sparkQuotes = await fetchYahooSparkQuotes(symbols);
+        if (sparkQuotes && sparkQuotes.length > 0) {
+          return sparkQuotes;
+        }
+      } catch (e: any) {
+        console.error(`[Yahoo Service] Spark fallback in fetchQuotesResilient failed:`, e.message);
+      }
+    }
+    return quoteList;
   } catch (err: any) {
     console.warn(`[Yahoo Service] Quote fetch failed, trying Twelve Data batch fallback:`, err.message);
     try {
@@ -342,51 +416,7 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
     } catch (tdErr: any) {
       console.warn(`[Yahoo Service] Twelve Data fallback failed: ${tdErr.message}. Trying Yahoo spark fallback.`);
       try {
-        const url = 'https://query1.finance.yahoo.com/v7/finance/spark';
-        const response = await axios.get(url, {
-          params: {
-            symbols: symbols.join(','),
-            range: '1d',
-            interval: '1d'
-          },
-          headers: {
-            'User-Agent': getRandomUserAgent()
-          },
-          httpsAgent: proxyAgent,
-          timeout: 10000
-        });
-
-        const data = response.data || {};
-        const results = data.spark?.result || [];
-        const resultMap = new Map<string, any>(results.map((r: any) => [r.symbol, r] as [string, any]));
-
-        return symbols.map(symbol => {
-          const spark = resultMap.get(symbol);
-          if (!spark || !spark.response?.[0]) return null;
-
-          const resp = spark.response[0];
-          const meta = resp.meta || {};
-          const close = resp.indicators?.quote?.[0]?.close || [];
-          const price = meta.regularMarketPrice || close[close.length - 1] || 0;
-          const prevClose = meta.chartPreviousClose || price;
-          const change = price - prevClose;
-          const changePercent = prevClose ? (change / prevClose) * 100 : 0;
-
-          return {
-            symbol,
-            regularMarketPrice: price,
-            regularMarketChange: change,
-            regularMarketChangePercent: changePercent,
-            regularMarketVolume: meta.regularMarketVolume || 0,
-            currency: meta.currency || 'USD',
-            regularMarketOpen: meta.regularMarketOpen || price,
-            regularMarketDayHigh: meta.regularMarketDayHigh || price,
-            regularMarketDayLow: meta.regularMarketDayLow || price,
-            fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh || price,
-            fiftyTwoWeekLow: meta.fiftyTwoWeekLow || price,
-            shortName: symbol.split('.')[0]
-          };
-        }).filter(Boolean) as any[];
+        return await fetchYahooSparkQuotes(symbols);
       } catch (fallbackErr: any) {
         console.error(`[Yahoo Service] Resilient spark fallback failed:`, fallbackErr.message);
         throw err;
