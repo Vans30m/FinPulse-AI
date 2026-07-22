@@ -8,8 +8,11 @@ import {
   Bell,
   Menu,
   X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAppData } from "../../context/AppDataContext";
+import { useTheme } from '../../context/ThemeContext';
 import LightLogo from '../../assets/Dark_Logo.png';
 import DarkLogo from '../../assets/Light_Logo.png';
 import { Link, NavLink } from "react-router-dom";
@@ -39,6 +42,7 @@ interface HeaderProps {
 }
 
 export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutClick }: HeaderProps) {
+  const { theme, setTheme } = useTheme();
   const { user } = useAppData();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
@@ -353,13 +357,12 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
 
                     <button
                       onClick={() => {
-                        setShowProfileMenu(false);
-                        onLogoutClick();
+                        setTheme(theme === 'dark' ? 'light' : 'dark');
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-bold text-slate-655 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
                     >
-                      <LogOut className="h-4 w-4" />
-                      Logout
+                      {theme === 'dark' ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-slate-400" />}
+                      <span>Theme</span>
                     </button>
                   </motion.div>
                 )}

@@ -781,7 +781,7 @@ export default function Profile() {
                   type="button"
                   disabled={isSaving}
                   onClick={() => setIsEditProfileOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -857,7 +857,7 @@ export default function Profile() {
                 <button
                   type="button"
                   onClick={() => setIsChangePasswordOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
                 >
                   Cancel
                 </button>
@@ -887,7 +887,7 @@ export default function Profile() {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setIsLogoutOpen(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-250 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
               >
                 No, Stay
               </button>
@@ -916,7 +916,7 @@ export default function Profile() {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setIsLogoutAllOpen(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-250 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
               >
                 Cancel
               </button>
@@ -945,7 +945,7 @@ export default function Profile() {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setIsDeleteAccountOpen(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-250 dark:border-white/5 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
               >
                 Cancel
               </button>

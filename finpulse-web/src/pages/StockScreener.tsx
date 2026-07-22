@@ -188,9 +188,20 @@ export default function StockScreener() {
   const handleTabClick = (tabId: string, tabVal: any) => {
     isScrollingRef.current = true;
     setActiveTab(tabVal);
+    const el = document.getElementById(tabId);
+    if (el) {
+      const headerOffset = 90; // Adjust for sticky header height
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - headerOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    // Re-enable scroll spy after the smooth scrolling finishes
     setTimeout(() => {
       isScrollingRef.current = false;
-    }, 100);
+    }, 850);
   };
 
   const getGridColsClass = () => {
