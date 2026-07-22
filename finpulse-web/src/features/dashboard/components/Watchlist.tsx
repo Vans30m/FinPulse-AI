@@ -487,16 +487,6 @@ export default function Watchlist() {
                             <Pin className={`h-4 w-4 ${item.pinned ? "fill-blue-500" : ""}`} />
                           </button>
 
-                          {/* Favorite Toggle */}
-                          <button
-                            onClick={() => handleToggleFavorite(item.id, item.favorite)}
-                            className={`w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${item.favorite ? "text-amber-500" : "text-slate-400"
-                              }`}
-                            title={item.favorite ? "Remove from Favorites" : "Mark as Favorite"}
-                          >
-                            <Star className={`h-4 w-4 ${item.favorite ? "fill-amber-500 text-amber-500" : ""}`} />
-                          </button>
-
                           {/* Delete Item */}
                           <button
                             onClick={() => handleRemoveAsset(item.id)}
@@ -515,7 +505,7 @@ export default function Watchlist() {
                         <span className="text-base md:text-xl font-black text-slate-800 dark:text-white">{item.price || "$0.00"}</span>
                       </div>
                       <span className={`text-xs font-bold flex items-center ${isPositive ? "text-emerald-500" : "text-rose-500"}`}>
-                        {isPositive ? "+" : ""}{item.changePercent || "0.00%"}
+                        {isPositive && !String(item.changePercent || "").startsWith('+') ? "+" : ""}{item.changePercent || "0.00%"}
                       </span>
                     </div>
                   </motion.div>
