@@ -468,7 +468,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
   const isForcePin = !!localStorage.getItem('finpulse_token') && sessionStorage.getItem('finpulse_pin_verified') !== 'true';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 pt-16 sm:pt-6">
       <div
         className="absolute inset-0 bg-slate-900/60 dark:bg-night-950/80 backdrop-blur-sm transition-opacity"
         onClick={() => {

@@ -43,28 +43,28 @@ function MarketHeatmapTile({ market }: { market: any }) {
       }
       className={`
         group relative flex aspect-[1.1] cursor-pointer flex-col items-center justify-center 
-        rounded-2xl border p-3 text-center transition-all duration-300 ease-out 
+        rounded-2xl border p-2 sm:p-3 text-center transition-all duration-300 ease-out 
         hover:-translate-y-1 hover:scale-[1.02] hover:shadow-md
         ${getHeatmapStyle(changePercent)}
       `}
     >
       {/* Symbol */}
-      <span className="text-[10px] font-black tracking-wider uppercase opacity-75">
-        {market.symbol.replace("=X", "").replace("-USD", "").replace("=F", "")}
+      <span className="text-[8px] sm:text-[10px] font-black tracking-wider uppercase opacity-75 truncate max-w-full block px-0.5">
+        {market.symbol.split('.')[0].replace("=X", "").replace("-USD", "").replace("=F", "")}
       </span>
 
       {/* Market Name */}
-      <h4 className="line-clamp-2 text-xs font-extrabold leading-tight tracking-tight mt-1 px-1">
+      <h4 className="line-clamp-2 text-[10px] sm:text-xs font-extrabold leading-tight tracking-tight mt-1 px-1 break-words">
         {market.name}
       </h4>
 
       {/* Price */}
-      <span className="text-[10px] font-bold opacity-80 mt-1.5 tabular-nums">
+      <span className="text-[9px] sm:text-[10px] font-bold opacity-80 mt-1.5 tabular-nums">
         {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </span>
 
       {/* Percentage Change */}
-      <span className="text-xs font-black tabular-nums tracking-tighter mt-1">
+      <span className="text-[10px] sm:text-xs font-black tabular-nums tracking-tighter mt-1">
         {isPositive ? "+" : ""}{changePercent.toFixed(2)}%
       </span>
     </div>
@@ -269,10 +269,10 @@ export default function Markets() {
             <div key={region} className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1">
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
+                  <h2 className="text-lg md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center">
                     <span className="mr-2 opacity-90">{REGION_FLAGS[region as keyof typeof REGION_FLAGS]}</span>
                     {region} {region === "Crypto" || region === "Forex" || region === "Commodities" ? "" : "Indices"}
-                    <span className="ml-2 text-xs font-semibold text-slate-400 dark:text-slate-500 normal-case">
+                    <span className="ml-2 text-[10px] md:text-xs font-semibold text-slate-400 dark:text-slate-500 normal-case">
                       ({regionMarkets.length} assets)
                     </span>
                   </h2>
@@ -318,7 +318,7 @@ export default function Markets() {
                 }
 
                 return (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
                     {filteredMarkets.map((market: any) => (
                       <MarketHeatmapTile
                         key={market.symbol}

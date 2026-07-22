@@ -199,7 +199,7 @@ export default function MarketStatusBar() {
   return (
     <div
       className="
-      relative flex items-center overflow-hidden w-full h-14
+      relative flex items-center overflow-hidden w-full h-12 md:h-14
       rounded-2xl border border-slate-200/60 bg-white/70 backdrop-blur-md
       dark:bg-night-900/70 dark:border-night-800
     "
@@ -207,7 +207,7 @@ export default function MarketStatusBar() {
       <div className="flex w-full overflow-hidden">
         <div
           className="
-          flex gap-4 items-center animate-marquee whitespace-nowrap
+          flex gap-2 md:gap-4 items-center animate-marquee whitespace-nowrap
           hover:[animation-play-state:paused]
           cursor-pointer select-none
         "
@@ -217,8 +217,8 @@ export default function MarketStatusBar() {
               <div
                 key={`${market.name}-${index}`}
                 className="
-                flex items-center gap-2.5 shrink-0
-                rounded-xl px-3.5 py-1.5
+                flex items-center gap-1.5 md:gap-2.5 shrink-0
+                rounded-xl px-2 py-1 md:px-3.5 md:py-1.5
                 border border-slate-100
                 dark:border-night-700/40
                 bg-slate-50/80
@@ -227,13 +227,13 @@ export default function MarketStatusBar() {
                 hover:scale-105
               "
               >
-                <span className="text-base leading-none">
+                <span className="text-xs md:text-base leading-none">
                   {market.symbol}
                 </span>
 
                 <span
                   className="
-                  text-xs font-bold
+                  text-[10px] md:text-xs font-bold
                   text-slate-700
                   dark:text-slate-300
                 "
@@ -242,11 +242,11 @@ export default function MarketStatusBar() {
                 </span>
 
                 <div
-                  className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-current/10 ${market.color}`}
+                  className={`flex items-center gap-1 px-1 py-0.5 md:px-1.5 md:py-0.5 rounded-md bg-current/10 ${market.color}`}
                 >
                   <span
                     className={`
-                    h-1.5 w-1.5 rounded-full
+                    h-1 w-1 md:h-1.5 md:w-1.5 rounded-full
                     ${
                       market.status !==
                         "CLOSED" &&
@@ -260,7 +260,7 @@ export default function MarketStatusBar() {
 
                   <span
                     className="
-                    text-[10px]
+                    text-[8px] md:text-[10px]
                     font-black
                     tracking-wide
                     uppercase

@@ -119,12 +119,12 @@ ${fullPage ? "h-full" : "max-h-[1300px]"}`}>
           <Newspaper className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">
+          <h2 className="text-base md:text-xl font-bold">
             {fullPage
               ? "Global Market News Center"
               : "Live Market News"}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Aggregated from Finnhub & Google News</p>
+          <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400">Aggregated from Finnhub & Google News</p>
         </div>
       </div>
 
