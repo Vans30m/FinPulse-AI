@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Twitter,
   Linkedin,
@@ -23,6 +23,8 @@ interface FooterSection {
 }
 
 export default function Footer() {
+  const location = useLocation();
+  const isScreener = location.pathname.startsWith('/screener');
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -94,7 +96,7 @@ export default function Footer() {
 
   return (
     <footer className="w-full border-t border-slate-200 dark:border-slate-800/60 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md mt-auto transition-colors duration-300">
-      <div className="mx-auto max-w-7xl px-4 pt-16 pb-8 sm:px-6 lg:px-8">
+      <div className={`mx-auto pt-16 pb-8 sm:px-6 lg:px-8 ${isScreener ? 'max-w-none px-4 sm:px-8' : 'max-w-7xl px-4'}`}>
 
         {/* Upper Master Grid */}
         <div className="grid grid-cols-1 gap-12 pb-12 lg:grid-cols-6 lg:gap-8">

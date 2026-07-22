@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, FileText, Check, ChevronDown, MessageSquare, X,
   Presentation, FileCheck, Leaf, Award, Search
@@ -180,9 +180,47 @@ const getInsightsYears = () => {
 };
 
 export default function StockScreener() {
+  const isScrollingRef = useRef(false);
   const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'analysis' | 'workbook' | 'shareholding' | 'documents'>('analysis');
+
+  const handleTabClick = (tabId: string, tabVal: any) => {
+    isScrollingRef.current = true;
+    setActiveTab(tabVal);
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 100);
+  };
+
+  const getGridColsClass = () => {
+    switch (docCategoryFilter) {
+      case 'Announcements':
+        return 'grid-cols-1 max-w-xl mx-auto';
+      case 'Filings':
+      case 'Decks':
+        return 'grid-cols-1 md:grid-cols-2';
+      case 'Ratings':
+        return 'grid-cols-1 md:grid-cols-3';
+      default:
+        return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+    }
+  };
+
+  const handleDocCategoryChange = (cat: string) => {
+    setDocCategoryFilter(cat);
+    const el = document.getElementById('screener-documents');
+    if (el) {
+      const headerOffset = 90;
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - headerOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const [timeframe, setTimeframe] = useState<'1mo' | '3mo' | '1yr' | 'max'>('1yr');
   const [shareholdingPeriod, setShareholdingPeriod] = useState<'quarterly' | 'yearly'>('quarterly');
   const [workbookTab, setWorkbookTab] = useState<'peers' | 'quarters' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'ratios' | 'insights'>('quarters');
@@ -1224,6 +1262,7 @@ Slide Outline:
     if (!selectedStock) return;
 
     const handleScroll = () => {
+      if (isScrollingRef.current) return;
       // Check if we are at the bottom of the page
       const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50;
 
@@ -1270,26 +1309,13 @@ Slide Outline:
 
       {/* 1. LANDING SEARCH VIEW */}
       {!selectedStock ? (
-        <div className="min-h-[70vh] flex flex-col justify-center items-center max-w-2xl mx-auto text-center space-y-8 py-12 px-4 sm:px-6 bg-[#f8f9fa] dark:bg-night-950 rounded-3xl border border-slate-200 dark:border-white/5 mt-8 shadow-sm">
+        <div className="min-h-[70vh] flex flex-col justify-center items-center max-w-2xl mx-auto text-center space-y-8 py-12 px-4 sm:px-6 mt-8">
           {/* Logo & Subtitle */}
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-2">
               <span className="text-slate-800 dark:text-white font-extrabold text-5xl tracking-tight">
                 screener
               </span>
-              <svg
-                className="h-10 w-10 text-emerald-500 dark:text-emerald-450"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="20" x2="18" y2="10" />
-                <line x1="12" y1="20" x2="12" y2="4" />
-                <line x1="6" y1="20" x2="6" y2="14" />
-              </svg>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-medium">
               Stock analysis and screening tool for investors in India & global markets.
@@ -1297,7 +1323,7 @@ Slide Outline:
           </div>
 
           {/* Search bar wrapper */}
-          <div className="w-full bg-white dark:bg-night-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200/50 dark:border-white/5 p-2">
+          <div className="w-full">
             <StockSearch
               placeholder="Search for a company"
               onSelect={(asset) => handleSelectStock(asset.symbol)}
@@ -1363,7 +1389,7 @@ Slide Outline:
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
-              <div className="w-full sm:w-60 bg-white dark:bg-night-900 rounded-xl border border-slate-200 dark:border-white/5 p-0.5 shadow-sm">
+              <div className="w-full sm:w-80">
                 <StockSearch
                   placeholder="Search another company"
                   onSelect={(asset) => handleSelectStock(asset.symbol)}
@@ -1409,19 +1435,7 @@ Slide Outline:
               ].map((tab) => (
                 <button
                   key={tab.tab}
-                  onClick={() => {
-                    setActiveTab(tab.tab as any);
-                    const el = document.getElementById(tab.id);
-                    if (el) {
-                      const headerOffset = 90; // Adjust for sticky header height
-                      const elementPosition = el.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.scrollY - headerOffset;
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                      });
-                    }
-                  }}
+                  onClick={() => handleTabClick(tab.id, tab.tab)}
                   className={`px-3 py-2 text-[10px] font-black uppercase tracking-wider transition-all duration-200 text-left w-full ${activeTab === tab.tab
                     ? 'border-l-2 border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400 pl-4 font-black bg-slate-50/50 dark:bg-white/[0.01]'
                     : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white border-l border-transparent pl-3 hover:bg-slate-50/30 dark:hover:bg-white/[0.005]'
@@ -1446,19 +1460,7 @@ Slide Outline:
                   ].map((tab) => (
                     <button
                       key={tab.tab}
-                      onClick={() => {
-                        setActiveTab(tab.tab as any);
-                        const el = document.getElementById(tab.id);
-                        if (el) {
-                          const headerOffset = 90; // Adjust for sticky header height
-                          const elementPosition = el.getBoundingClientRect().top;
-                          const offsetPosition = elementPosition + window.scrollY - headerOffset;
-                          window.scrollTo({
-                            top: offsetPosition,
-                            behavior: 'smooth'
-                          });
-                        }
-                      }}
+                      onClick={() => handleTabClick(tab.id, tab.tab)}
                       className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-full transition-all duration-300 whitespace-nowrap ${activeTab === tab.tab
                         ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 dark:from-cyan-400 dark:to-teal-400 dark:text-slate-950 dark:shadow-cyan-400/20 transform scale-105'
                         : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-white/5'
@@ -1579,18 +1581,17 @@ Slide Outline:
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                       {[
-                        { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}`, desc: 'Total market value', icon: '💰' },
-                        { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price', icon: '📈' },
-                        { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}`, desc: '52-week stock range', icon: '↕️' },
-                        { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x`, desc: 'Price-to-earnings multiple', icon: '📊' },
-                        { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}`, desc: 'Net asset value per share', icon: '📕' },
-                        { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%`, desc: 'Annual dividend return', icon: '💸' },
-                        { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%`, desc: 'Capital deployment return', icon: '⚡' },
-                        { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%`, desc: 'Return on equity', icon: '🎯' },
-                        { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}`, desc: 'Par value per share', icon: '💎' },
+                        { label: 'Market Cap', value: `${currencySymbol}${selectedStock.marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${isIndian ? 'Cr.' : 'M'}`, desc: 'Total market value' },
+                        { label: 'Current Price', value: `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price' },
+                        { label: 'High / Low', value: `${currencySymbol}${selectedStock.high52w.toFixed(0)} / ${currencySymbol}${selectedStock.low52w.toFixed(0)}`, desc: '52-week stock range' },
+                        { label: 'Stock P/E', value: `${selectedStock.peRatio.toFixed(1)}x`, desc: 'Price-to-earnings multiple' },
+                        { label: 'Book Value', value: `${currencySymbol}${selectedStock.bookValue.toFixed(1)}`, desc: 'Net asset value per share' },
+                        { label: 'Dividend Yield', value: `${selectedStock.dividendYield.toFixed(2)}%`, desc: 'Annual dividend return' },
+                        { label: 'ROCE', value: `${selectedStock.roce.toFixed(2)}%`, desc: 'Capital deployment return' },
+                        { label: 'ROE', value: `${selectedStock.roe.toFixed(2)}%`, desc: 'Return on equity' },
+                        { label: 'Face Value', value: `${currencySymbol}${selectedStock.faceValue.toFixed(2)}`, desc: 'Par value per share' },
                       ].map((ratio) => (
                         <div key={ratio.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
-                          <span className="text-lg sm:text-xl pt-0.5 shrink-0">{ratio.icon}</span>
                           <div className="flex flex-col min-w-0">
                             <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{ratio.label}</span>
                             <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{ratio.value}</span>
@@ -2320,7 +2321,7 @@ Slide Outline:
                 </div>
 
                 {/* Grid layout of Document Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className={`grid gap-6 min-h-[380px] ${getGridColsClass()}`}>
                   
                   {/* Category 1: Announcements (Announcements tab) */}
                   {(docCategoryFilter === 'All' || docCategoryFilter === 'Announcements') && (

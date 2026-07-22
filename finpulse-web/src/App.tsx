@@ -123,7 +123,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-night-900 text-slate-900 dark:text-slate-200 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-night-900 text-slate-900 dark:text-slate-200 transition-colors duration-300 overflow-x-clip">
 
       <LoginModal
         isOpen={isLoginModalOpen}
@@ -179,7 +179,7 @@ export default function App() {
 
       <main
         onClickCapture={handleProtectedAction}
-        className={`relative z-10 mx-auto w-full flex-1 transition-all duration-500 ${location.pathname === '/screener'
+        className={`relative z-10 mx-auto w-full flex-1 transition-all duration-500 ${location.pathname.startsWith('/screener')
           ? 'max-w-none px-4 sm:px-8 py-6'
           : 'max-w-7xl px-4 sm:px-6 py-8'
           }`}
@@ -218,6 +218,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="w-full"
                 >
                   <Watchlist />
                 </motion.div>
@@ -232,6 +233,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="w-full"
                 >
                   <StockScreener />
                 </motion.div>
@@ -246,6 +248,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="w-full"
                 >
                   <PortfolioDashboard />
                 </motion.div>
@@ -260,6 +263,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="w-full"
                 >
                   <PerformanceComparison />
                 </motion.div>
@@ -274,6 +278,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="w-full"
                 >
                   <MyAlertsDashboard />
                 </motion.div>
@@ -288,6 +293,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="w-full"
                 >
                   <AssetDetails />
                 </motion.div>
@@ -302,6 +308,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  className="w-full"
                 >
                   <Markets />
                 </motion.div>
