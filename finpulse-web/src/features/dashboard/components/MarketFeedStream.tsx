@@ -105,7 +105,7 @@ const { openAsset } = useChart();
         </div>
 
         {/* Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-4">
           {filteredIndices.map(
             (market: any) => {
               const isPositive =
@@ -136,7 +136,8 @@ const { openAsset } = useChart();
 }
                   className="
                     glass-card
-                    p-5
+                    p-3.5
+                    sm:p-5
                     flex
                     flex-col
                     justify-between
@@ -152,7 +153,8 @@ const { openAsset } = useChart();
                     <div>
                       <span
                         className="
-                        text-[10px]
+                        text-[8px]
+                        sm:text-[10px]
                         uppercase
                         font-bold
                         tracking-wider
@@ -170,7 +172,8 @@ const { openAsset } = useChart();
 
                       <h3
                         className="
-                        text-base
+                        text-xs
+                        sm:text-base
                         font-bold
                         text-slate-900
                         dark:text-white
@@ -178,25 +181,27 @@ const { openAsset } = useChart();
                         group-hover:text-blue-600
                         dark:group-hover:text-cyan-400
                         transition-colors
+                        line-clamp-2
                       "
                       >
                         {market.name}
                       </h3>
 
-                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                      <p className="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500">
                         {market.symbol}
                       </p>
                     </div>
 
-                    <ArrowUpRight className="h-4 w-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowUpRight className="h-4 w-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
                   </div>
 
                   {/* Bottom */}
-                  <div className="flex items-end justify-between mt-6">
+                  <div className="flex items-end justify-between mt-4 sm:mt-6">
                     <div>
                       <p
                         className="
-                        text-2xl
+                        text-sm
+                        sm:text-2xl
                         font-bold
                         tracking-tight
                         text-slate-900
@@ -208,15 +213,15 @@ const { openAsset } = useChart();
                         ).toLocaleString()}
                       </p>
 
-                      <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center gap-1 mt-1">
                         {isPositive ? (
-                          <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-600 dark:text-emerald-400" />
                         ) : (
-                          <TrendingDown className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                          <TrendingDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-rose-600 dark:text-rose-400" />
                         )}
 
                         <span
-                          className={`text-xs font-semibold ${
+                          className={`text-[9px] sm:text-xs font-semibold ${
                             isPositive
                               ? "text-emerald-600 dark:text-emerald-400"
                               : "text-rose-600 dark:text-rose-400"

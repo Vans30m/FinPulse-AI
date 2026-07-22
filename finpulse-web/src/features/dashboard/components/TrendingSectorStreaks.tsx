@@ -113,9 +113,9 @@ export default function TrendingSectorStreaks() {
   const pulse = data!;
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
       {/* Header controls */}
-      <div className="flex justify-between items-center mb-5">
+      <div className="flex justify-between items-center mb-4">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Sector Momentum</h3>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Global rotation index</p>
@@ -129,18 +129,18 @@ export default function TrendingSectorStreaks() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Top Rally Section */}
-        <div className="space-y-4">
-          <h4 className="text-xs font-black text-emerald-600 dark:text-emerald-450 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-105/10 pb-2">
+        <div className="space-y-3.5">
+          <h4 className="text-xs font-black text-emerald-600 dark:text-emerald-455 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-105/10 pb-1.5">
             <Flame className="h-4 w-4 text-orange-500 fill-orange-500 animate-pulse" />
             Top Rallying Sectors
           </h4>
-          <div className="space-y-3.5">
+          <div className="space-y-2.5">
             {pulse.topRally.map((item, index) => (
               <div
                 key={index}
-                className="group relative flex flex-col p-4 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-850/40 transition-all hover:border-emerald-500/30 hover:shadow-sm"
+                className="group relative flex flex-col p-3.5 sm:p-4 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all hover:border-emerald-500/30 hover:shadow-sm"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
@@ -159,7 +159,7 @@ export default function TrendingSectorStreaks() {
                 </div>
 
                 {/* Score bar */}
-                <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-1 mt-3.5 overflow-hidden">
+                <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-1 mt-2.5 overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-1000"
                     style={{ width: `${item.momentumScore}%` }}
@@ -167,7 +167,7 @@ export default function TrendingSectorStreaks() {
                 </div>
 
                 {/* Reason Explanation */}
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2.5 leading-relaxed font-semibold italic">
+                <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-2 leading-relaxed font-semibold italic">
                   "{item.reason}"
                 </p>
               </div>
@@ -176,16 +176,16 @@ export default function TrendingSectorStreaks() {
         </div>
 
         {/* Top Decline Section */}
-        <div className="space-y-4">
-          <h4 className="text-xs font-black text-rose-600 dark:text-rose-450 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-105/10 pb-2">
+        <div className="space-y-3.5">
+          <h4 className="text-xs font-black text-rose-600 dark:text-rose-455 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-105/10 pb-1.5">
             <TrendingDown className="h-4 w-4 text-rose-500" />
             Top Declining Sectors
           </h4>
-          <div className="space-y-3.5">
+          <div className="space-y-2.5">
             {pulse.topDecline.map((item, index) => (
               <div
                 key={index}
-                className="group relative flex flex-col p-4 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-850/40 transition-all hover:border-rose-500/30 hover:shadow-sm"
+                className="group relative flex flex-col p-3.5 sm:p-4 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all hover:border-rose-500/30 hover:shadow-sm"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
@@ -198,13 +198,13 @@ export default function TrendingSectorStreaks() {
                     </div>
                   </div>
 
-                  <span className="px-2 py-0.5 bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-455 border border-rose-500/10 rounded text-[9px] font-black uppercase tracking-wider shrink-0">
+                  <span className="px-2 py-0.5 bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/10 rounded text-[9px] font-black uppercase tracking-wider shrink-0">
                     ▼ {item.days}d Decline
                   </span>
                 </div>
 
                 {/* Score bar */}
-                <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-1 mt-3.5 overflow-hidden">
+                <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-1 mt-2.5 overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-rose-500 to-red-500 rounded-full transition-all duration-1000"
                     style={{ width: `${item.momentumScore}%` }}
@@ -212,7 +212,7 @@ export default function TrendingSectorStreaks() {
                 </div>
 
                 {/* Reason Explanation */}
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2.5 leading-relaxed font-semibold italic">
+                <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-2 leading-relaxed font-semibold italic">
                   "{item.reason}"
                 </p>
               </div>

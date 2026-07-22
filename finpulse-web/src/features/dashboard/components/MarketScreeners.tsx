@@ -108,7 +108,7 @@ export default function MarketScreeners({ marketRegion }: Props) {
           <p className="text-sm">No assets match this criteria right now.</p>
         </div>
       ) : (
-        <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory custom-scrollbar -mx-2 px-2 mask-linear-edge">
+        <div className="flex overflow-x-auto gap-2.5 sm:gap-4 pb-4 snap-x snap-mandatory custom-scrollbar -mx-2 px-2 mask-linear-edge">
           {stocks.map((stock: Stock) => {
             const isPositive = Number(stock.changePercent) >= 0;
             const currencySymbol = marketRegion === "india" ? "₹" : "$";
@@ -128,19 +128,19 @@ export default function MarketScreeners({ marketRegion }: Props) {
                     changePercent: Number(stock.changePercent),
                   })
                 }
-                className="min-w-[190px] shrink-0 snap-start glass-card p-4 text-left hover:border-blue-400/50 dark:hover:border-cyan-500/40 cursor-pointer group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="min-w-[165px] sm:min-w-[190px] shrink-0 snap-start glass-card p-3.5 sm:p-4 text-left hover:border-blue-400/50 dark:hover:border-cyan-500/40 cursor-pointer group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
-                <div className="mb-4">
-                  <span className="text-xs font-bold tracking-wide text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors block uppercase">
+                <div className="mb-3">
+                  <span className="text-[11px] sm:text-xs font-bold tracking-wide text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors block uppercase">
                     {stock.symbol.replace(".NS", "")}
                   </span>
-                  <span className="text-[11px] text-slate-400 dark:text-slate-400 block truncate mt-0.5 max-w-[160px]" title={stock.name}>
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400 block truncate mt-0.5 max-w-[135px]" title={stock.name}>
                     {stock.name}
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white block">
+                  <span className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-white block">
                     {currencySymbol}
                     {Number(stock.price).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
@@ -148,13 +148,13 @@ export default function MarketScreeners({ marketRegion }: Props) {
                     })}
                   </span>
 
-                  <div className="flex items-center justify-between gap-1 mt-1.5">
-                    <span className={`text-xs font-medium ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                  <div className="flex items-center justify-between gap-1 mt-1">
+                    <span className={`text-[10px] sm:text-xs font-medium ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                       {isPositive ? "+" : ""}
                       {Number(stock.change).toFixed(2)}
                     </span>
 
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                    <span className={`text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded-md ${
                       isPositive
                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
                         : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"

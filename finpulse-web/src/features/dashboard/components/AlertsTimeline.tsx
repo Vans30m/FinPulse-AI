@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Newspaper, Clock, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import API_BASE_URL from "../../../config/api";
 import { pageCache } from '../../../utils/cache';
 
@@ -33,7 +34,7 @@ export default function AlertsTimeline({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const displayedNews = isMobile ? liveNews.slice(0, 10) : liveNews;
+  const displayedNews = isMobile ? liveNews.slice(0, 5) : liveNews;
 
   useEffect(() => {
     const fetchAllNews = async () => {
@@ -137,37 +138,49 @@ ${fullPage ? "h-full" : "max-h-[1300px]"}`}>
           ) : liveNews.length === 0 ? (
             <div className="text-center py-10 text-sm text-slate-500">No recent news available.</div>
           ) : (
-            displayedNews.map((article) => (
-              <a
-                key={article.id}
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group border border-transparent hover:border-slate-200 dark:hover:border-white/10"
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${article.type === 'google'
-                        ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10'
-                        : 'text-blue-600 dark:text-cyan-400 bg-blue-50 dark:bg-cyan-500/10'
-                        }`}>
-                        {article.source}
-                      </span>
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {formatTime(article.datetime)}
-                      </span>
+            <>
+              {displayedNews.map((article) => (
+                <a
+                  key={article.id}
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${article.type === 'google'
+                          ? 'text-rose-600 dark:text-rose-450 bg-rose-50 dark:bg-rose-500/10'
+                          : 'text-blue-600 dark:text-cyan-400 bg-blue-50 dark:bg-cyan-500/10'
+                          }`}>
+                          {article.source}
+                        </span>
+                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> {formatTime(article.datetime)}
+                        </span>
+                      </div>
+                      <h4 className="text-xs md:text-sm font-medium md:font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors leading-snug break-words">
+                        {article.headline}
+                      </h4>
                     </div>
-                    <h4 className="text-xs md:text-sm font-medium md:font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors leading-snug break-words">
-                      {article.headline}
-                    </h4>
+                    <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                      <ExternalLink className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500" />
+                    </div>
                   </div>
-                  <div className="w-11 h-11 flex items-center justify-center shrink-0">
-                    <ExternalLink className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500" />
-                  </div>
-                </div>
-              </a>
-            ))
+                </a>
+              ))}
+
+              {isMobile && liveNews.length > 5 && (
+                <Link
+                  to="/news"
+                  className="w-full mt-3 py-2.5 px-4 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 border border-slate-200/50 dark:border-white/5"
+                >
+                  View More News
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </>
           )}
         </div>
       </div>

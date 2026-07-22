@@ -106,9 +106,9 @@ export default function AIBulletSummary() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
       {/* Top Header */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <span className="flex h-2 w-2 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
@@ -133,16 +133,16 @@ export default function AIBulletSummary() {
       </div>
 
       {/* Summary statement */}
-      <p className="text-xs text-slate-500 dark:text-slate-450 font-bold mb-4 italic leading-relaxed">
+      <p className="text-xs text-slate-500 dark:text-slate-300 font-bold mb-3 italic leading-relaxed">
         "{pulse.summary}"
       </p>
 
       {/* Bullet Insights */}
-      <ul className="space-y-3.5 border-t border-slate-100 dark:border-slate-850 pt-4">
+      <ul className="space-y-2.5 border-t border-slate-100 dark:border-slate-850 pt-3">
         {pulse.insights.slice(0, 5).map((bullet, index) => (
           <li
             key={index}
-            className="flex items-start space-x-3 text-sm text-slate-655 dark:text-slate-300 transition-all duration-300 animate-fadeIn"
+            className="flex items-start space-x-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300 transition-all duration-300 animate-fadeIn"
             style={{ animationDelay: `${index * 150}ms` }}
           >
             <span className="text-indigo-500 dark:text-indigo-400 font-extrabold mt-0.5">•</span>
@@ -152,7 +152,7 @@ export default function AIBulletSummary() {
       </ul>
 
       {/* Last Updated Timestamp */}
-      <div className="mt-5 pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+      <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
         <span>Updated: {new Date(pulse.generatedAt).toLocaleTimeString()}</span>
         <span className="flex items-center gap-1">
           <Sparkles className="h-2.5 w-2.5 text-indigo-500" />

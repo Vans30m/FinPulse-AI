@@ -135,19 +135,19 @@ export default function MarketExplanation() {
   const macroColors = hasMacro ? getImpactColors(brief.macroEvent.impact) : { border: "border-slate-200/50 dark:border-slate-800", bg: "bg-slate-50 dark:bg-white/[0.01]", text: "text-slate-500" };
 
   return (
-    <div className={`rounded-2xl border p-6 transition-all duration-300 ${cardBgClass} ${textClass}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+    <div className={`rounded-2xl border p-4 sm:p-6 transition-all duration-300 ${cardBgClass} ${textClass}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {isPositive ? (
-            <TrendingUp className="h-6 w-6 text-emerald-600 dark:text-emerald-400 animate-bounce-slow shrink-0" />
+            <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400 animate-bounce-slow shrink-0" />
           ) : (
-            <TrendingDown className="h-6 w-6 text-rose-600 dark:text-rose-450 animate-bounce-slow shrink-0" />
+            <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 dark:text-rose-450 animate-bounce-slow shrink-0" />
           )}
           <div>
-            <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${titleTextClass}`}>
+            <h2 className={`text-base sm:text-xl font-bold tracking-tight ${titleTextClass}`}>
               Where Are Markets Moving?
             </h2>
-            <p className={`text-xs sm:text-sm ${descriptionTextClass}`}>
+            <p className={`text-[10px] sm:text-xs ${descriptionTextClass}`}>
               AI-generated drivers based on market sentiment
             </p>
           </div>
@@ -155,7 +155,7 @@ export default function MarketExplanation() {
 
         <button
           onClick={() => fetchDrivers(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 text-xs font-bold transition-all w-fit self-start sm:self-auto"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 text-[10px] sm:text-xs font-bold transition-all w-fit self-start sm:self-auto"
           title="Force refresh analysis"
         >
           <RotateCcw className="h-3 w-3" />
@@ -163,21 +163,21 @@ export default function MarketExplanation() {
         </button>
       </div>
 
-      <div className="mt-5 p-4 rounded-xl bg-slate-900/10 dark:bg-black/30 border border-slate-200/40 dark:border-slate-800/40 backdrop-blur-sm">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+      <div className="mt-4 p-3.5 sm:p-4 rounded-xl bg-slate-900/10 dark:bg-black/30 border border-slate-200/40 dark:border-slate-800/40 backdrop-blur-sm">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
           <Terminal className="h-3.5 w-3.5 text-blue-500 dark:text-cyan-400" />
           <span>Command to AI</span>
         </div>
-        <p className="text-sm font-semibold text-slate-850 dark:text-slate-200 italic mb-3">
+        <p className="text-xs sm:text-sm font-semibold text-slate-850 dark:text-slate-200 italic mb-2.5">
           "{brief.question}"
         </p>
 
-        <div className="space-y-2 border-t border-slate-200/40 dark:border-slate-850/50 pt-3">
-          <ul className="space-y-2.5">
+        <div className="space-y-1.5 border-t border-slate-200/40 dark:border-slate-850/50 pt-2.5">
+          <ul className="space-y-2">
             {brief.analysis.map((item: string, index: number) => (
               <li
                 key={index}
-                className="text-sm flex items-start gap-2.5 text-slate-700 dark:text-slate-300 font-medium transition-all duration-300 animate-fadeIn"
+                className="text-xs sm:text-sm flex items-start gap-2 text-slate-700 dark:text-slate-200 font-medium transition-all duration-300 animate-fadeIn"
                 style={{ animationDelay: `${index * 150}ms` }}
               >
                 <span className="text-cyan-500 dark:text-cyan-400 font-black mt-0.5">•</span>
@@ -188,9 +188,9 @@ export default function MarketExplanation() {
         </div>
       </div>
 
-      <div className="mt-4 relative group">
+      <div className="mt-3 relative group">
         {hasMacro ? (
-          <div className={`rounded-xl border ${macroColors.border} ${macroColors.bg} p-4 flex items-start gap-3 transition-colors cursor-help`}>
+          <div className={`rounded-xl border ${macroColors.border} ${macroColors.bg} p-3.5 sm:p-4 flex items-start gap-3 transition-colors cursor-help`}>
             <AlertTriangle className={`h-5 w-5 ${macroColors.text} shrink-0 mt-0.5`} />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -199,7 +199,7 @@ export default function MarketExplanation() {
                   {brief.macroEvent.impact} Impact
                 </span>
               </div>
-              <p className="mt-1 text-sm text-slate-750 dark:text-slate-200 font-bold">{brief.macroEvent.title}</p>
+              <p className="mt-1 text-xs sm:text-sm text-slate-750 dark:text-slate-200 font-bold">{brief.macroEvent.title}</p>
             </div>
 
             <div className="absolute bottom-full left-4 mb-2 w-72 p-3.5 rounded-xl bg-slate-900/95 dark:bg-[#080d19]/95 text-white text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-40 border border-slate-250/10 dark:border-slate-800 backdrop-blur-md">

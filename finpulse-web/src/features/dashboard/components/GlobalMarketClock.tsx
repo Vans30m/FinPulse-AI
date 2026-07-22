@@ -129,7 +129,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 hover:shadow-xl space-y-5">
+    <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 hover:shadow-xl space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -141,7 +141,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
         <Clock className="h-4 w-4 text-slate-400 animate-pulse" />
       </div>
 
-      <div className="space-y-3.5">
+      <div className="space-y-2.5">
         {MARKETS_CONFIG.map((config) => {
           const status = getMarketStatus(config);
 
@@ -161,7 +161,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
           return (
             <div
               key={config.name}
-              className="p-3.5 rounded-xl border border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-850/35 transition-all duration-300 hover:border-indigo-500/20"
+              className="p-3 sm:p-3.5 rounded-xl border border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all duration-300 hover:border-indigo-500/20"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-2.5">
@@ -173,18 +173,18 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
                       <span className="text-xs font-black text-slate-800 dark:text-slate-200">{config.name}</span>
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wide">{config.city}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-xs font-mono font-black text-slate-900 dark:text-white">
                         {status.timeStr}
                       </span>
-                      <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
+                      <span className="text-[9px] text-slate-400 dark:text-slate-550 font-medium">
                         ({config.openTime} - {config.closeTime})
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-1.5">
+                <div className="flex flex-col items-end gap-1">
                   <div className="flex items-center gap-1.5">
                     {/* Pulsing neon status dot */}
                     {status.isOpen ? (
@@ -207,7 +207,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
                         ? "text-emerald-600 dark:text-emerald-400"
                         : status.isLunch
                           ? "text-amber-600 dark:text-amber-400"
-                          : "text-rose-600 dark:text-rose-400"
+                          : "text-rose-600 dark:text-rose-455"
                       }`}>
                       {status.isOpen ? "Open" : status.isLunch ? "Lunch" : "Closed"}
                     </span>
@@ -221,7 +221,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
 
               {/* Session Progress bar (only visible when open) */}
               {status.isOpen && (
-                <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-1 mt-3 overflow-hidden">
+                <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-1 mt-2.5 overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000"
                     style={{ width: `${status.progressPercent}%` }}
@@ -233,7 +233,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
         })}
       </div>
 
-      <div className="pt-3.5 border-t border-slate-50 dark:border-slate-850 flex items-center justify-center gap-1.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+      <div className="pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-center gap-1.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
         <CheckCircle className="h-3 w-3 text-emerald-500" />
         Synced with local device time
       </div>

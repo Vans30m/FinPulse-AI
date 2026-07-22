@@ -110,9 +110,9 @@ export default function AIPickOfTheDay() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
       {/* Header controls */}
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex justify-between items-start mb-3">
         <div>
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
@@ -155,13 +155,13 @@ export default function AIPickOfTheDay() {
       </div>
 
       {/* Summary Description */}
-      <p className="text-xs text-slate-655 dark:text-slate-400 mb-4 leading-relaxed font-semibold">
+      <p className="text-xs text-slate-700 dark:text-slate-200 mb-3 leading-relaxed font-semibold">
         {brief.summary}
       </p>
 
       {/* Confidence Bar */}
       <div className="mb-4">
-        <div className="flex justify-between items-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+        <div className="flex justify-between items-center text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1.5">
           <span>AI Target Confidence</span>
           <span className="text-indigo-500 dark:text-indigo-400">{brief.confidence}%</span>
         </div>
@@ -174,7 +174,7 @@ export default function AIPickOfTheDay() {
       </div>
 
       {/* Metrics Parameters Grid */}
-      <div className="grid grid-cols-2 gap-3.5 border-t border-slate-100 dark:border-slate-850 pt-4 mb-4">
+      <div className="grid grid-cols-2 gap-2.5 border-t border-slate-100 dark:border-slate-850 pt-3 mb-3">
         <div>
           <span className="text-[9px] uppercase font-bold text-slate-400">Target</span>
           <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5">${brief.target.toFixed(2)}</p>
@@ -186,12 +186,12 @@ export default function AIPickOfTheDay() {
       </div>
 
       {/* Risk and Holding period info */}
-      <div className="grid grid-cols-2 gap-3.5 pt-1.5">
+      <div className="grid grid-cols-2 gap-2.5 pt-1">
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-slate-400" />
           <div>
             <span className="text-[9px] uppercase font-bold text-slate-400 block">Holding Period</span>
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-350">{brief.holdingPeriod}</span>
+            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">{brief.holdingPeriod}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -206,7 +206,7 @@ export default function AIPickOfTheDay() {
       </div>
 
       {/* Last Updated Timestamp */}
-      <div className="mt-5 pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+      <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
         <span>Updated: {new Date(brief.generatedAt).toLocaleDateString()}</span>
         <span className="flex items-center gap-1 text-indigo-500">
           <Sparkles className="h-2.5 w-2.5" />

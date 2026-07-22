@@ -92,10 +92,13 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
       if (showNotifications && !target.closest('.notification-container')) {
         setShowNotifications(false);
       }
+      if (showProfileMenu && !target.closest('.profile-menu-container')) {
+        setShowProfileMenu(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showNotifications]);
+  }, [showNotifications, showProfileMenu]);
 
   // Track scroll position to change styling dynamically (Stripe-like effect)
   useEffect(() => {
@@ -306,7 +309,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
               <span className="hidden xs:inline">Sign In</span>
             </button>
           ) : (
-            <div className="relative">
+            <div className="relative profile-menu-container">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="flex items-center gap-2 rounded-xl p-1 sm:px-2.5 sm:py-1.5 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all"
@@ -349,7 +352,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                     <Link
                       to="/profile"
                       onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-655 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
                     >
                       <UserCircle className="h-4 w-4" />
                       <span>Profile</span>
@@ -359,7 +362,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                       onClick={() => {
                         setTheme(theme === 'dark' ? 'light' : 'dark');
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-bold text-slate-655 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
                     >
                       {theme === 'dark' ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-slate-400" />}
                       <span>Theme</span>

@@ -69,15 +69,17 @@ export default function VolatilityGauges() {
     ];
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-4 font-display">Volatility Indicators</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {gauges.map((gauge, idx) => (
-                    <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
-                        <span className="text-[11px] font-bold text-slate-400 block mb-1">{gauge.name}</span>
-                        <div className="flex items-baseline justify-between">
-                            <span className="text-lg font-black text-slate-800 dark:text-slate-100">{gauge.value}</span>
-                            <span className={`text-xs font-bold ${gauge.color}`}>{gauge.status}</span>
+                    <div key={idx} className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5 flex flex-col justify-between min-h-[64px] sm:min-h-[80px]">
+                        <span className="text-[9px] sm:text-[11px] font-bold text-slate-400 block mb-1 truncate" title={gauge.name}>
+                            {gauge.name}
+                        </span>
+                        <div className="flex flex-col gap-1 mt-1">
+                            <span className="text-sm sm:text-lg font-black text-slate-800 dark:text-slate-100 leading-none">{gauge.value}</span>
+                            <span className={`text-[9px] sm:text-xs font-semibold leading-none ${gauge.color}`}>{gauge.status}</span>
                         </div>
                     </div>
                 ))}

@@ -142,12 +142,12 @@ export default function FearGreedIndex() {
   const pathY = 50 - 40 * Math.sin(pathAngleRad);
 
   return (
-    <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 hover:shadow-xl space-y-6">
+    <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 hover:shadow-xl space-y-4">
       {/* Top Header Controls */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Fear & Greed Index</h3>
-          <p className="text-xs text-slate-550 dark:text-slate-400 mt-0.5">Sentiment analysis helper</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sentiment analysis helper</p>
         </div>
         <button
           onClick={() => fetchIndex(true)}
@@ -179,7 +179,6 @@ export default function FearGreedIndex() {
             strokeLinecap="round"
           />
 
-
           <defs>
             <linearGradient id="fearGreedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#ef4444" />     {/* Red */}
@@ -203,19 +202,19 @@ export default function FearGreedIndex() {
       </div>
 
       {/* Score Description */}
-      <p className="text-xs text-center text-slate-550 dark:text-slate-400 italic px-5 leading-relaxed font-semibold">
+      <p className="text-xs text-center text-slate-500 dark:text-slate-300 italic px-3 sm:px-5 leading-relaxed font-semibold">
         {brief.description}
       </p>
 
       {/* Takeaways Section */}
-      <div className="space-y-4 border-t border-slate-100 dark:border-slate-800/80 pt-5">
+      <div className="space-y-3.5 border-t border-slate-105/10 dark:border-slate-800/80 pt-3">
         <h4 className="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
           <Sparkles className="h-3.5 w-3.5" />
           AI Takeaways & Strategy
         </h4>
-        <ul className="space-y-3">
+        <ul className="space-y-2">
           {brief.investorTakeaways.map((item: string, index: number) => (
-            <li key={index} className="text-xs flex items-start gap-2.5 text-slate-655 dark:text-slate-350 leading-relaxed font-semibold">
+            <li key={index} className="text-xs flex items-start gap-2.5 text-slate-700 dark:text-slate-200 leading-relaxed font-semibold">
               <span className="text-indigo-500 dark:text-indigo-400 font-black mt-0.5">•</span>
               <span>{item}</span>
             </li>
@@ -224,16 +223,16 @@ export default function FearGreedIndex() {
       </div>
 
       {/* Main Opportunity & Risk Panels */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-550/[0.03] hover:bg-emerald-550/[0.06] hover:border-emerald-500/30 p-4 transition-all duration-305 group">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06] hover:border-emerald-500/30 p-3.5 sm:p-4 transition-all duration-305 group">
           <span className="text-[10px] uppercase font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 tracking-wider">
             <TrendingUp className="h-3.5 w-3.5 group-hover:translate-y-[-1px] transition-transform" /> Opportunity
           </span>
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2 leading-relaxed">{brief.opportunity}</p>
         </div>
         
-        <div className="rounded-xl border border-rose-500/20 bg-rose-550/[0.03] hover:bg-rose-550/[0.06] hover:border-rose-500/30 p-4 transition-all duration-305 group">
-          <span className="text-[10px] uppercase font-black text-rose-600 dark:text-rose-455 flex items-center gap-1.5 tracking-wider">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.03] hover:bg-rose-500/[0.06] hover:border-rose-500/30 p-3.5 sm:p-4 transition-all duration-305 group">
+          <span className="text-[10px] uppercase font-black text-rose-600 dark:text-rose-400 flex items-center gap-1.5 tracking-wider">
             <TrendingDown className="h-3.5 w-3.5 group-hover:translate-y-[1px] transition-transform" /> Monitor Risk
           </span>
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2 leading-relaxed">{brief.risk}</p>
@@ -241,9 +240,9 @@ export default function FearGreedIndex() {
       </div>
 
       {/* Historical indicators */}
-      <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-3 gap-2.5 text-center text-xs">
-        <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
-          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-wider">Yesterday</span>
+      <div className="pt-3.5 border-t border-slate-105/10 dark:border-slate-800/80 grid grid-cols-3 gap-2.5 text-center text-xs">
+        <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2 sm:p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
+          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-555 tracking-wider">Yesterday</span>
           <span className="font-black text-slate-800 dark:text-slate-200 mt-1 block">
             {brief.yesterday}
           </span>
@@ -252,8 +251,8 @@ export default function FearGreedIndex() {
           </span>
         </div>
         
-        <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
-          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-wider">Last Week</span>
+        <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2 sm:p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
+          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-555 tracking-wider">Last Week</span>
           <span className="font-black text-slate-800 dark:text-slate-200 mt-1 block">
             {brief.lastWeek}
           </span>
@@ -262,8 +261,8 @@ export default function FearGreedIndex() {
           </span>
         </div>
 
-        <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
-          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-wider">Last Month</span>
+        <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2 sm:p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
+          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-555 tracking-wider">Last Month</span>
           <span className="font-black text-slate-800 dark:text-slate-200 mt-1 block">
             {brief.lastMonth}
           </span>
@@ -274,7 +273,7 @@ export default function FearGreedIndex() {
       </div>
 
       {/* Last Updated Timestamp */}
-      <div className="pt-3.5 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-400 border-t border-slate-50 dark:border-slate-850">
+      <div className="pt-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-400 border-t border-slate-50 dark:border-slate-850">
         Updated: {new Date(brief.generatedAt).toLocaleString()}
       </div>
     </div>
