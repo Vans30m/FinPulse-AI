@@ -17,7 +17,7 @@ interface Props {
 export default function RollingCagrChart({ data }: Props) {
   return (
     <div className="bg-[#050711]/65 border border-slate-900 rounded-2xl p-4 h-[360px]">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <LineChart data={data} margin={{ top: 10, right: 14, left: -8, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#0f172a" />
           <XAxis dataKey="period" stroke="#64748b" fontSize={10} tickLine={false} />

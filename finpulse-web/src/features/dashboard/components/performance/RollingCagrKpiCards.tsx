@@ -58,7 +58,7 @@ function RollingCagrKpiCards({ metrics }: Props) {
             </div>
 
             <div className="h-10 mt-2.5 opacity-80">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <AreaChart data={metric.sparkline.map((value, idx) => ({ idx, value }))}>
                   <Area
                     type="monotone"

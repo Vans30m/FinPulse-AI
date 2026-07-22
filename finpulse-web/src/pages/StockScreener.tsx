@@ -1504,7 +1504,7 @@ Slide Outline:
 
                     {/* Composed Chart Container */}
                     <div className="h-72 w-full font-mono text-xs">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <ComposedChart data={chartData}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" className="dark:stroke-white/5" />
                           <XAxis dataKey="time" stroke="#888888" tickLine={false} axisLine={false} />

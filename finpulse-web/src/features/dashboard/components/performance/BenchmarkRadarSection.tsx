@@ -423,7 +423,7 @@ export default function BenchmarkRadarSection() {
 
             {/* Recharts Radar Chart */}
             <div id="radar-chart-container" className="h-[360px] w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
                   <PolarGrid stroke="#0f172a" />
                   <PolarAngleAxis
