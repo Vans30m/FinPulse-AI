@@ -111,6 +111,70 @@ export default function MarketStatusBar() {
     30
   );
 
+  const taiwanOpen = isMarketOpen(
+    "Asia/Taipei",
+    9,
+    0,
+    13,
+    30
+  );
+
+  const canadaOpen = isMarketOpen(
+    "America/Toronto",
+    9,
+    30,
+    16,
+    0
+  );
+
+  const australiaOpen = isMarketOpen(
+    "Australia/Sydney",
+    10,
+    0,
+    16,
+    0
+  );
+
+  const chinaOpen = isMarketOpen(
+    "Asia/Shanghai",
+    9,
+    30,
+    15,
+    0
+  );
+
+  const brazilOpen = isMarketOpen(
+    "America/Sao_Paulo",
+    10,
+    0,
+    17,
+    55
+  );
+
+  const mexicoOpen = isMarketOpen(
+    "America/Mexico_City",
+    8,
+    30,
+    15,
+    0
+  );
+
+  const singaporeOpen = isMarketOpen(
+    "Asia/Singapore",
+    9,
+    0,
+    17,
+    0
+  );
+
+  const commoditiesOpen = isMarketOpen(
+    "America/New_York",
+    9,
+    0,
+    17,
+    0
+  );
+
   const forexStatus = getForexStatus();
 
   const markets = [
@@ -151,6 +215,13 @@ export default function MarketStatusBar() {
     },
 
     {
+      name: "Taiwan",
+      symbol: "🇹🇼",
+      status: taiwanOpen ? "OPEN" : "CLOSED",
+      color: taiwanOpen ? "text-emerald-500" : "text-rose-500",
+    },
+
+    {
       name: "Hong Kong",
       symbol: "🇭🇰",
       status: hongKongOpen
@@ -173,6 +244,48 @@ export default function MarketStatusBar() {
     },
 
     {
+      name: "Canada",
+      symbol: "🇨🇦",
+      status: canadaOpen ? "OPEN" : "CLOSED",
+      color: canadaOpen ? "text-emerald-500" : "text-rose-500",
+    },
+
+    {
+      name: "Australia",
+      symbol: "🇦🇺",
+      status: australiaOpen ? "OPEN" : "CLOSED",
+      color: australiaOpen ? "text-emerald-500" : "text-rose-500",
+    },
+
+    {
+      name: "China",
+      symbol: "🇨🇳",
+      status: chinaOpen ? "OPEN" : "CLOSED",
+      color: chinaOpen ? "text-emerald-500" : "text-rose-500",
+    },
+
+    {
+      name: "Brazil",
+      symbol: "🇧🇷",
+      status: brazilOpen ? "OPEN" : "CLOSED",
+      color: brazilOpen ? "text-emerald-500" : "text-rose-500",
+    },
+
+    {
+      name: "Mexico",
+      symbol: "🇲🇽",
+      status: mexicoOpen ? "OPEN" : "CLOSED",
+      color: mexicoOpen ? "text-emerald-500" : "text-rose-500",
+    },
+
+    {
+      name: "Singapore",
+      symbol: "🇸🇬",
+      status: singaporeOpen ? "OPEN" : "CLOSED",
+      color: singaporeOpen ? "text-emerald-500" : "text-rose-500",
+    },
+
+    {
       name: "Crypto",
       symbol: "₿",
       status: "24/7",
@@ -187,6 +300,13 @@ export default function MarketStatusBar() {
         forexStatus === "OPEN"
           ? "text-violet-500"
           : "text-rose-500",
+    },
+
+    {
+      name: "Commodities",
+      symbol: "🛢",
+      status: commoditiesOpen ? "OPEN" : "CLOSED",
+      color: commoditiesOpen ? "text-emerald-500" : "text-rose-500",
     },
   ];
 

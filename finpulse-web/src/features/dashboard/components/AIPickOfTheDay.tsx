@@ -93,32 +93,38 @@ export default function AIPickOfTheDay() {
 
   const brief = data!;
 
+
   const getRecColors = (rec: string) => {
     const r = (rec || "").toLowerCase();
-    if (r.includes("strong buy")) return "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-500/20";
-    if (r.includes("buy")) return "bg-cyan-100 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-400 border-cyan-500/20";
-    if (r.includes("hold")) return "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-450 border-yellow-500/20";
-    if (r.includes("strong sell")) return "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-400 border-red-500/20";
-    return "bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-400 border-orange-500/20";
+    if (r.includes("strong buy")) return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+    if (r.includes("buy")) return "bg-cyan-500/10 text-cyan-400 border-cyan-500/30";
+    if (r.includes("hold")) return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+    if (r.includes("strong sell")) return "bg-rose-500/10 text-rose-400 border-rose-500/30";
+    return "bg-orange-500/10 text-orange-400 border-orange-500/30";
   };
 
   const getRiskColors = (risk: string) => {
     const r = (risk || "").toLowerCase();
-    if (r === "low") return "text-emerald-500 dark:text-emerald-400 bg-emerald-500/10";
-    if (r === "high") return "text-red-500 dark:text-red-450 bg-red-500/10";
-    return "text-amber-500 dark:text-amber-400 bg-amber-500/10";
+    if (r === "low") return "text-emerald-400 bg-emerald-500/10 border border-emerald-500/25";
+    if (r === "high") return "text-rose-400 bg-rose-500/10 border border-rose-500/25";
+    return "text-amber-400 bg-amber-500/10 border border-amber-500/25";
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
+    <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 sm:p-7 rounded-3xl border border-slate-800/80 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.5)] transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:shadow-[0_20px_50px_-12px_rgba(99,102,241,0.15)] relative overflow-hidden group">
+      {/* Decorative Radial Glows */}
+      <div className="absolute -right-16 -top-16 w-36 h-36 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-500/15 transition-all duration-550" />
+      <div className="absolute -left-16 -bottom-16 w-36 h-36 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+
       {/* Header controls */}
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-5 relative z-10">
         <div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-indigo-400" />
               AI Pick of the Day
             </span>
-            <span className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[9px] font-black rounded border border-indigo-200/20">
+            <span className="px-2 py-0.5 bg-indigo-500/15 text-indigo-300 text-[10px] font-bold rounded-lg border border-indigo-500/20">
               SCORE {brief.aiScore}
             </span>
           </div>
@@ -129,24 +135,24 @@ export default function AIPickOfTheDay() {
               e.preventDefault();
               window.location.hash = `#/stock/${brief.symbol}`;
             }}
-            className="group flex items-baseline gap-1.5 mt-1"
+            className="group flex items-baseline gap-2 mt-2"
           >
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+            <h3 className="text-3xl font-black text-white group-hover:text-indigo-400 transition-colors tracking-tight">
               {brief.symbol}
             </h3>
-            <span className="text-xs text-slate-400 truncate max-w-[130px] font-semibold">
+            <span className="text-sm text-slate-400 truncate max-w-[150px] font-medium group-hover:text-slate-300 transition-colors">
               {brief.company}
             </span>
           </a>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border uppercase tracking-wider ${getRecColors(brief.recommendation)}`}>
+        <div className="flex items-center gap-2.5">
+          <span className={`text-[10px] font-black px-3 py-1 rounded-full border uppercase tracking-wider ${getRecColors(brief.recommendation)}`}>
             {brief.recommendation}
           </span>
           <button
             onClick={() => fetchPick(true)}
-            className="p-2 rounded-xl border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] text-slate-400 hover:text-slate-700 dark:text-slate-350 dark:hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 group"
+            className="p-2 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:border-slate-700 hover:bg-slate-900 group"
             title="Generate New Pick"
           >
             <RotateCcw className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-180" />
@@ -155,50 +161,57 @@ export default function AIPickOfTheDay() {
       </div>
 
       {/* Summary Description */}
-      <p className="text-xs text-slate-700 dark:text-slate-200 mb-3 leading-relaxed font-semibold">
+      <p className="text-sm text-slate-350 mb-5 leading-relaxed font-normal relative z-10">
         {brief.summary}
       </p>
 
       {/* Confidence Bar */}
-      <div className="mb-4">
-        <div className="flex justify-between items-center text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1.5">
+      <div className="mb-6 relative z-10 bg-slate-950/40 p-3 rounded-2xl border border-slate-900">
+        <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
           <span>AI Target Confidence</span>
-          <span className="text-indigo-500 dark:text-indigo-400">{brief.confidence}%</span>
+          <span className="text-indigo-400 font-extrabold">{brief.confidence}%</span>
         </div>
-        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+        <div className="w-full bg-slate-800/60 rounded-full h-2 relative overflow-visible">
           <div
-            className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-1000 ease-out"
+            className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 h-full rounded-full relative shadow-[0_0_12px_rgba(99,102,241,0.5)]"
             style={{ width: `${brief.confidence}%` }}
-          />
+          >
+            {/* Glowing active point */}
+            <span className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-indigo-500 shadow-[0_0_10px_#6366f1] animate-pulse" />
+          </div>
         </div>
       </div>
 
       {/* Metrics Parameters Grid */}
-      <div className="grid grid-cols-2 gap-2.5 border-t border-slate-100 dark:border-slate-850 pt-3 mb-3">
-        <div>
-          <span className="text-[9px] uppercase font-bold text-slate-400">Target</span>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5">${brief.target.toFixed(2)}</p>
+      <div className="grid grid-cols-2 gap-4 border-t border-slate-900 pt-4 mb-4 relative z-10">
+        <div className="bg-slate-950/30 p-3 rounded-2xl border border-slate-900/60">
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Target</span>
+          <p className="text-xl font-black text-emerald-400 mt-1">${brief.target.toFixed(2)}</p>
         </div>
-        <div>
-          <span className="text-[9px] uppercase font-bold text-slate-400">Stop Loss</span>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5">${brief.stopLoss.toFixed(2)}</p>
+        <div className="bg-slate-950/30 p-3 rounded-2xl border border-slate-900/60">
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Stop Loss</span>
+          <p className="text-xl font-black text-rose-400 mt-1">${brief.stopLoss.toFixed(2)}</p>
         </div>
       </div>
 
       {/* Risk and Holding period info */}
-      <div className="grid grid-cols-2 gap-2.5 pt-1">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-slate-400" />
+      <div className="grid grid-cols-2 gap-4 pt-2 relative z-10">
+        <div className="flex items-center gap-3 bg-slate-950/30 p-3 rounded-2xl border border-slate-900/60">
+          <div className="p-2 bg-indigo-500/10 rounded-xl border border-indigo-500/15">
+            <Calendar className="h-4 w-4 text-indigo-400" />
+          </div>
           <div>
-            <span className="text-[9px] uppercase font-bold text-slate-400 block">Holding Period</span>
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">{brief.holdingPeriod}</span>
+            <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Holding Period</span>
+            <span className="text-xs font-bold text-slate-200">{brief.holdingPeriod}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ShieldAlert className="h-4 w-4 text-slate-400" />
+        <div className="flex items-center gap-3 bg-slate-950/30 p-3 rounded-2xl border border-slate-900/60">
+          <div className="p-2 bg-purple-500/10 rounded-xl border border-purple-500/15">
+            <ShieldAlert className="h-4 w-4 text-purple-400" />
+          </div>
           <div>
-            <span className="text-[9px] uppercase font-bold text-slate-400 block">Risk Profile</span>
-            <span className={`text-[11px] px-2 py-0.5 rounded font-black uppercase leading-tight ${getRiskColors(brief.risk)}`}>
+            <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Risk Profile</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-lg font-black uppercase leading-tight mt-0.5 inline-block ${getRiskColors(brief.risk)}`}>
               {brief.risk}
             </span>
           </div>
@@ -206,10 +219,10 @@ export default function AIPickOfTheDay() {
       </div>
 
       {/* Last Updated Timestamp */}
-      <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+      <div className="mt-5 pt-4 border-t border-slate-900 flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-slate-400 relative z-10">
         <span>Updated: {new Date(brief.generatedAt).toLocaleDateString()}</span>
-        <span className="flex items-center gap-1 text-indigo-500">
-          <Sparkles className="h-2.5 w-2.5" />
+        <span className="flex items-center gap-1 text-indigo-400">
+          <Sparkles className="h-3 w-3 animate-pulse" />
           Daily Pick
         </span>
       </div>
