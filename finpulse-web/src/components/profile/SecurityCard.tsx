@@ -1,4 +1,4 @@
-import { Fingerprint, History, Laptop, LogOut, Trash2, Smartphone, Monitor } from "lucide-react";
+import { Fingerprint, History, Laptop, LogOut, Trash2, Smartphone, Monitor, Mail } from "lucide-react";
 
 export interface SessionData {
   id: string;
@@ -12,7 +12,6 @@ export interface SessionData {
 interface SecurityCardProps {
   onChangePassword?: () => void;
   onToggle2FA?: () => void;
-  onLogoutAllDevices?: () => void;
   onDeleteAccount?: () => void;
   onRevokeSession?: (id: string) => void;
   onToggleSubscription?: () => void;
@@ -20,19 +19,20 @@ interface SecurityCardProps {
   twoFactorEnabled?: boolean;
   sessions?: SessionData[];
   currentSessionId?: string;
+  onLogout?: () => void;
 }
 
 export default function SecurityCard({
   onChangePassword,
   onToggle2FA,
-  onLogoutAllDevices,
   onDeleteAccount,
   onRevokeSession,
   onToggleSubscription,
   newsletterSubscribed = false,
   twoFactorEnabled = false,
   sessions = [],
-  currentSessionId = ""
+  currentSessionId = "",
+  onLogout
 }: SecurityCardProps) {
 
   const getSessionIcon = (device: string) => {
@@ -55,41 +55,56 @@ export default function SecurityCard({
         <div className="space-y-3">
           <button
             onClick={onChangePassword}
-            className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5 text-left text-xs font-black uppercase text-slate-800 dark:text-slate-200 transition-all duration-300"
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-350 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5 text-left text-xs font-black uppercase text-slate-800 dark:text-slate-200 transition-all duration-300"
           >
-            <span>Change Account Password</span>
-            <span className="text-[10px] lowercase text-slate-450 dark:text-slate-500">manage credentials</span>
+            <div className="flex items-center gap-3">
+              <Fingerprint className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+              <span>Change Account Password</span>
+            </div>
+            <span className="text-[9px] lowercase text-slate-400 dark:text-slate-500 font-bold">manage</span>
           </button>
-
 
           <button
             onClick={onToggleSubscription}
-            className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 text-left text-xs font-black uppercase ${
+            className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 text-left text-xs font-black uppercase ${
               newsletterSubscribed
-                ? "border-amber-500/20 dark:border-amber-500/30 hover:bg-amber-600 hover:text-white text-amber-500 hover:border-amber-600"
-                : "border-emerald-500/20 dark:border-emerald-500/30 hover:bg-emerald-600 hover:text-white text-emerald-500 hover:border-emerald-600"
+                ? "border-amber-500/20 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                : "border-emerald-500/20 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
             }`}
           >
-            <span>{newsletterSubscribed ? "Unsubscribe from Newsletters" : "Subscribe to Newsletters"}</span>
-            <span className="text-[10px] lowercase text-slate-450 dark:text-slate-500">
+            <div className="flex items-center gap-3">
+              <Mail className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+              <span>{newsletterSubscribed ? "Unsubscribe Newsletters" : "Subscribe Newsletters"}</span>
+            </div>
+            <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase border ${
+              newsletterSubscribed 
+                ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400" 
+                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+            }`}>
               {newsletterSubscribed ? "active" : "inactive"}
             </span>
           </button>
 
           <button
-            onClick={onLogoutAllDevices}
-            className="w-full flex items-center gap-2 p-4 rounded-2xl border border-red-500/20 dark:border-red-500/30 hover:bg-red-550 hover:text-white text-left text-xs font-black uppercase text-red-500 hover:border-red-550 transition-all duration-300"
+            onClick={onLogout}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-red-500/20 dark:border-red-500/30 hover:border-red-500/40 text-left text-xs font-black uppercase text-red-650 dark:text-red-400 hover:bg-red-500/10 transition-all duration-300"
           >
-            <LogOut className="h-4.5 w-4.5" />
-            <span>Logout Other Devices</span>
+            <div className="flex items-center gap-3">
+              <LogOut className="h-4.5 w-4.5 text-red-650 dark:text-red-400" />
+              <span>Account Logout</span>
+            </div>
+            <span className="text-[9px] lowercase text-red-400 dark:text-red-500 font-bold">session</span>
           </button>
 
           <button
             onClick={onDeleteAccount}
-            className="w-full flex items-center gap-2 p-4 rounded-2xl border border-rose-500/20 dark:border-rose-500/30 hover:bg-rose-550 hover:text-white text-left text-xs font-black uppercase text-rose-500 hover:border-rose-550 transition-all duration-300"
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-rose-500/20 dark:border-rose-500/30 hover:border-rose-500/40 text-left text-xs font-black uppercase text-rose-600 dark:text-rose-455 hover:bg-rose-500/10 transition-all duration-300"
           >
-            <Trash2 className="h-4.5 w-4.5" />
-            <span>Delete Account</span>
+            <div className="flex items-center gap-3">
+              <Trash2 className="h-4.5 w-4.5" />
+              <span>Delete Account</span>
+            </div>
+            <span className="text-[9px] lowercase text-rose-400 dark:text-rose-500 font-bold">terminate</span>
           </button>
         </div>
 

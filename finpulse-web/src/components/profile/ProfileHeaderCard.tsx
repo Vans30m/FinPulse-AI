@@ -1,4 +1,4 @@
-import { Camera, Mail, Calendar, CreditCard, Globe, Coins } from "lucide-react";
+import { Camera, Mail, Calendar, CreditCard, Globe, Coins, Edit2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ProfileHeaderCardProps {
@@ -12,7 +12,6 @@ interface ProfileHeaderCardProps {
   market?: string;
   onEditProfile?: () => void;
   onChangePassword?: () => void;
-  onLogout?: () => void;
 }
 
 export default function ProfileHeaderCard({
@@ -25,8 +24,7 @@ export default function ProfileHeaderCard({
   currency = "INR (₹)",
   market = "NSE / BSE",
   onEditProfile,
-  onChangePassword,
-  onLogout
+  onChangePassword
 }: ProfileHeaderCardProps) {
   return (
     <motion.div
@@ -70,34 +68,20 @@ export default function ProfileHeaderCard({
             </div>
 
             <div className="mb-2">
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
-                {name}
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight flex items-center justify-center sm:justify-start gap-2">
+                <span>{name}</span>
+                <button
+                  onClick={onEditProfile}
+                  className="text-slate-400 hover:text-blue-500 dark:hover:text-cyan-400 transition-colors p-1"
+                  title="Edit Profile"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </button>
               </h1>
               <p className="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center justify-center sm:justify-start gap-1 mt-1">
                 <Mail className="h-3 w-3 shrink-0" /> {email}
               </p>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
-            <button
-              onClick={onEditProfile}
-              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl border border-blue-200 dark:border-cyan-500/30 hover:border-blue-500 dark:hover:border-cyan-400 bg-blue-50/20 dark:bg-cyan-500/5 text-xs font-extrabold text-blue-600 dark:text-cyan-400 hover:bg-blue-50/50 dark:hover:bg-cyan-500/10 shadow-sm transition-all duration-300"
-            >
-              Edit Profile
-            </button>
-            <button
-              onClick={onChangePassword}
-              className="flex-1 md:flex-initial text-center px-4 py-2.5 rounded-xl border border-blue-200 dark:border-cyan-500/30 hover:border-blue-500 dark:hover:border-cyan-400 bg-blue-50/20 dark:bg-cyan-500/5 text-xs font-extrabold text-blue-600 dark:text-cyan-400 hover:bg-blue-50/50 dark:hover:bg-cyan-500/10 shadow-sm transition-all duration-300"
-            >
-              Change Password
-            </button>
-            <button
-              onClick={onLogout}
-              className="flex-1 md:flex-initial text-center px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black shadow-md shadow-red-500/10 hover:shadow-red-500/20 hover:scale-[1.02] transition-all duration-300"
-            >
-              Logout
-            </button>
           </div>
         </div>
 

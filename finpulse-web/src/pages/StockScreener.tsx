@@ -1309,7 +1309,7 @@ Slide Outline:
   }, [selectedStock]);
 
   return (
-    <div className="min-h-[85vh] bg-[#090d16] text-slate-200 font-sans transition-colors duration-300 relative w-full p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl border border-white/5">
+    <div className="min-h-[85vh] bg-white dark:bg-[#090d16] text-slate-900 dark:text-slate-200 font-sans transition-colors duration-300 relative w-full p-4 sm:p-6 md:p-8 rounded-3xl shadow-[0_12px_40px_-12px_rgba(0,0,0,0.06)] dark:shadow-2xl border border-slate-200 dark:border-white/5">
 
       {/* Loading Overlay */}
       {isLoading && (
@@ -1616,11 +1616,11 @@ Slide Outline:
                     <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
 
                     {/* Score Header */}
-                    <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                    <div className="flex items-center gap-4 border-b border-slate-150 dark:border-white/10 pb-4">
                       {/* Circular Progress Ring */}
                       <div className="relative h-16 w-16 shrink-0 flex items-center justify-center">
                         <svg className="absolute transform -rotate-90 w-16 h-16">
-                          <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.06)" strokeWidth="4" fill="transparent" />
+                          <circle cx="32" cy="32" r="28" className="stroke-slate-100 dark:stroke-white/[0.06]" strokeWidth="4" fill="transparent" />
                           <circle cx="32" cy="32" r="28" stroke="url(#healthGrad)" strokeWidth="4" fill="transparent" strokeDasharray={176} strokeDashoffset={176 - (176 * healthScore) / 100} strokeLinecap="round" />
                           <defs>
                             <linearGradient id="healthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1629,14 +1629,14 @@ Slide Outline:
                             </linearGradient>
                           </defs>
                         </svg>
-                        <span className="font-mono text-base font-black text-white">{healthScore}</span>
+                        <span className="font-mono text-base font-black text-slate-900 dark:text-white">{healthScore}</span>
                       </div>
 
                       <div>
-                        <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1">
+                        <span className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-widest flex items-center gap-1">
                           <Sparkles className="h-3 w-3 animate-pulse" /> AI Health Index
                         </span>
-                        <h3 className="text-sm font-extrabold text-white mt-0.5">
+                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">
                           {healthScore >= 75 ? 'Excellent Health' : healthScore >= 60 ? 'Strong Performance' : 'Stable Outlook'}
                         </h3>
                       </div>
@@ -1644,37 +1644,37 @@ Slide Outline:
 
                     {/* Pros List */}
                     <div className="space-y-3">
-                      <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" /> Strategic Strengths
+                      <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" /> Strategic Strengths
                       </h4>
-                      <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
+                      <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
                         <li className="flex items-start gap-2">
-                          <span className="text-emerald-400 font-black">✓</span>
+                          <span className="text-emerald-500 dark:text-emerald-400 font-black">✓</span>
                           <span>Healthy dividend payout ratio maintained.</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-emerald-400 font-black">✓</span>
+                          <span className="text-emerald-500 dark:text-emerald-400 font-black">✓</span>
                           <span>High capital efficiency (ROCE of {selectedStock.roce.toFixed(2)}%).</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-emerald-400 font-black">✓</span>
+                          <span className="text-emerald-500 dark:text-emerald-400 font-black">✓</span>
                           <span>Consistent historical growth trajectory.</span>
                         </li>
                       </ul>
                     </div>
 
                     {/* Cons List */}
-                    <div className="space-y-3 pt-3 border-t border-white/10">
-                      <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-rose-455" /> Risk Factors
+                    <div className="space-y-3 pt-3 border-t border-slate-150 dark:border-white/10">
+                      <h4 className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> Risk Factors
                       </h4>
-                      <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
+                      <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
                         <li className="flex items-start gap-2">
-                          <span className="text-rose-400 font-black">✗</span>
+                          <span className="text-rose-500 dark:text-rose-400 font-black">✗</span>
                           <span>Trading high relative to book value ({(selectedStock.price / selectedStock.bookValue).toFixed(1)}x).</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-rose-400 font-black">✗</span>
+                          <span className="text-rose-500 dark:text-rose-400 font-black">✗</span>
                           <span>P/E ratio of {selectedStock.peRatio.toFixed(1)}x is premium.</span>
                         </li>
                       </ul>

@@ -22,7 +22,9 @@ import {
   Globe,
   Clock,
   Unlock,
-  LogOut
+  LogOut,
+  FileText,
+  FileSpreadsheet
 } from "lucide-react";
 import { useAppData } from "../context/AppDataContext";
 import { useTheme, type ThemeMode } from "../context/ThemeContext";
@@ -109,7 +111,7 @@ export default function Profile() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
-  const [isLogoutAllOpen, setIsLogoutAllOpen] = useState(false);
+  const [logoutScope, setLogoutScope] = useState<'current' | 'all'>('current');
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -392,15 +394,16 @@ export default function Profile() {
     }
   };
 
-  const handleLogoutOtherDevices = async () => {
-    try {
-      await profileService.revokeAllOtherSessions();
-      toast.success("Logged out from other devices successfully");
-      setIsLogoutAllOpen(false);
-      loadProfile();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to revoke other sessions");
+  const handleCombinedLogout = async () => {
+    if (logoutScope === 'all') {
+      try {
+        await profileService.revokeAllOtherSessions();
+        toast.success("Logged out from other devices successfully");
+      } catch (err: any) {
+        toast.error("Failed to sign out other devices, logging out locally.");
+      }
     }
+    handleConfirmLogout();
   };
 
   // Account Operations
@@ -518,13 +521,12 @@ export default function Profile() {
         market={profileData?.timezone || "Asia/Kolkata"}
         onEditProfile={() => setIsEditProfileOpen(true)}
         onChangePassword={() => setIsChangePasswordOpen(true)}
-        onLogout={() => setIsLogoutOpen(true)}
       />
 
       {/* SECTION 2 - Investment Statistics Grid */}
       <div className="space-y-4">
         <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Investment Summary Dashboard</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {stats.map((stat, idx) => (
             <StatisticCard
               key={idx}
@@ -554,22 +556,22 @@ export default function Profile() {
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Real-time asset breakdowns currently saved to your watchlists.</p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Total Lists</span>
-                <p className="text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{watchlistSummary?.totalWatchlists || 0}</p>
+                <p className="text-sm sm:text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{watchlistSummary?.totalWatchlists || 0}</p>
               </div>
-              <div className="p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
+              <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Total Assets</span>
-                <p className="text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{watchlistSummary?.totalAssets || 0}</p>
+                <p className="text-sm sm:text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{watchlistSummary?.totalAssets || 0}</p>
               </div>
-              <div className="p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
+              <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Stocks / ETFs</span>
-                <p className="text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{(watchlistSummary?.stocks || 0) + (watchlistSummary?.etfs || 0)}</p>
+                <p className="text-sm sm:text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{(watchlistSummary?.stocks || 0) + (watchlistSummary?.etfs || 0)}</p>
               </div>
-              <div className="p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
+              <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Avg Change</span>
-                <p className={`text-lg font-black mt-1 ${watchlistSummary && watchlistSummary.averageGainLoss >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                <p className={`text-sm sm:text-lg font-black mt-1 ${watchlistSummary && watchlistSummary.averageGainLoss >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                   {watchlistSummary && watchlistSummary.averageGainLoss >= 0 ? '+' : ''}{watchlistSummary?.averageGainLoss.toFixed(2)}%
                 </p>
               </div>
@@ -579,7 +581,7 @@ export default function Profile() {
           {/* Security Controls */}
           <SecurityCard
             onChangePassword={() => setIsChangePasswordOpen(true)}
-            onLogoutAllDevices={() => setIsLogoutAllOpen(true)}
+            onLogout={() => setIsLogoutOpen(true)}
             onDeleteAccount={() => setIsDeleteAccountOpen(true)}
             onRevokeSession={handleRevokeSession}
             sessions={sessions}
@@ -620,7 +622,7 @@ export default function Profile() {
                       className={`py-2 rounded-xl text-xs font-black uppercase border capitalize transition-all ${
                         theme === t
                           ? "bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-500/25"
-                          : "border-slate-250 dark:border-white/5 text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5"
+                          : "border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                       }`}
                     >
                       {t}
@@ -654,21 +656,27 @@ export default function Profile() {
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Download a full breakdown archive of alerts, portfolios, and transaction records.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
               <button
                 onClick={() => handleExportData('json')}
-                className="py-3 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-blue-500 dark:hover:border-cyan-400 bg-slate-50/30 dark:bg-white/[0.01] hover:bg-slate-50 dark:hover:bg-cyan-500/5 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 shadow-sm"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-350 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5 text-left text-xs font-black uppercase text-slate-800 dark:text-slate-200 transition-all duration-300"
               >
-                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">JSON Archive</span>
-                <span className="text-xs font-extrabold text-blue-600 dark:text-slate-250">Download Data</span>
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+                  <span>JSON Archive</span>
+                </div>
+                <span className="text-[9px] lowercase text-blue-600 dark:text-cyan-400 font-bold">Download Data</span>
               </button>
               
               <button
                 onClick={() => handleExportData('csv')}
-                className="py-3 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-blue-500 dark:hover:border-cyan-400 bg-slate-50/30 dark:bg-white/[0.01] hover:bg-slate-50 dark:hover:bg-cyan-500/5 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 shadow-sm"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-350 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5 text-left text-xs font-black uppercase text-slate-800 dark:text-slate-200 transition-all duration-300"
               >
-                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">CSV Spreadsheet</span>
-                <span className="text-xs font-extrabold text-blue-600 dark:text-slate-250">Download Sheets</span>
+                <div className="flex items-center gap-3">
+                  <FileSpreadsheet className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+                  <span>CSV Spreadsheet</span>
+                </div>
+                <span className="text-[9px] lowercase text-blue-600 dark:text-cyan-400 font-bold">Download Sheets</span>
               </button>
             </div>
           </div>
@@ -873,58 +881,75 @@ export default function Profile() {
         </div>
       )}
 
-      {/* 3. Confirm Logout Modal */}
+      {/* 3. Confirm Logout Modal (Unified Choice) */}
       {isLogoutOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 text-center space-y-4 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-200">
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mx-auto text-xl font-bold">
-              👤
-            </div>
-            <div>
-              <h4 className="text-base font-extrabold text-slate-900 dark:text-white">Sign Out</h4>
-              <p className="text-xs text-slate-400 mt-1.5">Are you sure you want to end your active FinPulse session?</p>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setIsLogoutOpen(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
-              >
-                No, Stay
-              </button>
-              <button
-                onClick={handleConfirmLogout}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase"
-              >
-                Yes, Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Logout All Other Devices Modal */}
-      {isLogoutAllOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 text-center space-y-4 animate-in fade-in zoom-in duration-200">
-            <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
               <LogOut className="h-6 w-6" />
             </div>
-            <div>
-              <h4 className="text-base font-extrabold text-slate-900 dark:text-white">Logout other devices</h4>
-              <p className="text-xs text-slate-400 mt-1.5">This will invalidate all other active logins. Current browser session remains active.</p>
+            <div className="text-center">
+              <h4 className="text-base font-extrabold text-slate-900 dark:text-white">Sign Out of FinPulse</h4>
+              <p className="text-xs text-slate-400 mt-1.5">Choose your logout preference below:</p>
             </div>
-            <div className="flex gap-3 pt-2">
+
+            {/* Selection Options */}
+            <div className="space-y-2 text-left">
               <button
-                onClick={() => setIsLogoutAllOpen(false)}
+                type="button"
+                onClick={() => setLogoutScope('current')}
+                className={`w-full p-3 rounded-2xl border text-left flex items-start gap-3 transition-all ${
+                  logoutScope === 'current'
+                    ? 'border-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10 text-indigo-600 dark:text-cyan-400 font-extrabold'
+                    : 'border-slate-200 dark:border-white/5 bg-transparent text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${logoutScope === 'current' ? 'border-indigo-500' : 'border-slate-350 dark:border-slate-700'}`}>
+                  {logoutScope === 'current' && <div className="w-2 h-2 rounded-full bg-indigo-500 dark:bg-cyan-400" />}
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-black block uppercase tracking-wide">This Device Only</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5 leading-snug">Sign out of this browser session only. Other devices remain logged in.</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLogoutScope('all')}
+                className={`w-full p-3 rounded-2xl border text-left flex items-start gap-3 transition-all ${
+                  logoutScope === 'all'
+                    ? 'border-red-500 bg-red-500/5 dark:bg-red-500/10 text-red-650 dark:text-red-400 font-extrabold'
+                    : 'border-slate-200 dark:border-white/5 bg-transparent text-slate-650 dark:text-slate-400'
+                }`}
+              >
+                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${logoutScope === 'all' ? 'border-red-500' : 'border-slate-350 dark:border-slate-700'}`}>
+                  {logoutScope === 'all' && <div className="w-2 h-2 rounded-full bg-red-500" />}
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-black block uppercase tracking-wide">All Active Devices</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5 leading-snug">Sign out from this and all other connected browsers and mobile devices.</span>
+                </div>
+              </button>
+            </div>
+
+            <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsLogoutOpen(false)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
               >
                 Cancel
               </button>
               <button
-                onClick={handleLogoutOtherDevices}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase"
+                type="button"
+                onClick={handleCombinedLogout}
+                className={`flex-1 py-2.5 rounded-xl text-white text-xs font-black uppercase transition-all shadow-md ${
+                  logoutScope === 'all'
+                    ? 'bg-red-500 hover:bg-red-600 shadow-red-500/10 hover:shadow-red-500/20'
+                    : 'bg-indigo-500 hover:bg-indigo-650 shadow-indigo-500/10 hover:shadow-indigo-500/20 dark:bg-cyan-500 dark:hover:bg-cyan-600 dark:text-slate-950'
+                }`}
               >
-                Logout Others
+                Confirm Sign Out
               </button>
             </div>
           </div>

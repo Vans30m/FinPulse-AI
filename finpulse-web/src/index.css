@@ -253,6 +253,30 @@ iframe[src*="tradingview.com"]+a {
   color: #ffffff !important;
 }
 
+/* Light mode overrides for text/border colors in workbook and shareholding tables */
+html:not(.dark) #screener-workbook table tbody tr td,
+html:not(.dark) #screener-shareholding table tbody tr td {
+  color: #475569 !important; /* slate-600 */
+}
+
+html:not(.dark) #screener-workbook table tbody tr td:first-child,
+html:not(.dark) #screener-shareholding table tbody tr td:first-child {
+  color: #0f172a !important; /* slate-900 */
+}
+
+html:not(.dark) #screener-workbook table thead tr th,
+html:not(.dark) #screener-shareholding table thead tr th {
+  color: #64748b !important; /* slate-500 */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+html:not(.dark) #screener-workbook h3,
+html:not(.dark) #screener-shareholding h3,
+html:not(.dark) #screener-workbook h4,
+html:not(.dark) #screener-shareholding h4 {
+  color: #0f172a !important; /* slate-900 */
+}
+
 /* Discreet PDF download icon hover states */
 #screener-workbook table tbody tr td button svg {
   color: #94a3b8 !important;

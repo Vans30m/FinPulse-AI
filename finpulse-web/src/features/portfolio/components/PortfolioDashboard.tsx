@@ -57,7 +57,7 @@ const INITIAL_SECTIONS: MarketSection[] = [
     id: 'us',
     title: 'US Market',
     region: 'North America',
-    icon: <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-450" />,
+    icon: <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
     holdings: []
   },
   {
@@ -91,7 +91,7 @@ const getHoldingColorClass = (marketId: string, ticker: string) => {
     return { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/50 dark:border-blue-900/50' };
   }
   if (mid === 'us') {
-    return { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-450', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
+    return { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
   }
   if (mid === 'crypto' || tick.endsWith('-USD') || tick.endsWith('/USD')) {
     return { bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200/50 dark:border-orange-900/50' };
@@ -1301,8 +1301,8 @@ export default function PortfolioDashboard() {
                 onClick={() => setIsSandboxMode(!isSandboxMode)}
                 className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[8px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-sm whitespace-nowrap ${
                   isSandboxMode
-                    ? 'bg-blue-600 hover:bg-blue-750 dark:bg-cyan-500 dark:hover:bg-cyan-450 text-white dark:text-slate-950 border-transparent'
-                    : 'bg-purple-650 hover:bg-purple-750 dark:bg-purple-500 dark:hover:bg-purple-450 text-white border-transparent'
+                    ? 'bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-slate-950 border-transparent'
+                    : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-400 text-white border-transparent'
                 }`}
               >
                 <span className="hidden sm:inline">{isSandboxMode ? 'Switch to Portfolio Tracker' : 'Switch to Paper Trading'}</span>
@@ -1318,14 +1318,14 @@ export default function PortfolioDashboard() {
             {isSandboxMode ? (
               <button
                 onClick={() => setIsSandboxOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-650 dark:from-purple-500 dark:to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 min-h-[44px]"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-500 dark:to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 min-h-[44px]"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[3]" /> Place Paper Trade
               </button>
             ) : (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-650 dark:from-cyan-500 dark:to-blue-600 px-5 py-2.5 text-xs font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 transition-all duration-300 min-h-[44px]"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500 dark:to-blue-600 px-5 py-2.5 text-xs font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 transition-all duration-300 min-h-[44px]"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[3]" /> Add Asset Position
               </button>
@@ -1416,19 +1416,18 @@ export default function PortfolioDashboard() {
         </div>
       </div>
 
-      {/* Mobile Sticky Bottom Floating Action Button (FAB) */}
       <div className="md:hidden fixed bottom-6 right-6 z-[90]">
         {isSandboxMode ? (
           <button
             onClick={() => setIsSandboxOpen(true)}
-            className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-r from-purple-650 to-indigo-600 text-white shadow-2xl active:scale-95 transition-all"
+            className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xl active:scale-95 transition-all"
           >
             <Plus className="h-6 w-6 stroke-[3]" />
           </button>
         ) : (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-650 dark:from-cyan-500 dark:to-blue-600 text-white dark:text-night-950 shadow-2xl active:scale-95 transition-all"
+            className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500 dark:to-blue-600 text-white dark:text-night-950 shadow-2xl active:scale-95 transition-all"
           >
             <Plus className="h-6 w-6 stroke-[3]" />
           </button>
@@ -1537,17 +1536,17 @@ export default function PortfolioDashboard() {
 
       {/* Currency Split Info Banner */}
       {activeMarket === 'all' && (
-        <div className="bg-[#121a2a]/35 border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-medium text-slate-400 mb-6">
+        <div className="bg-slate-50 dark:bg-[#121a2a]/35 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-medium text-slate-600 dark:text-slate-400 mb-6">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
             <span>Unified Global View: domestic INR holdings are converted to USD (1 USD = {usdToInrRate.toFixed(4)} INR) to calculate consolidated totals.</span>
           </div>
           <div className="flex items-center gap-3.5 flex-wrap">
-            <span className="font-bold text-slate-350">Asset Segment Splits:</span>
-            <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🇮🇳 Domestic: <strong className="text-white">₹{portfolioSplits.inrVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>
-            {portfolioSplits.usdVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🇺🇸 US Market: <strong className="text-white">${portfolioSplits.usdVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
-            {portfolioSplits.cryptoVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🪙 Crypto: <strong className="text-white">${portfolioSplits.cryptoVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
-            {portfolioSplits.otherVal > 0 && <span className="bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-850">🌍 Other Markets: <strong className="text-white">${portfolioSplits.otherVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+            <span className="font-bold text-slate-700 dark:text-slate-350">Asset Segment Splits:</span>
+            <span className="bg-slate-100 dark:bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800/50">🇮🇳 Domestic: <strong className="text-slate-950 dark:text-white">₹{portfolioSplits.inrVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>
+            {portfolioSplits.usdVal > 0 && <span className="bg-slate-100 dark:bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800/50">🇺🇸 US Market: <strong className="text-slate-950 dark:text-white">${portfolioSplits.usdVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+            {portfolioSplits.cryptoVal > 0 && <span className="bg-slate-100 dark:bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800/50">🪙 Crypto: <strong className="text-slate-950 dark:text-white">${portfolioSplits.cryptoVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
+            {portfolioSplits.otherVal > 0 && <span className="bg-slate-100 dark:bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800/50">🌍 Other Markets: <strong className="text-slate-950 dark:text-white">${portfolioSplits.otherVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></span>}
           </div>
         </div>
       )}

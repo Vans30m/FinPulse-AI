@@ -34,7 +34,7 @@ export default function AlertsTimeline({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const displayedNews = isMobile ? liveNews.slice(0, 5) : liveNews;
+  const displayedNews = isMobile ? (fullPage ? liveNews.slice(0, 20) : liveNews.slice(0, 5)) : liveNews;
 
   useEffect(() => {
     const fetchAllNews = async () => {
@@ -171,7 +171,7 @@ ${fullPage ? "h-full" : "max-h-[1300px]"}`}>
                 </a>
               ))}
 
-              {isMobile && liveNews.length > 5 && (
+              {isMobile && !fullPage && liveNews.length > 5 && (
                 <Link
                   to="/news"
                   className="w-full mt-3 py-2.5 px-4 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 border border-slate-200/50 dark:border-white/5"
