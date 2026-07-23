@@ -280,26 +280,26 @@ export default function Watchlist() {
           <Info className="h-3.5 w-3.5" />
           <span>Watchlist Analytics Overview</span>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-          <div className="rounded-2xl md:rounded-3xl p-3.5 md:p-5 bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-xl">
-            <p className="text-[10px] md:text-xs opacity-75 uppercase font-bold">Total Assets</p>
-            <h2 className="text-xl md:text-3xl font-black mt-1 md:mt-2">{stats.total}</h2>
+        <div className="grid grid-cols-4 gap-1.5 md:gap-4">
+          <div className="rounded-xl md:rounded-3xl p-2 md:p-5 bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-xl">
+            <p className="text-[7.5px] min-[360px]:text-[9px] min-[400px]:text-[10px] md:text-xs opacity-75 uppercase font-bold tracking-tight whitespace-nowrap">Total Assets</p>
+            <h2 className="text-xs min-[360px]:text-sm min-[400px]:text-xl md:text-3xl font-black mt-1 md:mt-2">{stats.total}</h2>
           </div>
-          <div className="rounded-2xl md:rounded-3xl p-3.5 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase flex items-center gap-1">
-              Gainers <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+          <div className="rounded-xl md:rounded-3xl p-2 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+            <p className="text-[7.5px] min-[360px]:text-[9px] min-[400px]:text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase flex items-center gap-0.5 tracking-tight whitespace-nowrap">
+              Gainers <TrendingUp className="h-2.5 w-2.5 min-[360px]:h-3 min-[360px]:w-3 text-emerald-500 shrink-0" />
             </p>
-            <h2 className="text-xl md:text-3xl font-black mt-1 md:mt-2 text-emerald-500">{stats.gainers}</h2>
+            <h2 className="text-xs min-[360px]:text-sm min-[400px]:text-xl md:text-3xl font-black mt-1 md:mt-2 text-emerald-500">{stats.gainers}</h2>
           </div>
-          <div className="rounded-2xl md:rounded-3xl p-3.5 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase flex items-center gap-1">
-              Losers <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
+          <div className="rounded-xl md:rounded-3xl p-2 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+            <p className="text-[7.5px] min-[360px]:text-[9px] min-[400px]:text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase flex items-center gap-0.5 tracking-tight whitespace-nowrap">
+              Losers <TrendingDown className="h-2.5 w-2.5 min-[360px]:h-3 min-[360px]:w-3 text-rose-500 shrink-0" />
             </p>
-            <h2 className="text-xl md:text-3xl font-black mt-1 md:mt-2 text-rose-500">{stats.losers}</h2>
+            <h2 className="text-xs min-[360px]:text-sm min-[400px]:text-xl md:text-3xl font-black mt-1 md:mt-2 text-rose-500">{stats.losers}</h2>
           </div>
-          <div className="rounded-2xl md:rounded-3xl p-3.5 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase">Avg Return</p>
-            <h2 className="text-xl md:text-3xl font-black mt-1 md:mt-2 text-slate-800 dark:text-white">{stats.avgChange}</h2>
+          <div className="rounded-xl md:rounded-3xl p-2 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+            <p className="text-[7.5px] min-[360px]:text-[9px] min-[400px]:text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tight whitespace-nowrap">Avg Return</p>
+            <h2 className="text-xs min-[360px]:text-sm min-[400px]:text-xl md:text-3xl font-black mt-1 md:mt-2 text-slate-800 dark:text-white truncate">{stats.avgChange}</h2>
           </div>
         </div>
       </div>

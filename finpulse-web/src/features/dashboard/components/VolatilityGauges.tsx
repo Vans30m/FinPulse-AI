@@ -58,7 +58,7 @@ export default function VolatilityGauges() {
         }
 
         fetchVix();
-        const interval = setInterval(fetchVix, 30000);
+        const interval = setInterval(fetchVix, 15000);
         return () => clearInterval(interval);
     }, []);
 

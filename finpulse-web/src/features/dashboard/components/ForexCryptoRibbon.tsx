@@ -68,7 +68,7 @@ export default function ForexCryptoRibbon() {
     }
 
     fetchTickerData();
-    const interval = setInterval(fetchTickerData, 30000); // refresh every 30s
+    const interval = setInterval(fetchTickerData, 15000); // refresh every 15s
     return () => clearInterval(interval);
   }, []);
 

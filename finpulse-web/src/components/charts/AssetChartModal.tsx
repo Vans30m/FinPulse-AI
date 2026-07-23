@@ -547,7 +547,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
           className="relative z-10 w-[95vw] h-[95vh] rounded-2xl bg-[#070913] border border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] text-slate-100 flex flex-col overflow-hidden font-sans"
         >
           {/* ==================== HEADER ==================== */}
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center px-6 py-3 border-b border-slate-900 bg-[#0a0d1d]/60 backdrop-blur-md shrink-0">
+          <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 md:gap-6 items-center pl-4 pr-14 md:px-6 py-3 border-b border-slate-900 bg-[#0a0d1d]/60 backdrop-blur-md shrink-0">
             <div>
               {meta ? (
                 <ChartHeader
@@ -569,10 +569,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
               onClick={onClose}
               whileHover={{ scale: 1.08, rotate: 90 }}
               whileTap={{ scale: 0.93 }}
-              className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-rose-600/90 border border-slate-800/80 hover:border-rose-500/50 text-slate-400 hover:text-white transition-colors duration-200 flex items-center justify-center shadow-lg shadow-black/20"
+              className="absolute top-3 right-3 md:relative md:top-auto md:right-auto p-2 md:p-2.5 rounded-xl bg-slate-900/90 hover:bg-rose-600/90 border border-slate-800/80 hover:border-rose-500/50 text-slate-400 hover:text-white transition-colors duration-200 flex items-center justify-center shadow-lg shadow-black/20 z-10"
               aria-label="Close modal"
             >
-              <X size={24} className="stroke-[2.5]" />
+              <X size={20} className="stroke-[2.5] md:w-6 md:h-6" />
             </motion.button>
           </div>
 
