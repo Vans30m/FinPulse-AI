@@ -1293,9 +1293,22 @@ export default function PortfolioDashboard() {
       <div className="flex flex-col gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-              {isSandboxMode ? '🎮 Paper Sandbox' : 'Asset Portfolio'}
-            </h1>
+            <div className="flex items-center gap-2 sm:gap-3 flex-nowrap">
+              <h1 className="text-xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent whitespace-nowrap">
+                {isSandboxMode ? '🎮 Paper Sandbox' : 'Asset Portfolio'}
+              </h1>
+              <button
+                onClick={() => setIsSandboxMode(!isSandboxMode)}
+                className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[8px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-sm whitespace-nowrap ${
+                  isSandboxMode
+                    ? 'bg-blue-600 hover:bg-blue-750 dark:bg-cyan-500 dark:hover:bg-cyan-450 text-white dark:text-slate-950 border-transparent'
+                    : 'bg-purple-650 hover:bg-purple-750 dark:bg-purple-500 dark:hover:bg-purple-450 text-white border-transparent'
+                }`}
+              >
+                <span className="hidden sm:inline">{isSandboxMode ? 'Switch to Portfolio Tracker' : 'Switch to Paper Trading'}</span>
+                <span className="inline sm:hidden">{isSandboxMode ? 'Portfolio' : 'Paper Trade'}</span>
+              </button>
+            </div>
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
               {isSandboxMode ? 'Test strategies in real-time with $100k virtual cash balance.' : 'Global allocation breakdown with modular tracking.'}
             </p>
@@ -1322,7 +1335,7 @@ export default function PortfolioDashboard() {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
           {/* Currency Toggle (Horizontal Scrollable Pill Bar on Mobile) */}
-          <div className="flex overflow-x-auto no-scrollbar gap-1.5 py-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
+          <div className="flex overflow-x-auto no-scrollbar gap-1 py-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none justify-start w-full sm:w-auto">
             {[
               { code: 'USD', symbol: '$' },
               { code: 'INR', symbol: '₹' },
@@ -1332,10 +1345,10 @@ export default function PortfolioDashboard() {
               <button
                 key={cur.code}
                 onClick={() => setPortfolioCurrency(cur.code as any)}
-                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap min-h-[36px] flex items-center justify-center ${
+                className={`px-2.5 py-1 rounded-xl text-[9px] font-bold border transition-all whitespace-nowrap min-h-[30px] flex items-center justify-center ${
                   portfolioCurrency === cur.code
                     ? 'bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 border-transparent font-black shadow-sm'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-650 dark:text-slate-400 border-slate-200 dark:border-white/5'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-655 dark:text-slate-400 border-slate-200 dark:border-white/5'
                 }`}
               >
                 {cur.code} ({cur.symbol})
@@ -1344,18 +1357,12 @@ export default function PortfolioDashboard() {
           </div>
 
           {/* Secondary Action Cluster */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setIsSandboxMode(!isSandboxMode)}
-              className="text-[10px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-all min-h-[36px] bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5 shadow-sm"
-            >
-              {isSandboxMode ? 'Switch to Tracker' : 'Try Paper Trading'}
-            </button>
+          <div className="flex items-center gap-1.5 flex-wrap justify-start">
             <Link
               to="/performance"
-              className="text-[10px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl border bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5 shadow-sm inline-flex items-center gap-1.5 min-h-[36px]"
+              className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-xl border bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5 shadow-sm inline-flex items-center gap-1 min-h-[30px]"
             >
-              <BarChart3 className="h-3.5 w-3.5" />
+              <BarChart3 className="h-3 w-3" />
               <span>Comparison</span>
             </Link>
 
@@ -1363,11 +1370,11 @@ export default function PortfolioDashboard() {
             <div className="relative">
               <button
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
-                className="flex items-center justify-center gap-2 rounded-xl border border-blue-200 dark:border-cyan-500/30 bg-blue-50/20 dark:bg-cyan-500/5 px-3 py-2 text-[10px] font-extrabold text-blue-600 dark:text-cyan-400 shadow-sm transition-all min-h-[36px]"
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 dark:border-cyan-500/30 bg-blue-50/20 dark:bg-cyan-500/5 px-2.5 py-1 text-[9px] font-extrabold text-blue-600 dark:text-cyan-400 shadow-sm transition-all min-h-[30px]"
               >
-                <Download className="h-3.5 w-3.5" />
+                <Download className="h-3 w-3" />
                 <span>Export</span>
-                <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${showExportDropdown ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-2.5 w-2.5 transition-transform duration-300 ${showExportDropdown ? "rotate-180" : ""}`} />
               </button>
 
               {showExportDropdown && (
@@ -1428,41 +1435,49 @@ export default function PortfolioDashboard() {
         )}
       </div>
 
-      {/* Aggregate Cards Grid (2x2 on Mobile, 4 columns on Desktop) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        <div className="glass-panel p-4 flex items-center gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
-          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400 shrink-0">
+      {/* Aggregate Cards Grid (4 columns on all screen sizes, adjusted padding and fonts for mobile) */}
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-6">
+        <div className="glass-panel p-2 sm:p-4 flex items-center gap-2 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
+          <div className="hidden sm:flex p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400 shrink-0">
             <PieChart className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">Net Value</p>
-            <h3 className="text-base sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
+          <div className="min-w-0 w-full text-center sm:text-left">
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">Net Value</p>
+            <h3 className="text-xs sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
               {displayCurrency}{totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>
         </div>
 
-        <div className="glass-panel p-4 flex items-center gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
-          <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 shrink-0">
+        <div className="glass-panel p-2 sm:p-4 flex items-center gap-2 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
+          <div className="hidden sm:flex p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 shrink-0">
             <TrendingUp className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">Total Returns</p>
-            <h3 className={`text-base sm:text-2xl font-black mt-0.5 truncate ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+          <div className="min-w-0 w-full text-center sm:text-left">
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+              <span className="hidden sm:inline">Total Returns</span>
+              <span className="inline sm:hidden">Returns</span>
+            </p>
+            <h3 className={`text-xs sm:text-2xl font-black mt-0.5 truncate ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
               {totalGain >= 0 ? '+' : ''}{displayCurrency}{totalGain.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>
         </div>
 
-        <div className="glass-panel p-4 flex items-center gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300">
-          <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+        <div className="glass-panel p-2 sm:p-4 flex items-center gap-2 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
+          <div className="hidden sm:flex p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
             <Globe className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
-              {isSandboxMode ? "Cash" : "Asset Classes"}
+          <div className="min-w-0 w-full text-center sm:text-left">
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+              {isSandboxMode ? "Cash" : (
+                <>
+                  <span className="hidden sm:inline">Asset Classes</span>
+                  <span className="inline sm:hidden">Assets</span>
+                </>
+              )}
             </p>
-            <h3 className="text-base sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
+            <h3 className="text-xs sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
               {isSandboxMode 
                 ? `${displayCurrency}${cashBalanceInCurrency.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                 : `${activeHubsCount} Hub${activeHubsCount !== 1 ? 's' : ''}`}
@@ -1472,14 +1487,17 @@ export default function PortfolioDashboard() {
 
         <div 
           onClick={() => setIsBookedHistoryOpen(true)}
-          className="glass-panel p-4 flex items-center gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 cursor-pointer group"
+          className="glass-panel p-2 sm:p-4 flex items-center gap-2 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-0"
         >
-          <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-550/10 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
+          <div className="hidden sm:flex p-2 rounded-xl bg-amber-50 dark:bg-amber-550/10 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
             <TrendingUp className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">Booked P&L</p>
-            <h3 className={`text-base sm:text-2xl font-black mt-0.5 truncate ${totalBookedPL >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+          <div className="min-w-0 w-full text-center sm:text-left">
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+              <span className="hidden sm:inline">Booked P&L</span>
+              <span className="inline sm:hidden">Booked</span>
+            </p>
+            <h3 className={`text-xs sm:text-2xl font-black mt-0.5 truncate ${totalBookedPL >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
               {totalBookedPL >= 0 ? '+' : ''}{displayCurrency}{totalBookedPL.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>
@@ -1500,7 +1518,7 @@ export default function PortfolioDashboard() {
       )}
 
       {/* Market Tab Selector at Dashboard Level */}
-      <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner select-none mt-8 mb-4 overflow-x-auto w-full max-w-full scrollbar-none">
+      <div className="flex bg-slate-100/80 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 text-xs font-bold shadow-inner select-none mt-10 md:mt-12 mb-4 overflow-x-auto w-full max-w-full scrollbar-none">
         <div className="flex items-center gap-1 min-w-max">
           {['all', 'domestic', 'us', 'other', 'crypto', 'metals'].map(tab => (
             <button
@@ -1681,7 +1699,7 @@ export default function PortfolioDashboard() {
               return (
                 <div 
                   key={asset.id || `${asset.ticker}-${index}`} 
-                  className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors"
+                  className="p-2.5 flex items-center justify-between gap-2 hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors"
                 >
                   <button
                     type="button"
@@ -1694,28 +1712,31 @@ export default function PortfolioDashboard() {
                         type: asset.type || "Asset",
                       })
                     }
-                    className="flex-1 min-w-0 text-left flex flex-col gap-1 focus:outline-none"
+                    className="flex-1 min-w-0 text-left flex flex-col gap-0.5 focus:outline-none"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className={`px-1.5 py-0.5 text-[8px] font-black rounded border leading-tight shrink-0 ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`px-1 py-0.2 text-[7px] font-black rounded border leading-tight shrink-0 ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>
                         {asset.ticker}
                       </span>
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                      <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate">
                         {asset.name}
                       </span>
                     </div>
-                    <span className="text-[9px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase truncate">
+                    <span className="text-[8px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase truncate">
                       {asset.category} · Qty: {asset.shares < 0 ? `${Math.abs(asset.shares)} (Short)` : asset.shares}
+                    </span>
+                    <span className="text-[8px] font-semibold text-slate-450 dark:text-slate-500 truncate">
+                      Avg: {posCurrency}{asset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })} · LTP: {posCurrency}{asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
                   </button>
 
-                  <div className="flex items-center gap-3.5 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <div className="text-right flex flex-col items-end">
-                      <span className="text-xs font-bold text-slate-955 dark:text-white">
+                      <span className="text-[11px] font-bold text-slate-955 dark:text-white">
                         {posCurrency}{displayMarketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </span>
-                      <span className={`text-[10px] font-semibold flex items-center gap-0.5 mt-0.5 ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
-                        {asset.totalGain >= 0 ? '+' : ''}{asset.gainPercent.toFixed(1)}%
+                      <span className={`text-[9px] font-semibold flex items-center gap-0.5 ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                        {asset.totalGain >= 0 ? '+' : ''}{posCurrency}{displayTotalGain.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({asset.totalGain >= 0 ? '+' : ''}{asset.gainPercent.toFixed(1)}%)
                       </span>
                     </div>
 
@@ -1731,9 +1752,9 @@ export default function PortfolioDashboard() {
                           handleDeleteHolding(asset.id, asset.name);
                         }
                       }}
-                      className="flex items-center justify-center p-2 rounded-xl border border-slate-205 dark:border-slate-800 text-rose-550 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all min-w-[36px] min-h-[36px]"
+                      className="flex items-center justify-center p-1 rounded-lg border border-slate-200 dark:border-slate-800 text-rose-550 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all min-w-[28px] min-h-[28px]"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
@@ -1782,18 +1803,18 @@ export default function PortfolioDashboard() {
             data={allocationData}
           />
 
-          <div className="relative mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Portfolio Value</p>
-              <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{displayCurrency}{allocationTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          <div className="relative mt-4 sm:mt-6 grid grid-cols-3 gap-2 sm:gap-3.5">
+            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 sm:p-4 min-w-0">
+              <p className="text-[7px] sm:text-[10px] font-bold uppercase tracking-[0.16em] sm:tracking-[0.24em] text-slate-400 dark:text-slate-500 truncate">Portfolio Value</p>
+              <p className="mt-1 sm:mt-2 text-xs sm:text-lg font-black text-slate-900 dark:text-white truncate">{displayCurrency}{allocationTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Largest Slice</p>
-              <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{dominantAllocation ? dominantAllocation.name : 'N/A'}</p>
+            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 sm:p-4 min-w-0">
+              <p className="text-[7px] sm:text-[10px] font-bold uppercase tracking-[0.16em] sm:tracking-[0.24em] text-slate-400 dark:text-slate-500 truncate">Largest Slice</p>
+              <p className="mt-1 sm:mt-2 text-xs sm:text-lg font-black text-slate-900 dark:text-white truncate">{dominantAllocation ? dominantAllocation.name : 'N/A'}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Top Weight</p>
-              <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{allocationTotal > 0 && dominantAllocation ? `${((dominantAllocation.value / allocationTotal) * 100).toFixed(0)}%` : '0%'}</p>
+            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 sm:p-4 min-w-0">
+              <p className="text-[7px] sm:text-[10px] font-bold uppercase tracking-[0.16em] sm:tracking-[0.24em] text-slate-400 dark:text-slate-500 truncate">Top Weight</p>
+              <p className="mt-1 sm:mt-2 text-xs sm:text-lg font-black text-slate-900 dark:text-white truncate">{allocationTotal > 0 && dominantAllocation ? `${((dominantAllocation.value / allocationTotal) * 100).toFixed(0)}%` : '0%'}</p>
             </div>
           </div>
         </div>

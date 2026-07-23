@@ -51,9 +51,20 @@ const SUMMARY_ICON_MAP: Record<PortfolioSummaryIconKey, LucideIcon> = {
   margin: Landmark,
 };
 
+const getShortTrendLabel = (label: string): string => {
+  const l = label.toLowerCase();
+  if (l.includes("deployed")) return "Deployed";
+  if (l.includes("market value")) return "Value";
+  if (l.includes("session")) return l.includes("gain") ? "Gain" : "Loss";
+  if (l.includes("net")) return l.includes("gain") ? "Gain" : "Loss";
+  if (l.includes("positive")) return "Pos";
+  if (l.includes("negative")) return "Neg";
+  return label;
+};
+
 function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: Props) {
   return (
-    <section className="glass-panel p-6 relative overflow-hidden">
+    <section className="glass-panel p-3.5 sm:p-6 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] via-transparent to-cyan-500/[0.04] pointer-events-none" />
 
       <div className="relative flex flex-col gap-1.5 mb-6">
@@ -62,18 +73,18 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-5 animate-pulse">
-              <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-white/5 mb-4" />
-              <div className="h-3 w-32 rounded-full bg-slate-200 dark:bg-white/5 mb-3" />
-              <div className="h-8 w-40 rounded-full bg-slate-200 dark:bg-white/5 mb-3" />
-              <div className="h-3 w-24 rounded-full bg-slate-200 dark:bg-white/5" />
+            <div key={index} className="rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02] p-3.5 sm:p-5 animate-pulse">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-slate-200 dark:bg-white/5 mb-4" />
+              <div className="h-3 w-24 sm:w-32 rounded-full bg-slate-200 dark:bg-white/5 mb-3" />
+              <div className="h-6 sm:h-8 w-32 sm:w-40 rounded-full bg-slate-200 dark:bg-white/5 mb-3" />
+              <div className="h-3 w-16 sm:w-24 rounded-full bg-slate-200 dark:bg-white/5" />
             </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           {metrics.map((metric, index) => {
             const Icon = SUMMARY_ICON_MAP[metric.iconKey];
 
@@ -84,24 +95,25 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05, duration: 0.35, ease: "easeOut" }}
                 whileHover={{ y: -4 }}
-                className="group relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_30px_-22px_rgba(15,23,42,0.65)] transition-all duration-300 hover:border-blue-500/20 dark:hover:border-cyan-500/20 hover:shadow-[0_18px_48px_-28px_rgba(6,182,212,0.45)]"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-3.5 sm:p-5 shadow-[0_10px_30px_-22px_rgba(15,23,42,0.65)] transition-all duration-300 hover:border-blue-500/20 dark:hover:border-cyan-500/20 hover:shadow-[0_18px_48px_-28px_rgba(6,182,212,0.45)]"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] to-cyan-500/[0.05] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                <div className="relative flex items-start justify-between gap-3 mb-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5 text-blue-600 dark:text-cyan-400 shadow-sm">
-                    <Icon className="h-5 w-5" />
+                <div className="relative flex items-center justify-between gap-1.5 sm:gap-3 mb-3 sm:mb-4 flex-nowrap">
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5 text-blue-600 dark:text-cyan-400 shadow-sm shrink-0">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
 
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${metric.isPositive ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-600 dark:text-rose-400"}`}>
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[8px] sm:text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 ${metric.isPositive ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-600 dark:text-rose-400"}`}>
                     {metric.isPositive ? "+" : "-"}
-                    {metric.trendLabel}
+                    <span className="hidden sm:inline">{metric.trendLabel}</span>
+                    <span className="inline sm:hidden">{getShortTrendLabel(metric.trendLabel)}</span>
                   </span>
                 </div>
 
-                <div className="relative space-y-3">
+                <div className="relative space-y-1.5 sm:space-y-3">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">{metric.title}</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500 truncate">{metric.title}</p>
                     {(() => {
                       const isPLMetric = ["today-pnl", "total-pnl", "overall-return"].includes(metric.id);
                       const colorClass = isPLMetric
@@ -112,7 +124,7 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
                       const signPrefix = isPLMetric ? (metric.isPositive ? "+" : "-") : "";
 
                       return (
-                        <div className={`mt-2 text-2xl font-black tracking-tight ${colorClass}`}>
+                        <div className={`mt-1.5 sm:mt-2 text-sm sm:text-2xl font-black tracking-tight ${colorClass} truncate`}>
                           {metric.format === "currency" ? (
                             <AnimatedNumber value={metric.value} prefix={signPrefix + currencySymbol} decimals={2} className="font-black" />
                           ) : metric.format === "percent" ? (

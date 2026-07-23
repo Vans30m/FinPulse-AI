@@ -78,12 +78,12 @@ export default function PortfolioAllocationChart({
       </div>
 
       {/* Custom Clean Legend Grid */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800/60 pt-5">
+      <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-4 border-t border-slate-100 dark:border-slate-800/60 pt-3 sm:pt-5">
         {data.map((item, index) => {
           const pct = total > 0 ? ((item.value / total) * 100).toFixed(0) : "0";
           return (
-            <div key={item.name} className="rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.02] p-4 min-w-0">
-              <div className="flex items-start gap-3 min-w-0">
+            <div key={item.name} className="rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.02] p-2.5 sm:p-4 min-w-0">
+              <div className="flex items-start gap-1.5 sm:gap-3 min-w-0">
                 <div 
                   className="h-3.5 w-3.5 rounded-full shrink-0 mt-1" 
                   style={{ backgroundColor: COLORS[index % COLORS.length] }} 

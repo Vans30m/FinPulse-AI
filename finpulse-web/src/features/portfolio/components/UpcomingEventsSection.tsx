@@ -264,18 +264,20 @@ function UpcomingEventsSection() {
       <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div className="flex flex-col gap-1">
           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.32em]">Portfolio Event Intelligence</span>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Active Intelligence Calendar</h2>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Active Intelligence Calendar</h2>
+            <button 
+              onClick={fetchEvents}
+              className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] border border-slate-200/50 dark:border-white/5 text-slate-600 dark:text-slate-400 shrink-0"
+              title="Refresh events"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Header Actions */}
         <div className="flex flex-wrap items-center gap-2">
-
-          <button 
-            onClick={fetchEvents}
-            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] border border-slate-200/50 dark:border-white/5 text-slate-600 dark:text-slate-400"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
         </div>
       </div>
 

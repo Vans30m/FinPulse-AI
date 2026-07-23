@@ -104,7 +104,7 @@ export default function PortfolioPerformanceChart({
         </div>
       </div>
 
-      <div className="h-[220px] md:h-[320px] w-full">
+      <div className="w-full pb-4">
         <CandlestickChart
           customMultiData={mappedChartData}
           seriesKeys={seriesKeys}
