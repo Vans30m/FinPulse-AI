@@ -200,13 +200,13 @@ function HeatmapSkeleton() {
     <div className="space-y-4 animate-pulse">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-20 rounded-2xl border border-slate-900 bg-[#050711]/70" />
+          <div key={i} className="h-20 rounded-2xl border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70" />
         ))}
       </div>
-      <div className="h-52 rounded-2xl border border-slate-900 bg-[#050711]/70" />
+      <div className="h-52 rounded-2xl border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-28 rounded-2xl border border-slate-900 bg-[#050711]/70" />
+          <div key={i} className="h-28 rounded-2xl border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70" />
         ))}
       </div>
     </div>
@@ -276,21 +276,21 @@ export default function PerformanceHeatmap() {
   };
 
   return (
-    <section className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md relative">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 border-b border-slate-900 pb-4">
+    <section className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md relative">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 border-b border-slate-200 dark:border-slate-200 dark:border-slate-900 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <Calendar size={15} className="text-blue-400" />
-            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Performance Heatmap</span>
+            <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Performance Heatmap</span>
           </div>
-          <p className="text-xs text-slate-400 font-medium">Visualize your portfolio's daily performance over the last 365 days.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Visualize your portfolio's daily performance over the last 365 days.</p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => changeYear(-1)}
-            className="px-3 py-2 rounded-xl bg-[#050711] border border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1"
+            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-slate-800 dark:text-white transition-colors inline-flex items-center gap-1"
           >
             <ChevronLeft className="h-3.5 w-3.5" /> Previous Year
           </button>
@@ -305,7 +305,7 @@ export default function PerformanceHeatmap() {
             type="button"
             onClick={() => changeYear(1)}
             disabled={year >= currentYear + 1}
-            className="px-3 py-2 rounded-xl bg-[#050711] border border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-slate-800 dark:text-white transition-colors inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next Year <ChevronRight className="h-3.5 w-3.5" />
           </button>
@@ -317,8 +317,8 @@ export default function PerformanceHeatmap() {
       {loading ? (
         <HeatmapSkeleton />
       ) : noData ? (
-        <div className="rounded-2xl border border-slate-900 bg-[#050711]/65 p-10 text-center">
-          <p className="text-sm font-bold text-slate-300">No daily performance data available.</p>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/65 p-10 text-center">
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No daily performance data available.</p>
           <button
             type="button"
             onClick={() => {
@@ -355,22 +355,22 @@ export default function PerformanceHeatmap() {
           <HeatmapLegend className="mt-4" />
 
           <div className="mt-6">
-            <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">Monthly Summary</span>
+            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-200 dark:border-slate-900 pb-3 mb-4">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Monthly Summary</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {months.map((month) => (
-                <div key={month.monthLabel} className="rounded-2xl border border-slate-900 bg-[#050711]/70 p-4 text-xs">
+                <div key={month.monthLabel} className="rounded-2xl border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70 p-4 text-xs">
                   <p className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider">{month.monthLabel}</p>
                   <p className={month.averageReturn >= 0 ? "text-sm font-black text-emerald-400 mt-1.5" : "text-sm font-black text-rose-400 mt-1.5"}>
                     {month.averageReturn >= 0 ? "+" : ""}{month.averageReturn.toFixed(2)}%
                   </p>
-                  <div className="mt-2.5 space-y-1 text-[10px] text-slate-400">
+                  <div className="mt-2.5 space-y-1 text-[10px] text-slate-500 dark:text-slate-400">
                     <p>Best: <span className="text-emerald-400 font-bold">{month.best.portfolioReturn >= 0 ? "+" : ""}{month.best.portfolioReturn.toFixed(2)}%</span></p>
                     <p>Worst: <span className="text-rose-400 font-bold">{month.worst.portfolioReturn.toFixed(2)}%</span></p>
-                    <p>Winning Days: <span className="text-slate-200 font-semibold">{month.winning}</span></p>
-                    <p>Losing Days: <span className="text-slate-200 font-semibold">{month.losing}</span></p>
+                    <p>Winning Days: <span className="text-slate-750 dark:text-slate-200 font-semibold">{month.winning}</span></p>
+                    <p>Losing Days: <span className="text-slate-750 dark:text-slate-200 font-semibold">{month.losing}</span></p>
                   </div>
                 </div>
               ))}

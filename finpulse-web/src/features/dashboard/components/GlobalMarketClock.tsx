@@ -177,7 +177,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
                       <span className="text-xs font-mono font-black text-slate-900 dark:text-white">
                         {status.timeStr}
                       </span>
-                      <span className="text-[9px] text-slate-400 dark:text-slate-550 font-medium">
+                      <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
                         ({config.openTime} - {config.closeTime})
                       </span>
                     </div>

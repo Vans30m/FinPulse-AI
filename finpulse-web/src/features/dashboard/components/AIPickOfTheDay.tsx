@@ -93,6 +93,16 @@ export default function AIPickOfTheDay() {
 
   const brief = data!;
 
+  const getCurrencySymbol = (symbol: string) => {
+    const sym = (symbol || '').toUpperCase();
+    if (sym.endsWith('.NS') || sym.endsWith('.BO')) return '₹';
+    if (sym.endsWith('.L')) return '£';
+    if (sym.endsWith('.DE')) return '€';
+    return '$';
+  };
+
+  const cSymbol = getCurrencySymbol(brief.symbol);
+
   const getRecColors = (rec: string) => {
     const r = (rec || "").toLowerCase();
     if (r.includes("strong buy")) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
@@ -185,11 +195,11 @@ export default function AIPickOfTheDay() {
       <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-900 pt-4 mb-4 relative z-10">
         <div className="bg-slate-50/50 dark:bg-slate-950/30 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-900/60">
           <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">Target</span>
-          <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">${brief.target.toFixed(2)}</p>
+          <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{cSymbol}{brief.target.toFixed(2)}</p>
         </div>
-        <div className="bg-slate-50/50 dark:bg-slate-950/30 p-3 rounded-2xl border border-slate-200/60 dark:bg-slate-900/60">
+        <div className="bg-slate-50/50 dark:bg-slate-950/30 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-900/60">
           <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">Stop Loss</span>
-          <p className="text-xl font-black text-rose-600 dark:text-rose-400 mt-1">${brief.stopLoss.toFixed(2)}</p>
+          <p className="text-xl font-black text-rose-600 dark:text-rose-400 mt-1">{cSymbol}{brief.stopLoss.toFixed(2)}</p>
         </div>
       </div>
 

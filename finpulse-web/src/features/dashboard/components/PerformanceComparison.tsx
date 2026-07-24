@@ -23,6 +23,7 @@ import CumulativeReturnChart from "./performance/CumulativeReturnChart";
 import AIPortfolioAdvisorSection from "../../portfolio/components/AIPortfolioAdvisorSection";
 import API_BASE_URL from "../../../config/api";
 import { useAppData } from "../../../context/AppDataContext";
+import PageLoader from "../../../components/ui/PageLoader";
 
 import LightLogo from "../../../assets/Dark_Logo.png";
 import DarkLogo from "../../../assets/Light_Logo.png";
@@ -292,11 +293,7 @@ export default function PerformanceComparison() {
   const [activeTab, setActiveTab] = useState<"overview" | "metrics" | "constituents" | "ai">("overview");
  
   if (loading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Activity className="h-8 w-8 text-blue-500 animate-spin" />
-      </div>
-    );
+    return <PageLoader title="Performance Center" message="Analyzing risk metrics, calculating CAGR trajectories, and compiling benchmark comparison stats..." />;
   }
  
   // Render Premium Fallback/Zero State when Portfolio is Empty
@@ -305,14 +302,14 @@ export default function PerformanceComparison() {
       <div className="space-y-8 text-slate-100 font-sans selection:bg-blue-500/25 selection:text-white">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-white tracking-tight uppercase">Performance Analytics Center</h2>
-            <p className="text-xs text-slate-400 font-medium">Deep-dive metric matrices, alpha models, and solvency indicators.</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Performance Analytics Center</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Deep-dive metric matrices, alpha models, and solvency indicators.</p>
           </div>
         </div>
  
-        <div className="flex flex-col items-center justify-center text-center p-16 bg-[#121a2a]/45 border border-slate-900 rounded-3xl space-y-6">
+        <div className="flex flex-col items-center justify-center text-center p-16 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl space-y-6">
           <div className="h-16 w-16 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-            <Activity className="h-8 w-8 text-blue-400" />
+            <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
           <div className="space-y-2">
             <h3 className="text-xl font-bold text-white">Solvency & Performance Metrics Locked</h3>
@@ -322,7 +319,7 @@ export default function PerformanceComparison() {
           </div>
           <button
             onClick={() => navigate("/portfolio")}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-600/10"
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-slate-900 dark:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-600/10"
           >
             Go to Portfolio Dashboard
           </button>
@@ -348,13 +345,13 @@ export default function PerformanceComparison() {
       {/* HEADER SECTION WITH REFRESH TRIGGER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight uppercase">Performance Analytics Center</h2>
-          <p className="text-xs text-slate-400 font-medium">Deep-dive metric matrices, alpha models, and solvency indicators.</p>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Performance Analytics Center</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Deep-dive metric matrices, alpha models, and solvency indicators.</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
-            className="flex items-center gap-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all"
+            className="flex items-center gap-2 rounded-xl bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all"
           >
             <Activity className="h-4.5 w-4.5" />
             Recalculate Metrics
@@ -375,8 +372,8 @@ export default function PerformanceComparison() {
             onClick={() => setActiveTab(tab.id as any)}
             className={`px-5 py-3 border-b-2 text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
               activeTab === tab.id
-                ? "border-blue-500 text-blue-400 bg-blue-500/5 rounded-t-xl"
-                : "border-transparent text-slate-400 hover:text-white hover:border-slate-800"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-500/5 rounded-t-xl"
+                : "border-transparent text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-800"
             }`}
           >
             {tab.label}
@@ -395,11 +392,11 @@ export default function PerformanceComparison() {
           ].map((card, i) => (
             <div
               key={i}
-              className={`bg-[#121a2a]/45 backdrop-blur-md border border-slate-900 rounded-3xl p-5 shadow-lg bg-gradient-to-br ${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
+              className={`bg-white dark:bg-[#121a2a]/45 backdrop-blur-md border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-lg bg-gradient-to-br ${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
             >
               <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">{card.label}</span>
-              <h3 className="text-2xl font-black text-white tracking-tight mt-2">{card.val}</h3>
-              <span className="text-[10px] text-slate-400 block mt-1.5 font-medium">{card.desc}</span>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-2">{card.val}</h3>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1.5 font-medium">{card.desc}</span>
             </div>
           ))}
         </div>
@@ -409,17 +406,17 @@ export default function PerformanceComparison() {
       {activeTab === "overview" && (
         <div className="space-y-6 animate-fadeIn">
           {comparisonLoading ? (
-            <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-8 shadow-md text-center flex flex-col items-center justify-center space-y-4 min-h-[300px]">
+            <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-md text-center flex flex-col items-center justify-center space-y-4 min-h-[300px]">
               <Activity className="h-8 w-8 text-blue-500 animate-spin" />
-              <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">Loading Benchmark Performance...</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-widest">Loading Benchmark Performance...</p>
             </div>
           ) : comparisonError ? (
-            <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-8 shadow-md text-center flex flex-col items-center justify-center space-y-4 min-h-[300px]">
+            <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-md text-center flex flex-col items-center justify-center space-y-4 min-h-[300px]">
               <AlertCircle className="h-8 w-8 text-rose-500" />
-              <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">Unable to load benchmark.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-widest">Unable to load benchmark.</p>
               <button
                 onClick={() => fetchBenchmarkComparison()}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-slate-900 dark:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
               >
                 Retry
               </button>
@@ -430,8 +427,8 @@ export default function PerformanceComparison() {
               {comparisonData?.stats && (
                 <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${
                   comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
-                    ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400"
-                    : "bg-rose-500/5 border-rose-500/10 text-rose-450"
+                    ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "bg-rose-500/5 border-rose-500/10 text-rose-500 dark:text-rose-450"
                 }`}>
                   {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
                     <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -449,14 +446,14 @@ export default function PerformanceComparison() {
  
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Chart Block */}
-                <div className="lg:col-span-2 bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-3 mb-4">
+                <div className="lg:col-span-2 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
                     <div className="flex items-center gap-2">
-                      <LineChartIcon size={16} className="text-blue-400" />
+                      <LineChartIcon size={16} className="text-blue-600 dark:text-blue-400" />
                       <span className="text-xs font-black uppercase tracking-wider text-slate-400">Cumulative Return Comparison</span>
                     </div>
  
-                    <div className="flex flex-wrap bg-[#050711] p-1 rounded-xl border border-slate-900 gap-1">
+                    <div className="flex flex-wrap bg-slate-100 dark:bg-[#050711] p-1 rounded-xl border border-slate-200 dark:border-slate-900 gap-1">
                       {["1D", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "MAX"].map((tf) => (
                         <button
                           key={tf}
@@ -464,7 +461,7 @@ export default function PerformanceComparison() {
                           className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                             benchmarkTimeframe === tf
                               ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                              : "text-slate-400 hover:text-white"
+                              : "text-slate-400 hover:text-slate-900 dark:hover:text-white"
                           }`}
                         >
                           {tf}
@@ -480,8 +477,8 @@ export default function PerformanceComparison() {
                         onClick={() => setBenchmarkTicker(bench.symbol)}
                         className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border transition-all ${
                           benchmarkTicker === bench.symbol
-                            ? "bg-blue-600/10 text-blue-400 border-blue-500/20 shadow-inner"
-                            : "bg-[#050711]/40 text-slate-400 border-slate-900/60 hover:text-white"
+                            ? "bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-inner"
+                            : "bg-slate-50 dark:bg-[#050711]/40 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-900/60 hover:text-slate-900 dark:hover:text-white"
                         }`}
                       >
                         {bench.name}
@@ -491,55 +488,55 @@ export default function PerformanceComparison() {
  
                   {/* Stats Grid Above the Chart */}
                   {comparisonData?.stats && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6 border-b border-slate-900/60 pb-5">
-                      <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6 border-b border-slate-200 dark:border-slate-900/60 pb-5">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Portfolio Return</span>
-                        <span className="text-xs font-black text-emerald-400 font-mono block mt-1">
+                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono block mt-1">
                           {comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%
                         </span>
                       </div>
-                      <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Benchmark Return</span>
-                        <span className="text-xs font-black text-slate-300 font-mono block mt-1">
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 font-mono block mt-1">
                           {comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%
                         </span>
                       </div>
-                      <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Outperformance</span>
                         <span className={`text-xs font-black font-mono block mt-1 ${
-                          comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? "text-emerald-400" : "text-rose-450"
+                          comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-450"
                         }`}>
                           {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn) >= 0 ? "+" : ""}
                           {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%
                         </span>
                       </div>
-                      <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Alpha</span>
-                        <span className="text-xs font-black text-white font-mono block mt-1">
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
                           {comparisonData.stats.alpha >= 0 ? "+" : ""}{comparisonData.stats.alpha}
                         </span>
                       </div>
-                      <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Beta</span>
-                        <span className="text-xs font-black text-white font-mono block mt-1">
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
                           {comparisonData.stats.beta}
                         </span>
                       </div>
-                      <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Sharpe Ratio</span>
-                        <span className="text-xs font-black text-white font-mono block mt-1">
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
                           {comparisonData.stats.sharpeRatio}
                         </span>
                       </div>
-                      <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Volatility</span>
-                        <span className="text-xs font-black text-white font-mono block mt-1">
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
                           {comparisonData.stats.volatility}%
                         </span>
                       </div>
-                      <div className="bg-[#050711]/60 border border-slate-900/60 rounded-2xl p-3 text-center">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Max Drawdown</span>
-                        <span className="text-xs font-black text-rose-400 font-mono block mt-1">
+                        <span className="text-xs font-black text-rose-500 dark:text-rose-400 font-mono block mt-1">
                           {comparisonData.stats.maxDrawdown}%
                         </span>
                       </div>
@@ -548,7 +545,7 @@ export default function PerformanceComparison() {
  
                   <div className="w-full mt-2">
                     {(!comparisonData || processedSeries.length === 0) ? (
-                      <div className="h-[300px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-[#050711]/45 border border-slate-900 rounded-3xl">
+                      <div className="h-[300px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-900 rounded-3xl">
                         Not enough historical data available.
                       </div>
                     ) : (
@@ -562,30 +559,30 @@ export default function PerformanceComparison() {
                 </div>
  
                 {/* Statistics Panel */}
-                <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
+                <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
                       <span className="text-xs font-black uppercase tracking-wider text-slate-400">Benchmark Comparison stats</span>
                       <div className="flex items-center gap-1 bg-[#050711] px-2.5 py-1 rounded-xl border border-slate-900 text-xs">
                         <span className="text-[10px] text-slate-500 font-bold uppercase mr-1">Active:</span>
-                        <span className="text-white font-extrabold">{BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name}</span>
+                        <span className="text-slate-900 dark:text-white font-extrabold">{BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name}</span>
                       </div>
                     </div>
  
                     {comparisonData?.stats && (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-[#050711]/60 border border-slate-900 rounded-xl p-3">
+                          <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-xl p-3">
                             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Portfolio Return</span>
-                            <span className="text-sm font-black text-emerald-400 font-mono block mt-1">{comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%</span>
+                            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono block mt-1">{comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%</span>
                           </div>
-                          <div className="bg-[#050711]/60 border border-slate-900 rounded-xl p-3">
+                          <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-xl p-3">
                             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Benchmark Return</span>
-                            <span className="text-sm font-black text-slate-200 font-mono block mt-1">{comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%</span>
+                            <span className="text-sm font-black text-slate-700 dark:text-slate-200 font-mono block mt-1">{comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%</span>
                           </div>
                         </div>
  
-                        <div className="space-y-2 border-t border-slate-900/60 pt-3">
+                        <div className="space-y-2 border-t border-slate-200 dark:border-slate-900/60 pt-3">
                           {[
                             { label: "Alpha (Excess Return)", value: `${comparisonData.stats.alpha >= 0 ? "+" : ""}${comparisonData.stats.alpha}` },
                             { label: "Beta (Systemic Risk)", value: comparisonData.stats.beta },
@@ -596,8 +593,8 @@ export default function PerformanceComparison() {
                             { label: "Max Drawdown", value: `${comparisonData.stats.maxDrawdown}%` },
                             { label: "Portfolio Volatility", value: `${comparisonData.stats.volatility}%` }
                           ].map((stat, idx) => (
-                            <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-900/60 text-xs">
-                              <span className="text-slate-400 font-medium">{stat.label}</span>
+                            <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-205 dark:border-slate-900/60 text-xs">
+                              <span className="text-slate-500 dark:text-slate-400 font-medium">{stat.label}</span>
                               <span className="font-mono font-black text-white">{stat.value}</span>
                             </div>
                           ))}
@@ -610,9 +607,9 @@ export default function PerformanceComparison() {
  
               {/* Alpha & Beta Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-                  <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-                    <TrendingUp size={15} className="text-emerald-400" />
+                <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md">
+                  <div className="flex items-center gap-2 border-b border-slate-205 dark:border-slate-900 pb-3 mb-4">
+                    <TrendingUp size={15} className="text-emerald-600 dark:text-emerald-400" />
                     <span className="text-xs font-black uppercase tracking-wider text-slate-400">Top Alpha Contributors</span>
                   </div>
  
@@ -623,14 +620,14 @@ export default function PerformanceComparison() {
                       contributors.map((c, i) => {
                         const displayVal = cSymbol === '₹' ? c.profit * usdToInrRate : c.profit;
                         return (
-                          <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
+                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl">
                             <div>
                               <span className="text-xs font-black text-white">{c.symbol}</span>
                               <span className="text-[10px] text-slate-500 block">{c.name}</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-black text-emerald-400 font-mono">{c.return}</span>
-                              <span className="text-[10px] text-slate-400 block font-mono">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
+                              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{c.return}</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-500 dark:text-slate-400 block font-mono">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
                             </div>
                           </div>
                         );
@@ -639,27 +636,27 @@ export default function PerformanceComparison() {
                   </div>
                 </div>
  
-                <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
+                <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md">
                   <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-                    <TrendingDown size={15} className="text-rose-400" />
+                    <TrendingDown size={15} className="text-rose-500 dark:text-rose-400" />
                     <span className="text-xs font-black uppercase tracking-wider text-slate-400">Biggest Beta Underperformers</span>
                   </div>
  
                   <div className="space-y-3">
                     {losses.length === 0 ? (
-                      <div className="text-slate-550 text-xs py-4 font-bold text-center">No negative assets currently.</div>
+                      <div className="text-slate-500 text-xs py-4 font-bold text-center">No negative assets currently.</div>
                     ) : (
                       losses.map((l, i) => {
                         const displayVal = cSymbol === '₹' ? Math.abs(l.loss) * usdToInrRate : Math.abs(l.loss);
                         return (
-                          <div key={i} className="flex justify-between items-center p-3 bg-[#050711]/60 border border-slate-900 rounded-2xl">
+                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl">
                             <div>
                               <span className="text-xs font-black text-white">{l.symbol}</span>
                               <span className="text-[10px] text-slate-500 block">{l.name}</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-black text-rose-400 font-mono">{l.return}</span>
-                              <span className="text-[10px] text-slate-400 block font-mono">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
+                              <span className="text-xs font-black text-rose-500 dark:text-rose-400 font-mono">{l.return}</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-500 dark:text-slate-400 block font-mono">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
                             </div>
                           </div>
                         );
@@ -675,21 +672,21 @@ export default function PerformanceComparison() {
  
       {activeTab === "metrics" && (
         <div className="space-y-8 animate-fadeIn">
-          <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-6 shadow-md">
-            <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">Portfolio Allocation Benchmark Radar</h3>
-            <p className="text-xs text-slate-400 mb-6">Visual comparison of sector distributions and risks against selected benchmarks.</p>
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-6 shadow-md">
+            <h3 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider mb-2">Portfolio Allocation Benchmark Radar</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Visual comparison of sector distributions and risks against selected benchmarks.</p>
             <BenchmarkRadarSection />
           </div>
  
-          <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-6 shadow-md">
-            <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">Performance Calendar Heatmap</h3>
-            <p className="text-xs text-slate-400 mb-6">Historical ledger return heatmaps categorized by day, week, or month.</p>
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-6 shadow-md">
+            <h3 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider mb-2">Performance Calendar Heatmap</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Historical ledger return heatmaps categorized by day, week, or month.</p>
             <PerformanceHeatmap />
           </div>
  
-          <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-6 shadow-md">
-            <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">Rolling CAGR Charts</h3>
-            <p className="text-xs text-slate-400 mb-6">Compounded Annual Growth Rates measured over dynamic holding timeframes.</p>
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-6 shadow-md">
+            <h3 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider mb-2">Rolling CAGR Charts</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Compounded Annual Growth Rates measured over dynamic holding timeframes.</p>
             <RollingCagrSection />
           </div>
         </div>
@@ -698,11 +695,11 @@ export default function PerformanceComparison() {
       {activeTab === "constituents" && (
         <div className="space-y-6 animate-fadeIn">
           {comparisonData?.constituents ? (
-            <div className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-4">
+            <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-900 pb-4">
                 <div>
-                  <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Layers className="h-4.5 w-4.5 text-blue-400" />
+                  <h4 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                    <Layers className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
                     Benchmark Constituents & Weights
                   </h4>
                   <p className="text-[10px] text-slate-400 mt-0.5">Real-time Yahoo Finance constituent quotes and comparative returns.</p>
@@ -716,13 +713,13 @@ export default function PerformanceComparison() {
                       placeholder="Search constituents..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 pr-4 py-1.5 bg-[#050711] border border-slate-900 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-44"
+                      className="pl-8 pr-4 py-1.5 bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-44"
                     />
                     <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
                   </div>
  
                   {/* Limit Filters */}
-                  <div className="flex bg-[#050711] p-1 rounded-xl border border-slate-900 text-[10px] font-black uppercase text-slate-400">
+                  <div className="flex bg-slate-100 dark:bg-[#050711] p-1 rounded-xl border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase text-slate-400">
                     {[
                       { label: "Top 10", val: "10" },
                       { label: "Top 25", val: "25" },
@@ -733,7 +730,7 @@ export default function PerformanceComparison() {
                         key={lim.val}
                         onClick={() => setConstituentLimit(lim.val)}
                         className={`px-2.5 py-1 rounded-lg transition-all ${
-                          constituentLimit === lim.val ? "bg-blue-600/10 text-blue-400" : "hover:text-white"
+                          constituentLimit === lim.val ? "bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-600 dark:text-blue-400" : "hover:text-slate-900 dark:hover:text-white"
                         }`}
                       >
                         {lim.label}
@@ -746,34 +743,34 @@ export default function PerformanceComparison() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-950 text-slate-400 font-bold uppercase tracking-wider text-[10px] hover:bg-transparent">
+                    <tr className="border-b border-slate-200 dark:border-slate-950 text-slate-500 dark:text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] hover:bg-transparent">
                       <th className="py-3 px-2">Constituent Company</th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => {
                         setSortField("weight");
                         setSortDirection(prev => prev === "desc" ? "asc" : "desc");
                       }}>
                         Weight <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
                       </th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-white hidden sm:table-cell" onClick={() => {
+                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white hidden sm:table-cell" onClick={() => {
                         setSortField("price");
                         setSortDirection(prev => prev === "desc" ? "asc" : "desc");
                       }}>
                         Current Price <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
                       </th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-white" onClick={() => {
+                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => {
                         setSortField("timeframeReturn");
                         setSortDirection(prev => prev === "desc" ? "asc" : "desc");
                       }}>
                         {benchmarkTimeframe} Return % <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
                       </th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-white hidden sm:table-cell" onClick={() => {
+                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white hidden sm:table-cell" onClick={() => {
                         setSortField("dailyChange");
                         setSortDirection(prev => prev === "desc" ? "asc" : "desc");
                       }}>
                         Daily Change % <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
                       </th>
                       <th className="py-3 px-2 hidden md:table-cell">Sector</th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-white hidden md:table-cell" onClick={() => {
+                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white hidden md:table-cell" onClick={() => {
                         setSortField("marketCap");
                         setSortDirection(prev => prev === "desc" ? "asc" : "desc");
                       }}>
@@ -783,17 +780,17 @@ export default function PerformanceComparison() {
                   </thead>
                   <tbody>
                     {sortedAndFilteredConstituents.map((con, idx) => (
-                      <tr key={idx} className="border-b border-slate-900 hover:bg-[#050711]/40 transition-colors group relative">
+                      <tr key={idx} className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-[#050711]/40 transition-colors group relative">
                         <td className="py-3.5 px-2 flex items-center gap-2.5">
                           {con.logo ? (
                             <img src={con.logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="w-6 h-6 rounded-lg bg-slate-900 border border-slate-800 p-0.5 object-contain" />
                           ) : (
-                            <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] text-blue-400 font-bold font-mono">
+                            <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] text-blue-600 dark:text-blue-400 font-bold font-mono">
                               {con.symbol.slice(0, 2)}
                             </div>
                           )}
                           <div>
-                            <span className="font-extrabold text-white block">{con.name}</span>
+                            <span className="font-extrabold text-slate-900 dark:text-white block">{con.name}</span>
                             <span className="font-mono text-[9px] text-slate-500 uppercase">{con.symbol}</span>
                           </div>
                         </td>
@@ -803,13 +800,13 @@ export default function PerformanceComparison() {
                         <td className="py-3.5 px-2 font-mono font-bold text-slate-200 hidden sm:table-cell">
                           {con.price ? `$${con.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
                         </td>
-                        <td className={`py-3.5 px-2 font-mono font-bold ${con.timeframeReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                        <td className={`py-3.5 px-2 font-mono font-bold ${con.timeframeReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                           {con.timeframeReturn >= 0 ? "+" : ""}{con.timeframeReturn}%
                         </td>
-                        <td className={`py-3.5 px-2 font-mono font-bold ${con.dailyChange >= 0 ? "text-emerald-400" : "text-rose-400"} hidden sm:table-cell`}>
+                        <td className={`py-3.5 px-2 font-mono font-bold ${con.dailyChange >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"} hidden sm:table-cell`}>
                           {con.dailyChange >= 0 ? "+" : ""}{con.dailyChange?.toFixed(2)}%
                         </td>
-                        <td className="py-3.5 px-2 text-slate-400 font-medium hidden md:table-cell">
+                        <td className="py-3.5 px-2 text-slate-500 dark:text-slate-400 font-medium hidden md:table-cell">
                           {con.sector}
                         </td>
                         <td className="py-3.5 px-2 font-mono font-medium text-slate-400 hidden md:table-cell">
@@ -817,15 +814,15 @@ export default function PerformanceComparison() {
                         </td>
  
                         {/* Hover Tooltip card details */}
-                        <div className="absolute left-1/4 bottom-full mb-2 hidden group-hover:block bg-[#050711]/95 border border-slate-900 p-3.5 rounded-2xl shadow-2xl z-50 min-w-[200px] pointer-events-none backdrop-blur-md">
-                          <span className="block text-[9px] font-black uppercase tracking-wider text-blue-400 border-b border-slate-900 pb-1 mb-2">{con.name} metrics</span>
+                        <div className="absolute left-1/4 bottom-full mb-2 hidden group-hover:block bg-white dark:bg-[#050711]/95 border border-slate-200 dark:border-slate-900 p-3.5 rounded-2xl shadow-2xl z-50 min-w-[200px] pointer-events-none backdrop-blur-md">
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 border-b border-slate-900 pb-1 mb-2">{con.name} metrics</span>
                           <div className="space-y-1.5 text-[10px]">
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Sector:</span><span className="text-slate-300 font-semibold">{con.sector}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Industry:</span><span className="text-slate-300 font-semibold">{con.industry}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">PE Ratio:</span><span className="text-slate-300 font-mono font-semibold">{con.pe ? con.pe.toFixed(2) : "—"}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Dividend Yield:</span><span className="text-slate-300 font-mono font-semibold">{con.dividendYield ? `${(con.dividendYield * 100).toFixed(2)}%` : "—"}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W High:</span><span className="text-emerald-400 font-mono font-semibold">${con.fiftyTwoWeekHigh?.toFixed(2)}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W Low:</span><span className="text-rose-450 font-mono font-semibold">${con.fiftyTwoWeekLow?.toFixed(2)}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Sector:</span><span className="text-slate-750 dark:text-slate-300 font-semibold">{con.sector}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Industry:</span><span className="text-slate-750 dark:text-slate-300 font-semibold">{con.industry}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">PE Ratio:</span><span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">{con.pe ? con.pe.toFixed(2) : "—"}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Dividend Yield:</span><span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">{con.dividendYield ? `${(con.dividendYield * 100).toFixed(2)}%` : "—"}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W High:</span><span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">${con.fiftyTwoWeekHigh?.toFixed(2)}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W Low:</span><span className="text-rose-500 dark:text-rose-450 font-mono font-semibold">${con.fiftyTwoWeekLow?.toFixed(2)}</span></div>
                           </div>
                         </div>
                       </tr>
@@ -835,7 +832,7 @@ export default function PerformanceComparison() {
               </div>
             </div>
           ) : (
-            <div className="h-[200px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-[#050711]/45 border border-slate-900 rounded-3xl">
+            <div className="h-[200px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-900 rounded-3xl">
               No constituents available for the selected benchmark.
             </div>
           )}
@@ -847,13 +844,13 @@ export default function PerformanceComparison() {
           {/* AI Portfolio Advisor */}
           {advisorLoading ? (
             <div className="glass-panel p-8 flex flex-col items-center justify-center min-h-[200px] border border-slate-900 bg-[#121a2a]/45 rounded-3xl">
-              <Activity className="w-8 h-8 animate-spin text-cyan-400" />
-              <p className="text-xs text-slate-400 mt-3 font-mono">Synchronizing advisor insights...</p>
+              <Activity className="w-8 h-8 animate-spin text-blue-600 dark:text-cyan-400" />
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-mono">Synchronizing advisor insights...</p>
             </div>
           ) : advisorData ? (
             <AIPortfolioAdvisorSection advisor={advisorData} />
           ) : (
-            <div className="p-8 text-center text-slate-400 bg-[#121a2a]/45 border border-slate-900 rounded-3xl text-xs font-black uppercase tracking-widest">
+            <div className="p-8 text-center text-slate-400 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl text-xs font-black uppercase tracking-widest">
               AI Advisor Coach has no insights for the current holdings.
             </div>
           )}
@@ -864,26 +861,26 @@ export default function PerformanceComparison() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5 mt-8">
         {/* Metric Glossary */}
         <div className="bg-gradient-to-br from-[#121a2a]/40 to-[#0a0f1d]/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-4 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-500">
-          <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2 pl-2">
-            <Layers className="h-4 w-4 text-blue-400" />
+          <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-2 pl-2">
+            <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             Performance Metrics Glossary
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px] pl-2">
             <div className="space-y-1">
-              <span className="font-extrabold text-blue-400 block">Alpha (Excess Return)</span>
-              <p className="text-slate-400 leading-relaxed">Measures the portfolio's active return against a benchmark. A positive alpha indicates outperforming the index.</p>
+              <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Alpha (Excess Return)</span>
+              <p className="text-slate-650 dark:text-slate-400 leading-relaxed">Measures the portfolio's active return against a benchmark. A positive alpha indicates outperforming the index.</p>
             </div>
             <div className="space-y-1">
-              <span className="font-extrabold text-blue-400 block">Beta (Systemic Risk)</span>
-              <p className="text-slate-400 leading-relaxed">Indicates sensitivity to market movements. A Beta of 1.0 matches the benchmark; &gt;1.0 implies higher volatility.</p>
+              <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Beta (Systemic Risk)</span>
+              <p className="text-slate-650 dark:text-slate-400 leading-relaxed">Indicates sensitivity to market movements. A Beta of 1.0 matches the benchmark; &gt;1.0 implies higher volatility.</p>
             </div>
             <div className="space-y-1">
-              <span className="font-extrabold text-blue-400 block">Sharpe Ratio</span>
-              <p className="text-slate-400 leading-relaxed">Quantifies risk-adjusted return. Higher values (&gt;1.5) indicate efficient returns per unit of volatility risk.</p>
+              <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Sharpe Ratio</span>
+              <p className="text-slate-650 dark:text-slate-400 leading-relaxed">Quantifies risk-adjusted return. Higher values (&gt;1.5) indicate efficient returns per unit of volatility risk.</p>
             </div>
             <div className="space-y-1">
-              <span className="font-extrabold text-blue-400 block">Max Drawdown</span>
-              <p className="text-slate-400 leading-relaxed">Represents the maximum observed peak-to-trough drop in value, signaling worst-case historical risk exposure.</p>
+              <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Max Drawdown</span>
+              <p className="text-slate-650 dark:text-slate-400 leading-relaxed">Represents the maximum observed peak-to-trough drop in value, signaling worst-case historical risk exposure.</p>
             </div>
           </div>
         </div>
@@ -891,11 +888,11 @@ export default function PerformanceComparison() {
         {/* Compliance Card */}
         <div className="bg-gradient-to-br from-[#121a2a]/40 to-[#0a0f1d]/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-4 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500">
           <div className="space-y-2 pl-2">
-            <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+            <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-amber-400" />
               Regulatory Compliance & Disclosures
             </h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-650 dark:text-slate-400 leading-relaxed">
               All performance metrics, mock calculations, and simulated returns generated on this analytics dashboard are purely illustrative. FinPulse AI does not act as a SEBI or SEC registered investment advisor. Backtested results do not guarantee future asset performance.
             </p>
           </div>

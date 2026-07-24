@@ -9,17 +9,19 @@ import {
   YAxis,
 } from "recharts";
 import type { RollingCagrPoint } from "./rollingCagrTypes";
+import { useTheme } from "../../../../context/ThemeContext";
 
 interface Props {
   data: RollingCagrPoint[];
 }
 
 export default function RollingCagrChart({ data }: Props) {
+  const { theme } = useTheme();
   return (
-    <div className="bg-[#050711]/65 border border-slate-900 rounded-2xl p-4 h-[360px]">
+    <div className="bg-slate-50 dark:bg-[#050711]/65 border border-slate-200 dark:border-slate-900 rounded-2xl p-4 h-[360px]">
       <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <LineChart data={data} margin={{ top: 10, right: 14, left: -8, bottom: 4 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#0f172a" />
+          <CartesianGrid strokeDasharray="3 3" stroke={theme === "dark" ? "#0f172a" : "#e2e8f0"} />
           <XAxis dataKey="period" stroke="#64748b" fontSize={10} tickLine={false} />
           <YAxis stroke="#64748b" fontSize={10} tickLine={false} tickFormatter={(v) => `${v}%`} />
           <Tooltip

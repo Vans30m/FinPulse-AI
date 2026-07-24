@@ -115,14 +115,14 @@ export default function RollingCagrSection() {
   ];
 
   return (
-    <section className="bg-[#121a2a]/45 border border-slate-900 rounded-3xl p-5 shadow-md">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 border-b border-slate-900 pb-4">
+    <section className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-205 dark:border-slate-900 rounded-3xl p-5 shadow-md">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-4">
         <div>
-          <h3 className="text-lg font-black text-white tracking-tight uppercase">Rolling CAGR</h3>
-          <p className="text-xs text-slate-400 font-medium mt-1">Compounded annual growth trajectory across rolling windows and benchmark overlays.</p>
+          <h3 className="text-lg font-black text-slate-900 dark:text-slate-800 dark:text-white tracking-tight uppercase">Rolling CAGR</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Compounded annual growth trajectory across rolling windows and benchmark overlays.</p>
         </div>
 
-        <div className="flex bg-[#050711] p-1 rounded-xl border border-slate-900 w-fit">
+        <div className="flex bg-slate-50 dark:bg-[#050711] p-1 rounded-xl border border-slate-205 dark:border-slate-900 w-fit">
           {timeframeOptions.map((option) => (
             <button
               key={option}
@@ -134,7 +134,7 @@ export default function RollingCagrSection() {
                 }, 180);
               }}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                timeframe === option ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md" : "text-slate-400 hover:text-white"
+                timeframe === option ? "bg-gradient-to-r from-blue-600 to-blue-500 text-slate-900 dark:text-slate-800 dark:text-white shadow-md" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-800 dark:text-white"
               }`}
             >
               {option}
@@ -147,14 +147,14 @@ export default function RollingCagrSection() {
         <div className="space-y-4 animate-pulse">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-28 rounded-2xl border border-slate-900 bg-[#050711]/70" />
+              <div key={i} className="h-28 rounded-2xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70" />
             ))}
           </div>
-          <div className="h-[360px] rounded-2xl border border-slate-900 bg-[#050711]/70" />
+          <div className="h-[360px] rounded-2xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70" />
         </div>
       ) : empty ? (
-        <div className="rounded-2xl border border-slate-900 bg-[#050711]/70 p-10 text-center">
-          <p className="text-sm font-bold text-slate-300">No CAGR series available for selected range.</p>
+        <div className="rounded-2xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70 p-10 text-center">
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No CAGR series available for selected range.</p>
           <button
             type="button"
             onClick={() => {
@@ -173,17 +173,17 @@ export default function RollingCagrSection() {
           <RollingCagrChart data={data} />
 
           <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3 border-b border-slate-900 pb-3">
+            <div className="bg-slate-50 dark:bg-[#050711]/70 border border-slate-205 dark:border-slate-900 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-3">
                 <Trophy className="h-4 w-4 text-blue-400" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-400">Benchmark Comparison</span>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Benchmark Comparison</span>
               </div>
 
               <div className="space-y-2.5">
                 {benchmarkComparison.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between rounded-xl border border-slate-900 bg-[#050711]/80 p-3">
+                  <div key={item.label} className="flex items-center justify-between rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/80 p-3">
                     <div>
-                      <p className="text-xs font-black text-white">{item.label}</p>
+                      <p className="text-xs font-black text-slate-900 dark:text-slate-800 dark:text-white">{item.label}</p>
                       <p className="text-[10px] text-slate-500 mt-0.5">Benchmark CAGR {item.value.toFixed(2)}%</p>
                     </div>
                     <div className="text-right">
@@ -199,46 +199,46 @@ export default function RollingCagrSection() {
               </div>
             </div>
 
-            <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3 border-b border-slate-900 pb-3">
+            <div className="bg-slate-50 dark:bg-[#050711]/70 border border-slate-205 dark:border-slate-900 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-3">
                 <BarChart3 className="h-4 w-4 text-cyan-400" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-400">CAGR Statistics</span>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">CAGR Statistics</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-xl border border-slate-900 bg-[#050711]/85 p-3">
+                  <div key={stat.label} className="rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-slate-50/50 dark:bg-[#050711]/85 p-3">
                     <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">{stat.label}</p>
-                    <p className="text-xs font-black text-white font-mono mt-1.5">{stat.value}</p>
+                    <p className="text-xs font-black text-slate-900 dark:text-slate-800 dark:text-white font-mono mt-1.5">{stat.value}</p>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="mt-4 bg-[#050711]/70 border border-slate-900 rounded-2xl p-4">
-            <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-3">
+          <div className="mt-4 bg-slate-50 dark:bg-[#050711]/70 border border-slate-205 dark:border-slate-900 rounded-2xl p-4">
+            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-3 mb-3">
               <Sparkles className="h-4 w-4 text-purple-400" />
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">AI CAGR Insights</span>
+              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">AI CAGR Insights</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {insights.map((insight) => (
-                <div key={insight} className="rounded-xl border border-slate-900 bg-[#050711]/85 p-3 text-xs text-slate-300">
+                <div key={insight} className="rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-slate-50/50 dark:bg-[#050711]/85 p-3 text-xs text-slate-700 dark:text-slate-300">
                   {insight}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-slate-900 bg-[#050711]/70 overflow-hidden">
+          <div className="mt-4 rounded-2xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70 overflow-hidden">
             <button
               type="button"
               onClick={() => setExpanded((prev) => !prev)}
               className="w-full px-4 py-3 flex items-center justify-between text-left"
             >
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400 inline-flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 inline-flex items-center gap-2">
                 <Info className="h-3.5 w-3.5 text-indigo-400" /> What is CAGR?
               </span>
-              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
+              <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
             </button>
 
             <AnimatePresence initial={false}>
@@ -249,7 +249,7 @@ export default function RollingCagrSection() {
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="px-4 pb-4 text-xs text-slate-300 leading-relaxed border-t border-slate-900">
+                  <div className="px-4 pb-4 text-xs text-slate-700 dark:text-slate-300 leading-relaxed border-t border-slate-205 dark:border-slate-900">
                     CAGR (Compound Annual Growth Rate) reflects the smoothed annual growth of an investment over a period, assuming profits are reinvested.
                     It helps compare strategies across different horizons by normalizing volatile returns into a consistent annualized metric.
                   </div>
@@ -261,25 +261,25 @@ export default function RollingCagrSection() {
           <div className="mt-4 flex flex-wrap gap-2 justify-end">
             <button
               onClick={() => exportChartSeries(data, timeframe)}
-              className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
             >
               <FileText className="h-3.5 w-3.5 text-blue-400" /> Export CSV
             </button>
             <button
               onClick={() => exportChartSeries(data, timeframe)}
-              className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
             >
               <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" /> Export Excel
             </button>
             <button
               onClick={() => window.print()}
-              className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
             >
               <Download className="h-3.5 w-3.5 text-purple-400" /> Export PDF
             </button>
             <button
               onClick={() => exportChartSeries(data, timeframe)}
-              className="px-3.5 py-2 rounded-xl bg-[#050711] hover:bg-slate-900 border border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
             >
               <BarChart3 className="h-3.5 w-3.5 text-cyan-400" /> Download Chart
             </button>

@@ -181,8 +181,8 @@ export default function MyAlertsDashboard() {
 
       {/* 2. TABS SELECTOR */}
       <div className="flex border-b border-slate-200 dark:border-white/15 gap-4">
-        <button onClick={() => setActiveTab('alerts')} className={`pb-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'alerts' ? 'border-blue-600 text-blue-600 dark:border-cyan-400 dark:text-cyan-400' : 'border-transparent text-slate-550'}`}>Active Triggers</button>
-        <button onClick={() => setActiveTab('history')} className={`pb-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'history' ? 'border-blue-600 text-blue-600 dark:border-cyan-400 dark:text-cyan-400' : 'border-transparent text-slate-550'}`}>Trigger History</button>
+        <button onClick={() => setActiveTab('alerts')} className={`pb-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'alerts' ? 'border-blue-600 text-blue-600 dark:border-cyan-400 dark:text-cyan-400' : 'border-transparent text-slate-500'}`}>Active Triggers</button>
+        <button onClick={() => setActiveTab('history')} className={`pb-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'history' ? 'border-blue-600 text-blue-600 dark:border-cyan-400 dark:text-cyan-400' : 'border-transparent text-slate-500'}`}>Trigger History</button>
       </div>
 
       {/* 3. ALERTS / TRIGGERS CONTENT DISPLAY */}
@@ -245,7 +245,7 @@ export default function MyAlertsDashboard() {
                           {alert.isTriggered ? 'Triggered' : alert.enabled ? 'Active' : 'Paused'}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-550 dark:text-slate-400 mt-0.5">Condition: {alert.direction} target price <strong className="font-mono">${alert.targetPrice.toFixed(2)}</strong></p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Condition: {alert.direction} target price <strong className="font-mono">${alert.targetPrice.toFixed(2)}</strong></p>
                       {alert.notes && <p className="text-[10px] text-slate-400 italic mt-0.5">Note: {alert.notes}</p>}
                     </div>
                   </div>
@@ -277,7 +277,7 @@ export default function MyAlertsDashboard() {
                       {h.alert?.ticker || 'ASSET'}
                       <span className="text-xs font-mono text-emerald-500">Triggered at ${h.triggeredPrice.toFixed(2)}</span>
                     </h4>
-                    <p className="text-[11px] text-slate-550 dark:text-slate-400 mt-0.5">Trigger condition reached on {new Date(h.triggeredAt).toLocaleString()}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Trigger condition reached on {new Date(h.triggeredAt).toLocaleString()}</p>
                   </div>
                   <span className="text-[9px] uppercase font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg">Success</span>
                 </div>
@@ -341,7 +341,7 @@ export default function MyAlertsDashboard() {
                     className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all ${
                       newDirection === "ABOVE"
                         ? "bg-blue-600 text-white shadow-md shadow-blue-500/10"
-                        : "text-slate-550 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                     }`}
                   >
                     Above (&gt;)
@@ -352,7 +352,7 @@ export default function MyAlertsDashboard() {
                     className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all ${
                       newDirection === "BELOW"
                         ? "bg-blue-600 text-white shadow-md shadow-blue-500/10"
-                        : "text-slate-550 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                     }`}
                   >
                     Below (&lt;)

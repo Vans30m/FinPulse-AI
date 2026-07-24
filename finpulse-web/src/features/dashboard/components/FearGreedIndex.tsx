@@ -242,7 +242,7 @@ export default function FearGreedIndex() {
       {/* Historical indicators */}
       <div className="pt-3.5 border-t border-slate-105/10 dark:border-slate-800/80 grid grid-cols-3 gap-2.5 text-center text-xs">
         <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2 sm:p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
-          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-555 tracking-wider">Yesterday</span>
+          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-wider">Yesterday</span>
           <span className="font-black text-slate-800 dark:text-slate-200 mt-1 block">
             {brief.yesterday}
           </span>
@@ -252,7 +252,7 @@ export default function FearGreedIndex() {
         </div>
         
         <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2 sm:p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
-          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-555 tracking-wider">Last Week</span>
+          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-wider">Last Week</span>
           <span className="font-black text-slate-800 dark:text-slate-200 mt-1 block">
             {brief.lastWeek}
           </span>
@@ -262,7 +262,7 @@ export default function FearGreedIndex() {
         </div>
 
         <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2 sm:p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
-          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-555 tracking-wider">Last Month</span>
+          <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-wider">Last Month</span>
           <span className="font-black text-slate-800 dark:text-slate-200 mt-1 block">
             {brief.lastMonth}
           </span>
