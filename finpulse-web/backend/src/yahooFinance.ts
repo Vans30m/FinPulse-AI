@@ -18,12 +18,71 @@ export function getRandomUserAgent(): string {
   return USER_AGENTS[index];
 }
 
-// Set up optional Proxy Agent to route all traffic (Vercel/Render resilience)
-const proxyUrl = process.env.PROXY_URL || process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
-const proxyAgent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-if (proxyAgent) {
-  console.log(`[Yahoo Service] Initialized HttpsProxyAgent with proxy configuration.`);
+// Resolve paths for ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const proxiesFilePath = path.join(__dirname, '..', 'proxies.txt');
+
+function formatProxyUrl(rawUrl: string): string {
+  let url = rawUrl.trim();
+  if (!url) return '';
+
+  // Convert ip:port:user:pass Webshare format to standard http://user:pass@ip:port
+  const parts = url.split(':');
+  if (parts.length === 4) {
+    const [ip, port, user, pass] = parts;
+    return `http://${user}:${pass}@${ip}:${port}`;
+  }
+
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `http://${url}`;
+  }
+  return url;
+}
+
+let proxyUrls: string[] = [];
+
+// Try to load from proxies.txt
+try {
+  if (fs.existsSync(proxiesFilePath)) {
+    const fileContent = fs.readFileSync(proxiesFilePath, 'utf-8');
+    proxyUrls = fileContent.split('\n')
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith('#'))
+      .map(formatProxyUrl)
+      .filter(Boolean);
+    console.log(`[Yahoo Service] Loaded ${proxyUrls.length} proxies from proxies.txt`);
+  }
+} catch (err: any) {
+  console.warn(`[Yahoo Service] Failed to read proxies.txt:`, err.message);
+}
+
+// Fall back to environment variables if proxies.txt wasn't found or was empty
+if (proxyUrls.length === 0) {
+  const proxyUrlString = process.env.PROXIES || process.env.PROXY_URL || process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+  if (proxyUrlString) {
+    proxyUrls = proxyUrlString.split(',')
+      .map(p => p.trim())
+      .filter(Boolean)
+      .map(formatProxyUrl)
+      .filter(Boolean);
+  }
+}
+
+const proxyAgents = proxyUrls.map(url => new HttpsProxyAgent<string>(url));
+
+if (proxyAgents.length > 0) {
+  console.log(`[Yahoo Service] Initialized ${proxyAgents.length} rotating HttpsProxyAgents.`);
+}
+
+export function getProxyAgent(): HttpsProxyAgent<string> | undefined {
+  if (proxyAgents.length === 0) return undefined;
+  const index = Math.floor(Math.random() * proxyAgents.length);
+  return proxyAgents[index];
 }
 
 export const yahooFinance = new YahooFinance({
@@ -65,8 +124,9 @@ const originalModuleExec = (yahooFinance as any)._moduleExec;
   opts.fetchOptions.headers['Origin'] = 'https://finance.yahoo.com';
 
   // Attach proxy agent if configured
-  if (proxyAgent) {
-    opts.fetchOptions.agent = proxyAgent;
+  const agent = getProxyAgent();
+  if (agent) {
+    opts.fetchOptions.agent = agent;
   }
 
   return originalModuleExec.call(this, opts);
@@ -174,7 +234,7 @@ async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
       'Referer': 'https://finance.yahoo.com/',
       'Origin': 'https://finance.yahoo.com'
     },
-    httpsAgent: proxyAgent,
+    httpsAgent: getProxyAgent(),
     timeout: 10000
   });
 
@@ -237,26 +297,89 @@ function setTwelveDataRateLimited() {
   }
 }
 
-// Monkey-patch yahooFinance.quote to use a resilient axios fallback on failure (crumb 429 errors)
-const originalQuote = yahooFinance.quote;
-(yahooFinance as any).quote = async function (symbols: string | string[], options?: any) {
-  const symbolList = Array.isArray(symbols) ? symbols : [symbols];
+// Memory cache to prevent parallel/frequent requests from spamming Yahoo Finance APIs (triggers 429)
+const QUOTE_CACHE = new Map<string, { data: any; timestamp: number }>();
+const QUOTE_CACHE_TTL_MS = 15000; // Cache quotes for 15 seconds
 
+const CHART_CACHE = new Map<string, { data: any; timestamp: number }>();
+const CHART_CACHE_TTL_MS = 30000; // Cache chart data for 30 seconds
+
+const SEARCH_CACHE = new Map<string, { data: any; timestamp: number }>();
+const SEARCH_CACHE_TTL_MS = 60000; // Cache searches for 1 minute
+
+const inflightQuotePromises = new Map<string, Promise<any[]>>();
+
+function getCachedQuote(symbol: string): any | null {
+  const cached = QUOTE_CACHE.get(symbol.toUpperCase());
+  if (cached && Date.now() - cached.timestamp < QUOTE_CACHE_TTL_MS) {
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedQuote(symbol: string, data: any) {
+  if (data) {
+    QUOTE_CACHE.set(symbol.toUpperCase(), {
+      data,
+      timestamp: Date.now()
+    });
+  }
+}
+
+async function fetchYahooChartQuote(symbol: string): Promise<any | null> {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
+    const response = await axios.get(url, {
+      params: {
+        range: '1d',
+        interval: '1d'
+      },
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'https://finance.yahoo.com/',
+        'Origin': 'https://finance.yahoo.com'
+      },
+      httpsAgent: getProxyAgent(),
+      timeout: 10000
+    });
+
+    const meta = response.data?.chart?.result?.[0]?.meta;
+    if (!meta || !meta.regularMarketPrice) return null;
+
+    const price = meta.regularMarketPrice;
+    const prevClose = meta.chartPreviousClose || price;
+    const change = price - prevClose;
+    const changePercent = prevClose ? (change / prevClose) * 100 : 0;
+
+    return {
+      symbol: symbol,
+      regularMarketPrice: price,
+      regularMarketChange: change,
+      regularMarketChangePercent: changePercent,
+      regularMarketVolume: meta.regularMarketVolume || 0,
+      currency: meta.currency || 'USD',
+      regularMarketOpen: meta.regularMarketOpen || price,
+      regularMarketDayHigh: meta.regularMarketDayHigh || price,
+      regularMarketDayLow: meta.regularMarketDayLow || price,
+      fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh || price,
+      fiftyTwoWeekLow: meta.fiftyTwoWeekLow || price,
+      shortName: meta.shortName || symbol.split('.')[0],
+      longName: meta.longName || symbol
+    };
+  } catch (err: any) {
+    console.warn(`[Yahoo Service] Chart fallback quote failed for ${symbol}:`, err.message);
+    return null;
+  }
+}
+
+async function performRawQuoteFetch(symbolList: string[], options?: any): Promise<any[]> {
   if (!isYahooRateLimited()) {
     try {
-      const result = await originalQuote.call(this, symbols, options);
-      if (Array.isArray(symbols)) {
-        if (result && Array.isArray(result)) {
-          return symbols.map((sym, idx) => {
-            const r = result[idx];
-            return (r !== undefined && r !== null) ? r : getFallbackQuote(sym);
-          });
-        }
-      } else {
-        if (result !== undefined && result !== null) {
-          return result;
-        }
-      }
+      const result = await originalQuote.call(yahooFinance, symbolList, options);
+      const resList = Array.isArray(result) ? result : [result];
+      return resList;
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401') || msg.includes('crumb')) {
@@ -267,15 +390,32 @@ const originalQuote = yahooFinance.quote;
     }
   }
 
-  // Twelve Data Fallback
+  // 1. Spark Fallback (Yahoo direct API query1/query2) - Primary Resilient Fallback (crumb-free)
+  try {
+    const sparkResults = await fetchYahooSparkQuotes(symbolList);
+    if (sparkResults && sparkResults.length > 0) {
+      return sparkResults;
+    }
+  } catch (sparkErr: any) {
+    console.warn(`[Yahoo Service] Spark fallback failed, trying direct Chart quote fallback:`, sparkErr.message);
+  }
+
+  // 1b. Direct Chart Fallback - Fetch individual quotes using the chart endpoint (extremely resilient to 429/401)
+  try {
+    const chartQuotes = await Promise.all(symbolList.map(sym => fetchYahooChartQuote(sym)));
+    const validQuotes = chartQuotes.filter(Boolean);
+    if (validQuotes.length > 0) {
+      return validQuotes;
+    }
+  } catch (chartErr: any) {
+    console.warn(`[Yahoo Service] Direct Chart fallback quotes failed:`, chartErr.message);
+  }
+
+  // 2. Twelve Data Fallback
   if (!isTwelveDataRateLimited()) {
     try {
       const tdResults = await fetchTwelveDataQuotes(symbolList);
-      if (Array.isArray(symbols)) {
-        return symbolList.map((sym) => tdResults.find((r: any) => r && r.symbol && r.symbol.toUpperCase() === sym.toUpperCase()) || getFallbackQuote(sym));
-      } else {
-        return tdResults[0] || getFallbackQuote(symbols);
-      }
+      return tdResults;
     } catch (tdErr: any) {
       const msg = tdErr?.message || '';
       if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
@@ -286,248 +426,272 @@ const originalQuote = yahooFinance.quote;
     }
   }
 
-  // Spark Fallback (Yahoo direct API query1/query2)
-  if (!isYahooRateLimited()) {
+  return [];
+}
+
+async function fetchDeduplicatedQuotes(symbolList: string[], options?: any): Promise<any[]> {
+  const sortedKey = [...symbolList].sort().join(',');
+  if (inflightQuotePromises.has(sortedKey)) {
+    return inflightQuotePromises.get(sortedKey)!;
+  }
+
+  const promise = performRawQuoteFetch(symbolList, options).finally(() => {
+    inflightQuotePromises.delete(sortedKey);
+  });
+
+  inflightQuotePromises.set(sortedKey, promise);
+  return promise;
+}
+
+// Monkey-patch yahooFinance.quote to use a resilient axios fallback on failure (crumb 429 errors)
+const originalQuote = yahooFinance.quote;
+(yahooFinance as any).quote = async function (symbols: string | string[], options?: any) {
+  const symbolList = Array.isArray(symbols) ? symbols : [symbols];
+  const upperSymbolList = symbolList.map(s => s.toUpperCase());
+
+  // Check cache first
+  const cachedResults = upperSymbolList.map(sym => getCachedQuote(sym));
+  const missingIndices: number[] = [];
+  const missingSymbols: string[] = [];
+
+  cachedResults.forEach((cached, idx) => {
+    if (cached === null) {
+      missingIndices.push(idx);
+      missingSymbols.push(symbolList[idx]);
+    }
+  });
+
+  if (missingSymbols.length > 0) {
     try {
-      const sparkResults = await fetchYahooSparkQuotes(symbolList);
-      if (sparkResults && sparkResults.length > 0) {
-        if (Array.isArray(symbols)) {
-          return symbolList.map((sym) => sparkResults.find((r: any) => r && r.symbol && r.symbol.toUpperCase() === sym.toUpperCase()) || getFallbackQuote(sym));
-        } else {
-          return sparkResults[0] || getFallbackQuote(symbols);
+      const fetched = await fetchDeduplicatedQuotes(missingSymbols, options);
+      fetched.forEach(item => {
+        if (item && item.symbol) {
+          setCachedQuote(item.symbol, item);
         }
-      }
-    } catch (sparkErr: any) {
-      const msg = sparkErr?.message || '';
-      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
-        setYahooRateLimited();
-      }
-    }
-  }
-
-  // V7 Fallback
-  if (!isYahooRateLimited()) {
-    try {
-      const url = 'https://query1.finance.yahoo.com/v7/finance/quote';
-      const response = await axios.get(url, {
-        params: {
-          symbols: symbolList.join(',')
-        },
-        headers: {
-          'User-Agent': getRandomUserAgent(),
-          'Accept': 'application/json',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Referer': 'https://finance.yahoo.com/',
-          'Origin': 'https://finance.yahoo.com'
-        },
-        httpsAgent: proxyAgent,
-        timeout: 10000
       });
-
-      const results = response.data?.quoteResponse?.result || [];
-      if (Array.isArray(symbols)) {
-        return symbolList.map((sym) => results.find((r: any) => r && r.symbol && r.symbol.toUpperCase() === sym.toUpperCase()) || getFallbackQuote(sym));
-      } else {
-        return results[0] || getFallbackQuote(symbols);
-      }
-    } catch (fallbackErr: any) {
-      const msg = fallbackErr?.message || '';
-      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
-        setYahooRateLimited();
-      }
+    } catch (err: any) {
+      console.error(`[Yahoo Service] fetchDeduplicatedQuotes failed:`, err.message);
     }
   }
 
-  // If all failed or rate limited, return cached/mock quotes
-  const mocks = symbolList.map(sym => getFallbackQuote(sym));
+  // Construct response mapping
+  const finalResults = upperSymbolList.map((sym, idx) => {
+    return getCachedQuote(sym) || getFallbackQuote(symbolList[idx]);
+  });
+
   if (Array.isArray(symbols)) {
-    return mocks;
+    return finalResults;
   } else {
-    return mocks[0];
+    return finalResults[0];
   }
 };
 
 // Monkey-patch yahooFinance.search to use direct axios on failure
 const originalSearch = yahooFinance.search;
 (yahooFinance as any).search = async function (query: string, searchOptions?: any) {
+  const cacheKey = `${query.toUpperCase()}_${searchOptions?.quotesCount || 20}`;
+  const cached = SEARCH_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  let result: any = { quotes: [] };
   if (!isYahooRateLimited()) {
     try {
-      return await originalSearch.call(this, query, searchOptions);
+      result = await originalSearch.call(this, query, searchOptions);
+      SEARCH_CACHE.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
         setYahooRateLimited();
       }
-      try {
-        const response = await axios.get('https://query2.finance.yahoo.com/v1/finance/search', {
-          params: {
-            q: query,
-            quotesCount: searchOptions?.quotesCount || 20,
-            newsCount: searchOptions?.newsCount || 0
-          },
-          headers: {
-            'User-Agent': getRandomUserAgent(),
-            'Accept': 'application/json',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Referer': 'https://finance.yahoo.com/',
-            'Origin': 'https://finance.yahoo.com'
-          },
-          httpsAgent: proxyAgent,
-          timeout: 10000
-        });
-        return response.data || { quotes: [] };
-      } catch (fallbackErr: any) {
-        const fallbackMsg = fallbackErr?.message || '';
-        if (fallbackMsg.includes('429') || fallbackMsg.includes('Too Many Requests') || fallbackMsg.includes('401')) {
-          setYahooRateLimited();
-        }
-        throw err;
-      }
     }
   }
-  return { quotes: [] };
+
+  try {
+    const response = await axios.get('https://query2.finance.yahoo.com/v1/finance/search', {
+      params: {
+        q: query,
+        quotesCount: searchOptions?.quotesCount || 20,
+        newsCount: searchOptions?.newsCount || 0
+      },
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://finance.yahoo.com/',
+        'Origin': 'https://finance.yahoo.com'
+      },
+      httpsAgent: getProxyAgent(),
+      timeout: 10000
+    });
+    result = response.data || { quotes: [] };
+    SEARCH_CACHE.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
+  } catch (fallbackErr: any) {
+    console.warn(`[Yahoo Service] Direct search fallback failed:`, fallbackErr.message);
+    return { quotes: [] };
+  }
 };
 
 // Monkey-patch yahooFinance.chart to use a resilient axios fallback on failure
 const originalChart = yahooFinance.chart;
 (yahooFinance as any).chart = async function (symbol: string, options: any) {
+  const cacheKey = `${symbol.toUpperCase()}_${options.range || ''}_${options.interval || ''}`;
+  const cached = CHART_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CHART_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  let chartData: any;
   if (!isYahooRateLimited()) {
     try {
-      return await originalChart.call(this, symbol, options);
+      chartData = await originalChart.call(this, symbol, options);
+      CHART_CACHE.set(cacheKey, { data: chartData, timestamp: Date.now() });
+      return chartData;
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
         setYahooRateLimited();
       }
-      try {
-        const params: any = {};
-        if (options.range) params.range = options.range;
-        if (options.interval) params.interval = options.interval;
-        if (options.period1) {
-          params.period1 = options.period1 instanceof Date
-            ? Math.floor(options.period1.getTime() / 1000)
-            : options.period1;
-        }
-        if (options.period2) {
-          params.period2 = options.period2 instanceof Date
-            ? Math.floor(options.period2.getTime() / 1000)
-            : options.period2;
-        }
-
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-        const response = await axios.get(url, {
-          params,
-          headers: {
-            'User-Agent': getRandomUserAgent(),
-            'Accept': 'application/json',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Referer': 'https://finance.yahoo.com/',
-            'Origin': 'https://finance.yahoo.com'
-          },
-          httpsAgent: proxyAgent,
-          timeout: 10000
-        });
-
-        const result = response.data?.chart?.result?.[0];
-        if (!result) throw new Error("No chart data returned from Yahoo fallback");
-
-        const meta = result.meta || {};
-        const timestamps = result.timestamp || [];
-        const quote = result.indicators?.quote?.[0] || {};
-        const adjclose = result.indicators?.adjclose?.[0]?.adjclose || [];
-
-        const quotes = timestamps.map((timestamp: number, index: number) => ({
-          date: new Date(timestamp * 1000),
-          high: quote.high?.[index] ?? null,
-          volume: quote.volume?.[index] ?? null,
-          open: quote.open?.[index] ?? null,
-          low: quote.low?.[index] ?? null,
-          close: quote.close?.[index] ?? null,
-          adjclose: adjclose[index] ?? quote.close?.[index] ?? null
-        }));
-
-        return {
-          meta,
-          quotes
-        };
-      } catch (fallbackErr: any) {
-        const fallbackMsg = fallbackErr?.message || '';
-        if (fallbackMsg.includes('429') || fallbackMsg.includes('Too Many Requests') || fallbackMsg.includes('401')) {
-          setYahooRateLimited();
-        }
-        throw err;
-      }
     }
   }
-  throw new Error("Yahoo Finance rate limited (cooldown active)");
+
+  try {
+    const params: any = {};
+    if (options.range) params.range = options.range;
+    if (options.interval) params.interval = options.interval;
+    if (options.period1) {
+      params.period1 = options.period1 instanceof Date
+        ? Math.floor(options.period1.getTime() / 1000)
+        : options.period1;
+    }
+    if (options.period2) {
+      params.period2 = options.period2 instanceof Date
+        ? Math.floor(options.period2.getTime() / 1000)
+        : options.period2;
+    }
+
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
+    const response = await axios.get(url, {
+      params,
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'https://finance.yahoo.com/',
+        'Origin': 'https://finance.yahoo.com'
+      },
+      httpsAgent: getProxyAgent(),
+      timeout: 10000
+    });
+
+    const result = response.data?.chart?.result?.[0];
+    if (!result) throw new Error("No chart data returned from Yahoo fallback");
+
+    const meta = result.meta || {};
+    const timestamps = result.timestamp || [];
+    const quote = result.indicators?.quote?.[0] || {};
+    const adjclose = result.indicators?.adjclose?.[0]?.adjclose || [];
+
+    const quotes = timestamps.map((timestamp: number, index: number) => ({
+      date: new Date(timestamp * 1000),
+      high: quote.high?.[index] ?? null,
+      volume: quote.volume?.[index] ?? null,
+      open: quote.open?.[index] ?? null,
+      low: quote.low?.[index] ?? null,
+      close: quote.close?.[index] ?? null,
+      adjclose: adjclose[index] ?? quote.close?.[index] ?? null
+    }));
+
+    chartData = {
+      meta,
+      quotes
+    };
+    CHART_CACHE.set(cacheKey, { data: chartData, timestamp: Date.now() });
+    return chartData;
+  } catch (fallbackErr: any) {
+    console.warn(`[Yahoo Service] Direct chart fallback failed for ${symbol}:`, fallbackErr.message);
+    throw fallbackErr;
+  }
 };
 
 // Monkey-patch yahooFinance.historical to use a resilient axios fallback on failure
 const originalHistorical = yahooFinance.historical;
 (yahooFinance as any).historical = async function (symbol: string, options: any) {
+  const cacheKey = `${symbol.toUpperCase()}_hist_${options.range || ''}_${options.interval || ''}`;
+  const cached = CHART_CACHE.get(cacheKey); // Reuse CHART_CACHE for simplicity
+  if (cached && Date.now() - cached.timestamp < CHART_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  let histData: any[];
   if (!isYahooRateLimited()) {
     try {
-      return await originalHistorical.call(this, symbol, options);
+      histData = await originalHistorical.call(this, symbol, options);
+      CHART_CACHE.set(cacheKey, { data: histData, timestamp: Date.now() });
+      return histData;
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
         setYahooRateLimited();
       }
-      try {
-        const params: any = {};
-        if (options.range) params.range = options.range;
-        if (options.interval) params.interval = options.interval;
-        if (options.period1) {
-          params.period1 = options.period1 instanceof Date
-            ? Math.floor(options.period1.getTime() / 1000)
-            : options.period1;
-        }
-        if (options.period2) {
-          params.period2 = options.period2 instanceof Date
-            ? Math.floor(options.period2.getTime() / 1000)
-            : options.period2;
-        }
-
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-        const response = await axios.get(url, {
-          params,
-          headers: {
-            'User-Agent': getRandomUserAgent(),
-            'Accept': 'application/json',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Referer': 'https://finance.yahoo.com/',
-            'Origin': 'https://finance.yahoo.com'
-          },
-          httpsAgent: proxyAgent,
-          timeout: 10000
-        });
-
-        const result = response.data?.chart?.result?.[0];
-        if (!result) throw new Error("No historical data returned from Yahoo fallback");
-
-        const timestamps = result.timestamp || [];
-        const quote = result.indicators?.quote?.[0] || {};
-        const adjclose = result.indicators?.adjclose?.[0]?.adjclose || [];
-
-        return timestamps.map((timestamp: number, index: number) => ({
-          date: new Date(timestamp * 1000),
-          open: quote.open?.[index] ?? null,
-          high: quote.high?.[index] ?? null,
-          low: quote.low?.[index] ?? null,
-          close: quote.close?.[index] ?? null,
-          volume: quote.volume?.[index] ?? null,
-          adjClose: adjclose[index] ?? quote.close?.[index] ?? null
-        }));
-      } catch (fallbackErr: any) {
-        const fallbackMsg = fallbackErr?.message || '';
-        if (fallbackMsg.includes('429') || fallbackMsg.includes('Too Many Requests') || fallbackMsg.includes('401')) {
-          setYahooRateLimited();
-        }
-        throw err;
-      }
     }
   }
-  return [];
+
+  try {
+    const params: any = {};
+    if (options.range) params.range = options.range;
+    if (options.interval) params.interval = options.interval;
+    if (options.period1) {
+      params.period1 = options.period1 instanceof Date
+        ? Math.floor(options.period1.getTime() / 1000)
+        : options.period1;
+    }
+    if (options.period2) {
+      params.period2 = options.period2 instanceof Date
+        ? Math.floor(options.period2.getTime() / 1000)
+        : options.period2;
+    }
+
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
+    const response = await axios.get(url, {
+      params,
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'https://finance.yahoo.com/',
+        'Origin': 'https://finance.yahoo.com'
+      },
+      httpsAgent: getProxyAgent(),
+      timeout: 10000
+    });
+
+    const result = response.data?.chart?.result?.[0];
+    if (!result) throw new Error("No historical data returned from Yahoo fallback");
+
+    const timestamps = result.timestamp || [];
+    const quote = result.indicators?.quote?.[0] || {};
+    const adjclose = result.indicators?.adjclose?.[0]?.adjclose || [];
+
+    histData = timestamps.map((timestamp: number, index: number) => ({
+      date: new Date(timestamp * 1000),
+      open: quote.open?.[index] ?? null,
+      high: quote.high?.[index] ?? null,
+      low: quote.low?.[index] ?? null,
+      close: quote.close?.[index] ?? null,
+      volume: quote.volume?.[index] ?? null,
+      adjClose: adjclose[index] ?? quote.close?.[index] ?? null
+    }));
+
+    CHART_CACHE.set(cacheKey, { data: histData, timestamp: Date.now() });
+    return histData;
+  } catch (fallbackErr: any) {
+    console.warn(`[Yahoo Service] Direct historical fallback failed for ${symbol}:`, fallbackErr.message);
+    return [];
+  }
 };
 
 // Memory cache for Last-Known-Values (LKV)
