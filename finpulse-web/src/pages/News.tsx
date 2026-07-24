@@ -185,7 +185,7 @@ export default function News() {
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
             Market Intelligence
           </h1>
-          <p className="text-xs text-slate-555 dark:text-slate-400 font-semibold mt-1.5 max-w-xl hidden md:block">
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1.5 max-w-xl hidden md:block">
             Real-time global coverage aggregated from premium networks and macroeconomic schedules.
           </p>
         </div>

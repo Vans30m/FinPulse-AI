@@ -14,6 +14,7 @@ import { getFundamentals } from '../../../services/marketService';
 import PaperTradingOrderModal from './PaperTradingOrderModal';
 import PaperTradingLedger from './PaperTradingLedger';
 import API_BASE_URL from "../../../config/api";
+import PageLoader from "../../../components/ui/PageLoader";
 
 interface Holding {
   id?: string;
@@ -107,10 +108,22 @@ const getHoldingColorClass = (marketId: string, ticker: string) => {
 
 export default function PortfolioDashboard() {
   const [loading, setLoading] = useState(true);
-  const [sections, setSections] = useState<MarketSection[]>(INITIAL_SECTIONS);
-  const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
-  const [usdToEurRate, setUsdToEurRate] = useState<number>(0.92);
-  const [usdToGbpRate, setUsdToGbpRate] = useState<number>(0.79);
+  const [sections, setSections] = useState<MarketSection[]>(() => {
+    const cached = sessionStorage.getItem("portfolioSections");
+    return cached ? JSON.parse(cached) : INITIAL_SECTIONS;
+  });
+  const [usdToInrRate, setUsdToInrRate] = useState<number>(() => {
+    const cached = sessionStorage.getItem("usdToInrRate");
+    return cached ? parseFloat(cached) : 83.45;
+  });
+  const [usdToEurRate, setUsdToEurRate] = useState<number>(() => {
+    const cached = sessionStorage.getItem("usdToEurRate");
+    return cached ? parseFloat(cached) : 0.92;
+  });
+  const [usdToGbpRate, setUsdToGbpRate] = useState<number>(() => {
+    const cached = sessionStorage.getItem("usdToGbpRate");
+    return cached ? parseFloat(cached) : 0.79;
+  });
   const { user } = useAppData();
   const getCurrencyCode = (currencyString?: string): 'USD' | 'INR' | 'EUR' | 'GBP' => {
     if (!currencyString) return 'INR';
@@ -130,8 +143,14 @@ export default function PortfolioDashboard() {
   }, [user?.currency]);
 
   const [advisorData, setAdvisorData] = useState<any>(null);
-  const [performanceData, setPerformanceData] = useState<{ month: string; value: number; invested: number; profit: number }[]>([]);
-  const [liveQuotes, setLiveQuotes] = useState<Record<string, { price: number; change: number }>>({});
+  const [performanceData, setPerformanceData] = useState<{ month: string; value: number; invested: number; profit: number }[]>(() => {
+    const cached = sessionStorage.getItem("portfolioPerformanceData");
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [liveQuotes, setLiveQuotes] = useState<Record<string, { price: number; change: number }>>(() => {
+    const cached = sessionStorage.getItem("portfolioLiveQuotes");
+    return cached ? JSON.parse(cached) : {};
+  });
 
   // Paper Trading Sandbox States
   const [isSandboxMode, setIsSandboxMode] = useState<boolean>(false);
@@ -366,15 +385,13 @@ export default function PortfolioDashboard() {
     setShowSuggestions(false);
   };
 
-  const loadPortfolioData = async () => {
+  const loadPortfolioData = async (silent = false) => {
     const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
     const userId = storedUser.id;
     const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
     const headers: any = {};
     if (userId) headers['X-User-Id'] = userId;
     if (token) headers['Authorization'] = `Bearer ${token}`;
-
-
 
     // --- Holdings (independent) ---
     try {
@@ -390,7 +407,11 @@ export default function PortfolioDashboard() {
           return { ...initial, holdings: found ? found.holdings : [] };
         });
         setSections(mapped);
-        if (data.liveQuotes) setLiveQuotes(data.liveQuotes);
+        sessionStorage.setItem("portfolioSections", JSON.stringify(mapped));
+        if (data.liveQuotes) {
+          setLiveQuotes(data.liveQuotes);
+          sessionStorage.setItem("portfolioLiveQuotes", JSON.stringify(data.liveQuotes));
+        }
       }
     } catch (err) {
       console.error('Holdings fetch error:', err);
@@ -415,8 +436,10 @@ export default function PortfolioDashboard() {
             };
           });
           setPerformanceData(mapped);
+          sessionStorage.setItem("portfolioPerformanceData", JSON.stringify(mapped));
         } else {
           setPerformanceData([]);
+          sessionStorage.setItem("portfolioPerformanceData", JSON.stringify([]));
         }
       }
     } catch (err) {
@@ -445,33 +468,57 @@ export default function PortfolioDashboard() {
     const fetchRates = async () => {
       try {
         const inrData = await getFundamentals('USDINR=X');
-        if (inrData && inrData.price) setUsdToInrRate(inrData.price);
+        if (inrData && inrData.price) {
+          setUsdToInrRate(inrData.price);
+          sessionStorage.setItem("usdToInrRate", inrData.price.toString());
+        }
       } catch (e) {}
       try {
         const eurData = await getFundamentals('USDEUR=X');
-        if (eurData && eurData.price) setUsdToEurRate(eurData.price);
+        if (eurData && eurData.price) {
+          setUsdToEurRate(eurData.price);
+          sessionStorage.setItem("usdToEurRate", eurData.price.toString());
+        }
       } catch (e) {}
       try {
         const gbpData = await getFundamentals('USDGBP=X');
-        if (gbpData && gbpData.price) setUsdToGbpRate(gbpData.price);
+        if (gbpData && gbpData.price) {
+          setUsdToGbpRate(gbpData.price);
+          sessionStorage.setItem("usdToGbpRate", gbpData.price.toString());
+        }
       } catch (e) {}
     };
 
+    let timerId: any = null;
+
     const initialize = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchRates(),
-        loadPortfolioData()
-      ]);
-      setLoading(false);
+      const cached = sessionStorage.getItem("portfolioSections");
+      if (cached) {
+        loadPortfolioData(true);
+        fetchRates();
+        timerId = setTimeout(() => {
+          setLoading(false);
+        }, 2000);
+      } else {
+        setLoading(true);
+        await Promise.all([
+          fetchRates(),
+          loadPortfolioData(false)
+        ]);
+        setLoading(false);
+      }
     };
 
     initialize();
 
     const interval = setInterval(() => {
-      loadPortfolioData();
+      loadPortfolioData(true);
     }, 15000); // 15 seconds auto-refresh
 
+    return () => {
+      clearInterval(interval);
+      if (timerId) clearTimeout(timerId);
+    };
   }, [virtualHoldings]);
 
   const handleAddAsset = async (e: React.FormEvent) => {
@@ -1066,11 +1113,7 @@ export default function PortfolioDashboard() {
   }, [performanceData, currencyMultiplier]);
 
   if (loading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Activity className="h-8 w-8 text-blue-500 animate-spin" />
-      </div>
-    );
+    return <PageLoader title="Security Portfolios" message="Syncing asset allocations and latest transaction valuations..." />;
   }
 
   const allocationData = currentSections
@@ -1434,41 +1477,41 @@ export default function PortfolioDashboard() {
         )}
       </div>
 
-      {/* Aggregate Cards Grid (4 columns on all screen sizes, adjusted padding and fonts for mobile) */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-6">
-        <div className="glass-panel p-2 sm:p-4 flex items-center gap-2 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
-          <div className="hidden sm:flex p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400 shrink-0">
+      {/* Aggregate Cards Grid (2 columns on mobile, 4 columns on desktop, with rich icons and responsive spacing) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+        <div className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
+          <div className="flex p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400 shrink-0">
             <PieChart className="h-5 w-5" />
           </div>
-          <div className="min-w-0 w-full text-center sm:text-left">
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">Net Value</p>
-            <h3 className="text-xs sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
+          <div className="min-w-0 w-full text-left">
+            <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">Net Value</p>
+            <h3 className="text-sm sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
               {displayCurrency}{totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>
         </div>
 
-        <div className="glass-panel p-2 sm:p-4 flex items-center gap-2 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
-          <div className="hidden sm:flex p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 shrink-0">
+        <div className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
+          <div className="flex p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 shrink-0">
             <TrendingUp className="h-5 w-5" />
           </div>
-          <div className="min-w-0 w-full text-center sm:text-left">
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+          <div className="min-w-0 w-full text-left">
+            <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
               <span className="hidden sm:inline">Total Returns</span>
               <span className="inline sm:hidden">Returns</span>
             </p>
-            <h3 className={`text-xs sm:text-2xl font-black mt-0.5 truncate ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+            <h3 className={`text-sm sm:text-2xl font-black mt-0.5 truncate ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
               {totalGain >= 0 ? '+' : ''}{displayCurrency}{totalGain.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>
         </div>
 
-        <div className="glass-panel p-2 sm:p-4 flex items-center gap-2 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
-          <div className="hidden sm:flex p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+        <div className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
+          <div className="flex p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
             <Globe className="h-5 w-5" />
           </div>
-          <div className="min-w-0 w-full text-center sm:text-left">
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+          <div className="min-w-0 w-full text-left">
+            <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
               {isSandboxMode ? "Cash" : (
                 <>
                   <span className="hidden sm:inline">Asset Classes</span>
@@ -1476,7 +1519,7 @@ export default function PortfolioDashboard() {
                 </>
               )}
             </p>
-            <h3 className="text-xs sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
+            <h3 className="text-sm sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
               {isSandboxMode 
                 ? `${displayCurrency}${cashBalanceInCurrency.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                 : `${activeHubsCount} Hub${activeHubsCount !== 1 ? 's' : ''}`}
@@ -1486,17 +1529,17 @@ export default function PortfolioDashboard() {
 
         <div 
           onClick={() => setIsBookedHistoryOpen(true)}
-          className="glass-panel p-2 sm:p-4 flex items-center gap-2 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-0"
+          className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-0"
         >
-          <div className="hidden sm:flex p-2 rounded-xl bg-amber-50 dark:bg-amber-550/10 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
+          <div className="flex p-2 rounded-xl bg-amber-50 dark:bg-amber-550/10 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform">
             <TrendingUp className="h-5 w-5" />
           </div>
-          <div className="min-w-0 w-full text-center sm:text-left">
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+          <div className="min-w-0 w-full text-left">
+            <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
               <span className="hidden sm:inline">Booked P&L</span>
               <span className="inline sm:hidden">Booked</span>
             </p>
-            <h3 className={`text-xs sm:text-2xl font-black mt-0.5 truncate ${totalBookedPL >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+            <h3 className={`text-sm sm:text-2xl font-black mt-0.5 truncate ${totalBookedPL >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
               {totalBookedPL >= 0 ? '+' : ''}{displayCurrency}{totalBookedPL.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>

@@ -153,13 +153,47 @@ portfolioRoutes.post('/holdings', async (req, res) => {
   try {
     const { ticker, name, shares, avgCost, marketId } = req.body;
     const user = await getOrCreateDefaultUser(req);
+    const inputShares = parseFloat(shares);
+    const inputAvgCost = parseFloat(avgCost);
+
+    // Look for an existing holding for this ticker and market segment (case-insensitive)
+    const existingHolding = await prisma.holding.findFirst({
+      where: {
+        userId: user.id,
+        ticker: {
+          equals: ticker,
+          mode: 'insensitive'
+        },
+        marketId
+      }
+    });
+
+    if (existingHolding) {
+      const newShares = existingHolding.shares + inputShares;
+      let newAvgCost = inputAvgCost;
+
+      if (existingHolding.shares > 0 && newShares > 0) {
+        newAvgCost = ((existingHolding.shares * existingHolding.avgCost) + (inputShares * inputAvgCost)) / newShares;
+      }
+
+      const updatedHolding = await prisma.holding.update({
+        where: { id: existingHolding.id },
+        data: {
+          shares: newShares,
+          avgCost: newAvgCost,
+          name: name || existingHolding.name
+        }
+      });
+      return res.json(updatedHolding);
+    }
+
     const newHolding = await prisma.holding.create({
       data: {
         userId: user.id,
         ticker,
         name,
-        shares: parseFloat(shares),
-        avgCost: parseFloat(avgCost),
+        shares: inputShares,
+        avgCost: inputAvgCost,
         marketId
       }
     });

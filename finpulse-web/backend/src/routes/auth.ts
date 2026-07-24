@@ -1023,17 +1023,17 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
       } catch (err) {
         console.error(`Failed to fetch Yahoo quote for ${h.ticker}:`, err);
       }
-      
+
       let val = h.shares * currentPrice;
       let cost = h.shares * h.avgCost;
       let change = dayChange;
-      
+
       if (h.marketId === 'domestic' || h.ticker.toUpperCase().endsWith('.NS') || h.ticker.toUpperCase().endsWith('.BO')) {
         val = val / usdToInrRate;
         cost = cost / usdToInrRate;
         change = change / usdToInrRate;
       }
-      
+
       totalPortfolioValue += val;
       totalCostBasis += cost;
       todayProfitLoss += change;

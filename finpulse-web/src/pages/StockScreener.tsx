@@ -398,14 +398,22 @@ Slide Outline:
         }
       });
     } else {
-      let targetListId = watchlists[0]?.id;
-      if (!targetListId) {
-        createWatchlistMutation.mutate({ name: "My Watchlist" }, {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userName = storedUser.name || storedUser.username || 'User';
+      const targetListName = `${userName}'s Watchlist`;
+
+      const existingList = watchlists.find(
+        (list: any) => list.name.toLowerCase() === targetListName.toLowerCase()
+      );
+
+      if (!existingList) {
+        createWatchlistMutation.mutate({ name: targetListName }, {
           onSuccess: (newList) => {
             addWatchlistItemMutation.mutate({
               listId: newList.id,
               item: { symbol: selectedStock.symbol, notes: "Added from Screener" }
             });
+            toast.success(`Created watchlist "${targetListName}" and added ${selectedStock.symbol}`);
           },
           onError: (err: any) => {
             toast.error(`Failed to create watchlist: ${err.message || err}`);
@@ -413,12 +421,20 @@ Slide Outline:
         });
       } else {
         addWatchlistItemMutation.mutate({
-          listId: targetListId,
+          listId: existingList.id,
           item: { symbol: selectedStock.symbol, notes: "Added from Screener" }
+        }, {
+          onSuccess: () => {
+            toast.success(`Added ${selectedStock.symbol} to "${targetListName}"`);
+          },
+          onError: (err: any) => {
+            toast.error(`Failed to add item: ${err.message || err}`);
+          }
         });
       }
     }
   };
+
 
   // Shareholding Pattern calculation
   const shareholdingData = useMemo(() => {

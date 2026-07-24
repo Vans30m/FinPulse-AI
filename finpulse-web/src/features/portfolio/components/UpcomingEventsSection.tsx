@@ -442,7 +442,7 @@ function UpcomingEventsSection() {
         <div className="flex flex-col items-center justify-center py-12 border border-dashed border-slate-200 dark:border-slate-800/80 bg-slate-50/20 dark:bg-black/[0.05] rounded-2xl text-center">
           <CalendarClock className="h-10 w-10 text-slate-400 mb-3" />
           <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">No upcoming events found for your portfolio</h3>
-          <p className="text-xs text-slate-550 mb-4">Ensure you have active stocks or currencies in your assets overview.</p>
+          <p className="text-xs text-slate-500 mb-4">Ensure you have active stocks or currencies in your assets overview.</p>
           <button className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider">
             Explore Earnings Calendar
           </button>
@@ -601,23 +601,23 @@ function UpcomingEventsSection() {
                 {/* Modal Grid Info */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
                   <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
-                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">Event Horizon</span>
+                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Event Horizon</span>
                     <span className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-white">{formatEventDate(selectedEvent.eventDate)}</span>
                   </div>
                   <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
-                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">Importance</span>
+                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Importance</span>
                     <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${
                       selectedEvent.importance === "High" ? "text-rose-500" : selectedEvent.importance === "Medium" ? "text-amber-500" : "text-emerald-500"
                     }`}>{selectedEvent.importance}</span>
                   </div>
                   <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
-                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">AI Expected Impact</span>
+                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">AI Expected Impact</span>
                     <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${
                       selectedEvent.expectedImpact === "Bullish" ? "text-emerald-500" : selectedEvent.expectedImpact === "Bearish" ? "text-rose-500" : "text-blue-500 dark:text-cyan-400"
                     }`}>{selectedEvent.expectedImpact}</span>
                   </div>
                   <div className="bg-slate-50/50 dark:bg-white/[0.015] p-3 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm">
-                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">AI Confidence</span>
+                    <span className="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">AI Confidence</span>
                     <span className="text-[11px] sm:text-xs font-black text-purple-500">{selectedEvent.confidence}%</span>
                   </div>
                 </div>
@@ -625,7 +625,7 @@ function UpcomingEventsSection() {
                 {/* Event Body Description */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h4 className="text-xs font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider flex items-center gap-1.5">
+                    <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Info className="h-3.5 w-3.5 text-slate-455" />
                       Overview Description
                     </h4>
@@ -635,7 +635,7 @@ function UpcomingEventsSection() {
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="text-xs font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider flex items-center gap-1.5">
+                    <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
                       AI Intelligence Summary
                     </h4>
@@ -646,13 +646,13 @@ function UpcomingEventsSection() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-2">
-                      <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider">Historical Market Reaction</h5>
+                      <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Historical Market Reaction</h5>
                       <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 text-xs text-slate-655 dark:text-slate-300 font-semibold leading-relaxed">
                         {selectedEvent.historicalReaction}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider">AI Recommendation & Strategy</h5>
+                      <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">AI Recommendation & Strategy</h5>
                       <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 text-xs text-slate-655 dark:text-slate-300 font-semibold leading-relaxed">
                         {selectedEvent.aiRecommendation}
                       </div>

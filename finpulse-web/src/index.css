@@ -104,7 +104,7 @@ html {
 
   /* Subtle grid for light mode, completely transparent in dark mode */
   .bg-grid {
-    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-image: none;
     background-size: 32px 32px;
   }
 
