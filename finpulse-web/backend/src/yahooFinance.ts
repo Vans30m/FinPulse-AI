@@ -97,6 +97,44 @@ export function getProxyAgent(): HttpsProxyAgent<string> | undefined {
   return proxyAgents[index];
 }
 
+async function axiosGetResilient(url: string, config: any = {}, retries = 3): Promise<any> {
+  let lastError: any;
+  for (let i = 0; i < retries; i++) {
+    const agent = getProxyAgent();
+    const headers = {
+      ...config.headers,
+      'User-Agent': getRandomUserAgent(),
+    };
+    
+    try {
+      const response = await axios.get(url, {
+        ...config,
+        headers,
+        httpsAgent: agent,
+        timeout: agent ? 4000 : 10000
+      });
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      const status = err.response?.status;
+      if (status === 404) {
+        throw err;
+      }
+      
+      let errorDetails = '';
+      if (status === 429) {
+        const bodySnippet = typeof err.response?.data === 'string'
+          ? err.response.data.substring(0, 150)
+          : JSON.stringify(err.response?.data || {}).substring(0, 150);
+        errorDetails = ` - Response Data: ${bodySnippet}`;
+      }
+      
+      console.warn(`[Yahoo Service] Request to ${url} failed (Attempt ${i + 1}/${retries}) through proxy: ${status || err.message}${errorDetails}`);
+    }
+  }
+  throw lastError;
+}
+
 export const yahooFinance = new YahooFinance({
   suppressNotices: ['yahooSurvey'],
   validation: {
@@ -232,26 +270,40 @@ async function fetchTwelveDataQuotes(symbols: string[]): Promise<any[]> {
 
 // Helper to fetch quotes from Yahoo Spark API
 async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
-  const url = 'https://query1.finance.yahoo.com/v7/finance/spark';
-  const response = await axios.get(url, {
-    params: {
-      symbols: symbols.join(','),
-      range: '1d',
-      interval: '1d'
-    },
-    headers: {
-      'User-Agent': getRandomUserAgent(),
-      'Accept': 'application/json',
-      'Accept-Language': 'en-US,en;q=0.5',
-      'Referer': 'https://finance.yahoo.com/',
-      'Origin': 'https://finance.yahoo.com'
-    },
-    httpsAgent: getProxyAgent(),
-    timeout: 10000
-  });
+  const results: any[] = [];
+  const chunkSize = 10;
+  const delayMs = 300;
 
-  const data = response.data || {};
-  const results = data.spark?.result || [];
+  for (let i = 0; i < symbols.length; i += chunkSize) {
+    const chunk = symbols.slice(i, i + chunkSize);
+    const url = 'https://query1.finance.yahoo.com/v7/finance/spark';
+    try {
+      const response = await axiosGetResilient(url, {
+        params: {
+          symbols: chunk.join(','),
+          range: '1d',
+          interval: '1d'
+        },
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Referer': 'https://finance.yahoo.com/',
+          'Origin': 'https://finance.yahoo.com'
+        }
+      });
+
+      const data = response.data || {};
+      const sparkResults = data.spark?.result || [];
+      results.push(...sparkResults);
+    } catch (err: any) {
+      console.warn(`[Yahoo Service] Spark chunk fetch failed for ${chunk.join(',')}:`, err.message);
+    }
+
+    if (i + chunkSize < symbols.length) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+
   const resultMap = new Map<string, any>(results.map((r: any) => [r.symbol, r] as [string, any]));
 
   return symbols.map(symbol => {
@@ -341,20 +393,17 @@ function setCachedQuote(symbol: string, data: any) {
 async function fetchYahooChartQuote(symbol: string): Promise<any | null> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-    const response = await axios.get(url, {
+    const response = await axiosGetResilient(url, {
       params: {
         range: '1d',
         interval: '1d'
       },
       headers: {
-        'User-Agent': getRandomUserAgent(),
         'Accept': 'application/json',
         'Accept-Language': 'en-US,en;q=0.5',
         'Referer': 'https://finance.yahoo.com/',
         'Origin': 'https://finance.yahoo.com'
-      },
-      httpsAgent: getProxyAgent(),
-      timeout: 10000
+      }
     });
 
     const meta = response.data?.chart?.result?.[0]?.meta;
@@ -412,9 +461,20 @@ async function performRawQuoteFetch(symbolList: string[], options?: any): Promis
     console.warn(`[Yahoo Service] Spark fallback failed, trying direct Chart quote fallback:`, sparkErr.message);
   }
 
-  // 1b. Direct Chart Fallback - Fetch individual quotes using the chart endpoint (extremely resilient to 429/401)
+  // 1b. Direct Chart Fallback - Fetch individual quotes using the chart endpoint in a throttled/sequential sequence
   try {
-    const chartQuotes = await Promise.all(symbolList.map(sym => fetchYahooChartQuote(sym)));
+    const chartQuotes: any[] = [];
+    const concurrency = 3;
+    const delayMs = 250;
+    for (let i = 0; i < symbolList.length; i += concurrency) {
+      const chunk = symbolList.slice(i, i + concurrency);
+      const chunkResults = await Promise.all(chunk.map(sym => fetchYahooChartQuote(sym)));
+      chartQuotes.push(...chunkResults);
+      if (i + concurrency < symbolList.length) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+    
     const validQuotes = chartQuotes.filter(Boolean);
     if (validQuotes.length > 0) {
       return validQuotes;
@@ -522,21 +582,18 @@ const originalSearch = yahooFinance.search;
   }
 
   try {
-    const response = await axios.get('https://query2.finance.yahoo.com/v1/finance/search', {
+    const response = await axiosGetResilient('https://query2.finance.yahoo.com/v1/finance/search', {
       params: {
         q: query,
         quotesCount: searchOptions?.quotesCount || 20,
         newsCount: searchOptions?.newsCount || 0
       },
       headers: {
-        'User-Agent': getRandomUserAgent(),
         'Accept': 'application/json',
         'Accept-Language': 'en-US,en;q=0.9',
         'Referer': 'https://finance.yahoo.com/',
         'Origin': 'https://finance.yahoo.com'
-      },
-      httpsAgent: getProxyAgent(),
-      timeout: 10000
+      }
     });
     result = response.data || { quotes: [] };
     SEARCH_CACHE.set(cacheKey, { data: result, timestamp: Date.now() });
@@ -586,17 +643,14 @@ const originalChart = yahooFinance.chart;
     }
 
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-    const response = await axios.get(url, {
+    const response = await axiosGetResilient(url, {
       params,
       headers: {
-        'User-Agent': getRandomUserAgent(),
         'Accept': 'application/json',
         'Accept-Language': 'en-US,en;q=0.5',
         'Referer': 'https://finance.yahoo.com/',
         'Origin': 'https://finance.yahoo.com'
-      },
-      httpsAgent: getProxyAgent(),
-      timeout: 10000
+      }
     });
 
     const result = response.data?.chart?.result?.[0];
@@ -668,17 +722,14 @@ const originalHistorical = yahooFinance.historical;
     }
 
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-    const response = await axios.get(url, {
+    const response = await axiosGetResilient(url, {
       params,
       headers: {
-        'User-Agent': getRandomUserAgent(),
         'Accept': 'application/json',
         'Accept-Language': 'en-US,en;q=0.5',
         'Referer': 'https://finance.yahoo.com/',
         'Origin': 'https://finance.yahoo.com'
-      },
-      httpsAgent: getProxyAgent(),
-      timeout: 10000
+      }
     });
 
     const result = response.data?.chart?.result?.[0];
