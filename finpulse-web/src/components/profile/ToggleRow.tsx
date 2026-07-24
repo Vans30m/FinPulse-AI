@@ -26,7 +26,7 @@ export default function ToggleRow({
         <div className="space-y-0.5">
           <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{title}</p>
           {description && (
-            <p className="text-xs text-slate-400 dark:text-slate-550 leading-relaxed font-semibold">{description}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed font-semibold">{description}</p>
           )}
         </div>
       </div>

@@ -368,7 +368,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
                     >
                       {theme === 'dark' ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-slate-400" />}
-                      <span>Theme</span>
+                      <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
                     </button>
                   </motion.div>
                 )}

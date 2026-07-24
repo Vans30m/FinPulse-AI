@@ -136,7 +136,7 @@ const EarningsCard = memo(function EarningsCard({
               <span className="font-mono text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight truncate block" title={earning.symbol}>
                 {earning.symbol}
               </span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-555 font-semibold uppercase tracking-wider mt-0.5 truncate block">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mt-0.5 truncate block">
                 {earning.exchange}
               </span>
             </div>
@@ -151,7 +151,7 @@ const EarningsCard = memo(function EarningsCard({
           <h4 className="font-display font-bold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors text-sm sm:text-base line-clamp-1">
             {earning.name}
           </h4>
-          <span className="text-[10px] sm:text-xs text-slate-400 dark:text-slate-555 font-medium block mt-0.5 truncate">
+          <span className="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium block mt-0.5 truncate">
             {earning.sector}
           </span>
         </div>

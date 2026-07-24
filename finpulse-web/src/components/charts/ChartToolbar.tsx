@@ -331,7 +331,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
                   onClick={() => isOverlay ? onToggleOverlay(fav) : onTogglePane(fav)}
                   className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-colors ${isActive
                     ? "bg-blue-500 text-white"
-                    : "bg-slate-150 dark:bg-white/5 text-slate-550 hover:bg-slate-200 dark:hover:bg-white/10"
+                    : "bg-slate-150 dark:bg-white/5 text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10"
                     }`}
                 >
                   {fav}

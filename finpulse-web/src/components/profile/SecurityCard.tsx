@@ -117,7 +117,7 @@ export default function SecurityCard({
 
           <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
             {sessions.length === 0 ? (
-              <p className="text-xs text-slate-450 dark:text-slate-550 font-bold text-center py-4">No active sessions found.</p>
+              <p className="text-xs text-slate-450 dark:text-slate-500 font-bold text-center py-4">No active sessions found.</p>
             ) : (
               sessions.map((s, idx) => {
                 const isCurrent = s.id === currentSessionId || idx === 0; // fallback to first session if id not matched
@@ -134,7 +134,7 @@ export default function SecurityCard({
                             <span className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-450 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">current</span>
                           )}
                         </div>
-                        <p className="text-[10px] text-slate-450 dark:text-slate-550 font-bold mt-0.5">
+                        <p className="text-[10px] text-slate-450 dark:text-slate-500 font-bold mt-0.5">
                           IP: {s.ipAddress ? `${s.ipAddress.split('.').slice(0,2).join('.')}.*.*` : 'Unknown'} • Active: {new Date(s.createdAt).toLocaleDateString()}
                         </p>
                       </div>

@@ -164,7 +164,7 @@ export default function Footer() {
         <div className="border-y border-slate-200 dark:border-slate-800/60 py-8 my-4 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
           <div className="lg:col-span-1">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Subscribe to Intelligence Dispatches</h3>
-            <p className="text-xs text-slate-555 dark:text-slate-400 mt-1">Get advanced sentiment alerts delivered directly to your workstation.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Get advanced sentiment alerts delivered directly to your workstation.</p>
           </div>
           <div className="lg:col-span-2">
             <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row max-w-md w-full gap-2.5 sm:ml-auto">

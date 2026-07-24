@@ -185,7 +185,7 @@ export default function AIMarketSentiment() {
           {/* Market Mood Card */}
           <div className="flex-1 rounded-2xl border border-slate-200/50 dark:border-white/5 bg-slate-50/30 p-3.5 sm:p-5 dark:bg-white/[0.01] shadow-sm flex items-center justify-between hover:border-slate-300 dark:hover:border-white/10 transition-all">
             <div>
-              <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-550">Market Mood</div>
+              <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Market Mood</div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                 {brief.marketMood}
               </div>
@@ -204,7 +204,7 @@ export default function AIMarketSentiment() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4 flex-1">
             {/* Confidence Card */}
             <div className="rounded-2xl border border-slate-200/50 dark:border-white/5 bg-slate-50/30 p-3.5 sm:p-5 dark:bg-white/[0.01] shadow-sm hover:border-slate-300 dark:hover:border-white/10 transition-all flex flex-col justify-center">
-              <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-555">Confidence</div>
+              <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Confidence</div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-blue-600 dark:text-cyan-400">
                 {brief.confidence}%
               </div>
@@ -212,7 +212,7 @@ export default function AIMarketSentiment() {
 
             {/* Risk Card */}
             <div className="rounded-2xl border border-slate-200/50 dark:border-white/5 bg-slate-50/30 p-3.5 sm:p-5 dark:bg-white/[0.01] shadow-sm hover:border-slate-300 dark:hover:border-white/10 transition-all flex flex-col justify-center">
-              <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-555">Risk Level</div>
+              <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Risk Level</div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
                 {brief.riskLevel}
               </div>
@@ -234,7 +234,7 @@ export default function AIMarketSentiment() {
 
       {/* MIDDLE SECTION: Detailed AI Insights Feed */}
       <div className="relative z-10 mt-5 sm:mt-8">
-        <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-555 flex items-center gap-2">
+        <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
           <Sparkles className="h-3.5 w-3.5 text-blue-500 dark:text-cyan-400" />
           Detailed Market Insights
         </h3>
@@ -258,7 +258,7 @@ export default function AIMarketSentiment() {
         {/* Column 1: Strong momentum sectors */}
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-555 flex items-center gap-2">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
               <Terminal className="h-3.5 w-3.5 text-emerald-500" />
               Sectors: High Momentum
             </h3>
@@ -308,7 +308,7 @@ export default function AIMarketSentiment() {
         <div className="space-y-6">
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-555 flex items-center gap-2">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
                 <Terminal className="h-3.5 w-3.5 text-amber-500" />
                 Sectors: Mod/Low Momentum
               </h3>
@@ -356,7 +356,7 @@ export default function AIMarketSentiment() {
 
           {/* Active Market Threats (Placed under Weak Sectors to cover the gap) */}
           <div className="pt-2">
-            <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-555 flex items-center gap-2">
+            <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
               <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
               Active Market Threats
             </h3>
@@ -374,7 +374,7 @@ export default function AIMarketSentiment() {
       </div>
 
       {/* Footer Meta / Generated Time */}
-      <div className="relative z-10 mt-6 pt-4 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-555">
+      <div className="relative z-10 mt-6 pt-4 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
         <span>Generated: {new Date(brief.generatedAt).toLocaleString()}</span>
         <span>FinPulse AI Engine v1.2</span>
       </div>

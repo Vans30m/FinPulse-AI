@@ -1304,22 +1304,22 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             {/* Detailed Statistics Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                               <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                                <span className="text-[10px] text-slate-550 uppercase font-black tracking-wider leading-none">Institutional Holdings</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutional Holdings</span>
                                 <span className="text-2xl font-black text-white font-mono mt-3">{inst > 0 ? `${inst.toFixed(2)}%` : "N/A"}</span>
                               </div>
 
                               <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                                <span className="text-[10px] text-slate-550 uppercase font-black tracking-wider leading-none">Insider Holdings</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Insider Holdings</span>
                                 <span className="text-2xl font-black text-white font-mono mt-3">{insider > 0 ? `${insider.toFixed(2)}%` : "N/A"}</span>
                               </div>
 
                               <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                                <span className="text-[10px] text-slate-550 uppercase font-black tracking-wider leading-none">Retail & Public</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Retail & Public</span>
                                 <span className="text-2xl font-black text-white font-mono mt-3">{retail > 0 ? `${retail.toFixed(2)}%` : "N/A"}</span>
                               </div>
 
                               <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                                <span className="text-[10px] text-slate-550 uppercase font-black tracking-wider leading-none">Institutional Float / Count</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutional Float / Count</span>
                                 <span className="text-xs font-black text-slate-300 font-mono mt-3 block leading-tight">
                                   Float: {instFloat > 0 ? `${instFloat.toFixed(2)}%` : "N/A"}<br />
                                   Holders: {instCount}
@@ -1563,7 +1563,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   {/* MACD */}
                                   <div className="space-y-4 pt-2">
                                     <div className="flex justify-between text-xs font-mono">
-                                      <span className="text-slate-555 font-sans font-bold">MACD Crossover</span>
+                                      <span className="text-slate-500 font-sans font-bold">MACD Crossover</span>
                                       <span className={`font-black ${macd > macdSignal ? "text-emerald-450" : "text-rose-455"}`}>
                                         {macd > macdSignal ? "Bullish Crossover" : "Bearish Crossover"}
                                       </span>

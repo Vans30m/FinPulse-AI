@@ -314,7 +314,7 @@ export default function CommandPalette() {
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
                           {item.symbol}
                         </h4>
-                        <p className="text-xs text-slate-555 dark:text-slate-400">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           {item.name}
                         </p>
                       </div>

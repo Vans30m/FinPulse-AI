@@ -115,23 +115,23 @@ export default function TechnicalCard({
           
           <div className="space-y-3.5 text-sm flex-1 flex flex-col justify-center">
             <div className="flex justify-between items-center py-1 border-b border-slate-150 dark:border-white/[0.02]">
-              <span className="text-slate-550 dark:text-slate-400 font-bold">RSI (14)</span>
+              <span className="text-slate-500 dark:text-slate-400 font-bold">RSI (14)</span>
               <span className="font-mono font-black text-slate-900 dark:text-white">{data.rsi || "N/A"}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-slate-150 dark:border-white/[0.02]">
-              <span className="text-slate-550 dark:text-slate-400 font-bold">MACD Line</span>
+              <span className="text-slate-500 dark:text-slate-400 font-bold">MACD Line</span>
               <span className="font-mono font-black text-slate-900 dark:text-white">{data.macd || "N/A"}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-slate-150 dark:border-white/[0.02]">
-              <span className="text-slate-550 dark:text-slate-400 font-bold">Signal Line</span>
+              <span className="text-slate-500 dark:text-slate-400 font-bold">Signal Line</span>
               <span className="font-mono font-black text-slate-950 dark:text-slate-200">{data.signal || "N/A"}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-slate-150 dark:border-white/[0.02]">
-              <span className="text-slate-550 dark:text-slate-400 font-bold">EMA (20)</span>
+              <span className="text-slate-500 dark:text-slate-400 font-bold">EMA (20)</span>
               <span className="font-mono font-black text-slate-900 dark:text-white">{curPrefix}{data.ema20 || "N/A"}</span>
             </div>
             <div className="flex justify-between items-center py-1">
-              <span className="text-slate-550 dark:text-slate-400 font-bold">SMA (50)</span>
+              <span className="text-slate-500 dark:text-slate-400 font-bold">SMA (50)</span>
               <span className="font-mono font-black text-slate-900 dark:text-white">{curPrefix}{data.sma50 || "N/A"}</span>
             </div>
           </div>
