@@ -46,16 +46,28 @@ function formatProxyUrl(rawUrl: string): string {
 
 let proxyUrls: string[] = [];
 
-// Try to load from proxies.txt
+// Try to load from proxies.txt (local directories or Render Secrets)
 try {
+  const renderSecretsPath = '/etc/secrets/proxies.txt';
+  const localAltPath = path.join(process.cwd(), 'proxies.txt');
+  let pathUsed = '';
+
   if (fs.existsSync(proxiesFilePath)) {
-    const fileContent = fs.readFileSync(proxiesFilePath, 'utf-8');
+    pathUsed = proxiesFilePath;
+  } else if (fs.existsSync(renderSecretsPath)) {
+    pathUsed = renderSecretsPath;
+  } else if (fs.existsSync(localAltPath)) {
+    pathUsed = localAltPath;
+  }
+
+  if (pathUsed) {
+    const fileContent = fs.readFileSync(pathUsed, 'utf-8');
     proxyUrls = fileContent.split('\n')
       .map(line => line.trim())
       .filter(line => line && !line.startsWith('#'))
       .map(formatProxyUrl)
       .filter(Boolean);
-    console.log(`[Yahoo Service] Loaded ${proxyUrls.length} proxies from proxies.txt`);
+    console.log(`[Yahoo Service] Loaded ${proxyUrls.length} proxies from ${pathUsed}`);
   }
 } catch (err: any) {
   console.warn(`[Yahoo Service] Failed to read proxies.txt:`, err.message);
