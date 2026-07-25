@@ -64,9 +64,16 @@ graph TD
    ```
 2. Install package dependencies:
    ```bash
+   cd finpulse-web/backend
    npm install
    ```
-3. Create a `.env` file in `finpulse-web/backend` and configure the following variables:
+3. **Setup Proxy Rotation (Yahoo Finance Anti-Blocking)**
+   To prevent rate-limiting and scraping blocks from financial API providers, the backend supports automatic proxy rotation. Create a `proxies.txt` file inside the `finpulse-web/backend` directory and add your proxies (one per line):
+   ```text
+   ip:port
+   username:password@ip:port
+   ```
+4. Create a `.env` file in `finpulse-web/backend` and configure the following variables:
    ```env
    PORT=3000
    DATABASE_URL="postgresql://<user>:<password>@<host>/neondb?sslmode=require"
@@ -81,12 +88,12 @@ graph TD
    SMTP_USER="your-email@gmail.com"
    SMTP_PASS="your-app-password"
    ```
-4. Push database tables and generate the Prisma Client:
+5. Push database tables and generate the Prisma Client:
    ```bash
    npx prisma db push
    npx prisma generate
    ```
-5. Run the dev server:
+6. Run the dev server:
    ```bash
    npm run dev
    ```
@@ -127,6 +134,16 @@ graph TD
    ```bash
    python query_pipeline.py
    ```
+
+---
+
+## 🌐 Production Resiliency & Keep-Alive Schedule
+
+To bypass the auto-sleep restriction of Render's Free Tier (which spins down instances after 15 minutes of inactivity) and avoid initial request latency (cold starts), an external cron scheduler is utilized to keep the instance active:
+
+* **Target Endpoint:** Backend root URL (e.g., `https://finpulse-backend.onrender.com/`)
+* **Execution Interval:** Scheduled to run every **10 minutes** to prevent the container from entering inactive mode.
+* **Service Provider:** Configured via [cron-job.org](https://cron-job.org/) or [UptimeRobot](https://uptimerobot.com/).
 
 ---
 
