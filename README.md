@@ -143,7 +143,7 @@ To bypass the auto-sleep restriction of Render's Free Tier (which spins down ins
 
 * **Target Endpoint:** Backend root URL (e.g., `https://finpulse-backend.onrender.com/`)
 * **Execution Interval:** Scheduled to run every **10 minutes** to prevent the container from entering inactive mode.
-* **Service Provider:** Configured via [cron-job.org](https://cron-job.org/) or [UptimeRobot](https://uptimerobot.com/).
+* **Service Provider:** Configured via [cron-job.org](https://cron-job.org/).
 
 ---
 
