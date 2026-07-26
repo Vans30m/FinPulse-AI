@@ -97,30 +97,156 @@ export function getProxyAgent(): HttpsProxyAgent<string> | undefined {
   return proxyAgents[index];
 }
 
+// Rotate between Yahoo Finance query hosts to spread load and avoid per-host rate limits
+const YAHOO_HOSTS = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
+let yahooHostIndex = 0;
+function getNextYahooHost(): string {
+  const host = YAHOO_HOSTS[yahooHostIndex % YAHOO_HOSTS.length];
+  yahooHostIndex++;
+  return host;
+}
+
+// Replace query1/query2 in a Yahoo URL with the next rotating host
+function rotateYahooHost(url: string): string {
+  return url.replace(/query[12]\.finance\.yahoo\.com/, getNextYahooHost());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Yahoo Crumb + Cookie Session
+// Yahoo Finance APIs require a valid crumb (CSRF token) and session cookie.
+// Without them every direct axios call gets a 429 / 401 response.
+// ─────────────────────────────────────────────────────────────────────────────
+interface YahooSession {
+  crumb: string;
+  cookie: string;
+  fetchedAt: number;
+}
+
+let yahooSession: YahooSession | null = null;
+const YAHOO_SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
+let sessionFetchPromise: Promise<YahooSession | null> | null = null;
+
+async function fetchYahooSession(): Promise<YahooSession | null> {
+  // De-duplicate concurrent calls
+  if (sessionFetchPromise) return sessionFetchPromise;
+
+  sessionFetchPromise = (async () => {
+    try {
+      const ua = getRandomUserAgent();
+      const agent = getProxyAgent();
+
+      // Step 1 – hit the Yahoo Finance home page to get a session cookie
+      const consentRes = await axios.get('https://finance.yahoo.com/', {
+        headers: {
+          'User-Agent': ua,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+        httpsAgent: agent,
+        timeout: 12000,
+        maxRedirects: 5,
+      });
+
+      // Collect Set-Cookie headers
+      // axios v1 types 'set-cookie' as string[] | undefined, but guard both cases at runtime
+      const rawCookies: string[] = [];
+      const setCookieRaw = consentRes.headers['set-cookie'];
+      const setCookieArr: string[] = Array.isArray(setCookieRaw)
+        ? setCookieRaw
+        : setCookieRaw
+          ? [String(setCookieRaw)]
+          : [];
+      setCookieArr.forEach(c => rawCookies.push(c.split(';')[0]));
+
+      // Also include any cookies baked into the response URL (CSRF redirect)
+      const cookieHeader = rawCookies.join('; ');
+
+      // Step 2 – fetch the crumb using the session cookie
+      const crumbRes = await axios.get('https://query1.finance.yahoo.com/v1/test/getcrumb', {
+        headers: {
+          'User-Agent': ua,
+          'Accept': '*/*',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Referer': 'https://finance.yahoo.com/',
+          'Cookie': cookieHeader,
+        },
+        httpsAgent: agent,
+        timeout: 10000,
+      });
+
+      const crumb = typeof crumbRes.data === 'string' ? crumbRes.data.trim() : '';
+      if (!crumb || crumb.length < 3) {
+        console.warn('[Yahoo Session] Crumb fetch returned empty/invalid value:', crumbRes.data);
+        return null;
+      }
+
+      console.log(`[Yahoo Session] Successfully obtained crumb (${crumb}) and session cookie.`);
+      return { crumb, cookie: cookieHeader, fetchedAt: Date.now() };
+    } catch (err: any) {
+      console.warn('[Yahoo Session] Failed to fetch crumb/cookie:', err.message);
+      return null;
+    } finally {
+      sessionFetchPromise = null;
+    }
+  })();
+
+  return sessionFetchPromise;
+}
+
+async function getYahooSession(): Promise<YahooSession | null> {
+  if (yahooSession && Date.now() - yahooSession.fetchedAt < YAHOO_SESSION_TTL_MS) {
+    return yahooSession;
+  }
+  const session = await fetchYahooSession();
+  if (session) yahooSession = session;
+  return yahooSession;
+}
+
+// Invalidate session (called when we get 429 / 401 to force a fresh crumb next time)
+function invalidateYahooSession() {
+  yahooSession = null;
+}
+
 async function axiosGetResilient(url: string, config: any = {}, retries = 3): Promise<any> {
   let lastError: any;
   for (let i = 0; i < retries; i++) {
+    // Rotate the Yahoo host on each attempt to spread requests
+    const rotatedUrl = rotateYahooHost(url);
     const agent = getProxyAgent();
-    const headers = {
+
+    // Fetch (or reuse) a valid Yahoo crumb + cookie session
+    const session = await getYahooSession();
+
+    // Build query params – attach crumb if we have a session
+    const extraParams: Record<string, string> = {};
+    if (session?.crumb) extraParams.crumb = session.crumb;
+
+    const headers: Record<string, string> = {
       ...config.headers,
       'User-Agent': getRandomUserAgent(),
     };
-    
+    if (session?.cookie) headers['Cookie'] = session.cookie;
+
     try {
-      const response = await axios.get(url, {
+      const response = await axios.get(rotatedUrl, {
         ...config,
+        params: { ...config.params, ...extraParams },
         headers,
         httpsAgent: agent,
-        timeout: agent ? 4000 : 10000
+        timeout: agent ? 6000 : 12000,
       });
       return response;
     } catch (err: any) {
       lastError = err;
       const status = err.response?.status;
-      if (status === 404) {
-        throw err;
+
+      if (status === 404) throw err;
+
+      // On 401/429, invalidate the cached session so the next attempt fetches a fresh crumb
+      if (status === 401 || status === 429) {
+        invalidateYahooSession();
       }
-      
+
       let errorDetails = '';
       if (status === 429) {
         const bodySnippet = typeof err.response?.data === 'string'
@@ -128,8 +254,20 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3): Pr
           : JSON.stringify(err.response?.data || {}).substring(0, 150);
         errorDetails = ` - Response Data: ${bodySnippet}`;
       }
-      
-      console.warn(`[Yahoo Service] Request to ${url} failed (Attempt ${i + 1}/${retries}) through proxy: ${status || err.message}${errorDetails}`);
+
+      console.warn(`[Yahoo Service] Request to ${rotatedUrl} failed (Attempt ${i + 1}/${retries}) through proxy: ${status || err.message}${errorDetails}`);
+
+      // On 429, apply exponential back-off with jitter before retrying
+      if (status === 429) {
+        const baseDelay = 2000;
+        const backoff = baseDelay * Math.pow(2, i); // 2 s, 4 s, 8 s
+        const jitter = Math.random() * 1000;         // up to +1 s
+        const wait = Math.min(backoff + jitter, 15000); // cap at 15 s
+        console.warn(`[Yahoo Service] 429 – backing off for ${Math.round(wait)}ms before retry ${i + 1}/${retries}...`);
+        await new Promise(resolve => setTimeout(resolve, wait));
+      } else if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 400 * (i + 1)));
+      }
     }
   }
   throw lastError;
@@ -271,12 +409,14 @@ async function fetchTwelveDataQuotes(symbols: string[]): Promise<any[]> {
 // Helper to fetch quotes from Yahoo Spark API
 async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
   const results: any[] = [];
-  const chunkSize = 10;
-  const delayMs = 300;
+  const chunkSize = 5; // Smaller chunks to reduce per-request load
+  const delayMs = 600; // Longer delay between chunks to stay under rate limits
 
   for (let i = 0; i < symbols.length; i += chunkSize) {
     const chunk = symbols.slice(i, i + chunkSize);
-    const url = 'https://query1.finance.yahoo.com/v7/finance/spark';
+    // Alternate between query1 and query2 to spread load
+    const host = i % 2 === 0 ? 'query1.finance.yahoo.com' : 'query2.finance.yahoo.com';
+    const url = `https://${host}/v7/finance/spark`;
     try {
       const response = await axiosGetResilient(url, {
         params: {
@@ -290,7 +430,7 @@ async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
           'Referer': 'https://finance.yahoo.com/',
           'Origin': 'https://finance.yahoo.com'
         }
-      });
+      }, 2); // Only 2 retries for spark to fail fast to chart fallback
 
       const data = response.data || {};
       const sparkResults = data.spark?.result || [];
@@ -349,8 +489,8 @@ function isTwelveDataRateLimited(): boolean {
 
 function setYahooRateLimited() {
   if (Date.now() >= YAHOO_COOLDOWN_UNTIL) {
-    YAHOO_COOLDOWN_UNTIL = Date.now() + 60000; // 1 minute cooldown
-    console.warn(`[Yahoo Service] Yahoo Finance rate-limit/auth block detected (429/401). Entering 1-minute cooldown.`);
+    YAHOO_COOLDOWN_UNTIL = Date.now() + 90000; // 90-second cooldown (extended to let rate limit clear)
+    console.warn(`[Yahoo Service] Yahoo Finance rate-limit/auth block detected (429/401). Entering 90-second cooldown.`);
   }
 }
 
@@ -363,13 +503,13 @@ function setTwelveDataRateLimited() {
 
 // Memory cache to prevent parallel/frequent requests from spamming Yahoo Finance APIs (triggers 429)
 const QUOTE_CACHE = new Map<string, { data: any; timestamp: number }>();
-const QUOTE_CACHE_TTL_MS = 15000; // Cache quotes for 15 seconds
+const QUOTE_CACHE_TTL_MS = 30000; // Cache quotes for 30 seconds (increased to reduce 429s)
 
 const CHART_CACHE = new Map<string, { data: any; timestamp: number }>();
-const CHART_CACHE_TTL_MS = 30000; // Cache chart data for 30 seconds
+const CHART_CACHE_TTL_MS = 60000; // Cache chart data for 60 seconds (increased to reduce 429s)
 
 const SEARCH_CACHE = new Map<string, { data: any; timestamp: number }>();
-const SEARCH_CACHE_TTL_MS = 60000; // Cache searches for 1 minute
+const SEARCH_CACHE_TTL_MS = 120000; // Cache searches for 2 minutes
 
 const inflightQuotePromises = new Map<string, Promise<any[]>>();
 
@@ -451,7 +591,7 @@ async function performRawQuoteFetch(symbolList: string[], options?: any): Promis
     }
   }
 
-  // 1. Spark Fallback (Yahoo direct API query1/query2) - Primary Resilient Fallback (crumb-free)
+  // 1. Spark Fallback (Yahoo direct API with crumb auth) - Primary Resilient Fallback
   try {
     const sparkResults = await fetchYahooSparkQuotes(symbolList);
     if (sparkResults && sparkResults.length > 0) {
@@ -461,20 +601,18 @@ async function performRawQuoteFetch(symbolList: string[], options?: any): Promis
     console.warn(`[Yahoo Service] Spark fallback failed, trying direct Chart quote fallback:`, sparkErr.message);
   }
 
-  // 1b. Direct Chart Fallback - Fetch individual quotes using the chart endpoint in a throttled/sequential sequence
+  // 1b. Direct Chart Fallback - Fetch quotes one at a time to stay under rate limits
   try {
     const chartQuotes: any[] = [];
-    const concurrency = 3;
-    const delayMs = 250;
-    for (let i = 0; i < symbolList.length; i += concurrency) {
-      const chunk = symbolList.slice(i, i + concurrency);
-      const chunkResults = await Promise.all(chunk.map(sym => fetchYahooChartQuote(sym)));
-      chartQuotes.push(...chunkResults);
-      if (i + concurrency < symbolList.length) {
+    const delayMs = 500;
+    for (let i = 0; i < symbolList.length; i++) {
+      const result = await fetchYahooChartQuote(symbolList[i]);
+      chartQuotes.push(result);
+      if (i < symbolList.length - 1) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
-    
+
     const validQuotes = chartQuotes.filter(Boolean);
     if (validQuotes.length > 0) {
       return validQuotes;

@@ -18,7 +18,7 @@ async function callGeminiWithOllamaFallback(prompt: string, jsonMode = false): P
         parts: [{ text: prompt }]
       }],
       generationConfig: jsonMode ? { responseMimeType: "application/json" } : undefined
-    }, { timeout: 15000 });
+    }, { timeout: 45000 }); // 45s – Gemini 2.5 Flash is a thinking model and needs extra time
     
     if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
       return response.data.candidates[0].content.parts[0].text;
@@ -41,7 +41,7 @@ async function callGeminiWithOllamaFallback(prompt: string, jsonMode = false): P
         prompt: prompt,
         stream: false,
         format: jsonMode ? "json" : undefined
-      }, { timeout: 30000 });
+      }, { timeout: 8000 }); // 8s – fail fast if Ollama isn't running locally
       
       if (response.data?.response) {
         console.log(`Successfully fetched fallback response from Ollama (${ollamaModel})`);
