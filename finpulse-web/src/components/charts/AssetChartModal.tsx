@@ -606,8 +606,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                     <div className="flex items-center justify-between border-b border-slate-900/60 pb-2">
                       <span className="text-xs font-bold text-slate-300 tracking-wide">Active Position</span>
                       <span className={`px-2 py-0.5 text-[9px] font-black rounded border ${activePosition.shares < 0
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         }`}>
                         {activePosition.shares < 0 ? 'SHORT' : 'LONG'}
                       </span>
@@ -1706,7 +1706,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                         <div className="relative w-full px-6 h-36 flex items-center justify-center">
                                           {/* Vertical track */}
                                           <div className="absolute top-0 bottom-0 w-[3px] rounded-full bg-gradient-to-t from-emerald-500/30 via-blue-500/20 to-rose-500/30 border border-slate-900/40" />
-                                          
+
                                           {/* Ticks/Labels - Centered Layout */}
                                           {[
                                             { label: "R2", value: R2, color: "text-rose-400" },
@@ -1717,17 +1717,17 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                           ].map((lvl, idx) => {
                                             const pct = getPct(lvl.value);
                                             return (
-                                              <div 
-                                                key={idx} 
+                                              <div
+                                                key={idx}
                                                 className="absolute left-0 right-0 h-0 flex items-center justify-center pointer-events-none"
                                                 style={{ bottom: `${pct}%` }}
                                               >
                                                 {/* Left label */}
                                                 <span className={`absolute right-[56%] font-mono text-[9px] font-bold w-12 text-right ${lvl.color}`}>{lvl.label}</span>
-                                                
+
                                                 {/* Center crossing tick line */}
                                                 <div className="w-3.5 h-[1px] bg-slate-700 z-10" />
-                                                
+
                                                 {/* Right price value */}
                                                 <span className="absolute left-[56%] font-mono text-[9px] text-slate-500 w-16 text-left">{formatVal(lvl.value, true)}</span>
                                               </div>
@@ -1735,7 +1735,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                           })}
 
                                           {/* Current Price Pointer */}
-                                          <div 
+                                          <div
                                             className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 ease-out z-10 w-12"
                                             style={{ bottom: `${pricePct}%` }}
                                           >
@@ -1758,8 +1758,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                         ].map((lvl, idx) => {
                                           const isAbove = price >= lvl.value;
                                           return (
-                                            <div 
-                                              key={idx} 
+                                            <div
+                                              key={idx}
                                               className={`flex justify-between items-center px-4 py-2.5 rounded-xl transition-all duration-250 ${lvl.bgClass} ${lvl.borderClass}`}
                                             >
                                               <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
@@ -1806,8 +1806,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
                         return (
                           <div className={`border rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md transition-all duration-300 ${primaryGrowth >= 0
-                              ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20"
-                              : "bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent border-rose-500/20"
+                            ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20"
+                            : "bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent border-rose-500/20"
                             }`}>
                             <div className="space-y-1 w-full md:w-auto">
                               <span className="text-[10px] text-slate-505 uppercase font-black tracking-wider block">Return Analysis</span>
@@ -2075,8 +2075,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               setCloseQtyInput(String(totalShares));
                             }}
                             className={`py-2 rounded-xl text-xs font-bold transition-all border ${closeType === "full"
-                                ? "bg-rose-600/10 text-rose-450 border-rose-500/30"
-                                : "bg-slate-900/40 text-slate-400 border-slate-900/60 hover:bg-slate-900/80"
+                              ? "bg-rose-600/10 text-rose-450 border-rose-500/30"
+                              : "bg-slate-900/40 text-slate-400 border-slate-900/60 hover:bg-slate-900/80"
                               }`}
                           >
                             Close Full Position
@@ -2088,8 +2088,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               setCloseQtyInput(String(Math.min(totalShares, Math.ceil(totalShares / 2))));
                             }}
                             className={`py-2 rounded-xl text-xs font-bold transition-all border ${closeType === "partial"
-                                ? "bg-rose-600/10 text-rose-450 border-rose-500/30"
-                                : "bg-slate-900/40 text-slate-400 border-slate-900/60 hover:bg-slate-900/80"
+                              ? "bg-rose-600/10 text-rose-450 border-rose-500/30"
+                              : "bg-slate-900/40 text-slate-400 border-slate-900/60 hover:bg-slate-900/80"
                               }`}
                           >
                             Partial Close
@@ -2164,8 +2164,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         }}
                         disabled={!isValid}
                         className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${isValid
-                            ? "bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-500/10 active:scale-95"
-                            : "bg-slate-900 text-slate-650 cursor-not-allowed border border-slate-900/60"
+                          ? "bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-500/10 active:scale-95"
+                          : "bg-slate-900 text-slate-650 cursor-not-allowed border border-slate-900/60"
                           }`}
                       >
                         Confirm Close

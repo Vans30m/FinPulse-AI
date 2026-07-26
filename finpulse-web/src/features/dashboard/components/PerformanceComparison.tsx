@@ -35,13 +35,13 @@ export default function PerformanceComparison() {
   const [holdings, setHoldings] = useState<any[]>([]);
   const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
 
-  // New Benchmark Comparison states
+  // Benchmark Comparison states
   const [benchmarkTicker, setBenchmarkTicker] = useState<string>("^GSPC");
   const [benchmarkTimeframe, setBenchmarkTimeframe] = useState<string>("1M");
   const [comparisonLoading, setComparisonLoading] = useState<boolean>(true);
   const [comparisonError, setComparisonError] = useState<string | null>(null);
   const [comparisonData, setComparisonData] = useState<{ series: any[], stats: any, constituents: any[] } | null>(null);
-  
+
   // AI Advisor integration state
   const [advisorData, setAdvisorData] = useState<any>(null);
   const [advisorLoading, setAdvisorLoading] = useState<boolean>(true);
@@ -87,7 +87,7 @@ export default function PerformanceComparison() {
 
       if (holdingsRes.ok) {
         const data = await holdingsRes.json();
-        const allHoldings = (data.sections || []).flatMap((s: any) => 
+        const allHoldings = (data.sections || []).flatMap((s: any) =>
           (s.holdings || []).map((h: any) => ({ ...h, marketId: s.id }))
         );
         setHoldings(allHoldings);
@@ -99,7 +99,7 @@ export default function PerformanceComparison() {
         try {
           setAdvisorData(JSON.parse(cachedAdvisor));
           setAdvisorLoading(false);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       fetch(`${API_BASE_URL}/api/ai/portfolio-advisor`, { headers })
@@ -170,7 +170,7 @@ export default function PerformanceComparison() {
     loadPerformanceData();
     fetchBenchmarkComparison();
   };
-  // Process cumulative return series using helper utility with memoization
+
   const processedSeries = useMemo(() => {
     if (!comparisonData || !comparisonData.series) return [];
     return processCumulativeData(comparisonData.series);
@@ -179,6 +179,7 @@ export default function PerformanceComparison() {
   const activeBenchmarkName = useMemo(() => {
     return BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name || "Benchmark";
   }, [benchmarkTicker]);
+
   const portfolioStats = useMemo(() => {
     let totalValuation = 0;
     let totalCost = 0;
@@ -209,17 +210,18 @@ export default function PerformanceComparison() {
       yieldReturn
     };
   }, [holdings, usdToInrRate]);
+
   const sectorAllocations = useMemo(() => {
     if (holdings.length === 0) return [];
     const sectorsMap: Record<string, number> = {};
     let totalValue = 0;
- 
+
     holdings.forEach(h => {
       const val = h.marketValue || (h.shares * h.currentPrice) || 0;
       sectorsMap[h.sector || "Other"] = (sectorsMap[h.sector || "Other"] || 0) + val;
       totalValue += val;
     });
- 
+
     const colors = ["#3b82f6", "#10b981", "#a855f7", "#f59e42", "#ec4899", "#64748b"];
     return Object.entries(sectorsMap).map(([name, count], index) => ({
       name,
@@ -228,8 +230,7 @@ export default function PerformanceComparison() {
       color: colors[index % colors.length]
     }));
   }, [holdings]);
- 
-  // Top gainers (alpha contributors)
+
   const contributors = useMemo(() => {
     return holdings
       .filter(h => h.totalGain > 0)
@@ -241,8 +242,7 @@ export default function PerformanceComparison() {
         return: `${h.gainPercent >= 0 ? "+" : ""}${h.gainPercent.toFixed(2)}%`
       }));
   }, [holdings]);
- 
-  // Underperformers (losses)
+
   const losses = useMemo(() => {
     return holdings
       .filter(h => h.totalGain < 0)
@@ -254,49 +254,44 @@ export default function PerformanceComparison() {
         return: `${h.gainPercent.toFixed(2)}%`
       }));
   }, [holdings]);
- 
+
   const sortedAndFilteredConstituents = useMemo(() => {
     if (!comparisonData || !comparisonData.constituents) return [];
     let list = [...comparisonData.constituents];
- 
-    // Search filter
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q));
     }
- 
-    // Sort order
+
     list.sort((a, b) => {
       let valA = a[sortField];
       let valB = b[sortField];
- 
+
       if (valA === null || valA === undefined) return 1;
       if (valB === null || valB === undefined) return -1;
- 
+
       if (typeof valA === 'string') {
         return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
       } else {
         return sortDirection === 'asc' ? valA - valB : valB - valA;
       }
     });
- 
-    // Limit elements
+
     if (constituentLimit !== 'all') {
       const limitVal = parseInt(constituentLimit);
       list = list.slice(0, limitVal);
     }
- 
+
     return list;
   }, [comparisonData, searchQuery, constituentLimit, sortField, sortDirection]);
- 
-  // Tab state for restructuring the page
+
   const [activeTab, setActiveTab] = useState<"overview" | "metrics" | "constituents" | "ai">("overview");
- 
+
   if (loading) {
     return <PageLoader title="Performance Center" message="Analyzing risk metrics, calculating CAGR trajectories, and compiling benchmark comparison stats..." />;
   }
- 
-  // Render Premium Fallback/Zero State when Portfolio is Empty
+
   if (holdings.length === 0) {
     return (
       <div className="space-y-8 text-slate-100 font-sans selection:bg-blue-500/25 selection:text-white">
@@ -306,7 +301,7 @@ export default function PerformanceComparison() {
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Deep-dive metric matrices, alpha models, and solvency indicators.</p>
           </div>
         </div>
- 
+
         <div className="flex flex-col items-center justify-center text-center p-16 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl space-y-6">
           <div className="h-16 w-16 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
             <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
@@ -327,6 +322,7 @@ export default function PerformanceComparison() {
       </div>
     );
   }
+
   const getCurrencySymbol = (currencyString?: string) => {
     if (!currencyString) return '₹';
     if (currencyString.includes('₹') || currencyString.toUpperCase().includes('INR')) return '₹';
@@ -351,16 +347,16 @@ export default function PerformanceComparison() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
-            className="flex items-center gap-2 rounded-xl bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all"
+            className="flex items-center gap-2 rounded-xl bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all"
           >
             <Activity className="h-4.5 w-4.5" />
             Recalculate Metrics
           </button>
         </div>
       </div>
- 
+
       {/* TABS CONTROLLER */}
-      <div className="flex border-b border-slate-900/60 pb-px overflow-x-auto gap-2">
+      <div className="grid grid-cols-2 md:flex md:flex-row border-b border-slate-900/60 gap-2">
         {[
           { id: "overview", label: "Overview & Returns" },
           { id: "metrics", label: "Advanced Metrics" },
@@ -370,20 +366,19 @@ export default function PerformanceComparison() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-5 py-3 border-b-2 text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
-              activeTab === tab.id
+            className={`px-3 sm:px-5 py-3 border-b-2 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all text-center whitespace-nowrap ${activeTab === tab.id
                 ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-500/5 rounded-t-xl"
                 : "border-transparent text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-800"
-            }`}
+              }`}
           >
             {tab.label}
           </button>
         ))}
       </div>
- 
-      {/* ==================== HERO PERFORMANCE SUMMARY (Rendered on Overview and Metrics) ==================== */}
+
+      {/* HERO PERFORMANCE SUMMARY */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {[
             { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Aggregate return yield", grad: "from-cyan-600/10 to-blue-500/10" },
             { label: "Total Profit / Loss", val: `${displayGain >= 0 ? "+" : ""}${cSymbol}${displayGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Unrealized ledger delta", grad: "from-emerald-600/10 to-teal-500/10" },
@@ -392,16 +387,16 @@ export default function PerformanceComparison() {
           ].map((card, i) => (
             <div
               key={i}
-              className={`bg-white dark:bg-[#121a2a]/45 backdrop-blur-md border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-lg bg-gradient-to-br ${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
+              className={`bg-white dark:bg-[#121a2a]/45 backdrop-blur-md border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg bg-gradient-to-br ${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
             >
-              <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">{card.label}</span>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-2">{card.val}</h3>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1.5 font-medium">{card.desc}</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">{card.label}</span>
+              <h3 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1 sm:mt-2">{card.val}</h3>
+              <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 block mt-1 sm:mt-1.5 font-medium">{card.desc}</span>
             </div>
           ))}
         </div>
       )}
- 
+
       {/* TAB CONTENT RENDERING */}
       {activeTab === "overview" && (
         <div className="space-y-6 animate-fadeIn">
@@ -425,17 +420,16 @@ export default function PerformanceComparison() {
             <>
               {/* Performance Summary Banner */}
               {comparisonData?.stats && (
-                <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${
-                  comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
+                <div className={`p-4 rounded-2xl border flex items-start sm:items-center gap-3 transition-all ${comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
                     ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "bg-rose-500/5 border-rose-500/10 text-rose-500 dark:text-rose-450"
-                }`}>
+                    : "bg-rose-500/5 border-rose-500/10 text-rose-500 dark:text-rose-400"
+                  }`}>
                   {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
-                    <CheckCircle2 className="h-5 w-5 shrink-0" />
+                    <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5 sm:mt-0" />
                   ) : (
-                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 sm:mt-0" />
                   )}
-                  <span className="text-sm font-black uppercase tracking-wide">
+                  <span className="text-xs sm:text-sm font-black uppercase tracking-wide">
                     {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
                       ? `Portfolio outperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by +${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
                       : `Portfolio underperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by ${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
@@ -443,49 +437,48 @@ export default function PerformanceComparison() {
                   </span>
                 </div>
               )}
- 
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Chart Block */}
-                <div className="lg:col-span-2 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
+                <div className="lg:col-span-2 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-5 shadow-md flex flex-col justify-between">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
                     <div className="flex items-center gap-2">
                       <LineChartIcon size={16} className="text-blue-600 dark:text-blue-400" />
                       <span className="text-xs font-black uppercase tracking-wider text-slate-400">Cumulative Return Comparison</span>
                     </div>
- 
-                    <div className="flex flex-wrap bg-slate-100 dark:bg-[#050711] p-1 rounded-xl border border-slate-200 dark:border-slate-900 gap-1">
+
+                    <div className="flex flex-row overflow-x-auto scrollbar-none flex-nowrap bg-slate-100 dark:bg-[#050711] p-1 rounded-xl border border-slate-200 dark:border-slate-900 gap-1 w-full sm:w-auto">
                       {["1D", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "MAX"].map((tf) => (
                         <button
                           key={tf}
                           onClick={() => setBenchmarkTimeframe(tf)}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                            benchmarkTimeframe === tf
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${benchmarkTimeframe === tf
                               ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
                               : "text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                          }`}
+                            }`}
                         >
                           {tf}
                         </button>
                       ))}
                     </div>
                   </div>
- 
-                  <div className="mb-4 flex flex-wrap gap-1.5">
+
+                  {/* Benchmarks Selector Row */}
+                  <div className="mb-4 flex flex-row overflow-x-auto scrollbar-none gap-1.5 pb-1.5 flex-nowrap w-full snap-x">
                     {BENCHMARK_OPTIONS.map((bench) => (
                       <button
                         key={bench.symbol}
                         onClick={() => setBenchmarkTicker(bench.symbol)}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border transition-all ${
-                          benchmarkTicker === bench.symbol
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border transition-all shrink-0 snap-start ${benchmarkTicker === bench.symbol
                             ? "bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-inner"
                             : "bg-slate-50 dark:bg-[#050711]/40 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-900/60 hover:text-slate-900 dark:hover:text-white"
-                        }`}
+                          }`}
                       >
                         {bench.name}
                       </button>
                     ))}
                   </div>
- 
+
                   {/* Stats Grid Above the Chart */}
                   {comparisonData?.stats && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6 border-b border-slate-200 dark:border-slate-900/60 pb-5">
@@ -503,9 +496,8 @@ export default function PerformanceComparison() {
                       </div>
                       <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
                         <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Outperformance</span>
-                        <span className={`text-xs font-black font-mono block mt-1 ${
-                          comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-450"
-                        }`}>
+                        <span className={`text-xs font-black font-mono block mt-1 ${comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"
+                          }`}>
                           {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn) >= 0 ? "+" : ""}
                           {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%
                         </span>
@@ -542,7 +534,7 @@ export default function PerformanceComparison() {
                       </div>
                     </div>
                   )}
- 
+
                   <div className="w-full mt-2">
                     {(!comparisonData || processedSeries.length === 0) ? (
                       <div className="h-[300px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-900 rounded-3xl">
@@ -557,7 +549,7 @@ export default function PerformanceComparison() {
                     )}
                   </div>
                 </div>
- 
+
                 {/* Statistics Panel */}
                 <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
                   <div>
@@ -568,7 +560,7 @@ export default function PerformanceComparison() {
                         <span className="text-slate-900 dark:text-white font-extrabold">{BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name}</span>
                       </div>
                     </div>
- 
+
                     {comparisonData?.stats && (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
@@ -581,7 +573,7 @@ export default function PerformanceComparison() {
                             <span className="text-sm font-black text-slate-700 dark:text-slate-200 font-mono block mt-1">{comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%</span>
                           </div>
                         </div>
- 
+
                         <div className="space-y-2 border-t border-slate-200 dark:border-slate-900/60 pt-3">
                           {[
                             { label: "Alpha (Excess Return)", value: `${comparisonData.stats.alpha >= 0 ? "+" : ""}${comparisonData.stats.alpha}` },
@@ -593,7 +585,7 @@ export default function PerformanceComparison() {
                             { label: "Max Drawdown", value: `${comparisonData.stats.maxDrawdown}%` },
                             { label: "Portfolio Volatility", value: `${comparisonData.stats.volatility}%` }
                           ].map((stat, idx) => (
-                            <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-205 dark:border-slate-900/60 text-xs">
+                            <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-900/60 text-xs">
                               <span className="text-slate-500 dark:text-slate-400 font-medium">{stat.label}</span>
                               <span className="font-mono font-black text-white">{stat.value}</span>
                             </div>
@@ -604,15 +596,15 @@ export default function PerformanceComparison() {
                   </div>
                 </div>
               </div>
- 
+
               {/* Alpha & Beta Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md">
-                  <div className="flex items-center gap-2 border-b border-slate-205 dark:border-slate-900 pb-3 mb-4">
+                  <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
                     <TrendingUp size={15} className="text-emerald-600 dark:text-emerald-400" />
                     <span className="text-xs font-black uppercase tracking-wider text-slate-400">Top Alpha Contributors</span>
                   </div>
- 
+
                   <div className="space-y-3">
                     {contributors.length === 0 ? (
                       <div className="text-slate-500 text-xs py-4 font-bold text-center">No profitable assets currently.</div>
@@ -627,7 +619,7 @@ export default function PerformanceComparison() {
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{c.return}</span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-500 dark:text-slate-400 block font-mono">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
                             </div>
                           </div>
                         );
@@ -635,13 +627,13 @@ export default function PerformanceComparison() {
                     )}
                   </div>
                 </div>
- 
+
                 <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md">
                   <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
                     <TrendingDown size={15} className="text-rose-500 dark:text-rose-400" />
                     <span className="text-xs font-black uppercase tracking-wider text-slate-400">Biggest Beta Underperformers</span>
                   </div>
- 
+
                   <div className="space-y-3">
                     {losses.length === 0 ? (
                       <div className="text-slate-500 text-xs py-4 font-bold text-center">No negative assets currently.</div>
@@ -656,7 +648,7 @@ export default function PerformanceComparison() {
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-black text-rose-500 dark:text-rose-400 font-mono">{l.return}</span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-500 dark:text-slate-400 block font-mono">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
                             </div>
                           </div>
                         );
@@ -669,29 +661,48 @@ export default function PerformanceComparison() {
           )}
         </div>
       )}
- 
       {activeTab === "metrics" && (
-        <div className="space-y-8 animate-fadeIn">
-          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-6 shadow-md">
-            <h3 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider mb-2">Portfolio Allocation Benchmark Radar</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Visual comparison of sector distributions and risks against selected benchmarks.</p>
+        <div className="space-y-6 animate-fadeIn">
+          {/* Card 1: Benchmark Radar */}
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
+              <Layers className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Portfolio Allocation Benchmark Radar</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Visual comparison of sector distributions and risks against selected benchmarks.</p>
+              </div>
+            </div>
             <BenchmarkRadarSection />
           </div>
  
-          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-6 shadow-md">
-            <h3 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider mb-2">Performance Calendar Heatmap</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Historical ledger return heatmaps categorized by day, week, or month.</p>
+          {/* Card 2: Performance Heatmap */}
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
+              <Activity className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Performance Calendar Heatmap</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Historical ledger return heatmaps categorized by day, week, or month.</p>
+              </div>
+            </div>
             <PerformanceHeatmap />
           </div>
  
-          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-6 shadow-md">
-            <h3 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider mb-2">Rolling CAGR Charts</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Compounded Annual Growth Rates measured over dynamic holding timeframes.</p>
-            <RollingCagrSection />
+          {/* Card 3: Rolling CAGR */}
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
+              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0" />
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Rolling CAGR Charts</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Compounded Annual Growth Rates measured over dynamic holding timeframes.</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
- 
+
       {activeTab === "constituents" && (
         <div className="space-y-6 animate-fadeIn">
           {comparisonData?.constituents ? (
@@ -704,7 +715,7 @@ export default function PerformanceComparison() {
                   </h4>
                   <p className="text-[10px] text-slate-400 mt-0.5">Real-time Yahoo Finance constituent quotes and comparative returns.</p>
                 </div>
- 
+
                 <div className="flex flex-wrap items-center gap-3">
                   {/* Search Bar */}
                   <div className="relative">
@@ -717,7 +728,7 @@ export default function PerformanceComparison() {
                     />
                     <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
                   </div>
- 
+
                   {/* Limit Filters */}
                   <div className="flex bg-slate-100 dark:bg-[#050711] p-1 rounded-xl border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase text-slate-400">
                     {[
@@ -729,9 +740,8 @@ export default function PerformanceComparison() {
                       <button
                         key={lim.val}
                         onClick={() => setConstituentLimit(lim.val)}
-                        className={`px-2.5 py-1 rounded-lg transition-all ${
-                          constituentLimit === lim.val ? "bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-600 dark:text-blue-400" : "hover:text-slate-900 dark:hover:text-white"
-                        }`}
+                        className={`px-2.5 py-1 rounded-lg transition-all ${constituentLimit === lim.val ? "bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400" : "hover:text-slate-900 dark:hover:text-white"
+                          }`}
                       >
                         {lim.label}
                       </button>
@@ -739,11 +749,11 @@ export default function PerformanceComparison() {
                   </div>
                 </div>
               </div>
- 
+
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-950 text-slate-500 dark:text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] hover:bg-transparent">
+                    <tr className="border-b border-slate-200 dark:border-slate-950 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] hover:bg-transparent">
                       <th className="py-3 px-2">Constituent Company</th>
                       <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => {
                         setSortField("weight");
@@ -812,17 +822,17 @@ export default function PerformanceComparison() {
                         <td className="py-3.5 px-2 font-mono font-medium text-slate-400 hidden md:table-cell">
                           {con.marketCap ? `$${(con.marketCap / 1e9).toFixed(2)}B` : "—"}
                         </td>
- 
+
                         {/* Hover Tooltip card details */}
                         <div className="absolute left-1/4 bottom-full mb-2 hidden group-hover:block bg-white dark:bg-[#050711]/95 border border-slate-200 dark:border-slate-900 p-3.5 rounded-2xl shadow-2xl z-50 min-w-[200px] pointer-events-none backdrop-blur-md">
                           <span className="block text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 border-b border-slate-900 pb-1 mb-2">{con.name} metrics</span>
                           <div className="space-y-1.5 text-[10px]">
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Sector:</span><span className="text-slate-750 dark:text-slate-300 font-semibold">{con.sector}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Industry:</span><span className="text-slate-750 dark:text-slate-300 font-semibold">{con.industry}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Sector:</span><span className="text-slate-700 dark:text-slate-300 font-semibold">{con.sector}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Industry:</span><span className="text-slate-700 dark:text-slate-300 font-semibold">{con.industry}</span></div>
                             <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">PE Ratio:</span><span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">{con.pe ? con.pe.toFixed(2) : "—"}</span></div>
                             <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Dividend Yield:</span><span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">{con.dividendYield ? `${(con.dividendYield * 100).toFixed(2)}%` : "—"}</span></div>
                             <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W High:</span><span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">${con.fiftyTwoWeekHigh?.toFixed(2)}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W Low:</span><span className="text-rose-500 dark:text-rose-450 font-mono font-semibold">${con.fiftyTwoWeekLow?.toFixed(2)}</span></div>
+                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W Low:</span><span className="text-rose-500 dark:text-rose-400 font-mono font-semibold">${con.fiftyTwoWeekLow?.toFixed(2)}</span></div>
                           </div>
                         </div>
                       </tr>
@@ -838,7 +848,7 @@ export default function PerformanceComparison() {
           )}
         </div>
       )}
- 
+
       {activeTab === "ai" && (
         <div className="space-y-6 animate-fadeIn">
           {/* AI Portfolio Advisor */}
@@ -857,7 +867,7 @@ export default function PerformanceComparison() {
         </div>
       )}
 
-      {/* ==================== COMMON COMPLIANCE & GLOSSARY FOOTER ==================== */}
+      {/* COMMON COMPLIANCE & GLOSSARY FOOTER */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5 mt-8">
         {/* Metric Glossary */}
         <div className="bg-gradient-to-br from-[#121a2a]/40 to-[#0a0f1d]/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-4 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-500">
@@ -868,19 +878,19 @@ export default function PerformanceComparison() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px] pl-2">
             <div className="space-y-1">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Alpha (Excess Return)</span>
-              <p className="text-slate-650 dark:text-slate-400 leading-relaxed">Measures the portfolio's active return against a benchmark. A positive alpha indicates outperforming the index.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Measures the portfolio's active return against a benchmark. A positive alpha indicates outperforming the index.</p>
             </div>
             <div className="space-y-1">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Beta (Systemic Risk)</span>
-              <p className="text-slate-650 dark:text-slate-400 leading-relaxed">Indicates sensitivity to market movements. A Beta of 1.0 matches the benchmark; &gt;1.0 implies higher volatility.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Indicates sensitivity to market movements. A Beta of 1.0 matches the benchmark; &gt;1.0 implies higher volatility.</p>
             </div>
             <div className="space-y-1">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Sharpe Ratio</span>
-              <p className="text-slate-650 dark:text-slate-400 leading-relaxed">Quantifies risk-adjusted return. Higher values (&gt;1.5) indicate efficient returns per unit of volatility risk.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Quantifies risk-adjusted return. Higher values (&gt;1.5) indicate efficient returns per unit of volatility risk.</p>
             </div>
             <div className="space-y-1">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Max Drawdown</span>
-              <p className="text-slate-650 dark:text-slate-400 leading-relaxed">Represents the maximum observed peak-to-trough drop in value, signaling worst-case historical risk exposure.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Represents the maximum observed peak-to-trough drop in value, signaling worst-case historical risk exposure.</p>
             </div>
           </div>
         </div>
@@ -892,7 +902,7 @@ export default function PerformanceComparison() {
               <AlertCircle className="h-4 w-4 text-amber-400" />
               Regulatory Compliance & Disclosures
             </h4>
-            <p className="text-[11px] text-slate-650 dark:text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
               All performance metrics, mock calculations, and simulated returns generated on this analytics dashboard are purely illustrative. FinPulse AI does not act as a SEBI or SEC registered investment advisor. Backtested results do not guarantee future asset performance.
             </p>
           </div>

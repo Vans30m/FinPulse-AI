@@ -178,7 +178,6 @@ export default function App() {
       />
 
       <main
-        onClickCapture={handleProtectedAction}
         className={`relative z-10 mx-auto w-full flex-1 transition-all duration-500 ${location.pathname.startsWith('/screener')
           ? 'max-w-none px-4 sm:px-8 py-6'
           : 'max-w-7xl px-4 sm:px-6 py-8'
@@ -213,15 +212,19 @@ export default function App() {
             <Route
               path="/watchlist"
               element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="w-full"
-                >
-                  <Watchlist />
-                </motion.div>
+                isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <Watchlist />
+                  </motion.div>
+                ) : (
+                  <Navigate to="/pulse" replace />
+                )
               }
             />
 
@@ -243,45 +246,57 @@ export default function App() {
             <Route
               path="/portfolio"
               element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="w-full"
-                >
-                  <PortfolioDashboard />
-                </motion.div>
+                isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <PortfolioDashboard />
+                  </motion.div>
+                ) : (
+                  <Navigate to="/pulse" replace />
+                )
               }
             />
 
             <Route
               path="/performance"
               element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="w-full"
-                >
-                  <PerformanceComparison />
-                </motion.div>
+                isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <PerformanceComparison />
+                  </motion.div>
+                ) : (
+                  <Navigate to="/pulse" replace />
+                )
               }
             />
 
             <Route
               path="/alerts"
               element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="w-full"
-                >
-                  <MyAlertsDashboard />
-                </motion.div>
+                isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <MyAlertsDashboard />
+                  </motion.div>
+                ) : (
+                  <Navigate to="/pulse" replace />
+                )
               }
             />
 
@@ -332,56 +347,72 @@ export default function App() {
             <Route
               path="/profile"
               element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Profile />
-                </motion.div>
+                isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Profile />
+                  </motion.div>
+                ) : (
+                  <Navigate to="/pulse" replace />
+                )
               }
             />
 
             <Route
               path="/profile/edit"
               element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Profile />
-                </motion.div>
+                isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Profile />
+                  </motion.div>
+                ) : (
+                  <Navigate to="/pulse" replace />
+                )
               }
             />
 
             <Route
               path="/profile/security"
               element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Profile />
-                </motion.div>
+                isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Profile />
+                  </motion.div>
+                ) : (
+                  <Navigate to="/pulse" replace />
+                )
               }
             />
 
             <Route
               path="/profile/preferences"
               element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Preferences />
-                </motion.div>
+                isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Preferences />
+                  </motion.div>
+                ) : (
+                  <Navigate to="/pulse" replace />
+                )
               }
             />
 

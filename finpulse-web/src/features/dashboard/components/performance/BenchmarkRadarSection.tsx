@@ -318,7 +318,7 @@ export default function BenchmarkRadarSection() {
       {/* 1. HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-200 dark:border-slate-200 dark:border-slate-900 pb-5">
         <div>
-          <h3 className="text-lg font-black text-slate-900 dark:text-slate-800 dark:text-white tracking-tight uppercase flex items-center gap-2">
+          <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2">
             <Award size={18} className="text-blue-400" />
             Benchmark Radar
           </h3>
@@ -370,20 +370,20 @@ export default function BenchmarkRadarSection() {
       {loading ? (
         // Loading Skeleton
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 animate-pulse">
-          <div className="h-[400px] bg-slate-50/50 dark:bg-slate-50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl flex items-center justify-center">
+          <div className="h-[400px] bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl flex items-center justify-center">
             <span className="text-xs text-slate-500 font-extrabold uppercase">Loading radar datasets...</span>
           </div>
           <div className="space-y-4">
-            <div className="h-28 bg-slate-50/50 dark:bg-slate-50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl" />
-            <div className="h-44 bg-slate-50/50 dark:bg-slate-50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl" />
-            <div className="h-44 bg-slate-50/50 dark:bg-slate-50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl" />
+            <div className="h-28 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl" />
+            <div className="h-44 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl" />
+            <div className="h-44 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl" />
           </div>
         </div>
       ) : !benchmarkData ? (
         // Empty State
-        <div className="bg-slate-50/50 dark:bg-slate-50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl p-12 text-center">
+        <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl p-12 text-center">
           <AlertTriangle className="text-amber-500 mx-auto mb-3" size={32} />
-          <h4 className="text-sm font-black text-slate-900 dark:text-slate-800 dark:text-white uppercase">Benchmark Metrics Unavailable</h4>
+          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase">Benchmark Metrics Unavailable</h4>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
             Unable to fetch relative index data. Please select another benchmark target or reload the panel.
           </p>
@@ -392,7 +392,7 @@ export default function BenchmarkRadarSection() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           
           {/* LEFT: RADAR CHART CONTAINER */}
-          <div className="bg-slate-50/50 dark:bg-slate-50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl p-4 flex flex-col justify-between">
+          <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl p-4 flex flex-col justify-between">
             <div className="flex items-center justify-between gap-4 mb-2">
               <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Relative Alignment Spider</span>
               
@@ -473,13 +473,13 @@ export default function BenchmarkRadarSection() {
                             {showPortfolio && (
                               <div className="flex items-center justify-between gap-4 text-xs">
                                 <span className="text-blue-400 font-medium">Portfolio:</span>
-                                <span className="font-mono font-bold text-slate-900 dark:text-slate-800 dark:text-white">{data.portfolioDisplay}</span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">{data.portfolioDisplay}</span>
                               </div>
                             )}
                             {showBenchmark && (
                               <div className="flex items-center justify-between gap-4 text-xs">
                                 <span className="text-indigo-400 font-medium">{selectedBenchmark}:</span>
-                                <span className="font-mono font-bold text-slate-900 dark:text-slate-800 dark:text-white">{data.benchmarkDisplay}</span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">{data.benchmarkDisplay}</span>
                               </div>
                             )}
                           </div>
@@ -516,19 +516,19 @@ export default function BenchmarkRadarSection() {
 
             {/* Metrics outperformed/underperformed stats */}
             {comparisonDetails && (
-              <div className="bg-slate-50/50 dark:bg-slate-50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl p-4 space-y-3">
+              <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl p-4 space-y-3">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block border-b border-slate-200 dark:border-slate-200 dark:border-slate-900 pb-2">Comparison Ledger</span>
                 
                 <div className="grid grid-cols-2 gap-3 text-center">
                   <div className="bg-slate-50 dark:bg-[#121a2a]/20 border border-slate-200 dark:border-slate-200 dark:border-slate-900/60 rounded-xl p-2.5">
                     <span className="text-[9px] font-black uppercase text-emerald-400 block">Outperformed</span>
-                    <span className="text-lg font-black text-slate-900 dark:text-slate-800 dark:text-white font-mono mt-1 block">{comparisonDetails.outperformed.length}</span>
+                    <span className="text-lg font-black text-slate-900 dark:text-white font-mono mt-1 block">{comparisonDetails.outperformed.length}</span>
                     <span className="text-[8px] text-slate-500 font-medium uppercase mt-0.5 block">Metrics</span>
                   </div>
 
                   <div className="bg-slate-50 dark:bg-[#121a2a]/20 border border-slate-200 dark:border-slate-200 dark:border-slate-900/60 rounded-xl p-2.5">
                     <span className="text-[9px] font-black uppercase text-rose-400 block">Underperformed</span>
-                    <span className="text-lg font-black text-slate-900 dark:text-slate-800 dark:text-white font-mono mt-1 block">{comparisonDetails.underperformed.length}</span>
+                    <span className="text-lg font-black text-slate-900 dark:text-white font-mono mt-1 block">{comparisonDetails.underperformed.length}</span>
                     <span className="text-[8px] text-slate-500 font-medium uppercase mt-0.5 block">Metrics</span>
                   </div>
                 </div>
@@ -547,7 +547,7 @@ export default function BenchmarkRadarSection() {
             )}
 
             {/* Export Engine Panel */}
-            <div className="bg-slate-50/50 dark:bg-slate-50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl p-4">
+            <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl p-4">
               <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block border-b border-slate-200 dark:border-slate-200 dark:border-slate-900 pb-2 mb-3">Export Comparison Report</span>
               
               <div className="grid grid-cols-2 gap-2">

@@ -290,7 +290,7 @@ export default function PerformanceHeatmap() {
           <button
             type="button"
             onClick={() => changeYear(-1)}
-            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-slate-800 dark:text-white transition-colors inline-flex items-center gap-1"
+            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors inline-flex items-center gap-1"
           >
             <ChevronLeft className="h-3.5 w-3.5" /> Previous Year
           </button>
@@ -305,7 +305,7 @@ export default function PerformanceHeatmap() {
             type="button"
             onClick={() => changeYear(1)}
             disabled={year >= currentYear + 1}
-            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-slate-800 dark:text-white transition-colors inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next Year <ChevronRight className="h-3.5 w-3.5" />
           </button>

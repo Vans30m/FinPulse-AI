@@ -170,6 +170,13 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                     to={path}
                     end={item.id === "pulse"}
                     onMouseEnter={() => setHoveredTab(item.id)}
+                    onClick={(e) => {
+                      const protectedIds = ['portfolio', 'watchlist', 'alerts', 'performance', 'profile'];
+                      if (protectedIds.includes(item.id.toLowerCase()) && !isLoggedIn) {
+                        e.preventDefault();
+                        onLoginClick();
+                      }
+                    }}
                     className={({ isActive }) =>
                       `relative px-4 py-2 text-sm font-semibold transition-colors duration-300 z-10 ${isActive
                         ? "text-blue-600 dark:text-cyan-400"
@@ -407,7 +414,14 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                   <NavLink
                     to={path}
                     end={item.id === "pulse"}
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={(e) => {
+                      setIsMobileMenuOpen(false);
+                      const protectedIds = ['portfolio', 'watchlist', 'alerts', 'performance', 'profile'];
+                      if (protectedIds.includes(item.id.toLowerCase()) && !isLoggedIn) {
+                        e.preventDefault();
+                        onLoginClick();
+                      }
+                    }}
                     className={({ isActive }) =>
                       `px-4 py-3 rounded-xl text-sm font-bold transition-all ${isActive
                         ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/10"
