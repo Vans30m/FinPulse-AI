@@ -85,16 +85,27 @@ if (proxyUrls.length === 0) {
   }
 }
 
-const proxyAgents = proxyUrls.map(url => new HttpsProxyAgent<string>(url));
+interface ProxyObject {
+  agent: HttpsProxyAgent<string>;
+  cooldownUntil: number;
+  url: string;
+}
 
-if (proxyAgents.length > 0) {
-  console.log(`[Yahoo Service] Initialized ${proxyAgents.length} rotating HttpsProxyAgents.`);
+const proxyList: ProxyObject[] = proxyUrls.map(url => ({
+  agent: new HttpsProxyAgent<string>(url),
+  cooldownUntil: 0,
+  url
+}));
+
+if (proxyList.length > 0) {
+  console.log(`[Yahoo Service] Initialized ${proxyList.length} rotating HttpsProxyAgents with individual cooldowns.`);
 }
 
 export function getProxyAgent(): HttpsProxyAgent<string> | undefined {
-  if (proxyAgents.length === 0) return undefined;
-  const index = Math.floor(Math.random() * proxyAgents.length);
-  return proxyAgents[index];
+  const available = proxyList.filter(p => Date.now() >= p.cooldownUntil);
+  if (available.length === 0) return undefined;
+  const index = Math.floor(Math.random() * available.length);
+  return available[index].agent;
 }
 
 // Rotate between Yahoo Finance query hosts to spread load and avoid per-host rate limits
@@ -193,12 +204,23 @@ async function fetchYahooSession(): Promise<YahooSession | null> {
   return sessionFetchPromise;
 }
 
+let lastSessionFetchAttempt = 0;
+const SESSION_FETCH_COOLDOWN_MS = 5 * 60 * 1000; // 5 minute cooldown if failed
+
 async function getYahooSession(): Promise<YahooSession | null> {
   if (yahooSession && Date.now() - yahooSession.fetchedAt < YAHOO_SESSION_TTL_MS) {
     return yahooSession;
   }
+  // Cooldown if the last attempt failed (which set yahooSession to null/none)
+  if (!yahooSession && Date.now() - lastSessionFetchAttempt < SESSION_FETCH_COOLDOWN_MS) {
+    return null;
+  }
+  
+  lastSessionFetchAttempt = Date.now();
   const session = await fetchYahooSession();
-  if (session) yahooSession = session;
+  if (session) {
+    yahooSession = session;
+  }
   return yahooSession;
 }
 
@@ -207,15 +229,24 @@ function invalidateYahooSession() {
   yahooSession = null;
 }
 
-async function axiosGetResilient(url: string, config: any = {}, retries = 3): Promise<any> {
+async function axiosGetResilient(url: string, config: any = {}, retries = 3, useSession = false): Promise<any> {
   let lastError: any;
   for (let i = 0; i < retries; i++) {
     // Rotate the Yahoo host on each attempt to spread requests
     const rotatedUrl = rotateYahooHost(url);
-    const agent = getProxyAgent();
 
-    // Fetch (or reuse) a valid Yahoo crumb + cookie session
-    const session = await getYahooSession();
+    // Get an available proxy
+    const available = proxyList.filter(p => Date.now() >= p.cooldownUntil);
+    const proxyObj = available.length > 0
+      ? available[Math.floor(Math.random() * available.length)]
+      : undefined;
+    const agent = proxyObj?.agent;
+
+    // Fetch (or reuse) a valid Yahoo crumb + cookie session only if requested
+    let session: YahooSession | null = null;
+    if (useSession) {
+      session = await getYahooSession();
+    }
 
     // Build query params – attach crumb if we have a session
     const extraParams: Record<string, string> = {};
@@ -233,7 +264,7 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3): Pr
         params: { ...config.params, ...extraParams },
         headers,
         httpsAgent: agent,
-        timeout: agent ? 6000 : 12000,
+        timeout: agent ? 6000 : 12000
       });
       return response;
     } catch (err: any) {
@@ -243,12 +274,24 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3): Pr
       if (status === 404) throw err;
 
       // On 401/429, invalidate the cached session so the next attempt fetches a fresh crumb
-      if (status === 401 || status === 429) {
+      if (useSession && (status === 401 || status === 429)) {
         invalidateYahooSession();
       }
-
+      
+      // Cooldown this specific proxy if it timed out, failed, or was rate limited
+      if (proxyObj) {
+        if (status === 429 || err.message?.includes('timeout') || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
+          proxyObj.cooldownUntil = Date.now() + 5 * 60 * 1000; // 5-minute cooldown
+          console.warn(`[Yahoo Service] Proxy ${proxyObj.url.split('@')[1] || proxyObj.url.substring(0, 30)} got error/429/timeout. Cooled down for 5m.`);
+        }
+      }
       let errorDetails = '';
       if (status === 429) {
+        // Only trigger global rate limit if all proxies are cooled down
+        const anyWorkingProxy = proxyList.some(p => Date.now() >= p.cooldownUntil);
+        if (!anyWorkingProxy) {
+          setYahooRateLimited();
+        }
         const bodySnippet = typeof err.response?.data === 'string'
           ? err.response.data.substring(0, 150)
           : JSON.stringify(err.response?.data || {}).substring(0, 150);
@@ -413,6 +456,10 @@ async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
   const delayMs = 600; // Longer delay between chunks to stay under rate limits
 
   for (let i = 0; i < symbols.length; i += chunkSize) {
+    if (isYahooRateLimited()) {
+      console.warn(`[Yahoo Service] Yahoo is rate limited. Skipping remaining spark chunk queries.`);
+      break;
+    }
     const chunk = symbols.slice(i, i + chunkSize);
     // Alternate between query1 and query2 to spread load
     const host = i % 2 === 0 ? 'query1.finance.yahoo.com' : 'query2.finance.yahoo.com';
@@ -437,6 +484,10 @@ async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
       results.push(...sparkResults);
     } catch (err: any) {
       console.warn(`[Yahoo Service] Spark chunk fetch failed for ${chunk.join(',')}:`, err.message);
+      if (err.response?.status === 429 || err.message?.includes('429') || err.message?.includes('Too Many Requests')) {
+        setYahooRateLimited();
+        break;
+      }
     }
 
     if (i + chunkSize < symbols.length) {
