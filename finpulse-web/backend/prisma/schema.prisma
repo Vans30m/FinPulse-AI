@@ -157,10 +157,6 @@ model User {
   aiSessions             AiSession[]
   aiChatHistory          AIChatHistory[]
   notifications          Notification[]
-  userPreference         UserPreference?
-  notificationPreference NotificationPreference?
-  userLayout             UserLayout?
-  activities             UserActivity[]
   newsBookmarks          NewsBookmark[]
 
   @@index([email])
@@ -262,7 +258,6 @@ model Asset {
   isActive  Boolean             @default(true)
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
-  prices    AssetPriceHistory[]
 
   @@unique([symbol, exchange])
   @@index([symbol])
@@ -296,8 +291,6 @@ model Portfolio {
   holdings     PortfolioHolding[]
   transactions PortfolioTransaction[]
   snapshots    PortfolioSnapshot[]
-  performances PortfolioPerformance[]
-  dividends    PortfolioDividend[]
 
   @@index([userId])
 }
@@ -348,67 +341,6 @@ model PortfolioSnapshot {
   @@index([date])
 }
 
-model PortfolioPerformance {
-  id          String    @id @default(uuid())
-  portfolioId String
-  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
-  returnRate  Float
-  sharpeRatio Float?
-  volatility  Float?
-  date        DateTime  @default(now())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@index([portfolioId])
-  @@index([date])
-}
-
-model PortfolioDividend {
-  id          String    @id @default(uuid())
-  portfolioId String
-  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
-  symbol      String
-  amount      Float
-  date        DateTime  @default(now())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@index([portfolioId])
-  @@index([symbol])
-}
-
-model AssetPriceHistory {
-  id         String   @id @default(uuid())
-  assetId    String
-  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  closePrice Float
-  highPrice  Float?
-  lowPrice   Float?
-  openPrice  Float?
-  volume     Float?
-  date       DateTime
-  createdAt  DateTime @default(now())
-
-  @@unique([assetId, date])
-  @@index([assetId])
-  @@index([date])
-}
-
-model MarketCalendar {
-  id             String    @id @default(uuid())
-  exchange       String
-  event          String
-  type           EventType
-  date           DateTime
-  startTime      DateTime?
-  endTime        DateTime?
-  isMarketClosed Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  @@index([exchange])
-  @@index([date])
-}
 
 model Watchlist {
   id         String          @id @default(uuid())
@@ -494,17 +426,6 @@ model Notification {
   @@index([userId])
 }
 
-model UserPreference {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  theme     Theme    @default(DARK)
-  language  Language @default(EN)
-  currency  Currency @default(INR)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model RecentSearch {
   id        String   @id @default(uuid())
   userId    String
@@ -569,38 +490,6 @@ model financial_knowledge_base {
   created_at      DateTime?               @default(now())
 }
 
-model NotificationPreference {
-  id                  String   @id @default(uuid())
-  userId              String   @unique
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  priceAlerts         Boolean  @default(true)
-  systemNotifications Boolean  @default(true)
-  portfolioUpdates    Boolean  @default(true)
-  newsAlerts          Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-}
-
-model UserActivity {
-  id        String       @id @default(uuid())
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activity  ActivityType
-  details   String?
-  ipAddress String?
-  createdAt DateTime     @default(now())
-
-  @@index([userId])
-}
-
-model UserLayout {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dashboardConfig String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
 
 model MarketNews {
   id          String         @id @default(uuid())

@@ -118,7 +118,7 @@ export default function RollingCagrSection() {
     <section className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-205 dark:border-slate-900 rounded-3xl p-5 shadow-md">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-4">
         <div>
-          <h3 className="text-lg font-black text-slate-900 dark:text-slate-800 dark:text-white tracking-tight uppercase">Rolling CAGR</h3>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Rolling CAGR</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Compounded annual growth trajectory across rolling windows and benchmark overlays.</p>
         </div>
 
@@ -134,7 +134,7 @@ export default function RollingCagrSection() {
                 }, 180);
               }}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                timeframe === option ? "bg-gradient-to-r from-blue-600 to-blue-500 text-slate-900 dark:text-slate-800 dark:text-white shadow-md" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-800 dark:text-white"
+                timeframe === option ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               {option}
@@ -183,7 +183,7 @@ export default function RollingCagrSection() {
                 {benchmarkComparison.map((item) => (
                   <div key={item.label} className="flex items-center justify-between rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/80 p-3">
                     <div>
-                      <p className="text-xs font-black text-slate-900 dark:text-slate-800 dark:text-white">{item.label}</p>
+                      <p className="text-xs font-black text-slate-900 dark:text-white">{item.label}</p>
                       <p className="text-[10px] text-slate-500 mt-0.5">Benchmark CAGR {item.value.toFixed(2)}%</p>
                     </div>
                     <div className="text-right">
@@ -206,9 +206,9 @@ export default function RollingCagrSection() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-slate-50/50 dark:bg-[#050711]/85 p-3">
+                  <div key={stat.label} className="rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/85 p-3">
                     <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">{stat.label}</p>
-                    <p className="text-xs font-black text-slate-900 dark:text-slate-800 dark:text-white font-mono mt-1.5">{stat.value}</p>
+                    <p className="text-xs font-black text-slate-900 dark:text-white font-mono mt-1.5">{stat.value}</p>
                   </div>
                 ))}
               </div>
