@@ -605,11 +605,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                   <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-900/60 pb-2">
                       <span className="text-xs font-bold text-slate-300 tracking-wide">Active Position</span>
-                      <span className={`px-2 py-0.5 text-[9px] font-black rounded border ${
-                        activePosition.shares < 0 
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
+                      <span className={`px-2 py-0.5 text-[9px] font-black rounded border ${activePosition.shares < 0
+                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                           : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      }`}>
+                        }`}>
                         {activePosition.shares < 0 ? 'SHORT' : 'LONG'}
                       </span>
                     </div>
@@ -669,29 +668,32 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                 )}
 
                 {/* Tab Navigation Menu */}
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg">
+                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-3 sm:p-4 shadow-lg">
                   <div className="flex items-center justify-between border-b border-slate-900/60 pb-2 mb-3">
-                    <span className="text-xs font-bold text-slate-300 tracking-wide">Navigation Control</span>
+                    <span className="text-xs font-bold text-slate-350 tracking-wide">Navigation Control</span>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    {availableTabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          setActiveTab(tab.id as TabType);
-                          setTimeout(() => {
-                            tabContentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                          }, 80);
-                        }}
-                        className={`w-full px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all flex items-center gap-2.5 ${activeTab === tab.id
-                          ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner"
-                          : "text-slate-400 hover:text-white hover:bg-slate-900/40"
-                          }`}
-                      >
-                        <tab.icon size={14} />
-                        <span>{tab.label}</span>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:flex lg:flex-col gap-1.5">
+                    {availableTabs.map((tab) => {
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(tab.id as TabType);
+                            setTimeout(() => {
+                              tabContentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }, 80);
+                          }}
+                          className={`px-2 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5 ${isActive
+                            ? "bg-blue-600/15 text-blue-400 border border-blue-500/20 shadow-md shadow-blue-500/5 font-extrabold"
+                            : "text-slate-400 hover:text-white hover:bg-slate-900/40 border border-transparent"
+                            }`}
+                        >
+                          <tab.icon size={13} className="shrink-0" />
+                          <span className="text-[9px] sm:text-xs truncate">{tab.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -715,60 +717,60 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       exit={{ opacity: 0, y: 10 }}
                       className="space-y-6"
                     >
-                      <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md">
+                      <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md">
                         <h3 className="text-sm font-black uppercase text-slate-300 border-b border-slate-900 pb-3 mb-4">
                           Company Profile
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-450">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs text-slate-450">
                           <div>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Sector</span>
-                            <span className="text-sm font-bold text-slate-300 mt-1 block">{data.profile.sector}</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Sector</span>
+                            <span className="text-sm font-bold text-slate-350 mt-1 block truncate" title={data.profile.sector}>{data.profile.sector}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Industry</span>
-                            <span className="text-sm font-bold text-slate-300 mt-1 block">{data.profile.industry}</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Industry</span>
+                            <span className="text-sm font-bold text-slate-350 mt-1 block truncate" title={data.profile.industry}>{data.profile.industry}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Country</span>
-                            <span className="text-sm font-bold text-slate-300 mt-1 block">{data.profile.country}</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Country</span>
+                            <span className="text-sm font-bold text-slate-350 mt-1 block truncate" title={data.profile.country}>{data.profile.country}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Employees</span>
-                            <span className="text-sm font-bold text-slate-300 mt-1 block">{formatVal(data.profile.employees)}</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Employees</span>
+                            <span className="text-sm font-bold text-slate-350 mt-1 block font-mono">{formatVal(data.profile.employees)}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block">CEO</span>
-                            <span className="text-sm font-bold text-slate-300 mt-1 block">{data.profile.ceo}</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">CEO</span>
+                            <span className="text-sm font-bold text-slate-350 mt-1 block truncate" title={data.profile.ceo}>{data.profile.ceo}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Website</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Website</span>
                             {data.profile.website !== "Not Available" ? (
                               <a
                                 href={data.profile.website}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1 mt-1"
+                                className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1 mt-1 truncate max-w-full"
                               >
-                                <span>Visit Website</span>
-                                <ExternalLink size={12} />
+                                <span className="truncate">Visit Site</span>
+                                <ExternalLink size={12} className="shrink-0" />
                               </a>
                             ) : (
-                              <span className="text-sm font-bold text-slate-300 mt-1 block">N/A</span>
+                              <span className="text-sm font-bold text-slate-350 mt-1 block">N/A</span>
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed mt-6 pt-6 border-t border-slate-900/60">
+                        <p className="text-xs text-slate-400 leading-relaxed mt-5 pt-5 border-t border-slate-900/60 text-justify">
                           {data.profile.description}
                         </p>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Statistics Grid */}
-                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4">
+                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md space-y-4">
                           <h4 className="text-xs font-black uppercase text-slate-300 border-b border-slate-900 pb-2">
                             Key Ratios & Statistics
                           </h4>
-                          <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                          <div className="grid grid-cols-1 xs:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
                               <span className="text-slate-500">Market Cap</span>
                               <span className="text-slate-300 font-bold">{formatVal(data.statistics.marketCap, true)}</span>
@@ -778,7 +780,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               <span className="text-slate-300 font-bold">{formatVal(data.statistics.enterpriseValue, true)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
-                              <span className="text-slate-500">Shares Outstanding</span>
+                              <span className="text-slate-500">Shares Out.</span>
                               <span className="text-slate-300 font-bold">{formatVal(data.statistics.sharesOutstanding)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
@@ -798,18 +800,18 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               <span className="text-slate-300 font-bold">{formatVal(data.statistics.beta)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
-                              <span className="text-slate-500">Dividend Yield</span>
+                              <span className="text-slate-500">Div. Yield</span>
                               <span className="text-slate-300 font-bold">{formatVal(data.statistics.dividendYield * 100, false, true)}</span>
                             </div>
                           </div>
                         </div>
 
                         {/* Financial Health Grid */}
-                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4">
+                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md space-y-4">
                           <h4 className="text-xs font-black uppercase text-slate-300 border-b border-slate-900 pb-2">
                             Financial Condition
                           </h4>
-                          <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                          <div className="grid grid-cols-1 xs:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
                               <span className="text-slate-500">Total Cash</span>
                               <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.cash, true)}</span>
@@ -827,11 +829,11 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.ebitda, true)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
-                              <span className="text-slate-500">Operating Margin</span>
+                              <span className="text-slate-500">Oper. Margin</span>
                               <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.operatingMargin * 100, false, true)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
-                              <span className="text-slate-500">Profit Margin</span>
+                              <span className="text-slate-500">Prof. Margin</span>
                               <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.profitMargin * 100, false, true)}</span>
                             </div>
                           </div>
@@ -839,22 +841,21 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       </div>
                     </motion.div>
                   )}
-
                   {/* FINANCIALS TAB */}
                   {activeTab === "financials" && data && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="space-y-6"
+                      className="space-y-4"
                     >
-                      <div className="flex justify-between items-center bg-[#090d1a] border border-slate-900 p-4 rounded-xl">
-                        <div className="flex gap-2">
+                      <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-between sm:items-center bg-[#090d1a] border border-slate-900 p-3 sm:p-4 rounded-xl">
+                        <div className="flex gap-1.5 justify-center sm:justify-start">
                           {["income", "cashflow"].map((ft) => (
                             <button
                               key={ft}
                               onClick={() => setFinancialsTab(ft as any)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase ${financialsTab === ft
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${financialsTab === ft
                                 ? "bg-blue-600/20 text-blue-400 border border-blue-500/20"
                                 : "text-slate-450 hover:text-white"
                                 }`}
@@ -863,12 +864,12 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             </button>
                           ))}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5 justify-center sm:justify-end">
                           {["annual", "quarterly"].map((fp) => (
                             <button
                               key={fp}
                               onClick={() => setFinancialsPeriod(fp as any)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase ${financialsPeriod === fp
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${financialsPeriod === fp
                                 ? "bg-emerald-600/20 text-emerald-450 border border-emerald-500/20"
                                 : "text-slate-400 hover:text-white"
                                 }`}
@@ -909,37 +910,37 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         const pct2 = getGrowth(val2, prevVal2);
 
                         return (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* Card 1 */}
-                            <div className="bg-gradient-to-br from-[#0a0d1e] to-[#05070e] border border-blue-500/10 rounded-2xl p-5 shadow-lg relative overflow-hidden flex flex-col justify-between">
+                            <div className="bg-gradient-to-br from-[#0a0d1e] to-[#05070e] border border-blue-500/10 rounded-2xl p-4 sm:p-5 shadow-lg relative overflow-hidden flex flex-col justify-between">
                               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />
                               <div>
                                 <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">{title1}</span>
-                                <h4 className="text-2xl font-black text-white font-mono mt-2">{formatVal(val1, true)}</h4>
+                                <h4 className="text-xl sm:text-2xl font-black text-white font-mono mt-1.5">{formatVal(val1, true)}</h4>
                               </div>
                               {pct1 !== null && (
-                                <div className="mt-4 flex items-center gap-2">
-                                  <span className={`text-xs font-mono font-black px-1.5 py-0.5 rounded ${pct1 >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                <div className="mt-3 flex items-center gap-2">
+                                  <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${pct1 >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                                     {pct1 >= 0 ? '↑ +' : '↓ '}{pct1.toFixed(2)}%
                                   </span>
-                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">vs previous period</span>
+                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">vs prev</span>
                                 </div>
                               )}
                             </div>
 
                             {/* Card 2 */}
-                            <div className="bg-gradient-to-br from-[#0a0d1e] to-[#05070e] border border-emerald-500/10 rounded-2xl p-5 shadow-lg relative overflow-hidden flex flex-col justify-between">
+                            <div className="bg-gradient-to-br from-[#0a0d1e] to-[#05070e] border border-emerald-500/10 rounded-2xl p-4 sm:p-5 shadow-lg relative overflow-hidden flex flex-col justify-between">
                               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
                               <div>
                                 <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">{title2}</span>
-                                <h4 className="text-2xl font-black text-white font-mono mt-2">{formatVal(val2, true)}</h4>
+                                <h4 className="text-xl sm:text-2xl font-black text-white font-mono mt-1.5">{formatVal(val2, true)}</h4>
                               </div>
                               {pct2 !== null && (
-                                <div className="mt-4 flex items-center gap-2">
-                                  <span className={`text-xs font-mono font-black px-1.5 py-0.5 rounded ${pct2 >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                <div className="mt-3 flex items-center gap-2">
+                                  <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${pct2 >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                                     {pct2 >= 0 ? '↑ +' : '↓ '}{pct2.toFixed(2)}%
                                   </span>
-                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">vs previous period</span>
+                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">vs prev</span>
                                 </div>
                               )}
                             </div>
@@ -948,7 +949,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       })()}
 
                       {/* Multi-column Financials Data Table */}
-                      <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md overflow-x-auto">
+                      <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-3 sm:p-6 shadow-md overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left text-xs font-mono border-collapse">
                           <thead>
                             {(() => {
@@ -961,19 +962,19 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
                               return (
                                 <tr className="border-b border-slate-800 text-slate-500 font-sans">
-                                  <th className="py-3 font-black uppercase text-[10px] tracking-wider">Statement Item</th>
+                                  <th className="py-2.5 font-black uppercase text-[10px] tracking-wider whitespace-nowrap pr-6">Statement Item</th>
                                   {reports.map((report: any, idx: number) => {
                                     const d = new Date(report.endDate || report.date);
                                     const label = financialsPeriod === "quarterly"
                                       ? d.toLocaleDateString("en-US", { month: "short", year: "2-digit" })
                                       : d.getFullYear().toString();
                                     return (
-                                      <th key={idx} className="py-3 text-right font-black uppercase text-[10px] tracking-wider">
+                                      <th key={idx} className="py-2.5 text-right font-black uppercase text-[10px] tracking-wider pr-4 whitespace-nowrap">
                                         {label}
                                       </th>
                                     );
                                   })}
-                                  <th className="py-3 text-right font-black uppercase text-[10px] tracking-wider pl-4">Trend</th>
+                                  <th className="py-2.5 text-right font-black uppercase text-[10px] tracking-wider pl-4">Trend</th>
                                 </tr>
                               );
                             })()}
@@ -1017,17 +1018,17 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
                                 return (
                                   <tr key={key} className="border-b border-slate-900/40 hover:bg-slate-900/20 group transition-colors">
-                                    <td className="py-3 font-sans capitalize text-slate-400 group-hover:text-slate-200 transition-colors">
+                                    <td className="py-2.5 font-sans capitalize text-slate-400 group-hover:text-slate-200 transition-colors whitespace-nowrap pr-6">
                                       {key.replace(/([A-Z])/g, ' $1')}
                                     </td>
                                     {reports.map((report: any, idx: number) => (
-                                      <td key={idx} className={`py-3 text-right font-bold transition-colors ${idx === 0 ? 'text-slate-200 group-hover:text-white' : 'text-slate-500 group-hover:text-slate-350'
+                                      <td key={idx} className={`py-2.5 text-right font-bold transition-colors pr-4 whitespace-nowrap ${idx === 0 ? 'text-slate-200 group-hover:text-white' : 'text-slate-500 group-hover:text-slate-350'
                                         }`}>
                                         {formatVal(report[key], true)}
                                       </td>
                                     ))}
-                                    <td className="py-3 text-right pl-4">
-                                      {trendBadge || <span className="text-slate-600 font-sans">-</span>}
+                                    <td className="py-2.5 text-right pl-4 whitespace-nowrap">
+                                      {trendBadge || <span className="text-slate-650 font-sans">-</span>}
                                     </td>
                                   </tr>
                                 );
@@ -1244,14 +1245,13 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       </div>
                     </motion.div>
                   )}
-
                   {/* OWNERSHIP TAB */}
                   {activeTab === "ownership" && data && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6"
+                      className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md space-y-6"
                     >
                       <h3 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-3 tracking-wider">
                         Share Ownership Breakdown
@@ -1267,7 +1267,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         return (
                           <div className="space-y-6">
                             {/* Visual Progress Bar Chart */}
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                               <div className="flex justify-between items-center text-[10px] text-slate-450 uppercase font-black tracking-wider">
                                 <span>Holding Distribution</span>
                                 <span>Total: 100%</span>
@@ -1285,43 +1285,43 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               </div>
 
                               {/* Legend */}
-                              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[10px] font-bold text-slate-400">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1.5 text-[9px] sm:text-[10px] font-bold text-slate-400">
                                 <span className="flex items-center gap-1.5">
-                                  <span className="w-2.5 h-2.5 bg-cyan-500 inline-block rounded-full" />
-                                  Institutions ({inst.toFixed(2)}%)
+                                  <span className="w-2 h-2 bg-cyan-500 inline-block rounded-full" />
+                                  Inst. ({inst.toFixed(1)}%)
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                  <span className="w-2.5 h-2.5 bg-purple-500 inline-block rounded-full" />
-                                  Corporate Insiders ({insider.toFixed(2)}%)
+                                  <span className="w-2 h-2 bg-purple-500 inline-block rounded-full" />
+                                  Insiders ({insider.toFixed(1)}%)
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                  <span className="w-2.5 h-2.5 bg-emerald-500 inline-block rounded-full" />
-                                  Retail & Public ({retail.toFixed(2)}%)
+                                  <span className="w-2 h-2 bg-emerald-500 inline-block rounded-full" />
+                                  Retail ({retail.toFixed(1)}%)
                                 </span>
                               </div>
                             </div>
 
                             {/* Detailed Statistics Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                              <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutional Holdings</span>
-                                <span className="text-2xl font-black text-white font-mono mt-3">{inst > 0 ? `${inst.toFixed(2)}%` : "N/A"}</span>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                              <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 flex flex-col justify-between min-h-[90px]">
+                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutions</span>
+                                <span className="text-lg sm:text-2xl font-black text-white font-mono mt-2">{inst > 0 ? `${inst.toFixed(2)}%` : "N/A"}</span>
                               </div>
 
-                              <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Insider Holdings</span>
-                                <span className="text-2xl font-black text-white font-mono mt-3">{insider > 0 ? `${insider.toFixed(2)}%` : "N/A"}</span>
+                              <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 flex flex-col justify-between min-h-[90px]">
+                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider leading-none">Insiders</span>
+                                <span className="text-lg sm:text-2xl font-black text-white font-mono mt-2">{insider > 0 ? `${insider.toFixed(2)}%` : "N/A"}</span>
                               </div>
 
-                              <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Retail & Public</span>
-                                <span className="text-2xl font-black text-white font-mono mt-3">{retail > 0 ? `${retail.toFixed(2)}%` : "N/A"}</span>
+                              <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 flex flex-col justify-between min-h-[90px]">
+                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider leading-none">Retail/Public</span>
+                                <span className="text-lg sm:text-2xl font-black text-white font-mono mt-2">{retail > 0 ? `${retail.toFixed(2)}%` : "N/A"}</span>
                               </div>
 
-                              <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
-                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutional Float / Count</span>
-                                <span className="text-xs font-black text-slate-300 font-mono mt-3 block leading-tight">
-                                  Float: {instFloat > 0 ? `${instFloat.toFixed(2)}%` : "N/A"}<br />
+                              <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 flex flex-col justify-between min-h-[90px]">
+                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider leading-none">Float & Count</span>
+                                <span className="text-[10px] font-black text-slate-350 font-mono mt-1.5 block leading-tight">
+                                  Float: {instFloat > 0 ? `${instFloat.toFixed(1)}%` : "N/A"}<br />
                                   Holders: {instCount}
                                 </span>
                               </div>
@@ -1393,7 +1393,6 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       </div>
                     </motion.div>
                   )}
-
                   {/* TECHNICALS TAB */}
                   {activeTab === "technicals" && data && (
                     <motion.div
@@ -1402,7 +1401,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       exit={{ opacity: 0, y: 10 }}
                       className="space-y-6"
                     >
-                      {/* Consensus Gauge Card */}
+                      {/* Consensus Verdict & Indicator counts */}
                       {(() => {
                         const price = meta?.price || Number(data.statistics?.price) || 0;
                         const rsi = Number(data.technicals?.rsi) || 50;
@@ -1449,7 +1448,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           }
                         });
                         const maVerdict = maBuyCount > maSellCount ? "Bullish" : maBuyCount < maSellCount ? "Bearish" : "Neutral";
-                        const maVerdictBadge = maVerdict === "Bullish" ? "text-emerald-450 border-emerald-500/20 bg-emerald-500/5" : maVerdict === "Bearish" ? "text-rose-455 border-rose-500/20 bg-rose-500/5" : "text-slate-400 border-slate-800 bg-slate-800/10";
+                        const maVerdictBadge = maVerdict === "Bullish" ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/5" : maVerdict === "Bearish" ? "text-rose-400 border-rose-500/20 bg-rose-500/5" : "text-slate-400 border-slate-800 bg-slate-800/10";
 
                         // MACD
                         if (macd !== 0 || macdSignal !== 0) {
@@ -1457,9 +1456,15 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           else sellCount++;
                         }
 
-                        const high = Number(data.statistics?.dayHigh) || Number(data.statistics?.fiftyTwoWeekHigh) || price;
-                        const low = Number(data.statistics?.dayLow) || Number(data.statistics?.fiftyTwoWeekLow) || price;
+                        let high = Number(data.statistics?.dayHigh) || Number(data.statistics?.fiftyTwoWeekHigh) || price;
+                        let low = Number(data.statistics?.dayLow) || Number(data.statistics?.fiftyTwoWeekLow) || price;
                         const close = Number(data.statistics?.previousClose) || price;
+
+                        // Create realistic spreads (+-2%) if high/low values are identical/missing to prevent overlapping graphics
+                        if (high === low && price > 0) {
+                          high = price * 1.02;
+                          low = price * 0.98;
+                        }
 
                         const hasKeyLevels = price > 0 && high > 0 && low > 0;
                         let PP = 0, R1 = 0, S1 = 0, R2 = 0, S2 = 0;
@@ -1486,44 +1491,67 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         }
 
                         let summaryVerdict = "NEUTRAL";
-                        let verdictColor = "bg-gradient-to-r from-slate-950 to-slate-900 border-slate-850 text-slate-300";
+                        let verdictColor = "bg-gradient-to-r from-slate-950 to-slate-900 border-slate-850 text-slate-350";
+                        let verdictGlow = "shadow-slate-500/5";
 
                         if (buyCount > sellCount + 2) {
                           summaryVerdict = "STRONG BUY";
-                          verdictColor = "bg-gradient-to-r from-emerald-500/15 via-teal-500/5 to-transparent border-emerald-500/30 text-emerald-400";
+                          verdictColor = "bg-gradient-to-r from-emerald-950/20 via-[#070e17] to-[#040810] border-emerald-500/20 text-emerald-400";
+                          verdictGlow = "shadow-emerald-500/5";
                         } else if (buyCount > sellCount) {
                           summaryVerdict = "BUY";
-                          verdictColor = "bg-gradient-to-r from-cyan-500/15 via-blue-500/5 to-transparent border-cyan-500/30 text-cyan-400";
+                          verdictColor = "bg-gradient-to-r from-cyan-950/20 via-[#070e17] to-[#040810] border-cyan-500/20 text-cyan-400";
+                          verdictGlow = "shadow-cyan-500/5";
                         } else if (sellCount > buyCount + 2) {
                           summaryVerdict = "STRONG SELL";
-                          verdictColor = "bg-gradient-to-r from-rose-500/15 via-red-500/5 to-transparent border-rose-500/30 text-rose-400";
+                          verdictColor = "bg-gradient-to-r from-rose-955/20 via-[#070e17] to-[#040810] border-rose-500/20 text-rose-400";
+                          verdictGlow = "shadow-rose-500/5";
                         } else if (sellCount > buyCount) {
                           summaryVerdict = "SELL";
-                          verdictColor = "bg-gradient-to-r from-orange-500/15 via-red-500/5 to-transparent border-orange-500/30 text-orange-400";
+                          verdictColor = "bg-gradient-to-r from-orange-955/20 via-[#070e17] to-[#040810] border-orange-500/20 text-orange-400";
+                          verdictGlow = "shadow-orange-500/5";
                         }
 
-                        const totalSignals = buyCount + sellCount + neutralCount;
+                        const totalVerdict = buyCount + sellCount + neutralCount || 1;
+                        const buyPct = (buyCount / totalVerdict) * 100;
+                        const neutralPct = (neutralCount / totalVerdict) * 100;
+                        const sellPct = (sellCount / totalVerdict) * 100;
 
                         return (
                           <div className="space-y-6">
-                            {/* Summary Banner */}
-                            <div className={`border rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md ${verdictColor}`}>
-                              <div>
-                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Consensus Verdict</span>
-                                <h4 className="text-2xl font-black mt-2 tracking-tight">{summaryVerdict}</h4>
+                            {/* Summary Verdict Banner */}
+                            <div className={`border rounded-2xl p-4 sm:p-5 flex flex-col gap-4 shadow-lg ${verdictColor} ${verdictGlow}`}>
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                  <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest leading-none">Consensus Verdict</span>
+                                  <h4 className="text-xl sm:text-2xl font-black mt-1.5 tracking-tight font-sans">{summaryVerdict}</h4>
+                                </div>
+                                <div className="flex items-center gap-5 sm:gap-6 bg-black/30 px-4 py-2 rounded-xl border border-slate-900">
+                                  <div className="text-center">
+                                    <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Buy</span>
+                                    <span className="text-base font-black text-emerald-450 font-mono block mt-0.5">{buyCount}</span>
+                                  </div>
+                                  <div className="text-center border-l border-slate-800 pl-5 sm:pl-6">
+                                    <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Neutral</span>
+                                    <span className="text-base font-black text-slate-400 font-mono block mt-0.5">{neutralCount}</span>
+                                  </div>
+                                  <div className="text-center border-l border-slate-800 pl-5 sm:pl-6">
+                                    <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Sell</span>
+                                    <span className="text-base font-black text-rose-400 font-mono block mt-0.5">{sellCount}</span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-6">
-                                <div className="text-center">
-                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Buy</span>
-                                  <span className="text-lg font-black text-emerald-400 font-mono block mt-0.5">{buyCount}</span>
+                              {/* 3-segment Consensus rating progress bar */}
+                              <div className="space-y-1">
+                                <div className="w-full bg-slate-950 rounded-full h-2 flex overflow-hidden border border-slate-900">
+                                  {buyPct > 0 && <div style={{ width: `${buyPct}%` }} className="bg-emerald-500 h-full transition-all" title={`Buy: ${buyCount}`} />}
+                                  {neutralPct > 0 && <div style={{ width: `${neutralPct}%` }} className="bg-slate-500 h-full transition-all" title={`Neutral: ${neutralCount}`} />}
+                                  {sellPct > 0 && <div style={{ width: `${sellPct}%` }} className="bg-rose-500 h-full transition-all" title={`Sell: ${sellCount}`} />}
                                 </div>
-                                <div className="text-center border-l border-slate-900/60 pl-6">
-                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Neutral</span>
-                                  <span className="text-lg font-black text-slate-400 font-mono block mt-0.5">{neutralCount}</span>
-                                </div>
-                                <div className="text-center border-l border-slate-900/60 pl-6">
-                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Sell</span>
-                                  <span className="text-lg font-black text-rose-400 font-mono block mt-0.5">{sellCount}</span>
+                                <div className="flex justify-between text-[8px] text-slate-550 font-bold uppercase tracking-wider">
+                                  <span>Bullish ({buyPct.toFixed(0)}%)</span>
+                                  <span>Neutral ({neutralPct.toFixed(0)}%)</span>
+                                  <span>Bearish ({sellPct.toFixed(0)}%)</span>
                                 </div>
                               </div>
                             </div>
@@ -1531,26 +1559,28 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               {/* Oscillators */}
                               <div className="col-span-1">
-                                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
-                                  <h4 className="text-xs font-black uppercase text-slate-355 border-b border-slate-900 pb-3 tracking-wider">
+                                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md space-y-6 relative overflow-hidden">
+                                  <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none" />
+                                  <h4 className="text-xs font-black uppercase text-slate-300 border-b border-slate-900 pb-3 tracking-wider">
                                     Oscillators
                                   </h4>
 
                                   {/* RSI (14) */}
                                   <div className="space-y-2.5">
                                     <div className="flex justify-between text-xs font-mono">
-                                      <span className="text-slate-400 font-sans font-bold">RSI (14)</span>
-                                      <span className={`font-black ${rsi < 30 ? "text-emerald-455" : rsi > 70 ? "text-rose-455" : "text-slate-200"}`}>
+                                      <span className="text-slate-450 font-sans font-bold">RSI (14)</span>
+                                      <span className={`font-black ${rsi < 30 ? "text-emerald-450" : rsi > 70 ? "text-rose-455" : "text-slate-200"}`}>
                                         {rsi.toFixed(2)} ({rsi < 30 ? "Oversold" : rsi > 70 ? "Overbought" : "Neutral"})
                                       </span>
                                     </div>
-                                    <div className="relative w-full bg-slate-950 rounded-full h-3 border border-slate-900 overflow-hidden">
-                                      <div className="absolute left-0 w-[30%] h-full bg-emerald-500/20" />
-                                      <div className="absolute left-[30%] w-[40%] h-full bg-slate-800/30" />
-                                      <div className="absolute left-[70%] w-[30%] h-full bg-rose-500/20" />
+                                    {/* Upgraded slider bar track with indicator region highlights */}
+                                    <div className="relative w-full bg-slate-950 rounded-full h-3 border border-slate-900/60 overflow-hidden">
+                                      <div className="absolute left-0 w-[30%] h-full bg-emerald-500/10" />
+                                      <div className="absolute left-[30%] w-[40%] h-full bg-slate-500/[0.03]" />
+                                      <div className="absolute left-[70%] w-[30%] h-full bg-rose-500/10" />
                                       <div
                                         style={{ left: `${Math.min(97, Math.max(3, rsi))}%` }}
-                                        className="absolute -translate-x-1/2 top-1/2 -translate-y-1/2 w-4 h-4 bg-cyan-400 rounded-full shadow-lg shadow-cyan-400/80 border-2 border-[#090d1a] ring-2 ring-cyan-400/30"
+                                        className="absolute -translate-x-1/2 top-1/2 -translate-y-1/2 w-4 h-4 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee] border-2 border-[#090d1a] ring-2 ring-cyan-400/20"
                                       />
                                     </div>
                                     <div className="flex justify-between text-[8px] text-slate-500 font-bold uppercase tracking-wider">
@@ -1561,19 +1591,19 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   </div>
 
                                   {/* MACD */}
-                                  <div className="space-y-4 pt-2">
+                                  <div className="space-y-3.5 pt-3.5 border-t border-slate-900/60">
                                     <div className="flex justify-between text-xs font-mono">
-                                      <span className="text-slate-500 font-sans font-bold">MACD Crossover</span>
-                                      <span className={`font-black ${macd > macdSignal ? "text-emerald-450" : "text-rose-455"}`}>
-                                        {macd > macdSignal ? "Bullish Crossover" : "Bearish Crossover"}
+                                      <span className="text-slate-450 font-sans font-bold">MACD Crossover</span>
+                                      <span className={`font-black uppercase text-[10px] px-1.5 py-0.5 rounded ${macd > macdSignal ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-455 border border-rose-500/20"}`}>
+                                        {macd > macdSignal ? "Bullish" : "Bearish"}
                                       </span>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 text-center font-mono">
-                                      <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-900">
+                                      <div className="bg-[#070b16] p-3 rounded-xl border border-slate-900/80 flex flex-col justify-between min-h-[55px]">
                                         <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">Value</span>
                                         <span className="text-sm font-black text-slate-200 block mt-1">{macd.toFixed(3)}</span>
                                       </div>
-                                      <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-900">
+                                      <div className="bg-[#070b16] p-3 rounded-xl border border-slate-900/80 flex flex-col justify-between min-h-[55px]">
                                         <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">Signal</span>
                                         <span className="text-sm font-black text-slate-200 block mt-1">{macdSignal.toFixed(3)}</span>
                                       </div>
@@ -1583,20 +1613,21 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               </div>
 
                               {/* Moving Averages */}
-                              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md col-span-1 space-y-4">
+                              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md col-span-1 space-y-4 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
                                 <div className="flex justify-between items-center border-b border-slate-900 pb-3">
-                                  <h4 className="text-xs font-black uppercase text-slate-355 tracking-wider">
+                                  <h4 className="text-xs font-black uppercase text-slate-300 tracking-wider">
                                     Moving Averages (MAs)
                                   </h4>
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${maVerdictBadge}`}>
+                                  <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border ${maVerdictBadge}`}>
                                     {maVerdict}
                                   </span>
                                 </div>
 
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto custom-scrollbar">
                                   <table className="w-full text-xs font-mono text-left">
                                     <thead>
-                                      <tr className="border-b border-slate-900 text-[10px] text-slate-500 uppercase font-black tracking-wider">
+                                      <tr className="border-b border-slate-900 text-[10px] text-slate-550 uppercase font-black tracking-wider">
                                         <th className="pb-3 font-sans">Period</th>
                                         <th className="pb-3 text-center">Simple (SMA)</th>
                                         <th className="pb-3 text-right">Exponential (EMA)</th>
@@ -1609,25 +1640,25 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
                                         return (
                                           <tr key={i} className="hover:bg-white/[0.01] transition-colors duration-150">
-                                            <td className="py-3 font-sans font-bold text-slate-400">
+                                            <td className="py-3 font-sans font-black text-slate-400 whitespace-nowrap pr-3">
                                               MA {ma.name}
                                             </td>
-                                            <td className="py-3 text-center">
+                                            <td className="py-3 text-center whitespace-nowrap px-3">
                                               <div className="inline-flex flex-col items-center">
                                                 <span className="text-slate-200 font-bold">{formatVal(ma.sma, true)}</span>
                                                 {ma.sma > 0 && (
-                                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 ${price >= ma.sma ? "bg-emerald-500/10 text-emerald-455" : "bg-rose-500/10 text-rose-455"}`}>
-                                                    {price >= ma.sma ? "▲ Above" : "▼ Below"} ({Math.abs(smaDiff).toFixed(1)}%)
+                                                  <span className={`inline-flex items-center gap-0.5 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md mt-1.5 leading-none ${price >= ma.sma ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-455"}`}>
+                                                    {price >= ma.sma ? "▲ Above" : "▼ Below"} {Math.abs(smaDiff).toFixed(1)}%
                                                   </span>
                                                 )}
                                               </div>
                                             </td>
-                                            <td className="py-3 text-right">
+                                            <td className="py-3 text-right whitespace-nowrap pl-3">
                                               <div className="inline-flex flex-col items-end">
                                                 <span className="text-slate-200 font-bold">{formatVal(ma.ema, true)}</span>
                                                 {ma.ema > 0 && (
-                                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 ${price >= ma.ema ? "bg-emerald-500/10 text-emerald-455" : "bg-rose-500/10 text-rose-455"}`}>
-                                                    {price >= ma.ema ? "▲ Above" : "▼ Below"} ({Math.abs(emaDiff).toFixed(1)}%)
+                                                  <span className={`inline-flex items-center gap-0.5 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md mt-1.5 leading-none ${price >= ma.ema ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-455"}`}>
+                                                    {price >= ma.ema ? "▲ Above" : "▼ Below"} {Math.abs(emaDiff).toFixed(1)}%
                                                   </span>
                                                 )}
                                               </div>
@@ -1643,12 +1674,12 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
                             {/* Major Key Levels (Structural Levels) - Rendered full-width below oscillators and MAs */}
                             {hasKeyLevels ? (
-                              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4 w-full">
+                              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md space-y-4 w-full">
                                 <div className="flex justify-between items-center border-b border-slate-900/60 pb-3">
-                                  <h4 className="text-xs font-black uppercase text-slate-355 tracking-wider">
+                                  <h4 className="text-xs font-black uppercase text-slate-300 tracking-wider">
                                     Major Key Levels (Structural Levels)
                                   </h4>
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${verdictBadgeColor}`}>
+                                  <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border ${verdictBadgeColor}`}>
                                     {keyVerdict}
                                   </span>
                                 </div>
@@ -1656,9 +1687,8 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                 {(() => {
                                   const minLevel = S2;
                                   const maxLevel = R2;
-                                  const range = maxLevel - minLevel;
+                                  const range = maxLevel - minLevel || 1;
                                   const getPct = (val: number) => {
-                                    if (!range || range <= 0) return 50;
                                     return Math.max(0, Math.min(100, ((val - minLevel) / range) * 100));
                                   };
                                   const pricePct = getPct(price);
@@ -1666,16 +1696,21 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   return (
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center pt-2">
                                       {/* Price Ladder Visual Gauge */}
-                                      <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-[#0c1022]/40 rounded-xl border border-slate-900/60 h-full min-h-[220px]">
-                                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider mb-5">Price Alignment</span>
+                                      <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-[#0c1022]/40 rounded-xl border border-slate-900/60 h-full min-h-[250px] relative">
+                                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider mb-2">Price Alignment</span>
+                                        {/* Prominent Current Price Pulsing Badge */}
+                                        <div className="mb-4 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-2.5 py-1 rounded-lg text-xs font-black font-mono shadow-sm flex items-center gap-1.5 z-10">
+                                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                          <span>Current: {formatVal(price, true)}</span>
+                                        </div>
                                         <div className="relative w-full px-6 h-36 flex items-center justify-center">
                                           {/* Vertical track */}
-                                          <div className="absolute top-0 bottom-0 w-1.5 rounded-full bg-gradient-to-t from-emerald-500/20 via-blue-500/10 to-rose-500/20 border border-slate-900" />
+                                          <div className="absolute top-0 bottom-0 w-[3px] rounded-full bg-gradient-to-t from-emerald-500/30 via-blue-500/20 to-rose-500/30 border border-slate-900/40" />
                                           
-                                          {/* Ticks/Labels */}
+                                          {/* Ticks/Labels - Centered Layout */}
                                           {[
-                                            { label: "R2", value: R2, color: "text-rose-455" },
-                                            { label: "R1", value: R1, color: "text-rose-400" },
+                                            { label: "R2", value: R2, color: "text-rose-400" },
+                                            { label: "R1", value: R1, color: "text-rose-455" },
                                             { label: "PP", value: PP, color: "text-blue-400" },
                                             { label: "S1", value: S1, color: "text-emerald-455" },
                                             { label: "S2", value: S2, color: "text-emerald-400" },
@@ -1684,12 +1719,17 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                             return (
                                               <div 
                                                 key={idx} 
-                                                className="absolute left-0 right-0 flex items-center justify-between pointer-events-none"
+                                                className="absolute left-0 right-0 h-0 flex items-center justify-center pointer-events-none"
                                                 style={{ bottom: `${pct}%` }}
                                               >
-                                                <span className={`w-8 text-right font-mono text-[9px] font-bold ${lvl.color}`}>{lvl.label}</span>
-                                                <div className="w-4 h-px bg-slate-800" />
-                                                <span className="w-14 text-left font-mono text-[9px] text-slate-500">{formatVal(lvl.value, true)}</span>
+                                                {/* Left label */}
+                                                <span className={`absolute right-[56%] font-mono text-[9px] font-bold w-12 text-right ${lvl.color}`}>{lvl.label}</span>
+                                                
+                                                {/* Center crossing tick line */}
+                                                <div className="w-3.5 h-[1px] bg-slate-700 z-10" />
+                                                
+                                                {/* Right price value */}
+                                                <span className="absolute left-[56%] font-mono text-[9px] text-slate-500 w-16 text-left">{formatVal(lvl.value, true)}</span>
                                               </div>
                                             );
                                           })}
@@ -1702,35 +1742,30 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                             <div className="w-full h-[2px] bg-cyan-400 shadow-[0_0_8px_#22d3ee] relative flex items-center justify-center">
                                               <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
                                               <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950" />
-                                              
-                                              {/* Price Label Overlay (Centered above pointer) */}
-                                              <div className="absolute bottom-full mb-1.5 bg-cyan-950/90 text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded text-[8px] font-black font-mono shadow-[0_0_10px_rgba(34,211,238,0.2)] whitespace-nowrap">
-                                                {formatVal(price, true)}
-                                              </div>
                                             </div>
                                           </div>
                                         </div>
                                       </div>
 
                                       {/* Detailed Levels List */}
-                                      <div className="col-span-2 space-y-2">
+                                      <div className="col-span-2 space-y-2.5">
                                         {[
-                                          { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-455", bgClass: "hover:bg-rose-500/5" },
-                                          { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-400", bgClass: "hover:bg-rose-500/5" },
-                                          { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-400", bgClass: "bg-blue-500/5 border border-blue-500/10" },
-                                          { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-455", bgClass: "hover:bg-emerald-500/5" },
-                                          { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-400", bgClass: "hover:bg-emerald-500/5" },
+                                          { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-400", borderClass: "border-l-4 border-l-rose-500/70", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
+                                          { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-455", borderClass: "border-l-4 border-l-rose-500/40", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
+                                          { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-400", borderClass: "border-l-4 border-l-blue-500", bgClass: "border border-blue-500/20 bg-blue-500/5 shadow-md shadow-blue-500/5" },
+                                          { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-455", borderClass: "border-l-4 border-l-emerald-500/40", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
+                                          { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-400", borderClass: "border-l-4 border-l-emerald-500/70", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
                                         ].map((lvl, idx) => {
                                           const isAbove = price >= lvl.value;
                                           return (
                                             <div 
                                               key={idx} 
-                                              className={`flex justify-between items-center px-3 py-1.5 rounded-xl transition-all duration-200 ${lvl.bgClass}`}
+                                              className={`flex justify-between items-center px-4 py-2.5 rounded-xl transition-all duration-250 ${lvl.bgClass} ${lvl.borderClass}`}
                                             >
                                               <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
-                                              <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-200">
+                                              <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-200 whitespace-nowrap">
                                                 <span>{formatVal(lvl.value, true)}</span>
-                                                <span className={`text-[10px] font-sans px-2 py-0.5 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
+                                                <span className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
                                                   {isAbove ? "Above" : "Below"}
                                                 </span>
                                               </div>
@@ -1766,37 +1801,36 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         const p1y = meta.performance?.["1Y"];
                         const p5y = meta.performance?.["5Y"];
                         const pAll = meta.performance?.["All Time"];
-                        
+
                         const primaryGrowth = p5y ?? p1y ?? pAll ?? 0;
-                        
+
                         return (
-                          <div className={`border rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md transition-all duration-300 ${
-                            primaryGrowth >= 0 
-                              ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20" 
+                          <div className={`border rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md transition-all duration-300 ${primaryGrowth >= 0
+                              ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20"
                               : "bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent border-rose-500/20"
-                          }`}>
-                            <div className="space-y-1">
-                              <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Return Analysis</span>
-                              <h4 className="text-xl font-black text-slate-200">
-                                {primaryGrowth >= 20 
-                                  ? "Exceptional Long-Term Growth" 
-                                  : primaryGrowth >= 0 
-                                    ? "Steady Wealth Growth" 
+                            }`}>
+                            <div className="space-y-1 w-full md:w-auto">
+                              <span className="text-[10px] text-slate-505 uppercase font-black tracking-wider block">Return Analysis</span>
+                              <h4 className="text-lg sm:text-xl font-black text-slate-200">
+                                {primaryGrowth >= 20
+                                  ? "Exceptional Long-Term Growth"
+                                  : primaryGrowth >= 0
+                                    ? "Steady Wealth Growth"
                                     : "Undergoing Asset Consolidation"}
                               </h4>
                               <p className="text-xs text-slate-400 max-w-xl leading-relaxed mt-1">
                                 This asset has delivered a cumulative return of <span className={`font-bold ${primaryGrowth >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{primaryGrowth >= 0 ? "+" : ""}{primaryGrowth.toFixed(1)}%</span> over the multi-year cycle.
                               </p>
                             </div>
-                            
-                            <div className="flex gap-4 shrink-0 font-mono">
-                              <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
+
+                            <div className="grid grid-cols-2 gap-4 w-full md:w-auto shrink-0 font-mono">
+                              <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[100px]">
                                 <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">1-Year Return</span>
                                 <span className={`text-base font-black block mt-1 ${p1y >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                                   {p1y != null ? `${p1y >= 0 ? "+" : ""}${p1y.toFixed(2)}%` : "N/A"}
                                 </span>
                               </div>
-                              <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
+                              <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[100px]">
                                 <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">5-Year Return</span>
                                 <span className={`text-base font-black block mt-1 ${p5y >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                                   {p5y != null ? `${p5y >= 0 ? "+" : ""}${p5y.toFixed(2)}%` : "N/A"}
@@ -1822,23 +1856,23 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           const val = meta.performance?.[item.key];
                           const hasVal = val !== undefined && val !== null;
                           const isPositive = val >= 0;
-                          
+
+                          const borderClass = hasVal
+                            ? isPositive
+                              ? "border-l-4 border-l-emerald-500 border-slate-900/60 bg-emerald-500/[0.01] hover:border-emerald-500/30 hover:bg-emerald-500/[0.03]"
+                              : "border-l-4 border-l-rose-500 border-slate-900/60 bg-rose-500/[0.01] hover:border-rose-500/30 hover:bg-rose-500/[0.03]"
+                            : "border-l-4 border-l-slate-800 border-slate-900 bg-slate-950/20 text-slate-655";
+
                           return (
-                            <div 
-                              key={idx} 
-                              className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${
-                                hasVal 
-                                  ? isPositive 
-                                    ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]" 
-                                    : "bg-rose-500/[0.02] border-rose-950/60 hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
-                                  : "bg-slate-950/30 border-slate-900 text-slate-655"
-                              }`}
+                            <div
+                              key={idx}
+                              className={`p-3.5 rounded-xl border transition-all duration-200 flex flex-col justify-between h-24 relative overflow-hidden group ${borderClass}`}
                             >
                               {/* Period label */}
                               <div className="flex justify-between items-center z-10">
-                                <span className="text-[10px] text-slate-505 uppercase font-black tracking-wider">{item.label}</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider">{item.label}</span>
                                 {hasVal && (
-                                  <span className={`text-[10px] font-bold ${isPositive ? "text-emerald-455" : "text-rose-455"}`}>
+                                  <span className={`text-[10px] font-bold ${isPositive ? "text-emerald-450" : "text-rose-455"}`}>
                                     {isPositive ? "▲" : "▼"}
                                   </span>
                                 )}
@@ -1847,7 +1881,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               {/* Visual bar/track of performance magnitude */}
                               {hasVal && (
                                 <div className="w-full bg-slate-950/80 rounded-full h-1 my-1 overflow-hidden border border-slate-900">
-                                  <div 
+                                  <div
                                     className={`h-full rounded-full ${isPositive ? "bg-emerald-500" : "bg-rose-500"}`}
                                     style={{ width: `${Math.min(100, Math.abs(val) * (item.key === "1D" || item.key === "1W" ? 10 : 1))}%` }}
                                   />
@@ -1856,18 +1890,16 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
                               {/* Value */}
                               <div className="z-10 mt-auto">
-                                <span className={`text-sm font-mono font-black block tracking-tight ${
-                                  hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
-                                }`}>
+                                <span className={`text-sm font-mono font-black block tracking-tight ${hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
+                                  }`}>
                                   {hasVal ? `${isPositive ? "+" : ""}${val.toFixed(2)}%` : "N/A"}
                                 </span>
                               </div>
 
                               {/* Ambient Card Glow */}
                               {hasVal && (
-                                <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${
-                                  isPositive ? "bg-emerald-400" : "bg-rose-400"
-                                }`} />
+                                <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${isPositive ? "bg-emerald-400" : "bg-rose-400"
+                                  }`} />
                               )}
                             </div>
                           );
@@ -1886,9 +1918,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                     >
                       {(() => {
                         const newsItems = (data.news || []).slice(0, 10);
-                        const leftColNews = newsItems.slice(0, 5);
-                        const rightColNews = newsItems.slice(5, 10);
-                        
+
                         const renderNewsTable = (items: any[]) => (
                           <div className="overflow-x-auto rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md">
                             <table className="w-full text-left border-collapse">
@@ -1946,15 +1976,9 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         );
 
                         return (
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="space-y-3">
-                              <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Latest Coverage</h4>
-                              {renderNewsTable(leftColNews)}
-                            </div>
-                            <div className="space-y-3">
-                              <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Market Sentiment</h4>
-                              {renderNewsTable(rightColNews)}
-                            </div>
+                          <div className="w-full space-y-3">
+                            <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Latest Coverage</h4>
+                            {renderNewsTable(newsItems)}
                           </div>
                         );
                       })()}
@@ -1972,21 +1996,21 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
               const isShort = activePosition.shares < 0;
               const isDomestic = symbol.endsWith('.NS') || symbol.endsWith('.BO');
               const totalShares = Math.abs(activePosition.shares);
-              
+
               // Parse input quantity to close
               let sharesToClose = totalShares;
               if (closeType === "partial") {
                 const parsed = parseFloat(closeQtyInput);
                 sharesToClose = isNaN(parsed) ? 0 : parsed;
               }
-              
+
               // Calculate estimated P&L
               const pnl = isShort
                 ? (activePosition.avgCost - currentPrice) * sharesToClose
                 : (currentPrice - activePosition.avgCost) * sharesToClose;
 
               const currencySymbol = isDomestic ? '₹' : '$';
-              
+
               const isValid = sharesToClose > 0.0001 && sharesToClose <= totalShares;
 
               return (
@@ -2050,11 +2074,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               setCloseType("full");
                               setCloseQtyInput(String(totalShares));
                             }}
-                            className={`py-2 rounded-xl text-xs font-bold transition-all border ${
-                              closeType === "full"
+                            className={`py-2 rounded-xl text-xs font-bold transition-all border ${closeType === "full"
                                 ? "bg-rose-600/10 text-rose-450 border-rose-500/30"
                                 : "bg-slate-900/40 text-slate-400 border-slate-900/60 hover:bg-slate-900/80"
-                            }`}
+                              }`}
                           >
                             Close Full Position
                           </button>
@@ -2064,11 +2087,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               setCloseType("partial");
                               setCloseQtyInput(String(Math.min(totalShares, Math.ceil(totalShares / 2))));
                             }}
-                            className={`py-2 rounded-xl text-xs font-bold transition-all border ${
-                              closeType === "partial"
+                            className={`py-2 rounded-xl text-xs font-bold transition-all border ${closeType === "partial"
                                 ? "bg-rose-600/10 text-rose-450 border-rose-500/30"
                                 : "bg-slate-900/40 text-slate-400 border-slate-900/60 hover:bg-slate-900/80"
-                            }`}
+                              }`}
                           >
                             Partial Close
                           </button>
@@ -2141,11 +2163,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           }
                         }}
                         disabled={!isValid}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                          isValid
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${isValid
                             ? "bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-500/10 active:scale-95"
                             : "bg-slate-900 text-slate-650 cursor-not-allowed border border-slate-900/60"
-                        }`}
+                          }`}
                       >
                         Confirm Close
                       </button>

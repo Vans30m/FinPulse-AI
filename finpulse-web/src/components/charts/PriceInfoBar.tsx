@@ -57,48 +57,50 @@ export const PriceInfoBar: React.FC<PriceInfoBarProps> = ({
   return (
     <div className="flex flex-col gap-2 mb-4">
       {/* Row 1: Main Asset Details */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 py-2 px-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-white/5 font-mono text-xs">
-        <span className="font-extrabold text-blue-500 uppercase">{fundamentals.name || fundamentals.symbol || "Asset"}</span>
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:flex md:flex-wrap items-center gap-x-4 gap-y-2 py-2 px-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-white/5 font-mono text-[10px] sm:text-xs">
+        <span className="font-extrabold text-blue-500 uppercase col-span-3 sm:col-span-4 md:col-span-auto md:mr-2 truncate">{fundamentals.name || fundamentals.symbol || "Asset"}</span>
         
-        <div className="flex items-center gap-1.5">
-          <span className="font-bold text-slate-400 dark:text-slate-500 select-none">O:</span>
+        <div className="flex items-center gap-1">
+          <span className="font-bold text-slate-400 dark:text-slate-505 select-none">O:</span>
           <span className="font-extrabold text-slate-700 dark:text-slate-300">{formatPrice(activeOpen)}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="font-bold text-slate-400 dark:text-slate-500 select-none">H:</span>
+        <div className="flex items-center gap-1">
+          <span className="font-bold text-slate-400 dark:text-slate-505 select-none">H:</span>
           <span className="font-extrabold text-emerald-500">{formatPrice(activeHigh)}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="font-bold text-slate-400 dark:text-slate-500 select-none">L:</span>
+        <div className="flex items-center gap-1">
+          <span className="font-bold text-slate-400 dark:text-slate-505 select-none">L:</span>
           <span className="font-extrabold text-rose-500">{formatPrice(activeLow)}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="font-bold text-slate-400 dark:text-slate-500 select-none">C:</span>
+        <div className="flex items-center gap-1">
+          <span className="font-bold text-slate-400 dark:text-slate-505 select-none">C:</span>
           <span className="font-extrabold text-slate-700 dark:text-slate-300">{formatPrice(activePrice)}</span>
         </div>
 
         {/* Volume metrics */}
-        <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-white/10 pl-4">
-          <span className="font-bold text-slate-400 dark:text-slate-500 select-none">V:</span>
+        <div className="flex items-center gap-1 md:border-l md:border-slate-200 md:dark:border-white/10 md:pl-4">
+          <span className="font-bold text-slate-400 dark:text-slate-505 select-none">V:</span>
           <span className="font-extrabold text-slate-700 dark:text-slate-300">{formatVolume(activeVolume)}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Avg V:</span>
-          <span className="font-extrabold text-slate-500 dark:text-slate-400">{formatVolume(metrics.avgVolume)}</span>
+        <div className="flex items-center gap-1">
+          <span className="font-bold text-slate-400 dark:text-slate-505 select-none">Avg V:</span>
+          <span className="font-extrabold text-slate-550 dark:text-slate-400">{formatVolume(metrics.avgVolume)}</span>
         </div>
 
         {/* Session reference anchors */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-l border-slate-200 dark:border-white/10 pl-4 ml-auto">
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Prev Close:</span>
-            <span className="font-extrabold text-slate-500 dark:text-slate-400">{formatPrice(metrics.previousClose)}</span>
+        <div className="contents md:flex md:flex-wrap md:items-center gap-x-4 gap-y-1 md:border-l md:border-slate-200 md:dark:border-white/10 md:pl-4 md:ml-auto">
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-slate-400 dark:text-slate-505 select-none">
+              Prev <span className="hidden md:inline">Close</span>:
+            </span>
+            <span className="font-extrabold text-slate-550 dark:text-slate-400">{formatPrice(metrics.previousClose)}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Day H:</span>
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-slate-400 dark:text-slate-505 select-none">Day H:</span>
             <span className="font-extrabold text-emerald-500/80">{formatPrice(metrics.dayHigh)}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Day L:</span>
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-slate-400 dark:text-slate-505 select-none">Day L:</span>
             <span className="font-extrabold text-rose-500/80">{formatPrice(metrics.dayLow)}</span>
           </div>
         </div>
@@ -106,38 +108,40 @@ export const PriceInfoBar: React.FC<PriceInfoBarProps> = ({
 
       {/* Row 2: Compared Asset Details */}
       {compareSymbol && latestCompare && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 py-2 px-3 bg-blue-500/5 dark:bg-blue-500/10 rounded-xl border border-blue-200/40 dark:border-blue-500/20 font-mono text-xs animate-in slide-in-from-top-1 duration-150">
-          <span className="font-extrabold text-blue-500 uppercase">{compareFundamentals?.name || compareSymbol}</span>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:flex md:flex-wrap items-center gap-x-4 gap-y-2 py-2 px-3 bg-blue-500/5 dark:bg-blue-500/10 rounded-xl border border-blue-200/40 dark:border-blue-500/20 font-mono text-[10px] sm:text-xs animate-in slide-in-from-top-1 duration-150">
+          <span className="font-extrabold text-blue-500 uppercase col-span-3 sm:col-span-4 md:col-span-auto md:mr-2 truncate">{compareFundamentals?.name || compareSymbol}</span>
           
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-400 dark:text-slate-500 select-none">O:</span>
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-slate-400 dark:text-slate-550 select-none">O:</span>
             <span className="font-extrabold text-slate-700 dark:text-slate-300">{compOpen != null ? formatPrice(compOpen) : "N/A"}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-400 dark:text-slate-500 select-none">H:</span>
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-slate-400 dark:text-slate-550 select-none">H:</span>
             <span className="font-extrabold text-emerald-500">{compHigh != null ? formatPrice(compHigh) : "N/A"}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-400 dark:text-slate-500 select-none">L:</span>
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-slate-400 dark:text-slate-550 select-none">L:</span>
             <span className="font-extrabold text-rose-500">{compLow != null ? formatPrice(compLow) : "N/A"}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-400 dark:text-slate-500 select-none">C:</span>
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-slate-400 dark:text-slate-550 select-none">C:</span>
             <span className="font-extrabold text-slate-700 dark:text-slate-300">{compClose != null ? formatPrice(compClose) : "N/A"}</span>
           </div>
 
           {/* Session reference anchors for compared asset */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-l border-slate-200 dark:border-white/10 pl-4 ml-auto">
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Prev Close:</span>
-              <span className="font-extrabold text-slate-500 dark:text-slate-400">{formatPrice(compareFundamentals?.previousClose)}</span>
+          <div className="contents md:flex md:flex-wrap md:items-center gap-x-4 gap-y-1 md:border-l md:border-blue-200/20 md:pl-4 md:ml-auto">
+            <div className="flex items-center gap-1">
+              <span className="font-bold text-slate-400 dark:text-slate-550 select-none">
+                Prev <span className="hidden md:inline">Close</span>:
+              </span>
+              <span className="font-extrabold text-slate-550 dark:text-slate-400">{formatPrice(compareFundamentals?.previousClose)}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Day H:</span>
+            <div className="flex items-center gap-1">
+              <span className="font-bold text-slate-400 dark:text-slate-550 select-none">Day H:</span>
               <span className="font-extrabold text-emerald-500/80">{formatPrice(compareFundamentals?.dayHigh)}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-400 dark:text-slate-500 select-none">Day L:</span>
+            <div className="flex items-center gap-1">
+              <span className="font-bold text-slate-400 dark:text-slate-550 select-none">Day L:</span>
               <span className="font-extrabold text-rose-500/80">{formatPrice(compareFundamentals?.dayLow)}</span>
             </div>
           </div>
