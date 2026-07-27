@@ -53,9 +53,28 @@ export async function getGlobalMarketQuote(
 export async function getAllGlobalMarkets() {
   try {
     const symbols = GLOBAL_INDICES.map(m => m.symbol);
-    const quotes = await fetchQuotesResilient(symbols);
 
-    const quoteMap = new Map(quotes.map(q => [q.symbol, q]));
+    // Batch requests in chunks of 20 with delays to prevent Yahoo Finance 429 rate limiting.
+    // Previously this blasted all ~110 symbols at once which always triggered a 429 on cold boot.
+    const BATCH_SIZE = 20;
+    const BATCH_DELAY_MS = 800;
+    const allQuotes: any[] = [];
+
+    for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+      const batch = symbols.slice(i, i + BATCH_SIZE);
+      try {
+        const batchQuotes = await fetchQuotesResilient(batch);
+        allQuotes.push(...batchQuotes);
+      } catch (batchErr: any) {
+        console.warn(`[GlobalMarketService] Batch ${Math.floor(i / BATCH_SIZE) + 1} failed:`, batchErr.message);
+      }
+      // Add delay between batches (except after the last batch)
+      if (i + BATCH_SIZE < symbols.length) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+      }
+    }
+
+    const quoteMap = new Map(allQuotes.filter(q => q?.symbol).map(q => [q.symbol, q]));
 
     const results = GLOBAL_INDICES.map((market) => {
       const quote = quoteMap.get(market.symbol);
@@ -96,7 +115,7 @@ export async function getAllGlobalMarkets() {
     return results.filter(Boolean);
   } catch (err) {
     console.error("Failed to batch fetch all global markets:", err);
-    // Fallback to individual fetches in case batch fails
+    // Fallback to individual fetches in case something goes wrong
     const results = await Promise.all(
       GLOBAL_INDICES.map((market) =>
         getGlobalMarketQuote(
@@ -109,6 +128,7 @@ export async function getAllGlobalMarkets() {
     return results.filter(Boolean);
   }
 }
+
 
 export async function getIndexSummary(
   symbol: string

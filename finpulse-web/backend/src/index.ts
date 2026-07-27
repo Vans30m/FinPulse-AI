@@ -439,10 +439,12 @@ const server = app.listen(PORT, () => {
   console.log(`   Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
 
   // Start background price alert evaluations
+  // NOTE: 2-minute interval (was 30s) to avoid saturating the Yahoo Finance API rate limit.
+  // Alerts only evaluate when markets are likely open; LKV cache handles brief gaps.
   void evaluateAlerts();
   setInterval(() => {
     void evaluateAlerts();
-  }, 30000); // every 30 seconds
+  }, 2 * 60 * 1000); // every 2 minutes
 });
 
 // ==========================================

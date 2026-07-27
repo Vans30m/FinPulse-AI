@@ -2,7 +2,7 @@ import express from "express";
 import axios from "axios";
 import NodeCache from "node-cache";
 
-const marketsCache = new NodeCache({ stdTTL: 15 }); // 15 seconds cache for real-time market data
+const marketsCache = new NodeCache({ stdTTL: 120 }); // 2 minutes cache (was 15s) to reduce Yahoo Finance rate-limit hits
 const explanationCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache for macro market explanation
 
 import {

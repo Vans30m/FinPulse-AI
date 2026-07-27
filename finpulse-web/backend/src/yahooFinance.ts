@@ -554,13 +554,13 @@ function setTwelveDataRateLimited() {
 
 // Memory cache to prevent parallel/frequent requests from spamming Yahoo Finance APIs (triggers 429)
 const QUOTE_CACHE = new Map<string, { data: any; timestamp: number }>();
-const QUOTE_CACHE_TTL_MS = 30000; // Cache quotes for 30 seconds (increased to reduce 429s)
+const QUOTE_CACHE_TTL_MS = 5 * 60 * 1000; // Cache quotes for 5 minutes (reduced Yahoo call frequency)
 
 const CHART_CACHE = new Map<string, { data: any; timestamp: number }>();
-const CHART_CACHE_TTL_MS = 60000; // Cache chart data for 60 seconds (increased to reduce 429s)
+const CHART_CACHE_TTL_MS = 10 * 60 * 1000; // Cache chart data for 10 minutes (reduced Yahoo call frequency)
 
 const SEARCH_CACHE = new Map<string, { data: any; timestamp: number }>();
-const SEARCH_CACHE_TTL_MS = 120000; // Cache searches for 2 minutes
+const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000; // Cache searches for 5 minutes
 
 const inflightQuotePromises = new Map<string, Promise<any[]>>();
 
@@ -642,7 +642,27 @@ async function performRawQuoteFetch(symbolList: string[], options?: any): Promis
     }
   }
 
-  // 1. Spark Fallback (Yahoo direct API with crumb auth) - Primary Resilient Fallback
+  // 1. Twelve Data Fallback FIRST – completely different API, not affected by Yahoo 429 bans
+  // NOTE: Spark and Chart fallbacks below also use Yahoo Finance endpoints and will fail identically
+  // during a 429 ban. Twelve Data is tried first to avoid wasteful retries against a banned IP.
+  if (!isTwelveDataRateLimited()) {
+    try {
+      const tdResults = await fetchTwelveDataQuotes(symbolList);
+      if (tdResults && tdResults.length > 0) {
+        console.log(`[Yahoo Service] Twelve Data fallback succeeded for ${tdResults.length} symbols.`);
+        return tdResults;
+      }
+    } catch (tdErr: any) {
+      const msg = tdErr?.message || '';
+      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
+        setTwelveDataRateLimited();
+      } else {
+        console.warn(`[Yahoo Service] Twelve Data fallback failed, trying Yahoo Spark:`, msg);
+      }
+    }
+  }
+
+  // 2. Spark Fallback (Yahoo direct API – only useful if Yahoo isn't fully banned)
   try {
     const sparkResults = await fetchYahooSparkQuotes(symbolList);
     if (sparkResults && sparkResults.length > 0) {
@@ -652,7 +672,7 @@ async function performRawQuoteFetch(symbolList: string[], options?: any): Promis
     console.warn(`[Yahoo Service] Spark fallback failed, trying direct Chart quote fallback:`, sparkErr.message);
   }
 
-  // 1b. Direct Chart Fallback - Fetch quotes one at a time to stay under rate limits
+  // 3. Direct Chart Fallback – last-resort Yahoo endpoint, one symbol at a time
   try {
     const chartQuotes: any[] = [];
     const delayMs = 500;
@@ -670,21 +690,6 @@ async function performRawQuoteFetch(symbolList: string[], options?: any): Promis
     }
   } catch (chartErr: any) {
     console.warn(`[Yahoo Service] Direct Chart fallback quotes failed:`, chartErr.message);
-  }
-
-  // 2. Twelve Data Fallback
-  if (!isTwelveDataRateLimited()) {
-    try {
-      const tdResults = await fetchTwelveDataQuotes(symbolList);
-      return tdResults;
-    } catch (tdErr: any) {
-      const msg = tdErr?.message || '';
-      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
-        setTwelveDataRateLimited();
-      } else {
-        console.warn(`[Yahoo Service] Twelve Data fallback failed:`, msg);
-      }
-    }
   }
 
   return [];

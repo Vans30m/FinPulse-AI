@@ -442,7 +442,14 @@ export async function getAIScore(symbol: string) {
 
 export async function fetchGlobalMarkets() {
   const response = await fetch(`${API_BASE_URL}/api/global-markets`);
-  return response.json();
+  if (!response.ok) {
+    // Don't try to parse a 404/500 HTML error page as JSON — just return empty array
+    console.warn(`[fetchGlobalMarkets] API returned ${response.status}: ${response.statusText}`);
+    return [];
+  }
+  const data = await response.json();
+  // Guard against non-array response (backend error body etc.) to prevent .filter() crash
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getMarketHistory(symbol: string, range: string = "1mo") {

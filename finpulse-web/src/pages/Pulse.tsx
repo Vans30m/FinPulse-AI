@@ -24,13 +24,15 @@ export default function Pulse() {
   const [marketRegion, setMarketRegion] = useState<"india" | "us">("india");
 
   // Fetch the data at the page level to sync the global loading screen
+  // Only block on marketsLoading for the initial paint — earnings and other
+  // components have their own inner skeleton loaders and handle errors gracefully.
   const { isLoading: marketsLoading } = useGlobalMarkets();
   const { isLoading: earningsLoading } = useUpcomingEarnings("india");
 
-  // Keep page interactive when changing screener regions (which has its own inner skeleton loaders)
-  const isLoading = marketsLoading || earningsLoading;
+  // Only show the full-page loader on initial first fetch (not on background refetches or errors)
+  const isInitialLoading = marketsLoading && earningsLoading;
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return <PageLoader title="FinPulse Market Hub" message="Evaluating global indices, macroeconomic sentiment indicators, and asset performance..." />;
   }
 

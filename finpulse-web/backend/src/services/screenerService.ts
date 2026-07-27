@@ -4,7 +4,7 @@ import { getAllGlobalMarkets } from './globalMarketService.js';
 import NodeCache from 'node-cache';
 import axios from 'axios';
 
-const screenerCache = new NodeCache({ stdTTL: 60 });
+const screenerCache = new NodeCache({ stdTTL: 300 }); // 5 minutes (was 60s) – screener has large symbol batches, caching longer prevents 429s
 const earningsCache = new NodeCache({ stdTTL: 43200 }); // 12 hours TTL for Vercel deployment stability
 
 export async function getMarketScreener(

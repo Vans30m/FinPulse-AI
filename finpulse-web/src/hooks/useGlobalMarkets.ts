@@ -14,6 +14,6 @@ export function useGlobalMarkets() {
     queryFn:
       fetchGlobalMarkets,
 
-    refetchInterval: 30000,
+    refetchInterval: 2 * 60 * 1000, // 2 minutes – matches backend cache TTL and prevents Yahoo 429s
   });
 }
