@@ -438,13 +438,35 @@ const server = app.listen(PORT, () => {
   console.log(`   Environment : ${NODE_ENV}`);
   console.log(`   Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
 
-  // Start background price alert evaluations
-  // NOTE: 2-minute interval (was 30s) to avoid saturating the Yahoo Finance API rate limit.
-  // Alerts only evaluate when markets are likely open; LKV cache handles brief gaps.
-  void evaluateAlerts();
-  setInterval(() => {
+  // ─────────────────────────────────────────────────────────────────────
+  // Keep-Alive Self-Ping (Production / Render free tier)
+  // Render free tier spins the server down after ~15 min of inactivity,
+  // assigning a NEW IP on next restart — which is the #1 cause of 429s.
+  // Pinging /health every 10 minutes keeps the server awake and on the same IP.
+  // ─────────────────────────────────────────────────────────────────────
+  if (IS_PRODUCTION) {
+    const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    setInterval(async () => {
+      try {
+        await axios.get(`${SELF_URL}/health`, { timeout: 5000 });
+        console.log('[Keep-Alive] Self-ping OK');
+      } catch (err: any) {
+        console.warn('[Keep-Alive] Self-ping failed:', err.message);
+      }
+    }, 10 * 60 * 1000); // every 10 minutes
+    console.log(`[Keep-Alive] Self-ping enabled → ${SELF_URL}/health (every 10 min)`);
+  }
+
+  // Start background price alert evaluations.
+  // Delayed 15s on startup so the cold-start Yahoo warm-up completes first
+  // before the alert evaluator adds another wave of quote requests.
+  // NOTE: 2-minute interval to avoid saturating the Yahoo Finance API rate limit.
+  setTimeout(() => {
     void evaluateAlerts();
-  }, 2 * 60 * 1000); // every 2 minutes
+    setInterval(() => {
+      void evaluateAlerts();
+    }, 2 * 60 * 1000); // every 2 minutes
+  }, 15000); // 15-second startup delay
 });
 
 // ==========================================

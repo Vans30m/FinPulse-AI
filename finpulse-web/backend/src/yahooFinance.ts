@@ -530,6 +530,27 @@ async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
 let YAHOO_COOLDOWN_UNTIL = 0;
 let TWELVEDATA_COOLDOWN_UNTIL = 0;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Cold-Start Guard
+// On Render, the backend restarts on a fresh IP. Firing Yahoo Finance requests
+// immediately causes a 429 because Yahoo sees a sudden burst from an unknown IP.
+// We introduce a short warm-up delay on the very first request after startup.
+// ─────────────────────────────────────────────────────────────────────────────
+const COLD_START_DELAY_MS = 8000; // 8 seconds warm-up after module loads
+const STARTUP_TIME = Date.now();
+let coldStartWarmedUp = false;
+
+async function waitForColdStart(): Promise<void> {
+  if (coldStartWarmedUp) return;
+  const elapsed = Date.now() - STARTUP_TIME;
+  const remaining = COLD_START_DELAY_MS - elapsed;
+  if (remaining > 0) {
+    console.log(`[Yahoo Service] Cold-start guard: waiting ${Math.round(remaining)}ms before first Yahoo request...`);
+    await new Promise(resolve => setTimeout(resolve, remaining));
+  }
+  coldStartWarmedUp = true;
+}
+
 function isYahooRateLimited(): boolean {
   return Date.now() < YAHOO_COOLDOWN_UNTIL;
 }
@@ -540,8 +561,8 @@ function isTwelveDataRateLimited(): boolean {
 
 function setYahooRateLimited() {
   if (Date.now() >= YAHOO_COOLDOWN_UNTIL) {
-    YAHOO_COOLDOWN_UNTIL = Date.now() + 90000; // 90-second cooldown (extended to let rate limit clear)
-    console.warn(`[Yahoo Service] Yahoo Finance rate-limit/auth block detected (429/401). Entering 90-second cooldown.`);
+    YAHOO_COOLDOWN_UNTIL = Date.now() + 3 * 60 * 1000; // 3-minute cooldown (Render fresh IPs need longer to clear bans)
+    console.warn(`[Yahoo Service] Yahoo Finance rate-limit/auth block detected (429/401). Entering 3-minute cooldown.`);
   }
 }
 
@@ -627,6 +648,9 @@ async function fetchYahooChartQuote(symbol: string): Promise<any | null> {
 }
 
 async function performRawQuoteFetch(symbolList: string[], options?: any): Promise<any[]> {
+  // On cold start (Render restart), wait for the warm-up period before hitting Yahoo
+  await waitForColdStart();
+
   if (!isYahooRateLimited()) {
     try {
       const result = await originalQuote.call(yahooFinance, symbolList, options);

@@ -54,10 +54,11 @@ export async function getAllGlobalMarkets() {
   try {
     const symbols = GLOBAL_INDICES.map(m => m.symbol);
 
-    // Batch requests in chunks of 20 with delays to prevent Yahoo Finance 429 rate limiting.
-    // Previously this blasted all ~110 symbols at once which always triggered a 429 on cold boot.
-    const BATCH_SIZE = 20;
-    const BATCH_DELAY_MS = 800;
+    // Batch requests in smaller chunks with longer delays to prevent Yahoo Finance 429 rate limiting
+    // on cold starts (Render assigns a fresh IP, Yahoo sees a sudden burst and immediately bans).
+    // Smaller batches + longer delays = much lower chance of triggering the ban on restart.
+    const BATCH_SIZE = 10;
+    const BATCH_DELAY_MS = 2000;
     const allQuotes: any[] = [];
 
     for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
