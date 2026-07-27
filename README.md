@@ -6,7 +6,7 @@ The application utilizes a robust client-server model: a responsive **React 19**
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
 *   **Financial Market Clocks & Indices:** Interactive timezone monitoring, global exchanges tracking, and realtime indexing of S&P 500 (`^GSPC`), NASDAQ (`^IXIC`), and Dow Jones (`^DJI`).
 *   **Dynamic Stock Screener:** Advanced search and screening of NSE/BSE and global tickers. Provides detailed metrics: P/E Ratios, Dividend Yields, ROE, ROCE, Book Value, 52-week High/Low, and historical composed price charts.
@@ -17,7 +17,7 @@ The application utilizes a robust client-server model: a responsive **React 19**
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
@@ -31,7 +31,7 @@ graph TD
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend Client
 *   **Framework:** React 19 (TypeScript, Vite)
@@ -48,16 +48,16 @@ graph TD
 
 ---
 
-## 💻 Installation & Setup
+## Installation & Setup
 
-### 📦 Prerequisites
+### Prerequisites
 *   **Node.js** (v18 or higher)
 *   **Python 3.10+** (if running the offline embedding ingestion)
 *   **PostgreSQL** database (e.g. Neon Cloud) with the `pgvector` extension enabled.
 
 ---
 
-### 🗄️ 1. Backend Setup & Configuration
+### 1. Backend Setup & Configuration
 1. Navigate to the backend folder:
    ```bash
    cd finpulse-web/backend
@@ -100,7 +100,7 @@ graph TD
 
 ---
 
-### 🎨 2. Frontend Setup
+### 2. Frontend Setup
 1. Navigate to the client folder:
    ```bash
    cd finpulse-web
@@ -121,7 +121,7 @@ graph TD
 
 ---
 
-### 🤖 3. RAG Pipeline Ingestion
+### 3. RAG Pipeline Ingestion
 1. Install Python packages:
    ```bash
    pip install psycopg google-genai python-dotenv
@@ -137,7 +137,7 @@ graph TD
 
 ---
 
-## 🌐 Production Resiliency & Keep-Alive Schedule
+## Production Resiliency & Keep-Alive Schedule
 
 To bypass the auto-sleep restriction of Render's Free Tier (which spins down instances after 15 minutes of inactivity) and avoid initial request latency (cold starts), an external cron scheduler is utilized to keep the instance active:
 
@@ -147,5 +147,5 @@ To bypass the auto-sleep restriction of Render's Free Tier (which spins down ins
 
 ---
 
-## ⚖️ Compliance & Disclosures
+## Compliance & Disclosures
 FinPulse AI is a simulation and data tracking platform. It is **not** registered as an investment advisor (e.g. with SEBI, SEC). All financial information, AI-generated predictions, and performance mock-ups are strictly for educational and paper-trading purposes. Mandatory risk disclaimers are presented clearly across all interactive pages.
