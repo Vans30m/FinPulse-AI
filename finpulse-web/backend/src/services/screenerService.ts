@@ -4,8 +4,8 @@ import { getAllGlobalMarkets } from './globalMarketService.js';
 import NodeCache from 'node-cache';
 import axios from 'axios';
 
-const screenerCache = new NodeCache({ stdTTL: 300 }); // 5 minutes (was 60s) – screener has large symbol batches, caching longer prevents 429s
-const earningsCache = new NodeCache({ stdTTL: 43200 }); // 12 hours TTL for Vercel deployment stability
+const screenerCache = new NodeCache({ stdTTL: 600 }); // 10 minutes – longer cache = fewer Yahoo Finance calls, gainers/losers don't change per-minute
+const earningsCache = new NodeCache({ stdTTL: 43200 }); // 12 hours TTL for earnings calendar (rarely changes)
 
 export async function getMarketScreener(
   market: string,
@@ -69,9 +69,10 @@ export async function getMarketScreener(
       .sort((a: any, b: any) => a.changePercent - b.changePercent)
       .slice(0, 10);
   } else if (type === "active") {
-    result = filtered
-      .sort((a: any, b: any) => b.volume - a.volume)
-      .slice(0, 10);
+    // "Most Active" has been removed from the product — volume data
+    // requires an extra Yahoo Finance field that increases API load.
+    console.log('[Screener] type=active is disabled. Returning empty array.');
+    return [];
   } else {
     result = filtered;
   }
@@ -138,11 +139,9 @@ export async function getDomesticScreener(
   }
 
   if (type === "active") {
-    const result = stocks
-      .sort((a: any, b: any) => b.volume - a.volume)
-      .slice(0, 10);
-    screenerCache.set(cacheKey, result);
-    return result;
+    // "Most Active" has been removed from the product.
+    console.log('[Screener/India] type=active is disabled. Returning empty array.');
+    return [];
   }
 
   return stocks;

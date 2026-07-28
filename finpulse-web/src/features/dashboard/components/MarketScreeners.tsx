@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, Activity, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import { useChart } from "../../../context/ChartContext";
 import { useMarketScreener } from "../../../hooks/useMarketScreeners";
 
@@ -15,18 +15,15 @@ interface Stock {
   changePercent: string | number;
 }
 
-type TabId = "Gainers" | "Losers" | "Active";
+// "Most Active" tab removed — volume data requires a separate heavy Yahoo Finance
+// batch request that slows the page down. Only Gainers and Losers are shown.
+type TabId = "Gainers" | "Losers";
 
 export default function MarketScreeners({ marketRegion }: Props) {
   const { openAsset } = useChart();
   const [activeTab, setActiveTab] = useState<TabId>("Gainers");
 
-  const screenerType =
-    activeTab === "Gainers"
-      ? "gainers"
-      : activeTab === "Losers"
-      ? "losers"
-      : "active";
+  const screenerType = activeTab === "Gainers" ? "gainers" : "losers";
 
   const {
     data: stocks = [],
@@ -37,7 +34,6 @@ export default function MarketScreeners({ marketRegion }: Props) {
   const tabs = [
     { id: "Gainers", label: "Top Gainers", icon: TrendingUp },
     { id: "Losers", label: "Top Losers", icon: TrendingDown },
-    { id: "Active", label: "Most Active", icon: Activity },
   ] as const;
 
   // --- UX: Skeleton Loading State ---
