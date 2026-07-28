@@ -99,6 +99,69 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ==========================================
+// CLOUDFLARE EDGE CACHE HEADERS
+// Cloudflare caches responses that have Cache-Control: public.
+// User-specific routes must use no-store so Cloudflare never caches private data.
+// TTLs here match the in-memory NodeCache TTLs so Cloudflare serves stale edge
+// responses only while the backend itself has fresh data.
+// ==========================================
+const PRIVATE_ROUTE_PREFIXES = [
+  '/api/portfolio', '/api/watchlists', '/api/alerts',
+  '/api/profile', '/api/auth', '/api/ai-chat',
+  '/api/saved-screeners', '/api/recent',
+];
+
+// Public routes and their Cloudflare edge cache max-age (seconds)
+const PUBLIC_ROUTE_CACHE: [RegExp, number][] = [
+  [/^\/api\/global-markets($|\/)/, 300],        // 5 min
+  [/^\/api\/screener($|\/)/, 600],              // 10 min
+  [/^\/api\/earnings($|\/)/, 43200],            // 12 hours
+  [/^\/api\/market-indices($|\/)/, 120],         // 2 min
+  [/^\/api\/market-explanation($|\/)/, 600],    // 10 min
+  [/^\/api\/news($|\/)/, 300],                  // 5 min
+  [/^\/api\/economic-calendar($|\/)/, 3600],    // 1 hour
+  [/^\/api\/index-summary($|\/)/, 300],         // 5 min
+  [/^\/api\/charts($|\/)/, 300],                // 5 min
+  [/^\/api\/ai\/(?!chat)/, 300],               // 5 min (AI market briefs, not chat)
+  [/^\/api\/fundamentals($|\/)/, 120],          // 2 min
+  [/^\/api\/asset-details($|\/)/, 120],         // 2 min
+  [/^\/api\/technical($|\/)/, 300],             // 5 min
+  [/^\/api\/analyst($|\/)/, 21600],             // 6 hours
+  [/^\/api\/financial-health($|\/)/, 21600],    // 6 hours
+  [/^\/api\/search($|\/)/, 3600],              // 1 hour
+  [/^\/api\/news-sentiment($|\/)/, 300],        // 5 min
+  [/^\/api\/company-news($|\/)/, 600],         // 10 min
+];
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Never cache private/user-specific routes
+  const isPrivate = PRIVATE_ROUTE_PREFIXES.some(prefix => req.path.startsWith(prefix));
+  if (isPrivate) {
+    res.setHeader('Cache-Control', 'no-store');
+    return next();
+  }
+
+  // Apply public caching for known market data routes
+  for (const [pattern, maxAge] of PUBLIC_ROUTE_CACHE) {
+    if (pattern.test(req.path)) {
+      // public      → Cloudflare may cache this response
+      // max-age     → browser cache duration (seconds)
+      // s-maxage    → Cloudflare/CDN cache duration (overrides max-age for edge)
+      // stale-while-revalidate → serve stale while fetching fresh in background
+      res.setHeader(
+        'Cache-Control',
+        `public, max-age=${Math.floor(maxAge / 2)}, s-maxage=${maxAge}, stale-while-revalidate=${maxAge * 2}`
+      );
+      return next();
+    }
+  }
+
+  // Default: no caching for unmatched routes
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
+// ==========================================
 // HEALTH ENDPOINTS
 // ==========================================
 app.get('/', (_req: Request, res: Response) => {
