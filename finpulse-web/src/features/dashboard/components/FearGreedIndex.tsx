@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { AlertCircle, RotateCcw, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
 import { getAIFearGreed, type AIFearGreedData } from "../../../services/marketService";
 
-export default function FearGreedIndex() {
+export default function FearGreedIndex({ className = "" }: { className?: string }) {
   const [data, setData] = useState<AIFearGreedData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -142,7 +142,7 @@ export default function FearGreedIndex() {
   const pathY = 50 - 40 * Math.sin(pathAngleRad);
 
   return (
-    <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 hover:shadow-xl space-y-4">
+    <div className={`bg-white dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 hover:shadow-xl flex flex-col justify-between ${className}`}>
       {/* Top Header Controls */}
       <div className="flex items-center justify-between">
         <div>
@@ -159,8 +159,8 @@ export default function FearGreedIndex() {
       </div>
 
       {/* ARC Gauge visualization with analog needle pointer */}
-      <div className="relative flex flex-col items-center justify-center">
-        <svg className="w-64 h-36 drop-shadow-lg" viewBox="0 0 100 55">
+      <div className="relative flex flex-col items-center justify-center py-4 flex-1">
+        <svg className="w-72 h-40 drop-shadow-2xl" viewBox="0 0 100 55">
           {/* Background Arc */}
           <path
             d="M 10 50 A 40 40 0 0 1 90 50"
@@ -191,28 +191,28 @@ export default function FearGreedIndex() {
         </svg>
 
         {/* Score & Label Overlay */}
-        <div className="absolute bottom-3 text-center flex flex-col items-center">
-          <span className="text-5xl font-black text-slate-900 dark:text-white tracking-tight animate-fade-in">
+        <div className="absolute bottom-6 text-center flex flex-col items-center">
+          <span className="text-5xl sm:text-6xl font-black text-slate-900 dark:text-white tracking-tight animate-fade-in">
             {animatedScore}
           </span>
-          <span className={`text-[11px] font-black tracking-widest uppercase mt-1 transition-colors duration-500 bg-slate-50 dark:bg-slate-800/60 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700/30 ${getLabelColors(brief.sentiment)}`}>
+          <span className={`text-[11px] font-black tracking-widest uppercase mt-2.5 transition-colors duration-500 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-1 rounded-full border border-slate-100 dark:border-slate-750/30 ${getLabelColors(brief.sentiment)}`}>
             {brief.sentiment}
           </span>
         </div>
       </div>
 
       {/* Score Description */}
-      <p className="text-xs text-center text-slate-500 dark:text-slate-300 italic px-3 sm:px-5 leading-relaxed font-semibold">
+      <p className="text-xs text-center text-slate-500 dark:text-slate-300 italic px-3 sm:px-5 leading-relaxed font-semibold mb-2">
         {brief.description}
       </p>
 
       {/* Takeaways Section */}
-      <div className="space-y-3.5 border-t border-slate-105/10 dark:border-slate-800/80 pt-3">
+      <div className="space-y-3.5 border-t border-slate-105/10 dark:border-slate-800/85 pt-4 pb-1">
         <h4 className="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
           <Sparkles className="h-3.5 w-3.5" />
           AI Takeaways & Strategy
         </h4>
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {brief.investorTakeaways.map((item: string, index: number) => (
             <li key={index} className="text-xs flex items-start gap-2.5 text-slate-700 dark:text-slate-200 leading-relaxed font-semibold">
               <span className="text-indigo-500 dark:text-indigo-400 font-black mt-0.5">•</span>
@@ -223,15 +223,15 @@ export default function FearGreedIndex() {
       </div>
 
       {/* Main Opportunity & Risk Panels */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06] hover:border-emerald-500/30 p-3.5 sm:p-4 transition-all duration-305 group">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06] hover:border-emerald-500/30 p-4 transition-all duration-305 group">
           <span className="text-[10px] uppercase font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 tracking-wider">
             <TrendingUp className="h-3.5 w-3.5 group-hover:translate-y-[-1px] transition-transform" /> Opportunity
           </span>
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2 leading-relaxed">{brief.opportunity}</p>
         </div>
         
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.03] hover:bg-rose-500/[0.06] hover:border-rose-500/30 p-3.5 sm:p-4 transition-all duration-305 group">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.03] hover:bg-rose-500/[0.06] hover:border-rose-500/30 p-4 transition-all duration-305 group">
           <span className="text-[10px] uppercase font-black text-rose-600 dark:text-rose-400 flex items-center gap-1.5 tracking-wider">
             <TrendingDown className="h-3.5 w-3.5 group-hover:translate-y-[1px] transition-transform" /> Monitor Risk
           </span>

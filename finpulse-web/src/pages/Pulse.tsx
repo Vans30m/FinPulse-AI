@@ -45,15 +45,19 @@ export default function Pulse() {
           <div className="lg:col-span-2 space-y-8">
             <AIBulletSummary />
             <TrendingSectorStreaks />
-            <GlobalMarketClock />
+            <AIPickOfTheDay />
           </div>
 
           {/* Right Column (1 col wide on desktop) */}
-          <div className="space-y-6 sm:space-y-8">
-            <FearGreedIndex />
+          <div className="flex flex-col space-y-6 sm:space-y-8 h-full justify-between">
+            <FearGreedIndex className="flex-1 h-full" />
             <VolatilityGauges />
-            <AIPickOfTheDay />
           </div>
+        </div>
+
+        {/* Full-width Global Market Clock */}
+        <div className="mt-8">
+          <GlobalMarketClock />
         </div>
 
         {/* Full-width Market Screeners */}

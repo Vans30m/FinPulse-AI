@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getFundamentals } from "../../../services/marketService";
 
-export default function VolatilityGauges() {
+export default function VolatilityGauges({ className = "" }: { className?: string }) {
     const [vix, setVix] = useState({ value: "13.42", status: "Low", color: "text-emerald-500" });
     const [liquidity, setLiquidity] = useState({ value: "Normal", status: "Stable", color: "text-blue-500" });
     const [stress, setStress] = useState({ value: "0.18", status: "Minimal", color: "text-emerald-500" });
@@ -69,7 +69,7 @@ export default function VolatilityGauges() {
     ];
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
+        <div className={`bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005] ${className}`}>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-4 font-display">Volatility Indicators</h3>
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {gauges.map((gauge, idx) => (

@@ -144,11 +144,35 @@ export default function AIMarketSentiment() {
     return { bg: "bg-red-500 dark:bg-red-400", text: "text-red-500" };
   };
 
+  const getCardShapeStyles = (mood: string) => {
+    if (mood === "Bullish") {
+      return {
+        card: "rounded-3xl rounded-tr-[4.5rem] rounded-bl-[4.5rem] border-emerald-500/20 dark:border-emerald-500/10",
+        glowLeft: "bg-emerald-500/10 dark:bg-emerald-500/5",
+        glowRight: "bg-teal-500/10 dark:bg-teal-500/5"
+      };
+    }
+    if (mood === "Bearish") {
+      return {
+        card: "rounded-3xl rounded-tl-[4.5rem] rounded-br-[4.5rem] border-rose-500/20 dark:border-rose-500/10",
+        glowLeft: "bg-rose-500/10 dark:bg-rose-500/5",
+        glowRight: "bg-orange-500/10 dark:bg-orange-500/5"
+      };
+    }
+    return {
+      card: "rounded-3xl border-slate-200/80 dark:border-white/10",
+      glowLeft: "bg-cyan-500/10 dark:bg-cyan-500/5",
+      glowRight: "bg-blue-500/10 dark:bg-blue-500/5"
+    };
+  };
+
+  const shapeStyles = getCardShapeStyles(brief.marketMood);
+
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-night-900 dark:via-night-950 dark:to-night-900 shadow-2xl relative overflow-hidden transition-all duration-300">
+    <div className={`border bg-white p-4 sm:p-8 dark:bg-gradient-to-br dark:from-night-900 dark:via-night-950 dark:to-night-900 shadow-2xl relative overflow-hidden transition-all duration-500 ${shapeStyles.card}`}>
       {/* Background ambient glows */}
-      <div className="absolute -left-20 -top-20 z-0 h-64 w-64 rounded-full bg-cyan-500/10 dark:bg-cyan-500/5 blur-3xl pointer-events-none" />
-      <div className="absolute -right-20 -bottom-20 z-0 h-64 w-64 rounded-full bg-blue-500/10 dark:bg-blue-500/5 blur-3xl pointer-events-none" />
+      <div className={`absolute -left-20 -top-20 z-0 h-64 w-64 rounded-full blur-3xl pointer-events-none transition-all duration-500 ${shapeStyles.glowLeft}`} />
+      <div className={`absolute -right-20 -bottom-20 z-0 h-64 w-64 rounded-full blur-3xl pointer-events-none transition-all duration-500 ${shapeStyles.glowRight}`} />
 
       {/* Header */}
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 border-b border-slate-100 dark:border-white/5 pb-4 sm:pb-6">
