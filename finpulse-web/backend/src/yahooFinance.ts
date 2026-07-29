@@ -215,7 +215,7 @@ async function getYahooSession(): Promise<YahooSession | null> {
   if (!yahooSession && Date.now() - lastSessionFetchAttempt < SESSION_FETCH_COOLDOWN_MS) {
     return null;
   }
-  
+
   lastSessionFetchAttempt = Date.now();
   const session = await fetchYahooSession();
   if (session) {
@@ -277,7 +277,7 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3, use
       if (useSession && (status === 401 || status === 429)) {
         invalidateYahooSession();
       }
-      
+
       // Cooldown this specific proxy if it timed out, failed, or was rate limited
       if (proxyObj) {
         if (status === 429 || err.message?.includes('timeout') || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
@@ -887,7 +887,7 @@ const originalChart = yahooFinance.chart;
       low: quote.low?.[index] ?? null,
       close: quote.close?.[index] ?? null,
       adjclose: adjclose[index] ?? quote.close?.[index] ?? null
-    }));
+    })).filter((q: any) => q.close != null);
 
     chartData = {
       meta,
@@ -965,7 +965,7 @@ const originalHistorical = yahooFinance.historical;
       close: quote.close?.[index] ?? null,
       volume: quote.volume?.[index] ?? null,
       adjClose: adjclose[index] ?? quote.close?.[index] ?? null
-    }));
+    })).filter((q: any) => q.close != null);
 
     CHART_CACHE.set(cacheKey, { data: histData, timestamp: Date.now() });
     return histData;
