@@ -1,7 +1,4 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Activity } from "lucide-react";
-import { useGlobalMarkets } from "../hooks/useGlobalMarkets";
 import { useUpcomingEarnings } from "../hooks/useUpcomingEarnings";
 import PageLoader from "../components/ui/PageLoader";
 
@@ -9,7 +6,6 @@ import ForexCryptoRibbon from "../features/dashboard/components/ForexCryptoRibbo
 import AIMarketSentiment from "../features/dashboard/components/AIMarketSentiment";
 import MarketExplanation from "../features/dashboard/components/MarketExplanation";
 import AIBulletSummary from "../features/dashboard/components/AIBulletSummary";
-import MarketFeedStream from "../features/dashboard/components/MarketFeedStream";
 import TrendingSectorStreaks from "../features/dashboard/components/TrendingSectorStreaks";
 import VolatilityGauges from "../features/dashboard/components/VolatilityGauges";
 import { GlobalMarketClock } from "../features/dashboard/components/GlobalMarketClock";
@@ -21,19 +17,13 @@ import InvestmentCalculator from "../features/dashboard/components/InvestmentCal
 import AlertsTimeline from "../features/dashboard/components/AlertsTimeline";
 
 export default function Pulse() {
-  const [marketRegion, setMarketRegion] = useState<"india" | "us">("india");
-
-  // Fetch the data at the page level to sync the global loading screen
-  // Only block on marketsLoading for the initial paint — earnings and other
-  // components have their own inner skeleton loaders and handle errors gracefully.
-  const { isLoading: marketsLoading } = useGlobalMarkets();
   const { isLoading: earningsLoading } = useUpcomingEarnings("india");
 
   // Only show the full-page loader on initial first fetch (not on background refetches or errors)
-  const isInitialLoading = marketsLoading && earningsLoading;
+  const isInitialLoading = earningsLoading;
 
   if (isInitialLoading) {
-    return <PageLoader title="FinPulse Market Hub" message="Evaluating global indices, macroeconomic sentiment indicators, and asset performance..." />;
+    return <PageLoader title="FinPulse Market Hub" message="Evaluating macroeconomic sentiment indicators, and asset performance..." />;
   }
 
   return (
@@ -66,17 +56,9 @@ export default function Pulse() {
           </div>
         </div>
 
-        {/* Indices Stream: Full-width / fully covered page */}
-        <div className="mt-8">
-          <MarketFeedStream
-            marketRegion={marketRegion}
-            onMarketChange={setMarketRegion}
-          />
-        </div>
-
         {/* Full-width Market Screeners */}
         <div className="mt-8">
-          <MarketScreeners marketRegion={marketRegion} />
+          <MarketScreeners />
         </div>
 
         {/* Full-width Global Earnings Calendar */}

@@ -133,7 +133,8 @@ export default function AIMarketSentiment() {
   // Sort sectors by score descending
   const sortedSectors = [...brief.sectorStrength].sort((a, b) => b.score - a.score);
   const strongSectors = sortedSectors.filter(s => s.score >= 60);
-  const weakSectors = sortedSectors.filter(s => s.score < 60);
+  const neutralSectors = sortedSectors.filter(s => s.score >= 48 && s.score < 60);
+  const bearishSectors = sortedSectors.filter(s => s.score < 48);
 
   // Helper to determine progress bar color
   const getProgressBarStyles = (score: number) => {
@@ -253,8 +254,8 @@ export default function AIMarketSentiment() {
         </div>
       </div>
 
-      {/* BOTTOM SECTION: 2-Column Layout for Momentum & Threats */}
-      <div className="relative z-10 mt-5 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 items-start">
+      {/* BOTTOM SECTION: 3-Column Layout for Sectors */}
+      <div className="relative z-10 mt-5 sm:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 items-start">
         {/* Column 1: Strong momentum sectors */}
         <div>
           <div className="mb-4 flex items-center justify-between">
@@ -266,57 +267,12 @@ export default function AIMarketSentiment() {
           </div>
 
           <div className="space-y-2">
-            {strongSectors.map((sector, index) => {
-              const styles = getProgressBarStyles(sector.score);
-              return (
-                <div
-                  key={index}
-                  className="relative group rounded-2xl border border-slate-100 bg-slate-50/50 px-3 py-2.5 sm:p-4 dark:border-white/[0.03] dark:bg-white/[0.01] hover:border-slate-300 dark:hover:border-white/10 transition-all cursor-help"
-                >
-                  <div className="mb-1.5 flex justify-between items-center">
-                    <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">
-                      {sector.sector}
-                    </span>
-                    <span className={`text-xs sm:text-sm font-extrabold ${styles.text}`}>
-                      {sector.score}%
-                    </span>
-                  </div>
-
-                  <div className="h-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 overflow-hidden">
-                    <div
-                      className={`h-1.5 rounded-full transition-all duration-500 ${styles.bg} shadow-[0_0_10px_rgba(34,211,238,0.2)]`}
-                      style={{ width: `${sector.score}%` }}
-                    />
-                  </div>
-
-                  {/* Custom Tooltip on Hover */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-2xl bg-slate-900/95 dark:bg-[#080d19]/95 text-white text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-40 border border-slate-200/10 dark:border-slate-800 backdrop-blur-md">
-                    <div className="font-bold mb-1 text-cyan-400 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 animate-spin" />
-                      {sector.sector} Analysis
-                    </div>
-                    <p className="text-slate-300 font-medium">{sector.reason}</p>
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900/95 dark:border-t-[#080d19]/95" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Column 2: Moderate/low momentum sectors & Threats */}
-        <div className="space-y-6">
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
-                <Terminal className="h-3.5 w-3.5 text-amber-500" />
-                Sectors: Mod/Low Momentum
-              </h3>
-              <span className="text-[10px] font-black tracking-widest text-amber-500 uppercase">⚖️ NEUTRAL</span>
-            </div>
-
-            <div className="space-y-2">
-              {weakSectors.map((sector, index) => {
+            {strongSectors.length === 0 ? (
+              <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
+                No sectors in High Momentum.
+              </div>
+            ) : (
+              strongSectors.map((sector, index) => {
                 const styles = getProgressBarStyles(sector.score);
                 return (
                   <div
@@ -350,26 +306,136 @@ export default function AIMarketSentiment() {
                     </div>
                   </div>
                 );
-              })}
-            </div>
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Column 2: Moderate momentum sectors */}
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+              <Terminal className="h-3.5 w-3.5 text-amber-500" />
+              Sectors: Mod Momentum
+            </h3>
+            <span className="text-[10px] font-black tracking-widest text-amber-500 uppercase">⚖️ NEUTRAL</span>
           </div>
 
-          {/* Active Market Threats (Placed under Weak Sectors to cover the gap) */}
-          <div className="pt-2">
-            <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
-              <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-              Active Market Threats
-            </h3>
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.03] p-3.5 sm:p-5 shadow-sm">
-              <div className="font-black text-amber-750 dark:text-amber-400 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-wider">
-                <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-                <span>Critical Threat Focus</span>
+          <div className="space-y-2">
+            {neutralSectors.length === 0 ? (
+              <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
+                No sectors in Moderate Momentum.
               </div>
-              <p className="mt-2 text-xs sm:text-sm text-amber-900/80 dark:text-amber-200/90 font-semibold leading-relaxed">
-                {brief.todayRisk}
-              </p>
-            </div>
+            ) : (
+              neutralSectors.map((sector, index) => {
+                const styles = getProgressBarStyles(sector.score);
+                return (
+                  <div
+                    key={index}
+                    className="relative group rounded-2xl border border-slate-100 bg-slate-50/50 px-3 py-2.5 sm:p-4 dark:border-white/[0.03] dark:bg-white/[0.01] hover:border-slate-300 dark:hover:border-white/10 transition-all cursor-help"
+                  >
+                    <div className="mb-1.5 flex justify-between items-center">
+                      <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">
+                        {sector.sector}
+                      </span>
+                      <span className={`text-xs sm:text-sm font-extrabold ${styles.text}`}>
+                        {sector.score}%
+                      </span>
+                    </div>
+
+                    <div className="h-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 overflow-hidden">
+                      <div
+                        className={`h-1.5 rounded-full transition-all duration-500 ${styles.bg} shadow-[0_0_10px_rgba(34,211,238,0.2)]`}
+                        style={{ width: `${sector.score}%` }}
+                      />
+                    </div>
+
+                    {/* Custom Tooltip on Hover */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-2xl bg-slate-900/95 dark:bg-[#080d19]/95 text-white text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-40 border border-slate-200/10 dark:border-slate-800 backdrop-blur-md">
+                      <div className="font-bold mb-1 text-cyan-400 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 animate-spin" />
+                        {sector.sector} Analysis
+                      </div>
+                      <p className="text-slate-300 font-medium">{sector.reason}</p>
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900/95 dark:border-t-[#080d19]/95" />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
+        </div>
+
+        {/* Column 3: Bearish sector momentum */}
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+              <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
+              Sectors: Bearish Momentum
+            </h3>
+            <span className="text-[10px] font-black tracking-widest text-rose-500 uppercase">📉 BEARISH</span>
+          </div>
+
+          <div className="space-y-2">
+            {bearishSectors.length === 0 ? (
+              <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
+                No sectors in Bearish Momentum.
+              </div>
+            ) : (
+              bearishSectors.map((sector, index) => {
+                const styles = getProgressBarStyles(sector.score);
+                return (
+                  <div
+                    key={index}
+                    className="relative group rounded-2xl border border-slate-100 bg-slate-50/50 px-3 py-2.5 sm:p-4 dark:border-white/[0.03] dark:bg-white/[0.01] hover:border-slate-300 dark:hover:border-white/10 transition-all cursor-help"
+                  >
+                    <div className="mb-1.5 flex justify-between items-center">
+                      <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">
+                        {sector.sector}
+                      </span>
+                      <span className={`text-xs sm:text-sm font-extrabold ${styles.text}`}>
+                        {sector.score}%
+                      </span>
+                    </div>
+
+                    <div className="h-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 overflow-hidden">
+                      <div
+                        className={`h-1.5 rounded-full transition-all duration-500 ${styles.bg} shadow-[0_0_10px_rgba(34,211,238,0.2)]`}
+                        style={{ width: `${sector.score}%` }}
+                      />
+                    </div>
+
+                    {/* Custom Tooltip on Hover */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-2xl bg-slate-900/95 dark:bg-[#080d19]/95 text-white text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-40 border border-slate-200/10 dark:border-slate-800 backdrop-blur-md">
+                      <div className="font-bold mb-1 text-cyan-400 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 animate-spin" />
+                        {sector.sector} Analysis
+                      </div>
+                      <p className="text-slate-300 font-medium">{sector.reason}</p>
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900/95 dark:border-t-[#080d19]/95" />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Active Market Threats Section (Full width at bottom) */}
+      <div className="relative z-10 mt-6 sm:mt-8 pt-4 border-t border-slate-100 dark:border-white/5">
+        <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+          <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+          Active Market Threats
+        </h3>
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.03] p-3.5 sm:p-5 shadow-sm">
+          <div className="font-black text-amber-750 dark:text-amber-400 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-wider">
+            <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+            <span>Critical Threat Focus</span>
+          </div>
+          <p className="mt-2 text-xs sm:text-sm text-amber-900/80 dark:text-amber-200/90 font-semibold leading-relaxed">
+            {brief.todayRisk}
+          </p>
         </div>
       </div>
 

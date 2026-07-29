@@ -114,7 +114,7 @@ const PRIVATE_ROUTE_PREFIXES = [
 // Public routes and their Cloudflare edge cache max-age (seconds)
 const PUBLIC_ROUTE_CACHE: [RegExp, number][] = [
   [/^\/api\/global-markets($|\/)/, 300],        // 5 min
-  [/^\/api\/screener($|\/)/, 600],              // 10 min
+  [/^\/api\/screener($|\/)/, 21600],              // 6 hour
   [/^\/api\/earnings($|\/)/, 43200],            // 12 hours
   [/^\/api\/market-indices($|\/)/, 120],         // 2 min
   [/^\/api\/market-explanation($|\/)/, 600],    // 10 min
@@ -128,9 +128,9 @@ const PUBLIC_ROUTE_CACHE: [RegExp, number][] = [
   [/^\/api\/technical($|\/)/, 300],             // 5 min
   [/^\/api\/analyst($|\/)/, 21600],             // 6 hours
   [/^\/api\/financial-health($|\/)/, 21600],    // 6 hours
-  [/^\/api\/search($|\/)/, 3600],              // 1 hour
-  [/^\/api\/news-sentiment($|\/)/, 300],        // 5 min
-  [/^\/api\/company-news($|\/)/, 600],         // 10 min
+  [/^\/api\/search($|\/)/, 21600],              // 6 hour
+  [/^\/api\/news-sentiment($|\/)/, 21600],        // 6 hour
+  [/^\/api\/company-news($|\/)/, 21600],         // 6 hour
 ];
 
 app.use((req: Request, res: Response, next: NextFunction) => {

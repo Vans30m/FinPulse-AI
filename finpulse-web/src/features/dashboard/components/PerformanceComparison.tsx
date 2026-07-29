@@ -46,12 +46,6 @@ export default function PerformanceComparison() {
   const [advisorData, setAdvisorData] = useState<any>(null);
   const [advisorLoading, setAdvisorLoading] = useState<boolean>(true);
 
-  // Constituents table search/sort states
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [constituentLimit, setConstituentLimit] = useState<string>("all");
-  const [sortField, setSortField] = useState<string>("weight");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
   const BENCHMARK_OPTIONS = [
     { name: "NIFTY 50", symbol: "^NSEI" },
     { name: "SENSEX", symbol: "^BSESN" },
@@ -255,38 +249,7 @@ export default function PerformanceComparison() {
       }));
   }, [holdings]);
 
-  const sortedAndFilteredConstituents = useMemo(() => {
-    if (!comparisonData || !comparisonData.constituents) return [];
-    let list = [...comparisonData.constituents];
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q));
-    }
-
-    list.sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
-
-      if (valA === null || valA === undefined) return 1;
-      if (valB === null || valB === undefined) return -1;
-
-      if (typeof valA === 'string') {
-        return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      } else {
-        return sortDirection === 'asc' ? valA - valB : valB - valA;
-      }
-    });
-
-    if (constituentLimit !== 'all') {
-      const limitVal = parseInt(constituentLimit);
-      list = list.slice(0, limitVal);
-    }
-
-    return list;
-  }, [comparisonData, searchQuery, constituentLimit, sortField, sortDirection]);
-
-  const [activeTab, setActiveTab] = useState<"overview" | "metrics" | "constituents" | "ai">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "metrics" | "ai">("overview");
 
   if (loading) {
     return <PageLoader title="Performance Center" message="Analyzing risk metrics, calculating CAGR trajectories, and compiling benchmark comparison stats..." />;
@@ -360,7 +323,6 @@ export default function PerformanceComparison() {
         {[
           { id: "overview", label: "Overview & Returns" },
           { id: "metrics", label: "Advanced Metrics" },
-          { id: "constituents", label: "Constituents & Weights" },
           { id: "ai", label: "AI Advisor Coach" }
         ].map(tab => (
           <button
@@ -700,152 +662,6 @@ export default function PerformanceComparison() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {activeTab === "constituents" && (
-        <div className="space-y-6 animate-fadeIn">
-          {comparisonData?.constituents ? (
-            <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-900 pb-4">
-                <div>
-                  <h4 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <Layers className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
-                    Benchmark Constituents & Weights
-                  </h4>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Real-time Yahoo Finance constituent quotes and comparative returns.</p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Search Bar */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search constituents..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 pr-4 py-1.5 bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-44"
-                    />
-                    <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
-                  </div>
-
-                  {/* Limit Filters */}
-                  <div className="flex bg-slate-100 dark:bg-[#050711] p-1 rounded-xl border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase text-slate-400">
-                    {[
-                      { label: "Top 10", val: "10" },
-                      { label: "Top 25", val: "25" },
-                      { label: "Top 50", val: "50" },
-                      { label: "All", val: "all" }
-                    ].map((lim) => (
-                      <button
-                        key={lim.val}
-                        onClick={() => setConstituentLimit(lim.val)}
-                        className={`px-2.5 py-1 rounded-lg transition-all ${constituentLimit === lim.val ? "bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400" : "hover:text-slate-900 dark:hover:text-white"
-                          }`}
-                      >
-                        {lim.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-950 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] hover:bg-transparent">
-                      <th className="py-3 px-2">Constituent Company</th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => {
-                        setSortField("weight");
-                        setSortDirection(prev => prev === "desc" ? "asc" : "desc");
-                      }}>
-                        Weight <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
-                      </th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white hidden sm:table-cell" onClick={() => {
-                        setSortField("price");
-                        setSortDirection(prev => prev === "desc" ? "asc" : "desc");
-                      }}>
-                        Current Price <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
-                      </th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white" onClick={() => {
-                        setSortField("timeframeReturn");
-                        setSortDirection(prev => prev === "desc" ? "asc" : "desc");
-                      }}>
-                        {benchmarkTimeframe} Return % <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
-                      </th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white hidden sm:table-cell" onClick={() => {
-                        setSortField("dailyChange");
-                        setSortDirection(prev => prev === "desc" ? "asc" : "desc");
-                      }}>
-                        Daily Change % <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
-                      </th>
-                      <th className="py-3 px-2 hidden md:table-cell">Sector</th>
-                      <th className="py-3 px-2 cursor-pointer hover:text-slate-900 dark:hover:text-white hidden md:table-cell" onClick={() => {
-                        setSortField("marketCap");
-                        setSortDirection(prev => prev === "desc" ? "asc" : "desc");
-                      }}>
-                        Market Cap <ArrowUpDown className="inline-block h-3 w-3 ml-1" />
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedAndFilteredConstituents.map((con, idx) => (
-                      <tr key={idx} className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-[#050711]/40 transition-colors group relative">
-                        <td className="py-3.5 px-2 flex items-center gap-2.5">
-                          {con.logo ? (
-                            <img src={con.logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="w-6 h-6 rounded-lg bg-slate-900 border border-slate-800 p-0.5 object-contain" />
-                          ) : (
-                            <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] text-blue-600 dark:text-blue-400 font-bold font-mono">
-                              {con.symbol.slice(0, 2)}
-                            </div>
-                          )}
-                          <div>
-                            <span className="font-extrabold text-slate-900 dark:text-white block">{con.name}</span>
-                            <span className="font-mono text-[9px] text-slate-500 uppercase">{con.symbol}</span>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-2 font-mono font-bold text-slate-200">
-                          {con.weight ? `${con.weight}%` : "—"}
-                        </td>
-                        <td className="py-3.5 px-2 font-mono font-bold text-slate-200 hidden sm:table-cell">
-                          {con.price ? `$${con.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
-                        </td>
-                        <td className={`py-3.5 px-2 font-mono font-bold ${con.timeframeReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
-                          {con.timeframeReturn >= 0 ? "+" : ""}{con.timeframeReturn}%
-                        </td>
-                        <td className={`py-3.5 px-2 font-mono font-bold ${con.dailyChange >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"} hidden sm:table-cell`}>
-                          {con.dailyChange >= 0 ? "+" : ""}{con.dailyChange?.toFixed(2)}%
-                        </td>
-                        <td className="py-3.5 px-2 text-slate-500 dark:text-slate-400 font-medium hidden md:table-cell">
-                          {con.sector}
-                        </td>
-                        <td className="py-3.5 px-2 font-mono font-medium text-slate-400 hidden md:table-cell">
-                          {con.marketCap ? `$${(con.marketCap / 1e9).toFixed(2)}B` : "—"}
-                        </td>
-
-                        {/* Hover Tooltip card details */}
-                        <div className="absolute left-1/4 bottom-full mb-2 hidden group-hover:block bg-white dark:bg-[#050711]/95 border border-slate-200 dark:border-slate-900 p-3.5 rounded-2xl shadow-2xl z-50 min-w-[200px] pointer-events-none backdrop-blur-md">
-                          <span className="block text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 border-b border-slate-900 pb-1 mb-2">{con.name} metrics</span>
-                          <div className="space-y-1.5 text-[10px]">
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Sector:</span><span className="text-slate-700 dark:text-slate-300 font-semibold">{con.sector}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Industry:</span><span className="text-slate-700 dark:text-slate-300 font-semibold">{con.industry}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">PE Ratio:</span><span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">{con.pe ? con.pe.toFixed(2) : "—"}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">Dividend Yield:</span><span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">{con.dividendYield ? `${(con.dividendYield * 100).toFixed(2)}%` : "—"}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W High:</span><span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">${con.fiftyTwoWeekHigh?.toFixed(2)}</span></div>
-                            <div className="flex justify-between gap-4"><span className="text-slate-500 font-bold uppercase">52W Low:</span><span className="text-rose-500 dark:text-rose-400 font-mono font-semibold">${con.fiftyTwoWeekLow?.toFixed(2)}</span></div>
-                          </div>
-                        </div>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-900 rounded-3xl">
-              No constituents available for the selected benchmark.
-            </div>
-          )}
         </div>
       )}
 
