@@ -9,7 +9,6 @@ interface RibbonItem {
 }
 
 const TICKER_MAP = [
-  { pair: "USD/INR", symbol: "INR=X" },
   { pair: "EUR/USD", symbol: "EURUSD=X" },
   { pair: "GBP/USD", symbol: "GBPUSD=X" },
   { pair: "BTC/USD", symbol: "BTC-USD" },
@@ -19,7 +18,6 @@ const TICKER_MAP = [
 
 export default function ForexCryptoRibbon() {
   const [items, setItems] = useState<RibbonItem[]>([
-    { pair: "USD/INR", price: "83.45", change: "+0.12%", up: true },
     { pair: "EUR/USD", price: "1.0840", change: "-0.22%", up: false },
     { pair: "GBP/USD", price: "1.2650", change: "+0.05%", up: true },
     { pair: "BTC/USD", price: "67,250", change: "+3.40%", up: true },

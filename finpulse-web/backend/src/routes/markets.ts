@@ -13,8 +13,59 @@ import {
   getIndexSummary,
   getTechnicalIndicators,
   getFundamentals,
-  getFinancialHealth
+  getFinancialHealth,
+  getUpcomingEarningsForMarket
 } from "../services/yahooService.js";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Background Cache Warmer
+// Slowly and steadily rotates through pre-fetching markets page, screener data,
+// and earnings calendar in the background every 30 seconds.
+// Keeps caches hot before any user opens the site and avoids Yahoo Finance blocks.
+// ─────────────────────────────────────────────────────────────────────────────
+let warmerStep = 0;
+async function warmMarketsCache() {
+  try {
+    switch (warmerStep) {
+      case 0:
+        console.log('[Cache Warmer] Pre-fetching global markets data slowly...');
+        const globalData = await getAllGlobalMarkets();
+        marketsCache.set("global-markets-all", globalData);
+        console.log('[Cache Warmer] Global markets cache refreshed.');
+        break;
+      case 1:
+        console.log('[Cache Warmer] Pre-fetching India screener gainers/losers...');
+        await getDomesticScreener("gainers");
+        await getDomesticScreener("losers");
+        console.log('[Cache Warmer] India screeners cache refreshed.');
+        break;
+      case 2:
+        console.log('[Cache Warmer] Pre-fetching US screener gainers/losers...');
+        await getMarketScreener("us", "gainers");
+        await getMarketScreener("us", "losers");
+        console.log('[Cache Warmer] US screeners cache refreshed.');
+        break;
+      case 3:
+        console.log('[Cache Warmer] Pre-fetching upcoming earnings calendars (India/US)...');
+        await getUpcomingEarningsForMarket("india");
+        await getUpcomingEarningsForMarket("us");
+        console.log('[Cache Warmer] Earnings calendars cache refreshed.');
+        break;
+    }
+    // Rotate to the next step
+    warmerStep = (warmerStep + 1) % 4;
+  } catch (err: any) {
+    console.warn(`[Cache Warmer] Failed to refresh cache step ${warmerStep}:`, err.message);
+  }
+}
+
+// Start cache warming rotation with a 20-second startup delay
+setTimeout(() => {
+  void warmMarketsCache();
+  setInterval(() => {
+    void warmMarketsCache();
+  }, 30 * 1000); // Trigger a step every 30 seconds
+}, 20000);
 
 // 1. globalMarketsRoutes handles /api/global-markets
 const globalMarketsRoutes = express.Router();
@@ -93,7 +144,7 @@ fundamentalsRoutes.get("/batch/list", async (req, res) => {
     const symbols = String(symbolsQuery).split(",");
     const { fetchQuotesResilient } = await import("../yahooFinance.js");
     const quotes = await fetchQuotesResilient(symbols);
-    
+
     const result = quotes.map(quote => {
       if (!quote) return null;
       return {
