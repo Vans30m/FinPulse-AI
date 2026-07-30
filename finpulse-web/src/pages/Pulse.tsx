@@ -1,5 +1,8 @@
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useUpcomingEarnings } from "../hooks/useUpcomingEarnings";
+import { fetchGlobalMarkets } from "../services/marketService";
 import PageLoader from "../components/ui/PageLoader";
 
 import ForexCryptoRibbon from "../features/dashboard/components/ForexCryptoRibbon";
@@ -17,10 +20,21 @@ import InvestmentCalculator from "../features/dashboard/components/InvestmentCal
 import AlertsTimeline from "../features/dashboard/components/AlertsTimeline";
 
 export default function Pulse() {
+  const queryClient = useQueryClient();
   const { isLoading: earningsLoading } = useUpcomingEarnings("india");
 
   // Only show the full-page loader on initial first fetch (not on background refetches or errors)
   const isInitialLoading = earningsLoading;
+
+  useEffect(() => {
+    if (!isInitialLoading) {
+      // Pre-fetch global markets in the background once the Pulse page is loaded
+      queryClient.prefetchQuery({
+        queryKey: ["globalMarkets"],
+        queryFn: fetchGlobalMarkets,
+      });
+    }
+  }, [isInitialLoading, queryClient]);
 
   if (isInitialLoading) {
     return <PageLoader title="FinPulse Market Hub" message="Evaluating macroeconomic sentiment indicators, and asset performance..." />;

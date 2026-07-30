@@ -116,17 +116,6 @@ export default function PerformanceComparison() {
   };
 
   useEffect(() => {
-    const fetchRate = async () => {
-      try {
-        const data = await getFundamentals('USDINR=X');
-        if (data && data.price) {
-          setUsdToInrRate(data.price);
-        }
-      } catch (err) {
-        console.error("Failed to fetch USDINR exchange rate:", err);
-      }
-    };
-    fetchRate();
     loadPerformanceData();
   }, []);
 

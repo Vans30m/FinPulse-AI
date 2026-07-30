@@ -467,13 +467,6 @@ export default function PortfolioDashboard() {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const inrData = await getFundamentals('USDINR=X');
-        if (inrData && inrData.price) {
-          setUsdToInrRate(inrData.price);
-          sessionStorage.setItem("usdToInrRate", inrData.price.toString());
-        }
-      } catch (e) {}
-      try {
         const eurData = await getFundamentals('USDEUR=X');
         if (eurData && eurData.price) {
           setUsdToEurRate(eurData.price);
