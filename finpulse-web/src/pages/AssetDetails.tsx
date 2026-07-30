@@ -98,6 +98,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
 
   useEffect(() => {
     const fetchBaseQuote = async () => {
+      if (document.hidden) return;
       try {
         const fundData = await getFundamentals(symbol);
         if (fundData) {

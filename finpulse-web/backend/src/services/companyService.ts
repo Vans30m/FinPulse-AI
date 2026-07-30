@@ -1,10 +1,11 @@
-import { yahooFinance, fetchQuotesResilient } from '../yahooFinance.js';
+import { YahooClient } from './YahooClient.js';
+import { fetchQuotesResilient } from '../yahooFinance.js';
 
 export async function getCompanyNews(
   symbol: string
 ) {
   const result: any =
-    await yahooFinance.search(
+    await YahooClient.search(
       symbol
     );
   return result.news?.slice(0, 10) || [];
@@ -79,7 +80,7 @@ function calculateHistoryReturns(history: any[], currentPrice: number, changePer
 
 export async function getFundamentals(symbol: string) {
   try {
-    const quotes = await fetchQuotesResilient([symbol]);
+    const quotes = await YahooClient.quote([symbol]);
     const quote = quotes[0];
     if (!quote) throw new Error(`No quote found for symbol: ${symbol}`);
     const name = quote.longName || quote.shortName || quote.displayName || symbol;
@@ -98,7 +99,7 @@ export async function getFundamentals(symbol: string) {
 
     if (!hasNoFundamentals) {
       try {
-        const summary = await yahooFinance.quoteSummary(symbol, {
+        const summary = await YahooClient.quoteSummary(symbol, {
           modules: ["defaultKeyStatistics", "financialData", "summaryProfile"]
         });
         if (summary) {
@@ -122,12 +123,12 @@ export async function getFundamentals(symbol: string) {
 
     try {
       const [chartResult, chartMaxResult] = await Promise.all([
-        yahooFinance.chart(symbol, {
+        YahooClient.chart(symbol, {
           period1: startDate,
           period2: now,
           interval: '1d'
         }).catch(() => null),
-        yahooFinance.chart(symbol, {
+        YahooClient.chart(symbol, {
           period1: new Date(0),
           period2: now,
           interval: '1mo'

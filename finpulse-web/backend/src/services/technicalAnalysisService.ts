@@ -1,4 +1,4 @@
-import { yahooFinance } from '../yahooFinance.js';
+import { YahooClient } from './YahooClient.js';
 import { RSI, MACD, SMA, EMA } from "technicalindicators";
 import { getCompanyNews } from './companyService.js';
 
@@ -7,7 +7,7 @@ export async function getTechnicalIndicators(
 ) {
   try {
     const result =
-      await yahooFinance.chart(
+      await YahooClient.chart(
         symbol,
         {
           period1: new Date(
@@ -254,7 +254,7 @@ export async function getFinancialHealth(
 ) {
   try {
     const result =
-      await yahooFinance.quoteSummary(
+      await YahooClient.quoteSummary(
         symbol,
         {
           modules: [
@@ -282,7 +282,7 @@ export async function getAnalystConsensus(
 ) {
   try {
     const result =
-      await yahooFinance.quoteSummary(
+      await YahooClient.quoteSummary(
         symbol,
         {
           modules: [
@@ -407,7 +407,7 @@ export async function getAIScore(
     const now = new Date();
     const startDate = new Date();
     startDate.setFullYear(now.getFullYear() - 5);
-    const chartResult = await yahooFinance.chart(symbol, {
+    const chartResult = await YahooClient.chart(symbol, {
       period1: startDate,
       period2: now,
       interval: '1d'

@@ -1,6 +1,6 @@
 import { AlertStatus } from '@prisma/client';
 import { prisma } from '../prisma.js';
-import { yahooFinance, fetchQuotesResilient } from '../yahooFinance.js';
+import { YahooClient } from './YahooClient.js';
 import nodemailer from 'nodemailer';
 import axios from 'axios';
 
@@ -103,7 +103,7 @@ async function fetchPricesBatch(tickers: string[]): Promise<Record<string, numbe
   const uniqueTickers = Array.from(new Set(tickers));
 
   try {
-    const quotes = await fetchQuotesResilient(uniqueTickers);
+    const quotes = await YahooClient.quote(uniqueTickers);
     for (const q of quotes) {
       if (q && q.symbol && typeof q.regularMarketPrice === 'number') {
         prices[q.symbol] = q.regularMarketPrice;

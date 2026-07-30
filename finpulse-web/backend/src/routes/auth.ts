@@ -3,7 +3,7 @@ import { prisma } from '../prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
-import { yahooFinance } from '../index.js';
+import { YahooClient } from '../services/YahooClient.js';
 import crypto from 'crypto';
 
 const router = Router();
@@ -1005,16 +1005,18 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
 
     let usdToInrRate = 83.45;
 
+    const tickers = holdings.map(h => h.ticker);
+    const quotesList = tickers.length > 0 ? await YahooClient.quote(tickers) : [];
+    const quotesMap = new Map(
+      (Array.isArray(quotesList) ? quotesList : [quotesList])
+        .filter((q: any) => q && q.symbol)
+        .map((q: any) => [q.symbol.toUpperCase(), q])
+    );
+
     for (const h of holdings) {
-      let currentPrice = h.avgCost;
-      let dayChange = 0;
-      try {
-        const quote: any = await yahooFinance.quote(h.ticker);
-        currentPrice = quote.regularMarketPrice ?? h.avgCost;
-        dayChange = (quote.regularMarketChange ?? 0) * h.shares;
-      } catch (err) {
-        console.error(`Failed to fetch Yahoo quote for ${h.ticker}:`, err);
-      }
+      const quote = quotesMap.get(h.ticker.toUpperCase());
+      const currentPrice = quote?.regularMarketPrice ?? h.avgCost;
+      const dayChange = (quote?.regularMarketChange ?? 0) * h.shares;
 
       let val = h.shares * currentPrice;
       let cost = h.shares * h.avgCost;

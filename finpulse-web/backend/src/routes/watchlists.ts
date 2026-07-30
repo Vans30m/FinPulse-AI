@@ -2,7 +2,7 @@ import express from 'express';
 import { prisma } from '../prisma.js';
 import type { WatchlistItem, Watchlist, WatchlistNote, WatchlistTag } from '@prisma/client';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
-import { yahooFinance } from '../index.js';
+import { YahooClient } from '../services/YahooClient.js';
 import { getAIScore } from '../services/yahooService.js';
 const watchlistsRouter = express.Router();
 
@@ -36,37 +36,33 @@ watchlistsRouter.get('/', protect, async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    const populatedLists = await Promise.all(
-      lists.map(async (list) => {
-        const populatedItems = await Promise.all(
-          list.items.map(async (item) => {
-            // Only fetch price quote here — AI scores are computed by a separate endpoint
-            const quoteResult = await withTimeout(
-              yahooFinance.quote(item.symbol),
-              8000,
-              null as any
-            ).catch(() => null);
-
-            const q = quoteResult;
-
-            const changePercent = q?.regularMarketChangePercent !== undefined
-              ? `${q.regularMarketChangePercent >= 0 ? '+' : ''}${q.regularMarketChangePercent.toFixed(2)}%`
-              : '0.00%';
-            const price = q?.regularMarketPrice !== undefined
-              ? `${q.currency === 'INR' ? '\u20b9' : '$'}${q.regularMarketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : 'N/A';
-
-            return {
-              ...item,
-              price,
-              changePercent,
-              name: q?.longName || q?.shortName || item.symbol,
-            };
-          })
-        );
-        return { ...list, items: populatedItems };
-      })
+    const allSymbols = Array.from(new Set(lists.flatMap(list => list.items.map(item => item.symbol))));
+    const quotesList = allSymbols.length > 0 ? await YahooClient.quote(allSymbols) : [];
+    const quotesMap = new Map(
+      (Array.isArray(quotesList) ? quotesList : [quotesList])
+        .filter((q: any) => q && q.symbol)
+        .map((q: any) => [q.symbol.toUpperCase(), q])
     );
+
+    const populatedLists = lists.map((list) => {
+      const populatedItems = list.items.map((item) => {
+        const q = quotesMap.get(item.symbol.toUpperCase());
+        const changePercent = q?.regularMarketChangePercent !== undefined
+          ? `${q.regularMarketChangePercent >= 0 ? '+' : ''}${q.regularMarketChangePercent.toFixed(2)}%`
+          : '0.00%';
+        const price = q?.regularMarketPrice !== undefined
+          ? `${q.currency === 'INR' ? '\u20b9' : '$'}${q.regularMarketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : 'N/A';
+
+        return {
+          ...item,
+          price,
+          changePercent,
+          name: q?.longName || q?.shortName || item.symbol,
+        };
+      });
+      return { ...list, items: populatedItems };
+    });
 
     res.json(populatedLists);
   } catch (error: any) {
@@ -347,23 +343,26 @@ watchlistsRouter.get('/:id/analytics', protect, async (req, res) => {
       });
     }
 
-    const quotes = await Promise.all(
-      items.map(async (item) => {
-        try {
-          const q = await yahooFinance.quote(item.symbol);
-          return {
-            symbol: item.symbol,
-            changePercent: q.regularMarketChangePercent || 0,
-            price: q.regularMarketPrice || 0,
-            marketCap: q.regularMarketCap || 0,
-            exchange: q.exchangeName || 'GLOBAL',
-            sector: q.quoteType || 'Equities' // Placeholder since sector is not always on direct quote
-          };
-        } catch {
-          return null;
-        }
-      })
+    const tickers = items.map(item => item.symbol);
+    const quotesList = tickers.length > 0 ? await YahooClient.quote(tickers) : [];
+    const quotesMap = new Map(
+      (Array.isArray(quotesList) ? quotesList : [quotesList])
+        .filter((q: any) => q && q.symbol)
+        .map((q: any) => [q.symbol.toUpperCase(), q])
     );
+
+    const quotes = items.map((item) => {
+      const q = quotesMap.get(item.symbol.toUpperCase());
+      if (!q) return null;
+      return {
+        symbol: item.symbol,
+        changePercent: q.regularMarketChangePercent || 0,
+        price: q.regularMarketPrice || 0,
+        marketCap: q.regularMarketCap || 0,
+        exchange: q.exchangeName || 'GLOBAL',
+        sector: q.quoteType || 'Equities'
+      };
+    }).filter(Boolean);
 
     const validQuotes = quotes.filter(Boolean) as any[];
 

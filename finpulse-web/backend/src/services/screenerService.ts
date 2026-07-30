@@ -1,4 +1,4 @@
-import { yahooFinance, fetchQuotesResilient } from '../yahooFinance.js';
+import { YahooClient } from './YahooClient.js';
 import { DOMESTIC_INDICES, MARKET_UNIVERSE } from '../config/markets.js';
 import { getAllGlobalMarkets } from './globalMarketService.js';
 import NodeCache from 'node-cache';
@@ -18,11 +18,12 @@ export async function getMarketScreener(
   }
 
   let filtered: any[] = [];
+  const normalizedMarket = YahooClient.normalizeRegion(market);
 
-  if (market === "us") {
+  if (normalizedMarket === "usa") {
     try {
       const symbols = MARKET_UNIVERSE.usa || [];
-      const quotes = await fetchQuotesResilient(symbols);
+      const quotes = await YahooClient.quote(symbols);
       filtered = quotes
         .filter((q: any) => q && q.symbol)
         .map((quote: any) => ({
@@ -52,7 +53,7 @@ export async function getMarketScreener(
   } else {
     const data = await getAllGlobalMarkets();
     filtered = data.filter((item: any) => {
-      if (market === "india") {
+      if (normalizedMarket === "india") {
         return item.region === "India";
       }
       return true;
@@ -93,7 +94,7 @@ export async function getDomesticScreener(
 
   let stocks: any[] = [];
   try {
-    const quotes = await fetchQuotesResilient(DOMESTIC_INDICES);
+    const quotes = await YahooClient.quote(DOMESTIC_INDICES);
     stocks = quotes
       .filter((q: any) => q && q.symbol)
       .map((quote: any) => ({
@@ -149,7 +150,7 @@ export async function getDomesticScreener(
 
 export async function getUpcomingEarnings(symbol: string) {
   try {
-    const result: any = await yahooFinance.quoteSummary(symbol, {
+    const result: any = await YahooClient.quoteSummary(symbol, {
       modules: ["price", "summaryProfile", "summaryDetail", "calendarEvents", "defaultKeyStatistics"]
     });
 
@@ -199,7 +200,7 @@ export async function getUpcomingEarnings(symbol: string) {
 }
 
 export async function getUpcomingEarningsForMarket(market: string) {
-  const normalizedMarket = market.toLowerCase().replace(/\s+/g, "");
+  const normalizedMarket = YahooClient.normalizeRegion(market);
 
   // 1. Check cache first
   const cacheKey = `earnings-calendar-${normalizedMarket}`;
@@ -232,7 +233,7 @@ export async function getUpcomingEarningsForMarket(market: string) {
     try {
       // Fetch batch of quotes concurrently
       const results = await Promise.allSettled([
-        yahooFinance.quote(batch)
+        YahooClient.quote(batch)
       ]);
 
       for (const res of results) {
@@ -413,7 +414,7 @@ export async function getAssetEvents(symbol: string) {
     // 1. Fetch historical dividends
     let historicalDividends: any[] = [];
     try {
-      historicalDividends = await yahooFinance.historical(symbol, {
+      historicalDividends = await YahooClient.historical(symbol, {
         period1: nineMonthsAgo,
         period2: today,
         events: "dividends",
@@ -425,7 +426,7 @@ export async function getAssetEvents(symbol: string) {
     // 2. Fetch quote summary for calendar events and earnings history
     let summary: any = null;
     try {
-      summary = await yahooFinance.quoteSummary(symbol, {
+      summary = await YahooClient.quoteSummary(symbol, {
         modules: ["calendarEvents", "earnings"],
       });
     } catch (e) {

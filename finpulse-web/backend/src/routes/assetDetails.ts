@@ -1,5 +1,5 @@
 import express from "express";
-import { yahooFinance, fetchQuotesResilient } from "../yahooFinance.js";
+import { YahooClient } from "../services/YahooClient.js";
 import NodeCache from "node-cache";
 import axios from "axios";
 import { getFundamentals } from "../services/companyService.js";
@@ -210,8 +210,8 @@ router.get("/:symbol", async (req, res) => {
     let quoteData: any = quoteCache.get(symbol);
     if (!quoteData) {
       const [quotes, summary] = await Promise.all([
-        fetchQuotesResilient([symbol]).catch(() => []),
-        yahooFinance.quoteSummary(symbol, {
+        YahooClient.quote([symbol]).catch(() => []),
+        YahooClient.quoteSummary(symbol, {
           modules: [
             "assetProfile",
             "summaryDetail",
@@ -355,13 +355,13 @@ router.get("/:symbol", async (req, res) => {
         startDate.setFullYear(now.getFullYear() - 4); // Fetch 4 years of history
 
         const [annual, quarterly] = await Promise.all([
-          (yahooFinance as any).fundamentalsTimeSeries(symbol, {
+          YahooClient.fundamentalsTimeSeries(symbol, {
             period1: startDate,
             period2: now,
             type: 'annual',
             module: 'all'
           }).catch(() => []),
-          (yahooFinance as any).fundamentalsTimeSeries(symbol, {
+          YahooClient.fundamentalsTimeSeries(symbol, {
             period1: startDate,
             period2: now,
             type: 'quarterly',
@@ -426,11 +426,11 @@ router.get("/:symbol", async (req, res) => {
       const companyName = quoteData.quote?.longName || quoteData.quote?.shortName || symbol;
       const cleanBaseSymbol = symbol.split('.')[0];
       
-      // Perform searches in parallel
+       // Perform searches in parallel
       const [searchCompany, searchSymbol, searchBase] = await Promise.all([
-        yahooFinance.search(companyName).catch(() => null),
-        yahooFinance.search(symbol).catch(() => null),
-        yahooFinance.search(cleanBaseSymbol).catch(() => null)
+        YahooClient.search(companyName).catch(() => null),
+        YahooClient.search(symbol).catch(() => null),
+        YahooClient.search(cleanBaseSymbol).catch(() => null)
       ]);
       
       const newsList: any[] = [];
@@ -474,7 +474,7 @@ router.get("/:symbol", async (req, res) => {
       const now = new Date();
       const startDate = new Date();
       startDate.setFullYear(now.getFullYear() - 5);
-      const chartResult = await yahooFinance.chart(symbol, {
+      const chartResult = await YahooClient.chart(symbol, {
         period1: startDate,
         period2: now,
         interval: '1d'

@@ -310,16 +310,11 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3, use
 
       console.warn(`[Yahoo Service] Request to ${rotatedUrl} failed (Attempt ${i + 1}/${retries}) through proxy: ${status || err.message}${errorDetails}`);
 
-      // On 429, apply exponential back-off with jitter before retrying
+      // On 429, fail fast without sleeping so SWR fallback takes over immediately
       if (status === 429) {
-        const baseDelay = 2000;
-        const backoff = baseDelay * Math.pow(2, i); // 2 s, 4 s, 8 s
-        const jitter = Math.random() * 1000;         // up to +1 s
-        const wait = Math.min(backoff + jitter, 15000); // cap at 15 s
-        console.warn(`[Yahoo Service] 429 – backing off for ${Math.round(wait)}ms before retry ${i + 1}/${retries}...`);
-        await new Promise(resolve => setTimeout(resolve, wait));
+        console.warn(`[Yahoo Service] 429 - failing fast to allow graceful client fallback`);
       } else if (i < retries - 1) {
-        await new Promise(resolve => setTimeout(resolve, 400 * (i + 1)));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
   }

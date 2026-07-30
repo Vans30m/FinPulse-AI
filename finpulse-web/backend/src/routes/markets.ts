@@ -1,6 +1,7 @@
 import express from "express";
 import axios from "axios";
 import NodeCache from "node-cache";
+import { YahooClient } from "../services/YahooClient.js";
 
 const marketsCache = new NodeCache({ stdTTL: 120 }); // 2 minutes cache (was 15s) to reduce Yahoo Finance rate-limit hits
 const explanationCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache for macro market explanation
@@ -23,40 +24,23 @@ import {
 // and earnings calendar in the background every 30 seconds.
 // Keeps caches hot before any user opens the site and avoids Yahoo Finance blocks.
 // ─────────────────────────────────────────────────────────────────────────────
-let warmerStep = 0;
 async function warmMarketsCache() {
-  try {
-    switch (warmerStep) {
-      case 0:
-        console.log('[Cache Warmer] Pre-fetching global markets data slowly...');
-        const globalData = await getAllGlobalMarkets();
-        marketsCache.set("global-markets-all", globalData);
-        console.log('[Cache Warmer] Global markets cache refreshed.');
-        break;
-      case 1:
-        console.log('[Cache Warmer] Pre-fetching India screener gainers/losers...');
-        await getDomesticScreener("gainers");
-        await getDomesticScreener("losers");
-        console.log('[Cache Warmer] India screeners cache refreshed.');
-        break;
-      case 2:
-        console.log('[Cache Warmer] Pre-fetching US screener gainers/losers...');
-        await getMarketScreener("us", "gainers");
-        await getMarketScreener("us", "losers");
-        console.log('[Cache Warmer] US screeners cache refreshed.');
-        break;
-      case 3:
-        console.log('[Cache Warmer] Pre-fetching upcoming earnings calendars (India/US)...');
-        await getUpcomingEarningsForMarket("india");
-        await getUpcomingEarningsForMarket("us");
-        console.log('[Cache Warmer] Earnings calendars cache refreshed.');
-        break;
+  console.log('[Cache Warmer] Pre-warming major indices and trending assets...');
+  const symbolsToWarm = [
+    '^GSPC', '^IXIC', '^DJI', '^NSEI', '^BSESN', 
+    'AAPL', 'MSFT', 'NVDA', 'TSLA', 'RELIANCE.NS', 'TCS.NS'
+  ];
+  for (const symbol of symbolsToWarm) {
+    try {
+      await YahooClient.quote(symbol);
+      // randomized jitter/delay (1-3 seconds) between ticker pre-fetches
+      const delay = Math.floor(Math.random() * 2000) + 1000;
+      await new Promise(r => setTimeout(r, delay));
+    } catch (err: any) {
+      console.warn(`[Cache Warmer] Failed to warm ${symbol}:`, err.message);
     }
-    // Rotate to the next step
-    warmerStep = (warmerStep + 1) % 4;
-  } catch (err: any) {
-    console.warn(`[Cache Warmer] Failed to refresh cache step ${warmerStep}:`, err.message);
   }
+  console.log('[Cache Warmer] Cache warming completed.');
 }
 
 // Start cache warming rotation with a 20-second startup delay
@@ -64,7 +48,7 @@ setTimeout(() => {
   void warmMarketsCache();
   setInterval(() => {
     void warmMarketsCache();
-  }, 30 * 1000); // Trigger a step every 30 seconds
+  }, 10 * 60 * 1000); // Trigger every 10 minutes
 }, 20000);
 
 // 1. globalMarketsRoutes handles /api/global-markets
@@ -142,8 +126,8 @@ fundamentalsRoutes.get("/batch/list", async (req, res) => {
       return res.status(400).json({ error: "Missing symbols parameter" });
     }
     const symbols = String(symbolsQuery).split(",");
-    const { fetchQuotesResilient } = await import("../yahooFinance.js");
-    const quotes = await fetchQuotesResilient(symbols);
+    const { YahooClient } = await import("../services/YahooClient.js");
+    const quotes = await YahooClient.quote(symbols);
 
     const result = quotes.map(quote => {
       if (!quote) return null;

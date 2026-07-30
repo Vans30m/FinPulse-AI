@@ -1,7 +1,7 @@
 import express from "express";
 import axios from "axios";
 import { getAIScore, getAnalystConsensus } from "../services/yahooService.js";
-import { yahooFinance } from "../yahooFinance.js";
+import { YahooClient } from "../services/YahooClient.js";
 import { prisma } from "../prisma.js";
 import jwt from "jsonwebtoken";
 import Parser from "rss-parser";
@@ -204,7 +204,7 @@ stockSentimentRoutes.get("/:symbol", async (req, res) => {
     let hasTrend = false;
 
     try {
-      const chartResult = await yahooFinance.chart(symbol, {
+      const chartResult = await YahooClient.chart(symbol, {
         period1: startDate,
         period2: now,
         interval: '1d'
@@ -307,21 +307,19 @@ marketBriefRoutes.get("/market-brief", async (req, res) => {
 
   try {
     const symbols = ["^GSPC", "^IXIC", "^NSEI", "^BSESN", "^GDAXI", "^FCHI", "^FTSE", "^N225", "000001.SS", "^HSI", "^TWII", "^KS11", "GC=F", "CL=F", "^VIX"];
-    const quotes = await Promise.all(
-      symbols.map(async (sym) => {
-        try {
-          const q = await yahooFinance.quote(sym);
-          return {
-            symbol: sym,
-            price: q.regularMarketPrice,
-            changePercent: q.regularMarketChangePercent,
-            name: q.shortName || sym
-          };
-        } catch (e) {
-          return { symbol: sym, error: true };
-        }
-      })
-    );
+    const quotesList = await YahooClient.quote(symbols);
+    const quotes = symbols.map((sym) => {
+      const q = (Array.isArray(quotesList) ? quotesList : [quotesList]).find((item: any) => item && item.symbol?.toUpperCase() === sym.toUpperCase());
+      if (q) {
+        return {
+          symbol: sym,
+          price: q.regularMarketPrice,
+          changePercent: q.regularMarketChangePercent,
+          name: q.shortName || sym
+        };
+      }
+      return { symbol: sym, error: true };
+    });
 
     const headlines = await getRecentNewsHeadlines();
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
@@ -517,30 +515,26 @@ marketBriefRoutes.get("/portfolio-advisor", async (req, res) => {
     }
 
     // 2. Fetch live quotes for all holdings
-    const enrichedHoldings = await Promise.all(
-      holdings.map(async (h) => {
-        try {
-          const q = await yahooFinance.quote(h.ticker);
-          const currentPrice = q.regularMarketPrice ?? h.avgCost;
-          const changePercent = q.regularMarketChangePercent ?? 0;
-          return {
-            ...h,
-            currentPrice,
-            changePercent,
-            marketValue: h.shares * currentPrice,
-            costBasis: h.shares * h.avgCost
-          };
-        } catch {
-          return {
-            ...h,
-            currentPrice: h.avgCost,
-            changePercent: 0,
-            marketValue: h.shares * h.avgCost,
-            costBasis: h.shares * h.avgCost
-          };
-        }
-      })
+    const tickers = holdings.map(h => h.ticker);
+    const quotesList = tickers.length > 0 ? await YahooClient.quote(tickers) : [];
+    const quotesMap = new Map(
+      (Array.isArray(quotesList) ? quotesList : [quotesList])
+        .filter((q: any) => q && q.symbol)
+        .map((q: any) => [q.symbol.toUpperCase(), q])
     );
+
+    const enrichedHoldings = holdings.map((h) => {
+      const q = quotesMap.get(h.ticker.toUpperCase());
+      const currentPrice = q?.regularMarketPrice ?? h.avgCost;
+      const changePercent = q?.regularMarketChangePercent ?? 0;
+      return {
+        ...h,
+        currentPrice,
+        changePercent,
+        marketValue: h.shares * currentPrice,
+        costBasis: h.shares * h.avgCost
+      };
+    });
 
     // 3. Compute deterministic metrics
     const totalValue = enrichedHoldings.reduce((sum, h) => sum + h.marketValue, 0);
@@ -764,21 +758,19 @@ marketBriefRoutes.get("/market-drivers", async (req, res) => {
 
   try {
     const symbols = ["^GSPC", "^IXIC", "^NSEI", "^BSESN", "^GDAXI", "^FCHI", "^FTSE", "^N225", "000001.SS", "^HSI", "^TWII", "^KS11", "GC=F", "CL=F", "^VIX"];
-    const quotes = await Promise.all(
-      symbols.map(async (sym) => {
-        try {
-          const q = await yahooFinance.quote(sym);
-          return {
-            symbol: sym,
-            price: q.regularMarketPrice,
-            changePercent: q.regularMarketChangePercent,
-            name: q.shortName || sym
-          };
-        } catch (e) {
-          return { symbol: sym, error: true };
-        }
-      })
-    );
+    const quotesList = await YahooClient.quote(symbols);
+    const quotes = symbols.map((sym) => {
+      const q = (Array.isArray(quotesList) ? quotesList : [quotesList]).find((item: any) => item && item.symbol?.toUpperCase() === sym.toUpperCase());
+      if (q) {
+        return {
+          symbol: sym,
+          price: q.regularMarketPrice,
+          changePercent: q.regularMarketChangePercent,
+          name: q.shortName || sym
+        };
+      }
+      return { symbol: sym, error: true };
+    });
 
     const headlines = await getRecentNewsHeadlines();
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
@@ -908,21 +900,19 @@ marketBriefRoutes.get("/global-market-pulse", async (req, res) => {
 
   try {
     const symbols = ["^GSPC", "^IXIC", "^NSEI", "^BSESN", "^GDAXI", "^FCHI", "^FTSE", "^N225", "000001.SS", "^HSI", "^TWII", "^KS11", "GC=F", "CL=F", "^VIX", "BTC-USD"];
-    const quotes = await Promise.all(
-      symbols.map(async (sym) => {
-        try {
-          const q = await yahooFinance.quote(sym);
-          return {
-            symbol: sym,
-            price: q.regularMarketPrice,
-            changePercent: q.regularMarketChangePercent,
-            name: q.shortName || sym
-          };
-        } catch (e) {
-          return { symbol: sym, error: true };
-        }
-      })
-    );
+    const quotesList = await YahooClient.quote(symbols);
+    const quotes = symbols.map((sym) => {
+      const q = (Array.isArray(quotesList) ? quotesList : [quotesList]).find((item: any) => item && item.symbol?.toUpperCase() === sym.toUpperCase());
+      if (q) {
+        return {
+          symbol: sym,
+          price: q.regularMarketPrice,
+          changePercent: q.regularMarketChangePercent,
+          name: q.shortName || sym
+        };
+      }
+      return { symbol: sym, error: true };
+    });
 
     const headlines = await getRecentNewsHeadlines();
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
@@ -1029,21 +1019,19 @@ marketBriefRoutes.get("/fear-greed", async (req, res) => {
 
   try {
     const symbols = ["^GSPC", "^IXIC", "^NSEI", "^BSESN", "^GDAXI", "^FCHI", "^FTSE", "^N225", "000001.SS", "^HSI", "^TWII", "^KS11", "GC=F", "CL=F", "^VIX", "BTC-USD"];
-    const quotes = await Promise.all(
-      symbols.map(async (sym) => {
-        try {
-          const q = await yahooFinance.quote(sym);
-          return {
-            symbol: sym,
-            price: q.regularMarketPrice,
-            changePercent: q.regularMarketChangePercent,
-            name: q.shortName || sym
-          };
-        } catch (e) {
-          return { symbol: sym, error: true };
-        }
-      })
-    );
+    const quotesList = await YahooClient.quote(symbols);
+    const quotes = symbols.map((sym) => {
+      const q = (Array.isArray(quotesList) ? quotesList : [quotesList]).find((item: any) => item && item.symbol?.toUpperCase() === sym.toUpperCase());
+      if (q) {
+        return {
+          symbol: sym,
+          price: q.regularMarketPrice,
+          changePercent: q.regularMarketChangePercent,
+          name: q.shortName || sym
+        };
+      }
+      return { symbol: sym, error: true };
+    });
 
     // Calculate score using weighted market indicators
     const sp500 = quotes.find((q: any) => q.symbol === "^GSPC");
@@ -1188,22 +1176,26 @@ marketBriefRoutes.get("/pick-of-the-day", async (req, res) => {
       { symbol: "HDFCBANK.NS", name: "HDFC Bank Limited" }
     ];
 
-    const quotes = await Promise.all(
-      candidates.map(async (stock) => {
-        try {
-          const q = await yahooFinance.quote(stock.symbol);
-          return {
-            symbol: stock.symbol,
-            name: stock.name,
-            price: q.regularMarketPrice || 100,
-            changePercent: q.regularMarketChangePercent || 0,
-            volume: q.regularMarketVolume || 1000000
-          };
-        } catch (e) {
-          return { symbol: stock.symbol, name: stock.name, error: true };
-        }
-      })
+    const tickers = candidates.map(c => c.symbol);
+    const quotesList = await YahooClient.quote(tickers);
+    const quotesMap = new Map(
+      (Array.isArray(quotesList) ? quotesList : [quotesList])
+        .filter((q: any) => q && q.symbol)
+        .map((q: any) => [q.symbol.toUpperCase(), q])
     );
+    const quotes = candidates.map((stock) => {
+      const q = quotesMap.get(stock.symbol.toUpperCase());
+      if (q) {
+        return {
+          symbol: stock.symbol,
+          name: stock.name,
+          price: q.regularMarketPrice || 100,
+          changePercent: q.regularMarketChangePercent || 0,
+          volume: q.regularMarketVolume || 1000000
+        };
+      }
+      return { symbol: stock.symbol, name: stock.name, error: true };
+    });
 
     const validQuotes = quotes.filter((q: any) => !q.error);
     
@@ -1367,20 +1359,24 @@ marketBriefRoutes.get("/sector-momentum", async (req, res) => {
       { symbol: "XLC", name: "Communication Services" }
     ];
 
-    const quotes = await Promise.all(
-      sectorsDef.map(async (sec) => {
-        try {
-          const q = await yahooFinance.quote(sec.symbol);
-          return {
-            symbol: sec.symbol,
-            sector: sec.name,
-            changePercent: q.regularMarketChangePercent || 0
-          };
-        } catch (e) {
-          return { symbol: sec.symbol, sector: sec.name, error: true };
-        }
-      })
+    const tickers = sectorsDef.map(s => s.symbol);
+    const quotesList = await YahooClient.quote(tickers);
+    const quotesMap = new Map(
+      (Array.isArray(quotesList) ? quotesList : [quotesList])
+        .filter((q: any) => q && q.symbol)
+        .map((q: any) => [q.symbol.toUpperCase(), q])
     );
+    const quotes = sectorsDef.map((sec) => {
+      const q = quotesMap.get(sec.symbol.toUpperCase());
+      if (q) {
+        return {
+          symbol: sec.symbol,
+          sector: sec.name,
+          changePercent: q.regularMarketChangePercent || 0
+        };
+      }
+      return { symbol: sec.symbol, sector: sec.name, error: true };
+    });
 
     const validQuotes = quotes.filter((q: any) => !q.error);
     const evaluated = validQuotes.map((q: any) => {
@@ -1534,34 +1530,27 @@ marketBriefRoutes.get("/portfolio-advisor", async (req, res) => {
       return { sector: 'US Equities', type: 'Stock' };
     };
 
-    // Calculate dynamic valuations in parallel
-    const enrichedHoldings: any[] = await Promise.all(holdings.map(async (h) => {
-      try {
-        const quote = await yahooFinance.quote(h.ticker);
-        const currentPrice = quote.regularMarketPrice ?? h.avgCost;
-        return {
-          id: h.id,
-          ticker: h.ticker,
-          name: h.name,
-          shares: h.shares,
-          avgCost: h.avgCost,
-          currentPrice,
-          marketValue: h.shares * currentPrice,
-          marketId: h.marketId
-        };
-      } catch (err) {
-        return {
-          id: h.id,
-          ticker: h.ticker,
-          name: h.name,
-          shares: h.shares,
-          avgCost: h.avgCost,
-          currentPrice: h.avgCost,
-          marketValue: h.shares * h.avgCost,
-          marketId: h.marketId
-        };
-      }
-    }));
+    const tickers = holdings.map(h => h.ticker);
+    const quotesList = tickers.length > 0 ? await YahooClient.quote(tickers) : [];
+    const quotesMap = new Map(
+      (Array.isArray(quotesList) ? quotesList : [quotesList])
+        .filter((q: any) => q && q.symbol)
+        .map((q: any) => [q.symbol.toUpperCase(), q])
+    );
+    const enrichedHoldings: any[] = holdings.map((h) => {
+      const quote = quotesMap.get(h.ticker.toUpperCase());
+      const currentPrice = quote?.regularMarketPrice ?? h.avgCost;
+      return {
+        id: h.id,
+        ticker: h.ticker,
+        name: h.name,
+        shares: h.shares,
+        avgCost: h.avgCost,
+        currentPrice,
+        marketValue: h.shares * currentPrice,
+        marketId: h.marketId
+      };
+    });
 
     const totalHoldingsValue = enrichedHoldings.reduce((sum, h) => sum + h.marketValue, 0);
     const totalPortfolioValue = totalHoldingsValue + cash;

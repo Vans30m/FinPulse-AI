@@ -1,4 +1,4 @@
-import { yahooFinance, fetchQuotesResilient } from '../yahooFinance.js';
+import { YahooClient } from './YahooClient.js';
 import { GLOBAL_INDICES } from '../config/markets.js';
 
 export async function getGlobalMarketQuote(
@@ -7,7 +7,7 @@ export async function getGlobalMarketQuote(
   region: string
 ) {
   try {
-    const quotes = await fetchQuotesResilient([symbol]);
+    const quotes = await YahooClient.quote([symbol]);
     const quote = quotes[0];
 
     if (!quote || !quote.regularMarketPrice) {
@@ -64,7 +64,7 @@ export async function getAllGlobalMarkets() {
     for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
       const batch = symbols.slice(i, i + BATCH_SIZE);
       try {
-        const batchQuotes = await fetchQuotesResilient(batch);
+        const batchQuotes = await YahooClient.quote(batch);
         allQuotes.push(...batchQuotes);
       } catch (batchErr: any) {
         console.warn(`[GlobalMarketService] Batch ${Math.floor(i / BATCH_SIZE) + 1} failed:`, batchErr.message);
@@ -134,7 +134,7 @@ export async function getAllGlobalMarkets() {
 export async function getIndexSummary(
   symbol: string
 ) {
-  const quotes = await fetchQuotesResilient([symbol]);
+  const quotes = await YahooClient.quote([symbol]);
   const quote = quotes[0];
   if (!quote) throw new Error("Index data unavailable");
 

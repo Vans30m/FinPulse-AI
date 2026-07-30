@@ -8,11 +8,11 @@ import axios from 'axios';
 import { prisma } from './prisma.js';
 import Parser from 'rss-parser';
 import NodeCache from 'node-cache';
+import compression from 'compression';
 
 const searchCache = new NodeCache({ stdTTL: 3600 }); // Cache search queries for 1 hour
 
-import { yahooFinance } from './yahooFinance.js';
-export { yahooFinance };
+import { YahooClient } from './services/YahooClient.js';
 import chartRoutes from "./routes/charts.js";
 import { newsRoutes, companyNewsRoutes } from "./routes/news.js";
 import {
@@ -93,6 +93,7 @@ app.set('trust proxy', 1);
 // ==========================================
 // CORE MIDDLEWARE
 // ==========================================
+app.use(compression());
 app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions)); // Pre-flight for all routes (Express 5 compatible)
 app.use(express.json({ limit: '10mb' }));
@@ -247,7 +248,7 @@ app.get("/api/search", async (req: Request, res: Response) => {
       return res.json(cachedResults);
     }
 
-    const yahooResults = await yahooFinance.search(q, { quotesCount: 20 });
+    const yahooResults = await YahooClient.search(q, { quotesCount: 20 });
 
     const results =
       yahooResults.quotes
@@ -281,7 +282,7 @@ app.get("/api/search", async (req: Request, res: Response) => {
 app.get('/api/market-indices', async (_req: Request, res: Response) => {
   try {
     const symbols = ['^GSPC', '^IXIC', '^DJI'];
-    const quotes = await yahooFinance.quote(symbols);
+    const quotes = await YahooClient.quote(symbols);
     const formatted = quotes.map((q: any) => ({
       symbol: q.symbol,
       name: q.symbol === '^GSPC' ? 'S&P 500' : q.symbol === '^IXIC' ? 'NASDAQ' : 'DOW JONES',

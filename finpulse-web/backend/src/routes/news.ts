@@ -1,5 +1,5 @@
 import express from "express";
-import { yahooFinance } from "../yahooFinance.js";
+import { YahooClient } from "../services/YahooClient.js";
 import { fetchNewsSentiment } from "../controllers/newsController.js";
 
 // newsRoutes handles /api/news-sentiment
@@ -9,7 +9,7 @@ newsRoutes.get("/sentiment", fetchNewsSentiment);
 
 newsRoutes.get("/:symbol", async (req, res) => {
   try {
-    const result = await yahooFinance.search(req.params.symbol, { newsCount: 10 });
+    const result = await YahooClient.search(req.params.symbol, { newsCount: 10 });
     const news = result.news || [];
     let score = 50;
 
@@ -67,7 +67,7 @@ const companyNewsRoutes = express.Router();
 
 companyNewsRoutes.get("/:symbol", async (req, res) => {
   try {
-    const result: any = await yahooFinance.search(req.params.symbol);
+    const result: any = await YahooClient.search(req.params.symbol);
     res.json(result.news?.slice(0, 10) || []);
   } catch (error) {
     console.error("Company news error (returning fallback):", error);

@@ -27,6 +27,7 @@ export default function ForexCryptoRibbon() {
 
   useEffect(() => {
     async function fetchTickerData() {
+      if (document.hidden) return;
       try {
         const symbols = TICKER_MAP.map((t) => t.symbol);
         const batchData = await getFundamentalsBatch(symbols);

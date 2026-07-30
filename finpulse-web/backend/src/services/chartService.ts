@@ -1,4 +1,4 @@
-import { yahooFinance } from '../yahooFinance.js';
+import { YahooClient } from './YahooClient.js';
 
 // ==========================================
 // NEW WORKING HISTORICAL RECHARTS TIMELINE METHOD
@@ -18,7 +18,7 @@ export async function getAssetsHistoricalGrowth(
     // Fetch overlapping array promises asynchronously
     const historyPromises = symbols.map(async (symbol) => {
       try {
-        const queryResult = await yahooFinance.historical(symbol, {
+        const queryResult = await YahooClient.historical(symbol, {
           period1: startDate, // ✅ Pass the native Date object directly
           period2: endDate,   // ✅ Pass the native Date object directly
           interval: '1mo'
@@ -136,7 +136,7 @@ export async function getYahooCandles(
     }
 
     const result =
-      await yahooFinance.chart(
+      await YahooClient.chart(
         symbol,
         {
           period1,
@@ -214,7 +214,7 @@ export async function getMarketHistory(
 
   try {
     const chart =
-      await yahooFinance.chart(
+      await YahooClient.chart(
         symbol,
         {
           period1: new Date(
@@ -270,7 +270,7 @@ export async function getHistoricalChart(symbol: string, range: string, interval
       interval: interval,
     };
 
-    const result = await yahooFinance.chart(symbol, queryOptions as any);
+    const result = await YahooClient.chart(symbol, queryOptions as any);
     return result;
   } catch (error) {
     console.error(`Error fetching chart for ${symbol} with range ${range} and interval ${interval}:`, error);

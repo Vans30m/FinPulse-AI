@@ -57,6 +57,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
   useEffect(() => {
     if (!isLoggedIn) return;
     const fetchAlerts = async () => {
+      if (document.hidden) return;
       try {
         const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || '';
         const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');

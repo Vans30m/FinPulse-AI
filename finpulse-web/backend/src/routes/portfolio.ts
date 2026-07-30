@@ -1,7 +1,6 @@
 import express from 'express';
 import { prisma } from '../prisma.js';
-import { yahooFinance } from '../index.js';
-import { fetchQuotesResilient } from '../yahooFinance.js';
+import { YahooClient } from '../services/YahooClient.js';
 import jwt from 'jsonwebtoken';
 
 const portfolioRoutes = express.Router();
@@ -77,7 +76,7 @@ portfolioRoutes.get('/holdings', async (req, res) => {
     let quotes: any[] = [];
     if (allTickers.length > 0) {
       try {
-        quotes = await fetchQuotesResilient(allTickers);
+        quotes = await YahooClient.quote(allTickers);
       } catch (err) {
         console.error('Failed to fetch batch quotes in holdings route:', err);
       }
@@ -382,9 +381,18 @@ portfolioRoutes.get('/events', async (req, res) => {
     const user = await getOrCreateDefaultUser(req);
     const holdings = await prisma.holding.findMany({ where: { userId: user.id } });
 
-    const events = await Promise.all(holdings.map(async (h) => {
+    const tickers = holdings.map(h => h.ticker);
+    const quotesList = tickers.length > 0 ? await YahooClient.quote(tickers) : [];
+    const quotesMap = new Map(
+      (Array.isArray(quotesList) ? quotesList : [quotesList])
+        .filter((q: any) => q && q.symbol)
+        .map((q: any) => [q.symbol.toUpperCase(), q])
+    );
+
+    const events = holdings.map((h) => {
       try {
-        const quote = await yahooFinance.quote(h.ticker);
+        const quote = quotesMap.get(h.ticker.toUpperCase());
+        if (!quote) return null;
         const tz = quote.exchangeTimezoneName || 'UTC';
         const tzShort = quote.exchangeTimezoneShortName || 'UTC';
 
@@ -451,7 +459,7 @@ portfolioRoutes.get('/events', async (req, res) => {
       } catch {
         return null;
       }
-    }));
+    });
 
     res.json(events.filter(Boolean));
   } catch (error: any) {
@@ -494,7 +502,7 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
 
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {
       try {
-        const hist = await yahooFinance.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1mo' });
+        const hist = await YahooClient.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1mo' });
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, marketId: h.marketId, history: hist };
       } catch {
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, marketId: h.marketId, history: [] };
@@ -533,7 +541,7 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
     const benchmarkHistories: Record<string, any[]> = {};
     for (const [key, symbol] of Object.entries(benchmarkSymbols)) {
       try {
-        benchmarkHistories[key] = await yahooFinance.historical(symbol, { period1: startDate, period2: endDate, interval: '1mo' });
+        benchmarkHistories[key] = await YahooClient.historical(symbol, { period1: startDate, period2: endDate, interval: '1mo' });
       } catch {
         benchmarkHistories[key] = [];
       }
@@ -649,7 +657,7 @@ portfolioRoutes.get('/benchmarks', async (req, res) => {
 
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {
       try {
-        const hist = await yahooFinance.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1mo' });
+        const hist = await YahooClient.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1mo' });
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: hist };
       } catch {
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: [] };
@@ -685,7 +693,7 @@ portfolioRoutes.get('/benchmarks', async (req, res) => {
     for (const [name, ticker] of Object.entries(benchmarkSymbols)) {
       let bHistory: any[] = [];
       try {
-        bHistory = await yahooFinance.historical(ticker, { period1: startDate, period2: endDate, interval: '1mo' });
+        bHistory = await YahooClient.historical(ticker, { period1: startDate, period2: endDate, interval: '1mo' });
       } catch (err) {
         console.error(err);
       }
@@ -827,7 +835,7 @@ portfolioRoutes.get('/heatmap', async (req, res) => {
 
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {
       try {
-        const hist = await yahooFinance.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1d' });
+        const hist = await YahooClient.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1d' });
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: hist };
       } catch {
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: [] };
@@ -934,7 +942,7 @@ portfolioRoutes.get('/analysis', async (req, res) => {
 
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {
       try {
-        const hist = await yahooFinance.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1mo' });
+        const hist = await YahooClient.historical(h.ticker, { period1: startDate, period2: endDate, interval: '1mo' });
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: hist };
       } catch {
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: [] };
@@ -986,7 +994,7 @@ portfolioRoutes.get('/analysis', async (req, res) => {
     const benchmarkRows = [];
     for (const [name, ticker] of Object.entries(benchmarkSymbols)) {
       try {
-        const quote = await yahooFinance.quote(ticker);
+        const quote = await YahooClient.quote(ticker);
         const changePercent = quote.regularMarketChangePercent || 0;
         const pReturn = pAnnReturn * 100;
         const diff = pReturn - changePercent;
@@ -1014,7 +1022,7 @@ portfolioRoutes.get('/analysis', async (req, res) => {
     const missedOpportunities = [];
 
     const holdingGains = await Promise.all(holdings.map(async (h) => {
-      const quote = await yahooFinance.quote(h.ticker);
+      const quote = await YahooClient.quote(h.ticker);
       const curr = quote.regularMarketPrice ?? h.avgCost;
       const gain = (curr - h.avgCost) * h.shares;
       return { ticker: h.ticker, gain, name: h.name };
@@ -1347,7 +1355,7 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
     }
 
     // 1. Fetch benchmark history
-    const bHistory = await yahooFinance.historical(symbol, { period1: startDate, period2: endDate, interval: interval as any }).catch(() => []);
+    const bHistory = await YahooClient.historical(symbol, { period1: startDate, period2: endDate, interval: interval as any }).catch(() => []);
 
     // 2. Fetch USDINR history
     let usdinrHistory: any[] = [];
@@ -1355,7 +1363,7 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
     // 3. Fetch holdings history
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {
       try {
-        const hist = await yahooFinance.historical(h.ticker, { period1: startDate, period2: endDate, interval: interval as any });
+        const hist = await YahooClient.historical(h.ticker, { period1: startDate, period2: endDate, interval: interval as any });
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: hist };
       } catch {
         return { ticker: h.ticker, shares: h.shares, avgCost: h.avgCost, history: [] };
@@ -1501,8 +1509,8 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
     const cons = CONSTITUENTS[symbol] || CONSTITUENTS['^GSPC'] || [];
     const constituentsQuotes = await Promise.all(cons.map(async (c) => {
       try {
-        const quote = await yahooFinance.quote(c.symbol);
-        const hist = await yahooFinance.historical(c.symbol, { period1: startDate, period2: endDate, interval: '1mo' }).catch(() => []);
+        const quote = await YahooClient.quote(c.symbol);
+        const hist = await YahooClient.historical(c.symbol, { period1: startDate, period2: endDate, interval: '1mo' }).catch(() => []);
 
         const initial = hist[0]?.close ?? hist[0]?.adjClose ?? quote.regularMarketPreviousClose ?? 1;
         const current = quote.regularMarketPrice ?? initial;

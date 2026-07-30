@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma.js';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
-import { yahooFinance } from '../index.js';
+import { YahooClient } from '../services/YahooClient.js';
 
 const profileRoutes = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
@@ -404,7 +404,7 @@ profileRoutes.get('/watchlist-summary', protect, async (req, res) => {
     if (symbols.size > 0) {
       try {
         const symbolArray = Array.from(symbols);
-        const quotes = await yahooFinance.quote(symbolArray);
+        const quotes = await YahooClient.quote(symbolArray);
         for (const quote of quotes) {
           if (quote && typeof quote.regularMarketChangePercent === 'number') {
             totalChangePercent += quote.regularMarketChangePercent;

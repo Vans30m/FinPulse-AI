@@ -8,6 +8,7 @@ export default function VolatilityGauges({ className = "" }: { className?: strin
 
     useEffect(() => {
         async function fetchVix() {
+            if (document.hidden) return;
             try {
                 const fundamentals = await getFundamentals("^VIX");
                 const price = fundamentals.price;
