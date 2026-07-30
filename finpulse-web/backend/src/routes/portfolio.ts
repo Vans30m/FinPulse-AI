@@ -491,11 +491,6 @@ portfolioRoutes.get('/rolling-cagr', async (req, res) => {
 
     // Fetch USD/INR history for converting domestic holdings to USD
     let usdinrHist: any[] = [];
-    try {
-      usdinrHist = await yahooFinance.historical('USDINR=X', { period1: startDate, period2: endDate, interval: '1mo' }).catch(() => []);
-    } catch (err) {
-      console.error("Failed to fetch USD/INR history for cagr:", err);
-    }
 
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {
       try {
@@ -1356,9 +1351,6 @@ portfolioRoutes.get('/benchmark-comparison', async (req, res) => {
 
     // 2. Fetch USDINR history
     let usdinrHistory: any[] = [];
-    try {
-      usdinrHistory = await yahooFinance.historical('USDINR=X', { period1: startDate, period2: endDate, interval: interval as any });
-    } catch (err) { }
 
     // 3. Fetch holdings history
     const holdingsHistory = await Promise.all(holdings.map(async (h) => {

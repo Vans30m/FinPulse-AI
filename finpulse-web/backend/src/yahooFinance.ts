@@ -280,9 +280,19 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3, use
 
       // Cooldown this specific proxy if it timed out, failed, or was rate limited
       if (proxyObj) {
-        if (status === 429 || err.message?.includes('timeout') || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
-          proxyObj.cooldownUntil = Date.now() + 5 * 60 * 1000; // 5-minute cooldown
-          console.warn(`[Yahoo Service] Proxy ${proxyObj.url.split('@')[1] || proxyObj.url.substring(0, 30)} got error/429/timeout. Cooled down for 5m.`);
+        const isProxyError = 
+          status === 429 || 
+          status === 407 || 
+          status === 502 || 
+          status === 503 || 
+          status === 504 || 
+          err.message?.includes('timeout') || 
+          err.code === 'ECONNRESET' || 
+          err.code === 'ETIMEDOUT';
+
+        if (isProxyError) {
+          proxyObj.cooldownUntil = Date.now() + 30 * 60 * 1000; // 30-minute cooldown
+          console.warn(`[Yahoo Service] Proxy ${proxyObj.url.split('@')[1] || proxyObj.url.substring(0, 30)} got error (${status || err.code || 'timeout'}). Cooled down for 30m.`);
         }
       }
       let errorDetails = '';

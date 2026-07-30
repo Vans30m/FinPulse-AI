@@ -224,7 +224,6 @@ const RAW_GLOBAL_INDICES = [
   { symbol: "USDCAD=X", name: "USD/CAD", region: "Forex" },
   { symbol: "AUDUSD=X", name: "AUD/USD", region: "Forex" },
   { symbol: "NZDUSD=X", name: "NZD/USD", region: "Forex" },
-  { symbol: "USDINR=X", name: "USD/INR", region: "Forex" },
   { symbol: "USDHKD=X", name: "USD/HKD", region: "Forex" },
   { symbol: "USDCNY=X", name: "USD/CNY", region: "Forex" },
   { symbol: "EURGBP=X", name: "EUR/GBP", region: "Forex" },

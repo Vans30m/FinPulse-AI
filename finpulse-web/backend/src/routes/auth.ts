@@ -1004,14 +1004,6 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
     let todayProfitLoss = 0;
 
     let usdToInrRate = 83.45;
-    try {
-      const rateQuote: any = await yahooFinance.quote('USDINR=X');
-      if (rateQuote && rateQuote.regularMarketPrice) {
-        usdToInrRate = rateQuote.regularMarketPrice;
-      }
-    } catch (err) {
-      console.error("Failed to fetch USDINR rate on backend stats:", err);
-    }
 
     for (const h of holdings) {
       let currentPrice = h.avgCost;
