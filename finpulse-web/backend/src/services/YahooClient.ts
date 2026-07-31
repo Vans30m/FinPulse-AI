@@ -208,10 +208,107 @@ class CentralYahooClient {
   async quote(symbols: string | string[], options?: any): Promise<any> {
     const symbolList = Array.isArray(symbols) ? symbols : [symbols];
     if (symbolList.length === 0) return Array.isArray(symbols) ? [] : null;
-    const sortedKey = [...symbolList].map(s => s.toUpperCase()).sort().join(',');
-    const cacheKey = `quote_${sortedKey}`;
-    const result = await this.executeQuery(cacheKey, 45, () => yahooFinance.quote(symbolList, options));
-    return Array.isArray(symbols) ? result : result[0];
+
+    const usIndices = new Set(["^GSPC", "^IXIC", "^DJI", "^RUT", "^NDX", "^VIX", "^DJT", "^DJU", "^NYA", "^TNX"]);
+    const cryptos = new Set([
+      "BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "DOGE-USD", "ADA-USD", "AVAX-USD",
+      "DOT-USD", "LINK-USD", "TRX-USD", "LTC-USD", "XLM-USD", "HBAR-USD", "SHIB-USD",
+      "ATOM-USD", "ETC-USD"
+    ]);
+    const forexPairs = new Set([
+      "EURUSD=X", "GBPUSD=X", "USDJPY=X", "USDCHF=X", "USDCAD=X", "AUDUSD=X",
+      "NZDUSD=X", "USDHKD=X", "USDCNY=X", "EURGBP=X", "EURJPY=X", "GBPJPY=X", "AUDJPY=X"
+    ]);
+
+    const results: any[] = [];
+    const usIndicesToFetch: string[] = [];
+    const cryptoForexToFetch: string[] = [];
+    const yahooSymbols: string[] = [];
+
+    for (const symbol of symbolList) {
+      const symUpper = symbol.toUpperCase();
+      if (usIndices.has(symUpper)) {
+        usIndicesToFetch.push(symUpper);
+      } else if (cryptos.has(symUpper) || forexPairs.has(symUpper)) {
+        cryptoForexToFetch.push(symUpper);
+      } else {
+        yahooSymbols.push(symbol);
+      }
+    }
+
+    if (cryptoForexToFetch.length > 0) {
+      try {
+        const { fetchTwelveDataQuotes } = await import("./twelveDataService.js");
+        const quotes = await fetchTwelveDataQuotes(cryptoForexToFetch);
+        for (const sym of cryptoForexToFetch) {
+          const q = quotes[sym];
+          if (q) {
+            results.push({
+              symbol: sym,
+              ...q,
+              fiftyTwoWeekHigh: q.regularMarketDayHigh,
+              fiftyTwoWeekLow: q.regularMarketDayLow,
+              shortName: sym,
+              longName: sym
+            });
+          } else {
+            yahooSymbols.push(sym);
+          }
+        }
+      } catch (e) {
+        console.warn("[YahooClient] Twelve Data fetch failed, falling back to Yahoo:", e);
+        yahooSymbols.push(...cryptoForexToFetch);
+      }
+    }
+
+    if (usIndicesToFetch.length > 0) {
+      try {
+        const { getFinnhubQuote } = await import("./finnhubService.js");
+        for (const sym of usIndicesToFetch) {
+          const q = await getFinnhubQuote(sym);
+          if (q) {
+            results.push({
+              symbol: sym,
+              regularMarketPrice: q.price,
+              regularMarketChange: q.change,
+              regularMarketChangePercent: q.changePercent,
+              regularMarketVolume: 0,
+              regularMarketDayHigh: q.dayHigh,
+              regularMarketDayLow: q.dayLow,
+              regularMarketOpen: q.open,
+              regularMarketPreviousClose: q.previousClose,
+              fiftyTwoWeekHigh: q.dayHigh,
+              fiftyTwoWeekLow: q.dayLow,
+              currency: "USD",
+              exchange: "Finnhub",
+              shortName: sym,
+              longName: sym
+            });
+          } else {
+            yahooSymbols.push(sym);
+          }
+        }
+      } catch (e) {
+        console.warn("[YahooClient] Finnhub fetch failed, falling back to Yahoo:", e);
+        yahooSymbols.push(...usIndicesToFetch);
+      }
+    }
+
+    if (yahooSymbols.length > 0) {
+      const sortedKey = [...yahooSymbols].map(s => s.toUpperCase()).sort().join(',');
+      const cacheKey = `quote_${sortedKey}`;
+      const yahooResults = await this.executeQuery(cacheKey, 45, () => yahooFinance.quote(yahooSymbols, options));
+      if (Array.isArray(yahooResults)) {
+        results.push(...yahooResults);
+      } else if (yahooResults) {
+        results.push(yahooResults);
+      }
+    }
+
+    const resultMap = new Map(results.filter(r => r?.symbol).map(r => [r.symbol.toUpperCase(), r]));
+    const orderedResults = symbolList.map(s => resultMap.get(s.toUpperCase()) || null);
+
+    return Array.isArray(symbols) ? orderedResults : orderedResults[0];
   }
 
   async search(query: string, options?: any): Promise<any> {
