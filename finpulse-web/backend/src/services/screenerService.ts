@@ -202,6 +202,19 @@ export async function getUpcomingEarnings(symbol: string) {
 export async function getUpcomingEarningsForMarket(market: string) {
   const normalizedMarket = YahooClient.normalizeRegion(market);
 
+  // If US market, try Finnhub first
+  if (normalizedMarket === "usa") {
+    try {
+      const { getFinnhubUpcomingEarnings } = await import("./finnhubService.js");
+      const finnhubEarnings = await getFinnhubUpcomingEarnings();
+      if (finnhubEarnings && finnhubEarnings.length > 0) {
+        return finnhubEarnings;
+      }
+    } catch (err: any) {
+      console.warn("[Earnings Calendar] Finnhub fetch failed, falling back to Yahoo:", err.message);
+    }
+  }
+
   // 1. Check cache first
   const cacheKey = `earnings-calendar-${normalizedMarket}`;
   const cachedData = earningsCache.get(cacheKey);

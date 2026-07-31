@@ -52,33 +52,108 @@ export async function getGlobalMarketQuote(
 
 export async function getAllGlobalMarkets() {
   try {
-    const symbols = GLOBAL_INDICES.map(m => m.symbol);
+    const cryptoAndForexSymbols = GLOBAL_INDICES.filter(m => m.region === "Crypto" || m.region === "Forex").map(m => m.symbol);
+    const usIndicesSymbols = GLOBAL_INDICES.filter(m => m.region === "US").map(m => m.symbol);
+    const yahooOnlySymbols = GLOBAL_INDICES.filter(m => m.region !== "Crypto" && m.region !== "Forex" && m.region !== "US").map(m => m.symbol);
 
-    // Batch requests in smaller chunks with longer delays to prevent Yahoo Finance 429 rate limiting
-    // on cold starts (Render assigns a fresh IP, Yahoo sees a sudden burst and immediately bans).
-    // Smaller batches + longer delays = much lower chance of triggering the ban on restart.
+    // 1. Fetch Twelve Data for Crypto & Forex
+    let twelveDataQuotes: Record<string, any> = {};
+    try {
+      const { fetchTwelveDataQuotes } = await import("./twelveDataService.js");
+      twelveDataQuotes = await fetchTwelveDataQuotes(cryptoAndForexSymbols);
+    } catch (err: any) {
+      console.warn("[GlobalMarketService] Twelve Data fetch failed:", err.message);
+    }
+
+    // 2. Fetch Finnhub for US Indices
+    const finnhubQuotes: Record<string, any> = {};
+    try {
+      const { getFinnhubQuote } = await import("./finnhubService.js");
+      for (const symbol of usIndicesSymbols) {
+        const q = await getFinnhubQuote(symbol);
+        if (q) {
+          finnhubQuotes[symbol] = q;
+        }
+      }
+    } catch (err: any) {
+      console.warn("[GlobalMarketService] Finnhub fetch failed:", err.message);
+    }
+
+    // 3. Fallback to Yahoo Finance for whatever failed or wasn't targeted
+    const failedTwelveData = cryptoAndForexSymbols.filter(s => !twelveDataQuotes[s]);
+    const failedFinnhub = usIndicesSymbols.filter(s => !finnhubQuotes[s]);
+    const symbolsForYahoo = [...yahooOnlySymbols, ...failedTwelveData, ...failedFinnhub];
+
     const BATCH_SIZE = 10;
     const BATCH_DELAY_MS = 2000;
-    const allQuotes: any[] = [];
+    const allYahooQuotes: any[] = [];
 
-    for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
-      const batch = symbols.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < symbolsForYahoo.length; i += BATCH_SIZE) {
+      const batch = symbolsForYahoo.slice(i, i + BATCH_SIZE);
       try {
         const batchQuotes = await YahooClient.quote(batch);
-        allQuotes.push(...batchQuotes);
+        allYahooQuotes.push(...batchQuotes);
       } catch (batchErr: any) {
         console.warn(`[GlobalMarketService] Batch ${Math.floor(i / BATCH_SIZE) + 1} failed:`, batchErr.message);
       }
-      // Add delay between batches (except after the last batch)
-      if (i + BATCH_SIZE < symbols.length) {
+      if (i + BATCH_SIZE < symbolsForYahoo.length) {
         await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
       }
     }
 
-    const quoteMap = new Map(allQuotes.filter(q => q?.symbol).map(q => [q.symbol, q]));
+    const yahooQuoteMap = new Map(allYahooQuotes.filter(q => q?.symbol).map(q => [q.symbol, q]));
 
     const results = GLOBAL_INDICES.map((market) => {
-      const quote = quoteMap.get(market.symbol);
+      const symbol = market.symbol;
+
+      if (market.region === "Crypto" || market.region === "Forex") {
+        const tdQuote = twelveDataQuotes[symbol];
+        if (tdQuote) {
+          return {
+            symbol: market.symbol,
+            name: market.name,
+            region: market.region,
+            price: tdQuote.regularMarketPrice,
+            change: tdQuote.regularMarketChange,
+            changePercent: tdQuote.regularMarketChangePercent,
+            volume: tdQuote.regularMarketVolume,
+            currency: tdQuote.currency || "USD",
+            dayHigh: tdQuote.regularMarketDayHigh,
+            dayLow: tdQuote.regularMarketDayLow,
+            yearHigh: tdQuote.regularMarketDayHigh,
+            yearLow: tdQuote.regularMarketDayLow,
+            previousClose: tdQuote.regularMarketPreviousClose,
+            open: tdQuote.regularMarketOpen,
+            exchange: tdQuote.exchange || "TwelveData"
+          };
+        }
+      }
+
+      if (market.region === "US") {
+        const fhQuote = finnhubQuotes[symbol];
+        if (fhQuote) {
+          return {
+            symbol: market.symbol,
+            name: market.name,
+            region: market.region,
+            price: fhQuote.price,
+            change: fhQuote.change,
+            changePercent: fhQuote.changePercent,
+            volume: 0,
+            currency: "USD",
+            dayHigh: fhQuote.dayHigh,
+            dayLow: fhQuote.dayLow,
+            yearHigh: fhQuote.dayHigh,
+            yearLow: fhQuote.dayLow,
+            previousClose: fhQuote.previousClose,
+            open: fhQuote.open,
+            exchange: "Finnhub"
+          };
+        }
+      }
+
+      // Default / Fallback to Yahoo
+      const quote = yahooQuoteMap.get(symbol);
       if (!quote || !quote.regularMarketPrice) return null;
 
       const bid = quote.bid;
@@ -116,7 +191,7 @@ export async function getAllGlobalMarkets() {
     return results.filter(Boolean);
   } catch (err) {
     console.error("Failed to batch fetch all global markets:", err);
-    // Fallback to individual fetches in case something goes wrong
+    // Fallback to individual fetches
     const results = await Promise.all(
       GLOBAL_INDICES.map((market) =>
         getGlobalMarketQuote(
