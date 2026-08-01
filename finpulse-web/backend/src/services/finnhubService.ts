@@ -3,7 +3,7 @@ import NodeCache from "node-cache";
 import { YahooClient } from "./YahooClient.js";
 
 const finnhubCache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
-const indexCache = new NodeCache({ stdTTL: 180 }); // Cache indices for 3 minutes
+const indexCache = new NodeCache({ stdTTL: 300 }); // Cache indices for 5 minutes
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
 const BASE_URL = "https://finnhub.io/api/v1";
@@ -35,9 +35,9 @@ export async function getFinnhubUpcomingEarnings(): Promise<any[]> {
   const today = new Date();
   const fromDate = today.toISOString().split("T")[0];
   
-  // Fetch for next 30 days
+  // Fetch for next 7 days (1 week)
   const futureDate = new Date();
-  futureDate.setDate(today.getDate() + 30);
+  futureDate.setDate(today.getDate() + 7);
   const toDate = futureDate.toISOString().split("T")[0];
 
   console.log(`[Finnhub Service] Fetching US earnings from ${fromDate} to ${toDate}`);

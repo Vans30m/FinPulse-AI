@@ -33,8 +33,8 @@ async function warmMarketsCache() {
   for (const symbol of symbolsToWarm) {
     try {
       await YahooClient.quote(symbol);
-      // randomized jitter/delay (1-3 seconds) between ticker pre-fetches
-      const delay = Math.floor(Math.random() * 2000) + 1000;
+      // randomized jitter/delay (3-6 seconds) between ticker pre-fetches
+      const delay = Math.floor(Math.random() * 3000) + 3000;
       await new Promise(r => setTimeout(r, delay));
     } catch (err: any) {
       console.warn(`[Cache Warmer] Failed to warm ${symbol}:`, err.message);

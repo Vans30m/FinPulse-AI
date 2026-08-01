@@ -188,20 +188,46 @@ class CentralYahooClient {
     if (cacheKey.startsWith('summary_')) {
       return {};
     }
+    if (cacheKey.startsWith('search_')) {
+      const query = cacheKey.split('_')[1] || '';
+      const mockAssets = [
+        { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ', type: 'EQUITY' },
+        { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ', type: 'EQUITY' },
+        { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ', type: 'EQUITY' },
+        { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ', type: 'EQUITY' },
+        { symbol: 'RELIANCE.NS', name: 'Reliance Industries Limited', exchange: 'NSE', type: 'EQUITY' },
+        { symbol: 'TCS.NS', name: 'Tata Consultancy Services Limited', exchange: 'NSE', type: 'EQUITY' },
+        { symbol: 'HDFCBANK.NS', name: 'HDFC Bank Limited', exchange: 'NSE', type: 'EQUITY' },
+        { symbol: 'BTC-USD', name: 'Bitcoin USD', exchange: 'CCC', type: 'CRYPTOCURRENCY' },
+        { symbol: 'ETH-USD', name: 'Ethereum USD', exchange: 'CCC', type: 'CRYPTOCURRENCY' },
+        { symbol: 'SOL-USD', name: 'Solana USD', exchange: 'CCC', type: 'CRYPTOCURRENCY' },
+        { symbol: 'EURUSD=X', name: 'EUR/USD', exchange: 'CCY', type: 'CURRENCY' },
+        { symbol: 'GBPUSD=X', name: 'GBP/USD', exchange: 'CCY', type: 'CURRENCY' },
+      ];
+      
+      const filtered = mockAssets.filter(asset => 
+        asset.symbol.toLowerCase().includes(query.toLowerCase()) || 
+        asset.name.toLowerCase().includes(query.toLowerCase())
+      ).map(item => ({
+        symbol: item.symbol,
+        shortname: item.name,
+        longname: item.name,
+        exchDisp: item.exchange,
+        quoteType: item.type,
+      }));
+      
+      return { quotes: filtered, news: [] };
+    }
     return null;
   }
 
   private getDeterministicMockQuote(symbol: string) {
     const cleanSym = symbol.toUpperCase();
-    const hash = cleanSym.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const basePrice = (hash % 1000) + 50.5;
-    const change = ((hash % 100) / 10) - 5;
-    const changePercent = (change / basePrice) * 100;
     return {
       symbol: cleanSym,
-      regularMarketPrice: basePrice,
-      regularMarketChange: change,
-      regularMarketChangePercent: changePercent,
+      regularMarketPrice: null,
+      regularMarketChange: null,
+      regularMarketChangePercent: null,
       shortName: cleanSym.split('.')[0] + ' Inc.',
       longName: cleanSym.split('.')[0] + ' Corporation',
       currency: cleanSym.endsWith('.NS') || cleanSym.endsWith('.BO') ? 'INR' : 'USD'
@@ -246,7 +272,7 @@ class CentralYahooClient {
         const { fetchTwelveDataQuotes } = await import("./twelveDataService.js");
         const sortedKey = [...cryptoForexToFetch].map(s => s.toUpperCase()).sort().join(',');
         const cacheKey = `twelvedata_${sortedKey}`;
-        const quotes = await this.executeQuery(cacheKey, 180, () => fetchTwelveDataQuotes(cryptoForexToFetch));
+        const quotes = await this.executeQuery(cacheKey, 300, () => fetchTwelveDataQuotes(cryptoForexToFetch));
         for (const sym of cryptoForexToFetch) {
           const q = quotes[sym];
           if (q) {
@@ -310,7 +336,15 @@ class CentralYahooClient {
     if (yahooSymbols.length > 0) {
       const sortedKey = [...yahooSymbols].map(s => s.toUpperCase()).sort().join(',');
       const cacheKey = `quote_${sortedKey}`;
-      const yahooResults = await this.executeQuery(cacheKey, 45, () => yahooFinance.quote(yahooSymbols, options));
+      const yahooResults = await this.executeQuery(cacheKey, 120, async () => {
+        const res = await yahooFinance.quote(yahooSymbols, options);
+        const list = Array.isArray(res) ? res : [res];
+        const isInvalid = list.every(q => !q || q.regularMarketPrice === 0 || q.regularMarketPrice === undefined || q.regularMarketPrice === null);
+        if (isInvalid) {
+          throw new Error("Yahoo Finance returned invalid/empty quotes due to rate limit/block");
+        }
+        return res;
+      });
       if (Array.isArray(yahooResults)) {
         results.push(...yahooResults);
       } else if (yahooResults) {

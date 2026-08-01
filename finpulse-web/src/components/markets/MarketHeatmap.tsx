@@ -79,6 +79,9 @@ export default function MarketHeatmap({ markets }: Props) {
 
   // Refined multi-tier color scale for high contrast
   const getHeatmapStyle = (change: number) => {
+    if (isNaN(change)) {
+      return "bg-slate-50 text-slate-400 border-slate-200 dark:bg-white/[0.01] dark:text-slate-500 dark:border-white/5 hover:bg-slate-100/50 dark:hover:bg-white/[0.02]";
+    }
     if (change >= 1.5) {
       return "bg-emerald-700 dark:bg-emerald-800 text-white border-emerald-600/40 hover:bg-emerald-650 dark:hover:bg-emerald-750";
     }
@@ -121,8 +124,9 @@ export default function MarketHeatmap({ markets }: Props) {
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
               {section.items.map((market) => {
-                const change = parseFloat(market.changePercent as any) || 0;
-                const isPositive = change > 0;
+                const hasChange = market.changePercent !== null && market.changePercent !== undefined && !isNaN(parseFloat(market.changePercent as any));
+                const change = hasChange ? parseFloat(market.changePercent as any) : NaN;
+                const isPositive = !isNaN(change) && change > 0;
 
                 return (
                   <div
@@ -147,8 +151,7 @@ export default function MarketHeatmap({ markets }: Props) {
 
                     {/* Percentage Change */}
                     <span className="text-sm font-black tabular-nums tracking-tighter mt-1.5">
-                      {isPositive ? "+" : ""}
-                      {change.toFixed(2)}%
+                      {!isNaN(change) ? `${isPositive ? "+" : ""}${change.toFixed(2)}%` : "N/A"}
                     </span>
                   </div>
                 );

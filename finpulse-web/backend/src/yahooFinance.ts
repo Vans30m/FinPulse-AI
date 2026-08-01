@@ -2,6 +2,9 @@ import YahooFinance from 'yahoo-finance2';
 import axios from 'axios';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
+// Disable TLS verification to handle custom certificates from rotating/scraping proxies
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 // Define rotating standard desktop User-Agents to mimic real browsers
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -102,7 +105,7 @@ interface ProxyObject {
 }
 
 const proxyList: ProxyObject[] = proxyUrls.map(url => ({
-  agent: new HttpsProxyAgent<string>(url),
+  agent: new HttpsProxyAgent<string>(url, { rejectUnauthorized: false }),
   cooldownUntil: 0,
   url
 }));
@@ -1164,11 +1167,6 @@ function getFallbackQuote(symbol: string): any {
     };
   }
 
-  const hash = sym.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const basePrice = (hash % 1000) + 50.5;
-  const change = ((hash % 100) / 10) - 5;
-  const changePercent = (change / basePrice) * 100;
-
   let cleanName = sym.split('.')[0];
   if (sym.endsWith('.NS')) {
     cleanName = cleanName + " Industries";
@@ -1176,19 +1174,19 @@ function getFallbackQuote(symbol: string): any {
 
   return {
     symbol: sym,
-    regularMarketPrice: basePrice,
-    regularMarketChange: change,
-    regularMarketChangePercent: changePercent,
+    regularMarketPrice: null,
+    regularMarketChange: null,
+    regularMarketChangePercent: null,
     shortName: cleanName,
     longName: cleanName,
     currency: sym.endsWith('.NS') || sym.endsWith('.BO') ? 'INR' : 'USD',
-    regularMarketDayHigh: basePrice + Math.abs(change) * 0.2,
-    regularMarketDayLow: basePrice - Math.abs(change) * 0.2,
-    regularMarketOpen: basePrice - change,
-    regularMarketPreviousClose: basePrice - change,
-    fiftyTwoWeekHigh: basePrice * 1.3,
-    fiftyTwoWeekLow: basePrice * 0.8,
-    regularMarketVolume: (hash % 900000) + 100000
+    regularMarketDayHigh: null,
+    regularMarketDayLow: null,
+    regularMarketOpen: null,
+    regularMarketPreviousClose: null,
+    fiftyTwoWeekHigh: null,
+    fiftyTwoWeekLow: null,
+    regularMarketVolume: null
   };
 }
 
@@ -1225,7 +1223,7 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
         return sparkQuotes;
       } catch (fallbackErr: any) {
         console.error(`[Yahoo Service] Resilient spark fallback failed:`, fallbackErr.message);
-        
+
         // Try Alpha Vantage last resort fallback!
         try {
           const { getAlphaVantageQuote } = await import("./services/alphaVantageService.js");

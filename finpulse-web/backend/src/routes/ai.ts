@@ -834,18 +834,18 @@ Respond ONLY with valid JSON. Match this schema exactly. Do NOT wrap it in any m
     } catch (geminiError) {
       console.warn("Gemini API call failed, generating fallback AI Market Drivers:", geminiError);
       
-      const validQuotes = quotes.filter((q: any) => !q.error && q.changePercent !== undefined);
+      const validQuotes = quotes.filter((q: any) => !q.error && q.changePercent !== undefined && q.changePercent !== null);
       const positiveQuotes = validQuotes.filter((q: any) => q.changePercent > 0);
       const negativeQuotes = validQuotes.filter((q: any) => q.changePercent < 0);
       
       const sp500 = quotes.find((q: any) => q.symbol === "^GSPC");
-      const spChange = sp500 && !sp500.error ? (sp500.changePercent || 0) : 0.5;
+      const spChange = sp500 && !sp500.error && typeof sp500.changePercent === 'number' ? sp500.changePercent : 0.5;
       
       const nifty = quotes.find((q: any) => q.symbol === "^NSEI");
-      const niftyChange = nifty && !nifty.error ? (nifty.changePercent || 0) : 0.4;
+      const niftyChange = nifty && !nifty.error && typeof nifty.changePercent === 'number' ? nifty.changePercent : 0.4;
       
       const vixQuote = quotes.find((q: any) => q.symbol === "^VIX");
-      const vixVal = vixQuote && !vixQuote.error ? vixQuote.price : 14;
+      const vixVal = vixQuote && !vixQuote.error && typeof vixQuote.price === 'number' ? vixQuote.price : 14;
       let impact: "High" | "Medium" | "Low" = "Low";
       if (vixVal > 22) impact = "High";
       else if (vixVal > 16) impact = "Medium";

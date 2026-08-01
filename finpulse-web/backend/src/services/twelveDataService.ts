@@ -1,7 +1,7 @@
 import axios from "axios";
 import NodeCache from "node-cache";
 
-const twelveDataCache = new NodeCache({ stdTTL: 180 }); // Cache for 3 minutes to satisfy 7 api/min & 799/day
+const twelveDataCache = new NodeCache({ stdTTL: 300 }); // Cache for 5 minutes to satisfy api rate limits
 
 const TWELVEDATA_API_KEY = process.env.TWELVEDATA_API_KEY;
 const BASE_URL = "https://api.twelvedata.com";

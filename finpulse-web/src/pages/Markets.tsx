@@ -6,12 +6,18 @@ import { useChart } from "../context/ChartContext";
 
 function MarketHeatmapTile({ market }: { market: any }) {
   const { openAsset } = useChart();
-  const changePercent = parseFloat(market.changePercent) || 0;
-  const change = parseFloat(market.change) || 0;
-  const price = parseFloat(market.price) || 0;
-  const isPositive = changePercent >= 0;
+  const hasPrice = market.price !== null && market.price !== undefined && !isNaN(parseFloat(market.price));
+  const hasChange = market.changePercent !== null && market.changePercent !== undefined && !isNaN(parseFloat(market.changePercent));
+
+  const changePercent = hasChange ? parseFloat(market.changePercent) : NaN;
+  const change = hasChange ? parseFloat(market.change) : NaN;
+  const price = hasPrice ? parseFloat(market.price) : NaN;
+  const isPositive = !isNaN(changePercent) && changePercent >= 0;
 
   const getHeatmapStyle = (val: number) => {
+    if (isNaN(val)) {
+      return "bg-slate-50 text-slate-400 border-slate-200 dark:bg-white/[0.01] dark:text-slate-500 dark:border-white/5 hover:bg-slate-100/50 dark:hover:bg-white/[0.02]";
+    }
     if (val >= 1.5) {
       return "bg-emerald-700 dark:bg-emerald-800 text-white border-emerald-600/40 hover:bg-emerald-650 dark:hover:bg-emerald-750";
     }
@@ -36,9 +42,9 @@ function MarketHeatmapTile({ market }: { market: any }) {
           name: market.name,
           exchange: market.region,
           type: market.region === "Crypto" ? "Crypto" : market.region === "Forex" ? "Forex" : market.region === "Commodities" ? "Commodities" : "Index",
-          price: price,
-          change: change,
-          changePercent: changePercent,
+          price: !isNaN(price) ? price : undefined,
+          change: !isNaN(change) ? change : undefined,
+          changePercent: !isNaN(changePercent) ? changePercent : undefined,
         })
       }
       className={`
@@ -60,12 +66,12 @@ function MarketHeatmapTile({ market }: { market: any }) {
 
       {/* Price */}
       <span className="text-[9px] sm:text-[10px] font-bold opacity-80 mt-1.5 tabular-nums">
-        {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        {!isNaN(price) ? price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}
       </span>
 
       {/* Percentage Change */}
       <span className="text-[10px] sm:text-xs font-black tabular-nums tracking-tighter mt-1">
-        {isPositive ? "+" : ""}{changePercent.toFixed(2)}%
+        {!isNaN(changePercent) ? `${isPositive ? "+" : ""}${changePercent.toFixed(2)}%` : "N/A"}
       </span>
     </div>
   );
