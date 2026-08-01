@@ -239,7 +239,9 @@ class CentralYahooClient {
     if (cryptoForexToFetch.length > 0) {
       try {
         const { fetchTwelveDataQuotes } = await import("./twelveDataService.js");
-        const quotes = await fetchTwelveDataQuotes(cryptoForexToFetch);
+        const sortedKey = [...cryptoForexToFetch].map(s => s.toUpperCase()).sort().join(',');
+        const cacheKey = `twelvedata_${sortedKey}`;
+        const quotes = await this.executeQuery(cacheKey, 180, () => fetchTwelveDataQuotes(cryptoForexToFetch));
         for (const sym of cryptoForexToFetch) {
           const q = quotes[sym];
           if (q) {

@@ -6,6 +6,17 @@ const twelveDataCache = new NodeCache({ stdTTL: 180 }); // Cache for 3 minutes t
 const TWELVEDATA_API_KEY = process.env.TWELVEDATA_API_KEY;
 const BASE_URL = "https://api.twelvedata.com";
 
+let TWELVEDATA_COOLDOWN_UNTIL = 0;
+
+export function isTwelveDataRateLimited(): boolean {
+  return Date.now() < TWELVEDATA_COOLDOWN_UNTIL;
+}
+
+export function setTwelveDataRateLimited() {
+  TWELVEDATA_COOLDOWN_UNTIL = Date.now() + 60000; // 1 minute cooldown
+  console.warn(`[Twelve Data Service] Twelve Data rate-limit detected. Entering 1-minute cooldown.`);
+}
+
 // Map Yahoo style symbols to Twelve Data style symbols
 // BTC-USD -> BTC/USD
 // EURUSD=X -> EUR/USD
@@ -20,11 +31,11 @@ export function toTwelveDataSymbol(yahooSymbol: string): string {
 }
 
 export async function fetchTwelveDataQuotes(yahooSymbols: string[]): Promise<Record<string, any>> {
-  const cacheKey = "twelvedata-quotes-all";
-  const cached = twelveDataCache.get<Record<string, any>>(cacheKey);
-  if (cached) {
-    console.log("[Twelve Data Service] Returning cached crypto/forex quotes");
-    return cached;
+  const result: Record<string, any> = {};
+
+  if (isTwelveDataRateLimited()) {
+    console.warn("[Twelve Data Service] Twelve Data is rate limited. Skipping request.");
+    return result;
   }
 
   if (!TWELVEDATA_API_KEY) {
@@ -32,13 +43,28 @@ export async function fetchTwelveDataQuotes(yahooSymbols: string[]): Promise<Rec
     return {};
   }
 
+  const missingYahooSymbols: string[] = [];
+
+  // Check cache for each symbol individually
+  for (const ys of yahooSymbols) {
+    const cachedQuote = twelveDataCache.get<any>(`td-quote-${ys.toUpperCase()}`);
+    if (cachedQuote) {
+      result[ys] = cachedQuote;
+    } else {
+      missingYahooSymbols.push(ys);
+    }
+  }
+
+  if (missingYahooSymbols.length === 0) {
+    return result;
+  }
+
   const tdToYahooSymbolMap: Record<string, string> = {};
   const tdSymbols: string[] = [];
 
-  for (const ys of yahooSymbols) {
+  for (const ys of missingYahooSymbols) {
     const tds = toTwelveDataSymbol(ys);
     tdToYahooSymbolMap[tds] = ys;
-    // Twelve data also accepts lowercase or uppercase, but standard is uppercase
     tdSymbols.push(tds);
   }
 
@@ -51,41 +77,49 @@ export async function fetchTwelveDataQuotes(yahooSymbols: string[]): Promise<Rec
         symbol: symbolParam,
         apikey: TWELVEDATA_API_KEY,
       },
+      timeout: 10000
     });
 
     const data = response.data;
-    if (!data) return {};
+    if (!data) return result;
 
     // If Twelve Data returns an error (e.g. rate limit, invalid key)
     if (data.status === "error" || data.code >= 400) {
       console.warn("[Twelve Data Service] API Error:", data.message || data);
-      return {};
+      if (data.code === 429 || data.message?.includes("429") || data.message?.includes("rate limit") || data.message?.includes("Too Many Requests")) {
+        setTwelveDataRateLimited();
+      }
+      return result;
     }
 
-    const result: Record<string, any> = {};
-
-    // If only one symbol was requested, response might not be nested by symbol
+    // Process and cache retrieved quotes
     if (tdSymbols.length === 1) {
       const singleSymbol = tdSymbols[0];
       const ys = tdToYahooSymbolMap[singleSymbol];
       if (data.symbol) {
-        result[ys] = mapTwelveDataQuote(data);
+        const mapped = mapTwelveDataQuote(data);
+        result[ys] = mapped;
+        twelveDataCache.set(`td-quote-${ys.toUpperCase()}`, mapped);
       }
     } else {
       // Multiple symbols response is an object keyed by symbol name
       for (const [tds, quoteData] of Object.entries<any>(data)) {
         const ys = tdToYahooSymbolMap[tds] || tdToYahooSymbolMap[tds.toUpperCase()];
         if (ys && quoteData && quoteData.symbol) {
-          result[ys] = mapTwelveDataQuote(quoteData);
+          const mapped = mapTwelveDataQuote(quoteData);
+          result[ys] = mapped;
+          twelveDataCache.set(`td-quote-${ys.toUpperCase()}`, mapped);
         }
       }
     }
 
-    twelveDataCache.set(cacheKey, result);
     return result;
   } catch (err: any) {
     console.error("[Twelve Data Service] HTTP Request failed:", err.message);
-    return {};
+    if (err.response?.status === 429 || err.message?.includes("429") || err.message?.includes("Too Many Requests")) {
+      setTwelveDataRateLimited();
+    }
+    return result;
   }
 }
 

@@ -122,6 +122,9 @@ function rotateYahooHost(url: string): string {
   return url.replace(/query[12]\.finance\.yahoo\.com/, getNextYahooHost());
 }
 
+// Global timestamp to throttle outgoing direct Yahoo Finance requests
+let lastYahooRequestTime = 0;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Yahoo Crumb + Cookie Session
 // Yahoo Finance APIs require a valid crumb (CSRF token) and session cookie.
@@ -232,6 +235,19 @@ function invalidateYahooSession() {
 async function axiosGetResilient(url: string, config: any = {}, retries = 3, useSession = false): Promise<any> {
   let lastError: any;
   for (let i = 0; i < retries; i++) {
+    // Ensure minimum gap (fetch by gaps) before sending direct Yahoo request
+    if (url.includes('yahoo.com')) {
+      const now = Date.now();
+      const elapsed = now - lastYahooRequestTime;
+      const minGap = 1200; // 1.2 seconds gap
+      if (elapsed < minGap) {
+        const wait = minGap - elapsed;
+        const jitter = Math.floor(Math.random() * 400);
+        await new Promise(resolve => setTimeout(resolve, wait + jitter));
+      }
+      lastYahooRequestTime = Date.now();
+    }
+
     // Rotate the Yahoo host on each attempt to spread requests
     const rotatedUrl = rotateYahooHost(url);
 
@@ -339,7 +355,18 @@ export const yahooFinance = new YahooFinance({
 
 // Monkey-patch _moduleExec to globally disable result schema validation and inject rotating User-Agents & Proxy Agent
 const originalModuleExec = (yahooFinance as any)._moduleExec;
-(yahooFinance as any)._moduleExec = function (opts: any) {
+(yahooFinance as any)._moduleExec = async function (opts: any) {
+  // Ensure minimum gap (fetch by gaps) before letting the module execute requests
+  const now = Date.now();
+  const elapsed = now - lastYahooRequestTime;
+  const minGap = 1200; // 1.2 seconds gap
+  if (elapsed < minGap) {
+    const wait = minGap - elapsed;
+    const jitter = Math.floor(Math.random() * 400);
+    await new Promise(resolve => setTimeout(resolve, wait + jitter));
+  }
+  lastYahooRequestTime = Date.now();
+
   if (!opts.moduleOptions) {
     opts.moduleOptions = {};
   }
@@ -389,6 +416,90 @@ function yahooToTwelveDataSymbol(symbol: string): string {
     }
   }
   return s;
+}
+
+function yahooToTwelveDataInterval(yahooInterval: string): string {
+  const map: Record<string, string> = {
+    '1m': '1min',
+    '2m': '2min',
+    '5m': '5min',
+    '15m': '15min',
+    '30m': '30min',
+    '60m': '1h',
+    '90m': '1h',
+    '1h': '1h',
+    '4h': '4h',
+    '1d': '1day',
+    '5d': '1day',
+    '1wk': '1week',
+    '1mo': '1month',
+    '3mo': '1month',
+  };
+  return map[yahooInterval] || '1day';
+}
+
+function formatDate(date: Date | number | string): string {
+  const d = new Date(date);
+  return d.toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+async function fetchTwelveDataTimeSeries(symbol: string, options: any): Promise<any> {
+  const apiKey = process.env.TWELVEDATA_API_KEY;
+  if (!apiKey) {
+    throw new Error("TWELVEDATA_API_KEY is not configured in .env");
+  }
+
+  const tdSymbol = yahooToTwelveDataSymbol(symbol);
+  const interval = yahooToTwelveDataInterval(options.interval || '1d');
+  
+  const params: any = {
+    symbol: tdSymbol,
+    interval: interval,
+    apikey: apiKey,
+    outputsize: 500
+  };
+
+  if (options.period1) {
+    params.start_date = formatDate(options.period1);
+  }
+  if (options.period2) {
+    params.end_date = formatDate(options.period2);
+  }
+
+  console.log(`[Yahoo Service] Fetching Twelve Data time_series fallback for ${symbol} with interval=${interval}`);
+  const url = 'https://api.twelvedata.com/time_series';
+  const response = await axios.get(url, { params, timeout: 15000 });
+  const data = response.data;
+
+  if (!data || data.status === 'error') {
+    throw new Error(`Twelve Data Time Series Error: ${data?.message || 'Unknown error'}`);
+  }
+
+  const values = data.values || [];
+  const reversedValues = [...values].reverse();
+
+  const quotes = reversedValues.map((v: any) => {
+    const close = parseFloat(v.close);
+    return {
+      date: new Date(v.datetime),
+      open: parseFloat(v.open) || null,
+      high: parseFloat(v.high) || null,
+      low: parseFloat(v.low) || null,
+      close: close || null,
+      volume: parseInt(v.volume) || null,
+      adjclose: close || null
+    };
+  });
+
+  return {
+    meta: {
+      symbol: symbol,
+      currency: data.meta?.currency || 'USD',
+      exchangeName: data.meta?.exchange || 'TwelveData',
+      instrumentType: data.meta?.type || 'EQUITY'
+    },
+    quotes
+  };
 }
 
 // Helper to fetch quotes from Twelve Data when Yahoo Finance fails
@@ -850,6 +961,22 @@ const originalChart = yahooFinance.chart;
     }
   }
 
+  if (!isTwelveDataRateLimited()) {
+    try {
+      const tdChart = await fetchTwelveDataTimeSeries(symbol, options);
+      CHART_CACHE.set(cacheKey, { data: tdChart, timestamp: Date.now() });
+      console.log(`[Yahoo Service] Twelve Data chart fallback succeeded for ${symbol}`);
+      return tdChart;
+    } catch (tdErr: any) {
+      const msg = tdErr?.message || '';
+      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
+        setTwelveDataRateLimited();
+      } else {
+        console.warn(`[Yahoo Service] Twelve Data chart fallback failed for ${symbol}:`, msg);
+      }
+    }
+  }
+
   try {
     const params: any = {};
     if (options.range) params.range = options.range;
@@ -925,6 +1052,22 @@ const originalHistorical = yahooFinance.historical;
       const msg = err?.message || '';
       if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
         setYahooRateLimited();
+      }
+    }
+  }
+
+  if (!isTwelveDataRateLimited()) {
+    try {
+      const tdChart = await fetchTwelveDataTimeSeries(symbol, options);
+      CHART_CACHE.set(cacheKey, { data: tdChart.quotes, timestamp: Date.now() });
+      console.log(`[Yahoo Service] Twelve Data historical fallback succeeded for ${symbol}`);
+      return tdChart.quotes;
+    } catch (tdErr: any) {
+      const msg = tdErr?.message || '';
+      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
+        setTwelveDataRateLimited();
+      } else {
+        console.warn(`[Yahoo Service] Twelve Data historical fallback failed for ${symbol}:`, msg);
       }
     }
   }
