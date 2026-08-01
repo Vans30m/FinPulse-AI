@@ -182,6 +182,8 @@ export async function getFinnhubUpcomingEarnings(): Promise<any[]> {
   return results;
 }
 
+let finnhubCooldownUntil = 0;
+
 export async function getFinnhubQuote(symbol: string): Promise<any | null> {
   const cacheKey = `quote-${symbol}`;
   const cached = indexCache.get<any>(cacheKey);
@@ -190,6 +192,10 @@ export async function getFinnhubQuote(symbol: string): Promise<any | null> {
   }
 
   if (!FINNHUB_API_KEY) {
+    return null;
+  }
+
+  if (Date.now() < finnhubCooldownUntil) {
     return null;
   }
 
@@ -219,6 +225,10 @@ export async function getFinnhubQuote(symbol: string): Promise<any | null> {
     return mapped;
   } catch (err: any) {
     console.warn(`[Finnhub Service] Error fetching quote for ${symbol}:`, err.message);
+    if (err.response?.status === 429) {
+      console.warn(`[Finnhub Service] Finnhub rate limit (429) encountered. Entering 1-minute cooldown.`);
+      finnhubCooldownUntil = Date.now() + 60000; // 1 minute cooldown
+    }
     return null;
   }
 }
