@@ -74,6 +74,11 @@ class SequentialQueue {
   }
 }
 
+function isUsStock(symbol: string): boolean {
+  const sym = symbol.toUpperCase();
+  return !sym.includes('.') && !sym.includes('=X') && !sym.startsWith('^') && !sym.endsWith('-USD');
+}
+
 class CentralYahooClient {
   private cache = new NodeCache({ stdTTL: 86400, useClones: false });
   private inflight = new Map<string, Promise<any>>();
@@ -221,14 +226,14 @@ class CentralYahooClient {
     ]);
 
     const results: any[] = [];
-    const usIndicesToFetch: string[] = [];
+    const finnhubSymbolsToFetch: string[] = [];
     const cryptoForexToFetch: string[] = [];
     const yahooSymbols: string[] = [];
 
     for (const symbol of symbolList) {
       const symUpper = symbol.toUpperCase();
-      if (usIndices.has(symUpper)) {
-        usIndicesToFetch.push(symUpper);
+      if (usIndices.has(symUpper) || isUsStock(symUpper)) {
+        finnhubSymbolsToFetch.push(symUpper);
       } else if (cryptos.has(symUpper) || forexPairs.has(symUpper)) {
         cryptoForexToFetch.push(symUpper);
       } else {
@@ -263,10 +268,10 @@ class CentralYahooClient {
       }
     }
 
-    if (usIndicesToFetch.length > 0) {
+    if (finnhubSymbolsToFetch.length > 0) {
       try {
         const { getFinnhubQuote } = await import("./finnhubService.js");
-        for (const sym of usIndicesToFetch) {
+        for (const sym of finnhubSymbolsToFetch) {
           const q = await getFinnhubQuote(sym);
           if (q) {
             results.push({
@@ -292,7 +297,7 @@ class CentralYahooClient {
         }
       } catch (e) {
         console.warn("[YahooClient] Finnhub fetch failed, falling back to Yahoo:", e);
-        yahooSymbols.push(...usIndicesToFetch);
+        yahooSymbols.push(...finnhubSymbolsToFetch);
       }
     }
 

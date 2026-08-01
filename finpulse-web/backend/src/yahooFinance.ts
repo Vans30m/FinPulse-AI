@@ -296,14 +296,14 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3, use
 
       // Cooldown this specific proxy if it timed out, failed, or was rate limited
       if (proxyObj) {
-        const isProxyError = 
-          status === 429 || 
-          status === 407 || 
-          status === 502 || 
-          status === 503 || 
-          status === 504 || 
-          err.message?.includes('timeout') || 
-          err.code === 'ECONNRESET' || 
+        const isProxyError =
+          status === 429 ||
+          status === 407 ||
+          status === 502 ||
+          status === 503 ||
+          status === 504 ||
+          err.message?.includes('timeout') ||
+          err.code === 'ECONNRESET' ||
           err.code === 'ETIMEDOUT';
 
         if (isProxyError) {
@@ -451,7 +451,7 @@ async function fetchTwelveDataTimeSeries(symbol: string, options: any): Promise<
 
   const tdSymbol = yahooToTwelveDataSymbol(symbol);
   const interval = yahooToTwelveDataInterval(options.interval || '1d');
-  
+
   const params: any = {
     symbol: tdSymbol,
     interval: interval,
@@ -1215,6 +1215,36 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
         return sparkQuotes;
       } catch (fallbackErr: any) {
         console.error(`[Yahoo Service] Resilient spark fallback failed:`, fallbackErr.message);
+        
+        // Try Alpha Vantage last resort fallback!
+        try {
+          const { getAlphaVantageQuote } = await import("./services/alphaVantageService.js");
+          const avQuotes = [];
+          for (const s of symbols) {
+            const avQ = await getAlphaVantageQuote(s);
+            if (avQ) {
+              avQuotes.push({
+                symbol: s,
+                regularMarketPrice: avQ.price,
+                regularMarketChange: avQ.change,
+                regularMarketChangePercent: avQ.changePercent,
+                regularMarketVolume: avQ.volume,
+                currency: s.endsWith('.NS') || s.endsWith('.BO') ? 'INR' : 'USD',
+                exchange: "AlphaVantage",
+                shortName: s.split('.')[0],
+                longName: s
+              });
+            }
+          }
+          if (avQuotes.length > 0) {
+            console.log(`[Yahoo Service] Alpha Vantage fallback succeeded for ${avQuotes.length} symbols.`);
+            updateLkvCache(avQuotes);
+            return avQuotes;
+          }
+        } catch (avErr: any) {
+          console.warn("[Yahoo Service] Alpha Vantage fallback failed:", avErr.message);
+        }
+
         // Fall back to LKV or deterministic mock quotes instead of throwing
         console.log(`[Yahoo Service] All API options failed. Serving LKV/Mock fallback quotes for ${symbols.length} symbols.`);
         return symbols.map(s => getFallbackQuote(s));

@@ -349,7 +349,7 @@ export async function getUpcomingEarningsForMarket(market: string) {
   // Fallback to mock data if the Yahoo Finance batch quote request failed completely (e.g. 429 crumb error on Render)
   if (cleanFinalResults.length === 0) {
     console.log(`[Earnings Calendar] Yahoo Finance API crumb/rate limit issue detected. Generating resilient fallback upcoming earnings for ${market}.`);
-    
+
     const mockCompanies: { [key: string]: { name: string; price: number; sector: string; pe: number; eps: number } } = {
       // US
       "AAPL": { name: "Apple Inc.", price: 182.50, sector: "Technology", pe: 28.5, eps: 6.42 },
@@ -362,7 +362,7 @@ export async function getUpcomingEarningsForMarket(market: string) {
       "NFLX": { name: "Netflix Inc.", price: 610.50, sector: "Communication Services", pe: 42.8, eps: 14.20 },
       "JPM": { name: "JPMorgan Chase & Co.", price: 195.40, sector: "Financial Services", pe: 11.5, eps: 16.20 },
       "V": { name: "Visa Inc.", price: 278.20, sector: "Financial Services", pe: 32.1, eps: 8.62 },
-      
+
       // India
       "RELIANCE.NS": { name: "Reliance Industries Ltd.", price: 2950.00, sector: "Energy", pe: 26.4, eps: 112.5 },
       "TCS.NS": { name: "Tata Consultancy Services Ltd.", price: 3950.00, sector: "Technology", pe: 28.1, eps: 140.2 },
@@ -380,7 +380,7 @@ export async function getUpcomingEarningsForMarket(market: string) {
       const info = mockCompanies[symbol] || { name: symbol.split(".")[0], price: 100 + idx * 25, sector: "N/A", pe: 20, eps: 5 };
       const date = new Date();
       date.setDate(date.getDate() + 1 + idx); // upcoming earnings in 1-6 days
-      
+
       return {
         symbol,
         name: info.name,
