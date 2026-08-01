@@ -85,6 +85,14 @@ if (proxyUrls.length === 0) {
   }
 }
 
+// Add ScraperAPI key automatically if configured in the environment
+if (process.env.SCRAPERAPI_KEY) {
+  const scraperapiProxy = formatProxyUrl(`http://scraperapi:${process.env.SCRAPERAPI_KEY}@proxy-server.scraperapi.com:8001`);
+  if (scraperapiProxy) {
+    proxyUrls.push(scraperapiProxy);
+  }
+}
+
 interface ProxyObject {
   agent: HttpsProxyAgent<string>;
   cooldownUntil: number;

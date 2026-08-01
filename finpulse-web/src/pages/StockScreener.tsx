@@ -183,6 +183,7 @@ export default function StockScreener() {
   const isScrollingRef = useRef(false);
   const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isChartLoading, setIsChartLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'analysis' | 'workbook' | 'shareholding' | 'documents'>('analysis');
 
   const handleTabClick = (tabId: string, tabVal: any) => {
@@ -1228,21 +1229,9 @@ Slide Outline:
   const handleSelectStock = async (symbol: string) => {
     setIsLoading(true);
     try {
-      const [fundamentals, historyData, _aiScore, newsData] = await Promise.all([
-        getFundamentals(symbol),
-        getMarketHistory(symbol, timeframe).catch(() => []),
-        getAIScore(symbol).catch(() => ({ score: 70 })),
-        getCompanyNews(symbol).catch(() => [])
-      ]);
-
-      const history = historyData.map((h: any, idx: number) => ({
-        time: new Date(h.date || Date.now() - (historyData.length - idx) * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        price: h.price
-      })).filter((item: any) => typeof item.price === 'number');
-
-      setCompanyNews(newsData);
-
-      const isIndian = symbol.endsWith('.NS');
+      // 1. Fetch fundamentals first to open the page instantly!
+      const fundamentals = await getFundamentals(symbol);
+      const isIndian = symbol.toUpperCase().endsWith('.NS');
 
       const details: StockDetails = {
         symbol: symbol.toUpperCase(),
@@ -1259,28 +1248,66 @@ Slide Outline:
         low52w: fundamentals.fiftyTwoWeekLow || (fundamentals.price || 150) * 0.75,
         faceValue: isIndian ? 10.00 : 1.00,
         about: fundamentals.about || `${fundamentals.name || symbol} is a leading enterprise in its sector, engaged in operations, manufacturing, research, development, and marketing of high-technology products and services globally.`,
-        history: history.length > 0 ? history : [
-          { time: 'Jan', price: (fundamentals.price || 150) * 0.9 },
-          { time: 'Mar', price: (fundamentals.price || 150) * 0.95 },
-          { time: 'Jun', price: (fundamentals.price || 150) * 1.05 },
-          { time: 'Sep', price: (fundamentals.price || 150) * 0.98 },
-          { time: 'Dec', price: (fundamentals.price || 150) }
-        ]
+        history: [] // Start with an empty list so we don't draw a dummy chart
       };
 
+      // Set stock details immediately to open the page!
       setSelectedStock(details);
+      setIsLoading(false); // Stop full-page blur loader!
+      setIsChartLoading(true); // Show chart loader!
+
+      // 2. Fetch slower data (chart history & AI score & news) asynchronously in the background
+      Promise.all([
+        getMarketHistory(symbol, timeframe).catch(() => []),
+        getAIScore(symbol).catch(() => ({ score: 70 })),
+        getCompanyNews(symbol).catch(() => [])
+      ]).then(([historyData, _aiScore, newsData]) => {
+        const history = historyData.map((h: any, idx: number) => ({
+          time: new Date(h.date || Date.now() - (historyData.length - idx) * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          price: h.price
+        })).filter((item: any) => typeof item.price === 'number');
+
+        setCompanyNews(newsData);
+        setSelectedStock(prev => {
+          if (!prev || prev.symbol !== symbol.toUpperCase()) return prev;
+          return {
+            ...prev,
+            history: history.length > 0 ? history : prev.history
+          };
+        });
+      }).finally(() => {
+        setIsChartLoading(false);
+      });
+
     } catch (error) {
       console.error("Error loading stock details:", error);
       toast.error("Failed to load details for " + symbol);
-    } finally {
       setIsLoading(false);
+      setIsChartLoading(false);
     }
   };
 
-  // Trigger fetch again if timeframe changes for selected stock
+  // Trigger fetch again in the background if timeframe changes for selected stock (no page-level blur!)
   useEffect(() => {
     if (selectedStock) {
-      handleSelectStock(selectedStock.symbol);
+      setIsChartLoading(true);
+      getMarketHistory(selectedStock.symbol, timeframe)
+        .then((historyData) => {
+          const history = historyData.map((h: any, idx: number) => ({
+            time: new Date(h.date || Date.now() - (historyData.length - idx) * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+            price: h.price
+          })).filter((item: any) => typeof item.price === 'number');
+
+          setSelectedStock(prev => {
+            if (!prev || prev.symbol !== selectedStock.symbol) return prev;
+            return {
+              ...prev,
+              history: history.length > 0 ? history : prev.history
+            };
+          });
+        })
+        .catch((err) => console.warn("Failed to load history on timeframe change:", err))
+        .finally(() => setIsChartLoading(false));
     }
   }, [timeframe]);
 
@@ -1525,48 +1552,55 @@ Slide Outline:
                     </div>
 
                     {/* Composed Chart Container */}
-                    <div className="h-72 w-full font-mono text-xs">
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                        <ComposedChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" className="dark:stroke-white/5" />
-                          <XAxis dataKey="time" stroke="#888888" tickLine={false} axisLine={false} />
+                    <div className="h-72 w-full font-mono text-xs relative flex items-center justify-center">
+                      {isChartLoading ? (
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="h-8 w-8 border-3 border-blue-600 dark:border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-[10px] text-slate-500 font-bold animate-pulse">Loading charts...</span>
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                          <ComposedChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" className="dark:stroke-white/5" />
+                            <XAxis dataKey="time" stroke="#888888" tickLine={false} axisLine={false} />
 
-                          {/* Left Axis for Volume */}
-                          <YAxis yAxisId="left" stroke="#888888" tickLine={false} axisLine={false} orientation="left" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                            {/* Left Axis for Volume */}
+                            <YAxis yAxisId="left" stroke="#888888" tickLine={false} axisLine={false} orientation="left" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
 
-                          {/* Right Axis for Price */}
-                          <YAxis yAxisId="right" stroke="#888888" tickLine={false} axisLine={false} orientation="right" domain={['auto', 'auto']} tickFormatter={(v) => `${currencySymbol}${v}`} />
+                            {/* Right Axis for Price */}
+                            <YAxis yAxisId="right" stroke="#888888" tickLine={false} axisLine={false} orientation="right" domain={['auto', 'auto']} tickFormatter={(v) => `${currencySymbol}${v}`} />
 
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: 'rgba(9, 13, 26, 0.95)',
-                              borderRadius: '16px',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              color: '#fff'
-                            }}
-                          />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'rgba(9, 13, 26, 0.95)',
+                                borderRadius: '16px',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                color: '#fff'
+                              }}
+                            />
 
-                          {/* Render Volume Bars */}
-                          {showVolume && (
-                            <Bar yAxisId="left" dataKey="volume" fill="#93c5fd" opacity={0.35} barSize={8} radius={[2, 2, 0, 0]} />
-                          )}
+                            {/* Render Volume Bars */}
+                            {showVolume && (
+                              <Bar yAxisId="left" dataKey="volume" fill="#93c5fd" opacity={0.35} barSize={8} radius={[2, 2, 0, 0]} />
+                            )}
 
-                          {/* Render Price Line */}
-                          {showPrice && (
-                            <Line yAxisId="right" type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2.2} dot={false} name="Price" />
-                          )}
+                            {/* Render Price Line */}
+                            {showPrice && (
+                              <Line yAxisId="right" type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2.2} dot={false} name="Price" />
+                            )}
 
-                          {/* Render 50 DMA */}
-                          {showDMA50 && (
-                            <Line yAxisId="right" type="monotone" dataKey="dma50" stroke="#f59e0b" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="50 DMA" />
-                          )}
+                            {/* Render 50 DMA */}
+                            {showDMA50 && (
+                              <Line yAxisId="right" type="monotone" dataKey="dma50" stroke="#f59e0b" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="50 DMA" />
+                            )}
 
-                          {/* Render 200 DMA */}
-                          {showDMA200 && (
-                            <Line yAxisId="right" type="monotone" dataKey="dma200" stroke="#ef4444" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="200 DMA" />
-                          )}
-                        </ComposedChart>
-                      </ResponsiveContainer>
+                            {/* Render 200 DMA */}
+                            {showDMA200 && (
+                              <Line yAxisId="right" type="monotone" dataKey="dma200" stroke="#ef4444" strokeWidth={1.8} dot={false} strokeDasharray="4 4" name="200 DMA" />
+                            )}
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      )}
                     </div>
 
                     {/* Checkboxes Legend Row at the bottom */}
