@@ -271,8 +271,14 @@ class CentralYahooClient {
     if (finnhubSymbolsToFetch.length > 0) {
       try {
         const { getFinnhubQuote } = await import("./finnhubService.js");
+        const { getPolygonQuote } = await import("./polygonService.js");
         for (const sym of finnhubSymbolsToFetch) {
-          const q = await getFinnhubQuote(sym);
+          let q = await getFinnhubQuote(sym);
+          if (!q) {
+            // Try Polygon as a secondary backup!
+            q = await getPolygonQuote(sym);
+          }
+
           if (q) {
             results.push({
               symbol: sym,
@@ -287,7 +293,7 @@ class CentralYahooClient {
               fiftyTwoWeekHigh: q.dayHigh,
               fiftyTwoWeekLow: q.dayLow,
               currency: "USD",
-              exchange: "Finnhub",
+              exchange: "Finnhub/Polygon",
               shortName: sym,
               longName: sym
             });
@@ -296,7 +302,7 @@ class CentralYahooClient {
           }
         }
       } catch (e) {
-        console.warn("[YahooClient] Finnhub fetch failed, falling back to Yahoo:", e);
+        console.warn("[YahooClient] Finnhub/Polygon fetch failed, falling back to Yahoo:", e);
         yahooSymbols.push(...finnhubSymbolsToFetch);
       }
     }
