@@ -31,6 +31,10 @@ function formatProxyUrl(rawUrl: string): string {
   let url = rawUrl.trim();
   if (!url) return '';
 
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
   // Convert ip:port:user:pass Webshare format to standard http://user:pass@ip:port
   const parts = url.split(':');
   if (parts.length === 4) {
@@ -38,9 +42,7 @@ function formatProxyUrl(rawUrl: string): string {
     return `http://${user}:${pass}@${ip}:${port}`;
   }
 
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = `http://${url}`;
-  }
+  url = `http://${url}`;
   return url;
 }
 
