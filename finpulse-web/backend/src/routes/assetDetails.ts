@@ -233,7 +233,7 @@ router.get("/:symbol", async (req, res) => {
       console.log(`[Asset Details] Live quote and summary failed or empty for ${symbol}. Injecting mock base to allow full payload execution...`);
       const fallbackData = generateLocalMockData(symbol);
       
-      if (!quoteData.quote) {
+      if (!quoteData.quote || Object.keys(quoteData.quote).length === 0) {
         quoteData.quote = {
           currency: fallbackData?.currency || "USD",
           exchangeName: symbol.endsWith('.NS') ? "NSE" : "NASDAQ",
@@ -254,7 +254,7 @@ router.get("/:symbol", async (req, res) => {
         };
       }
       
-      if (!quoteData.summary) {
+      if (!quoteData.summary || Object.keys(quoteData.summary).length === 0) {
         quoteData.summary = {
           assetProfile: {
             sector: "Technology",
