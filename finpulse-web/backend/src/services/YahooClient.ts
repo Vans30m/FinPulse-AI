@@ -26,7 +26,7 @@ setInterval(() => metrics.logStats(), 60000);
 class SequentialQueue {
   private queue: (() => Promise<any>)[] = [];
   private active = false;
-  private minDelay = 3500; // sequential throttler (max 1 request per 3.5 seconds)
+  private minDelay = 1500; // sequential throttler (max 1 request per 1.5 seconds)
   private lastCallTime = 0;
 
   get size() {
