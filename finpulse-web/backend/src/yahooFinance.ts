@@ -156,7 +156,7 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3, use
     if (url.includes('yahoo.com')) {
       const now = Date.now();
       const elapsed = now - lastYahooRequestTime;
-      const minGap = 1200; // 1.2 seconds gap
+      const minGap = 3500; // 3.5 seconds gap to satisfy Yahoo limits
       if (elapsed < minGap) {
         const wait = minGap - elapsed;
         const jitter = Math.floor(Math.random() * 400);
@@ -247,7 +247,7 @@ const originalModuleExec = (yahooFinance as any)._moduleExec;
   // Ensure minimum gap (fetch by gaps) before letting the module execute requests
   const now = Date.now();
   const elapsed = now - lastYahooRequestTime;
-  const minGap = 1200; // 1.2 seconds gap
+  const minGap = 3500; // 3.5 seconds gap to satisfy Yahoo limits
   if (elapsed < minGap) {
     const wait = minGap - elapsed;
     const jitter = Math.floor(Math.random() * 400);
@@ -836,6 +836,7 @@ const originalChart = yahooFinance.chart;
       CHART_CACHE.set(cacheKey, { data: chartData, timestamp: Date.now() });
       return chartData;
     } catch (err: any) {
+      console.error(`[Yahoo Service] originalChart failed for ${symbol}:`, err);
       const msg = err?.message || '';
       if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
         setYahooRateLimited();
