@@ -16,7 +16,6 @@ import MyAlertsDashboard from './features/dashboard/components/MyAlertsDashboard
 import AssetDetails from "./pages/AssetDetails";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import Markets from "./pages/Markets";
 import News from './pages/News';
 import Profile from "./pages/Profile";
 import Preferences from "./profile/pages/Preferences";
@@ -24,15 +23,12 @@ import AssetChartModal from "./components/charts/AssetChartModal";
 import { useChart } from "./context/ChartContext";
 import AIMarketSentiment from "./features/dashboard/components/AIMarketSentiment";
 import MarketExplanation from "./features/dashboard/components/MarketExplanation";
-import GlobalEarningsCalendar from "./components/home/GlobalEarningsCalendar";
 
 // New Pulse Page Components
-import ForexCryptoRibbon from './features/dashboard/components/ForexCryptoRibbon';
 import FearGreedIndex from './features/dashboard/components/FearGreedIndex';
 import AIBulletSummary from './features/dashboard/components/AIBulletSummary';
 import AIPickOfTheDay from './features/dashboard/components/AIPickOfTheDay';
 import TrendingSectorStreaks from './features/dashboard/components/TrendingSectorStreaks';
-import VolatilityGauges from './features/dashboard/components/VolatilityGauges';
 import { GlobalMarketClock } from './features/dashboard/components/GlobalMarketClock';
 
 // Stock Screener Page Component Integration
@@ -104,7 +100,6 @@ export default function App() {
   // Integrated 'screener' navigation matrix item
   const navItems = [
     { id: 'pulse', label: 'Pulse' },
-    { id: 'markets', label: 'Markets' },
     { id: 'screener', label: 'Screener' },
     { id: 'portfolio', label: 'Portfolio' },
     { id: 'performance', label: 'Performance' },
@@ -315,20 +310,7 @@ export default function App() {
               }
             />
 
-            <Route
-              path="/markets"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="w-full"
-                >
-                  <Markets />
-                </motion.div>
-              }
-            />
+
 
             <Route
               path="/news"

@@ -11,8 +11,6 @@ interface Stock {
   changePercent: string | number;
 }
 
-// "Most Active" tab removed — volume data requires a separate heavy Yahoo Finance
-// batch request that slows the page down. Only Gainers and Losers are shown.
 type TabId = "Gainers" | "Losers";
 
 export default function MarketScreeners() {
@@ -22,57 +20,42 @@ export default function MarketScreeners() {
   const screenerType = activeTab === "Gainers" ? "gainers" : "losers";
 
   const {
-    data: domesticStocks = [],
-    isLoading: isDomesticLoading,
-    error: domesticError,
-  } = useMarketScreener("india", screenerType);
-
-  const {
-    data: usStocks = [],
-    isLoading: isUsLoading,
-    error: usError,
-  } = useMarketScreener("us", screenerType);
+    data: globalStocks = [],
+    isLoading,
+    error,
+  } = useMarketScreener("global", screenerType);
 
   const tabs = [
-    { id: "Gainers", label: "Top Gainers", icon: TrendingUp },
-    { id: "Losers", label: "Top Losers", icon: TrendingDown },
+    { id: "Gainers", label: "Global Top Gainers", icon: TrendingUp },
+    { id: "Losers", label: "Global Top Losers", icon: TrendingDown },
   ] as const;
 
-  const isLoading = isDomesticLoading || isUsLoading;
-  const hasError = domesticError && usError;
-
-  // --- UX: Skeleton Loading State ---
   if (isLoading) {
     return (
       <div className="w-full space-y-4">
         <div className="h-10 w-full bg-slate-100 dark:bg-white/5 rounded-lg animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[1, 2].map((col) => (
-            <div key={col} className="space-y-3">
-              <div className="h-6 w-32 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
-              <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="min-w-[165px] sm:min-w-[190px] shrink-0 glass-card p-4 space-y-3 opacity-60">
-                    <div className="space-y-2">
-                      <div className="h-4 w-12 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
-                      <div className="h-3 w-24 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
-                    </div>
-                    <div className="space-y-2 pt-2">
-                      <div className="h-5 w-20 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
-                      <div className="h-4 w-16 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
-                    </div>
-                  </div>
-                ))}
+        <div className="space-y-3">
+          <div className="h-6 w-32 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
+          <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="min-w-[165px] sm:min-w-[190px] shrink-0 glass-card p-4 space-y-3 opacity-60">
+                <div className="space-y-2">
+                  <div className="h-4 w-12 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
+                  <div className="h-3 w-24 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
+                </div>
+                <div className="space-y-2 pt-2">
+                  <div className="h-5 w-20 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
+                  <div className="h-4 w-16 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  // --- UX: Error State ---
-  if (hasError) {
+  if (error) {
     return (
       <div className="glass-card p-6 border-rose-500/20 bg-rose-500/5 flex items-center gap-3 text-rose-600 dark:text-rose-400">
         <AlertCircle className="h-5 w-5 shrink-0" />
@@ -81,7 +64,7 @@ export default function MarketScreeners() {
     );
   }
 
-  const renderScreenerList = (stocks: Stock[], isDomestic: boolean) => {
+  const renderScreenerList = (stocks: Stock[]) => {
     if (stocks.length === 0) {
       return (
         <div className="glass-card p-8 text-center text-slate-400 dark:text-slate-500">
@@ -89,9 +72,6 @@ export default function MarketScreeners() {
         </div>
       );
     }
-
-    const currencySymbol = isDomestic ? "₹" : "$";
-    const marketName = isDomestic ? "NSE" : "NASDAQ";
 
     return (
       <div className="flex overflow-x-auto gap-2.5 sm:gap-4 pb-4 snap-x snap-mandatory custom-scrollbar -mx-2 px-2 mask-linear-edge">
@@ -106,7 +86,7 @@ export default function MarketScreeners() {
                   symbol: stock.symbol,
                   yahooSymbol: stock.symbol,
                   name: stock.name,
-                  exchange: marketName,
+                  exchange: "Global",
                   type: "Stock",
                   price: Number(stock.price),
                   change: Number(stock.change),
@@ -117,7 +97,7 @@ export default function MarketScreeners() {
             >
               <div className="mb-3">
                 <span className="text-[11px] sm:text-xs font-bold tracking-wide text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors block uppercase">
-                  {stock.symbol.replace(".NS", "")}
+                  {stock.symbol}
                 </span>
                 <span className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400 block truncate mt-0.5 max-w-[135px]" title={stock.name}>
                   {stock.name}
@@ -126,7 +106,7 @@ export default function MarketScreeners() {
 
               <div>
                 <span className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-white block">
-                  {currencySymbol}
+                  $
                   {Number(stock.price).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -185,41 +165,12 @@ export default function MarketScreeners() {
         })}
       </div>
 
-      {/* Domestic and US Sections Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-        {/* Domestic (India) Section */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <span className="text-base">🇮🇳</span>
-            <h3 className="text-sm font-bold text-slate-850 dark:text-slate-200 uppercase tracking-wide">
-              Domestic (India)
-            </h3>
-          </div>
-          {domesticError && !isDomesticLoading ? (
-            <div className="glass-card p-4 text-center text-xs text-rose-500 border border-rose-500/10">
-              Failed to load Domestic data.
-            </div>
-          ) : (
-            renderScreenerList(domesticStocks, true)
-          )}
-        </div>
-
-        {/* US Section */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <span className="text-base">🇺🇸</span>
-            <h3 className="text-sm font-bold text-slate-850 dark:text-slate-200 uppercase tracking-wide">
-              United States (US)
-            </h3>
-          </div>
-          {usError && !isUsLoading ? (
-            <div className="glass-card p-4 text-center text-xs text-rose-500 border border-rose-500/10">
-              Failed to load US data.
-            </div>
-          ) : (
-            renderScreenerList(usStocks, false)
-          )}
-        </div>
+      {/* Screeners List Section */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide px-1">
+          {activeTab === "Gainers" ? "Global Top Gainers" : "Global Top Losers"}
+        </h3>
+        {renderScreenerList(globalStocks)}
       </div>
     </div>
   );

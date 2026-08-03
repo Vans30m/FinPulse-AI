@@ -16,8 +16,6 @@ import { YahooClient } from './services/YahooClient.js';
 import chartRoutes from "./routes/charts.js";
 import { newsRoutes, companyNewsRoutes } from "./routes/news.js";
 import {
-  globalMarketsRoutes,
-  indexSummaryRoutes,
   technicalRoutes,
   fundamentalsRoutes,
   financialHealthRoutes,
@@ -37,7 +35,7 @@ import alertsRouter from "./routes/alerts.js";
 import recentRouter from "./routes/recent.js";
 import customScreenerRouter from "./routes/screeners.js";
 import aiHistoryRouter from "./routes/aiHistory.js";
-import { getUpcomingEarningsForMarket, getAssetEvents } from "./services/yahooService.js";
+import { getAssetEvents } from "./services/yahooService.js";
 import authRoutes from "./routes/auth.js";
 import assetDetailsRoute from "./routes/assetDetails.js";
 import { evaluateAlerts } from "./services/alertEvaluator.js";
@@ -114,14 +112,11 @@ const PRIVATE_ROUTE_PREFIXES = [
 
 // Public routes and their Cloudflare edge cache max-age (seconds)
 const PUBLIC_ROUTE_CACHE: [RegExp, number][] = [
-  [/^\/api\/global-markets($|\/)/, 300],        // 5 min
-  [/^\/api\/screener($|\/)/, 21600],              // 6 hour
+  [/^\/api\/screener\/global($|\/)/, 300],        // 5 min
   [/^\/api\/earnings($|\/)/, 43200],            // 12 hours
   [/^\/api\/market-indices($|\/)/, 120],         // 2 min
-  [/^\/api\/market-explanation($|\/)/, 600],    // 10 min
   [/^\/api\/news($|\/)/, 300],                  // 5 min
   [/^\/api\/economic-calendar($|\/)/, 3600],    // 1 hour
-  [/^\/api\/index-summary($|\/)/, 300],         // 5 min
   [/^\/api\/charts($|\/)/, 300],                // 5 min
   [/^\/api\/ai\/(?!chat)/, 300],               // 5 min (AI market briefs, not chat)
   [/^\/api\/fundamentals($|\/)/, 120],          // 2 min
@@ -195,9 +190,7 @@ app.use("/api/analyst", analystRoutes);
 app.use("/api/company-news", companyNewsRoutes);
 app.use("/api/ai-score", aiScoreRoutes);
 app.use("/api/ai", marketBriefRoutes);
-app.use("/api/global-markets", globalMarketsRoutes);
 app.use("/api/screener", screenerRoutes);
-app.use("/api/index-summary", indexSummaryRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/ai-chat", aiHistoryRouter);
 app.use("/api/profile", profileRoutes);
@@ -208,19 +201,7 @@ app.use("/api/saved-screeners", customScreenerRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api/asset-details", assetDetailsRoute);
 
-// ==========================================
-// 0. GLOBAL EARNINGS CALENDAR ENDPOINT
-// ==========================================
-app.get(["/api/earnings/calendar/:market", "/api/earnings/upcoming/:market"], async (req: Request, res: Response) => {
-  try {
-    const market = String(req.params['market'] || "");
-    const data = await getUpcomingEarningsForMarket(market);
-    res.json(data);
-  } catch (error: any) {
-    console.error(`Error in GET earnings endpoint for ${req.params['market']}:`, error);
-    res.status(500).json({ error: error.message || "Failed to fetch earnings calendar" });
-  }
-});
+
 
 app.get("/api/events/:symbol", async (req: Request, res: Response) => {
   try {

@@ -161,7 +161,6 @@ export default function Preferences() {
               className="w-full bg-slate-100 dark:bg-night-800/80 px-4 py-2.5 text-xs rounded-xl border border-transparent focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white transition-all"
             >
               <option value="Portfolio">Portfolio Dashboard</option>
-              <option value="Markets">Markets Overview</option>
               <option value="Watchlist">Watchlist Stream</option>
               <option value="Performance">CAGR / Performance Charts</option>
             </select>

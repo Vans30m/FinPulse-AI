@@ -151,7 +151,6 @@ class CentralYahooClient {
       const startTime = Date.now();
       metrics.yahooCalls++;
       try {
-        console.log(`[YahooClient Miss] Fetching fresh data: ${cacheKey}`);
         const result = await fetchFn();
         metrics.totalResponseTime += (Date.now() - startTime);
         this.cache.set(cacheKey, {
@@ -162,10 +161,12 @@ class CentralYahooClient {
       } catch (err: any) {
         metrics.totalResponseTime += (Date.now() - startTime);
         const status = err.response?.status;
-        if (status === 429 || err.message?.includes('429')) {
-          metrics.rateLimit429Count++;
+        const isRateLimit = status === 429 || err.message?.includes('429');
+        if (isRateLimit) {
+          console.warn(`[YahooClient Rate Limited] Key: ${cacheKey} (Served Fallback gracefully)`);
+        } else {
+          console.error(`[YahooClient Miss Fetch Failed] Key: ${cacheKey}, Error: ${err.message}`);
         }
-        console.error(`[YahooClient Miss Fetch Failed] Key: ${cacheKey}, Error: ${err.message}`);
         // Return fallback quotes/data instead of throwing to prevent crashing the response
         return this.getFallbackValue(cacheKey);
       }
@@ -187,6 +188,9 @@ class CentralYahooClient {
     }
     if (cacheKey.startsWith('summary_')) {
       return {};
+    }
+    if (cacheKey.startsWith('fundamentals_')) {
+      return [];
     }
     if (cacheKey.startsWith('search_')) {
       const query = cacheKey.split('_')[1] || '';

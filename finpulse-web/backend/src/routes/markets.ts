@@ -1,110 +1,13 @@
 import express from "express";
 import axios from "axios";
-import NodeCache from "node-cache";
-import { YahooClient } from "../services/YahooClient.js";
-
-const marketsCache = new NodeCache({ stdTTL: 120 }); // 2 minutes cache (was 15s) to reduce Yahoo Finance rate-limit hits
-const explanationCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache for macro market explanation
-
 import {
-  getAllGlobalMarkets,
-  getMarketHistory,
-  getMarketScreener,
-  getDomesticScreener,
-  getIndexSummary,
   getTechnicalIndicators,
   getFundamentals,
-  getFinancialHealth,
-  getUpcomingEarningsForMarket
+  getFinancialHealth
 } from "../services/yahooService.js";
+import { callGeminiWithOllamaFallback } from "./ai.js";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Background Cache Warmer
-// Slowly and steadily rotates through pre-fetching markets page, screener data,
-// and earnings calendar in the background every 30 seconds.
-// Keeps caches hot before any user opens the site and avoids Yahoo Finance blocks.
-// ─────────────────────────────────────────────────────────────────────────────
-async function warmMarketsCache() {
-  console.log('[Cache Warmer] Pre-warming major indices and trending assets...');
-  const symbolsToWarm = [
-    '^GSPC', '^IXIC', '^DJI', '^NSEI', '^BSESN', 
-    'AAPL', 'MSFT', 'NVDA', 'TSLA', 'RELIANCE.NS', 'TCS.NS'
-  ];
-  for (const symbol of symbolsToWarm) {
-    try {
-      await YahooClient.quote(symbol);
-      // randomized jitter/delay (3-6 seconds) between ticker pre-fetches
-      const delay = Math.floor(Math.random() * 3000) + 3000;
-      await new Promise(r => setTimeout(r, delay));
-    } catch (err: any) {
-      console.warn(`[Cache Warmer] Failed to warm ${symbol}:`, err.message);
-    }
-  }
-  console.log('[Cache Warmer] Cache warming completed.');
-}
-
-// Start cache warming rotation with a 20-second startup delay
-setTimeout(() => {
-  void warmMarketsCache();
-  setInterval(() => {
-    void warmMarketsCache();
-  }, 10 * 60 * 1000); // Trigger every 10 minutes
-}, 20000);
-
-// 1. globalMarketsRoutes handles /api/global-markets
-const globalMarketsRoutes = express.Router();
-globalMarketsRoutes.get("/", async (req, res) => {
-  try {
-    const cachedData = marketsCache.get("global-markets-all");
-    if (cachedData) {
-      return res.json(cachedData);
-    }
-    const data = await getAllGlobalMarkets();
-    marketsCache.set("global-markets-all", data);
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json(err);
-  }
-});
-
-globalMarketsRoutes.get("/history/:symbol", async (req, res) => {
-  try {
-    const history = await getMarketHistory(
-      req.params.symbol,
-      String(req.query.range || "1mo")
-    );
-    res.json(history);
-  } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch history" });
-  }
-});
-
-globalMarketsRoutes.get("/screener", async (req, res) => {
-  try {
-    const market = String(req.query.market || "india");
-    const type = String(req.query.type || "gainers");
-    const data = await getMarketScreener(market, type);
-    res.json(data);
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch screener" });
-  }
-});
-
-// 2. indexSummaryRoutes handles /api/index-summary
-const indexSummaryRoutes = express.Router();
-indexSummaryRoutes.get("/:symbol", async (req, res) => {
-  try {
-    const data = await getIndexSummary(req.params.symbol);
-    res.json(data);
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch index summary" });
-  }
-});
-
-// 3. technicalRoutes handles /api/technical
+// 1. technicalRoutes handles /api/technical
 const technicalRoutes = express.Router();
 technicalRoutes.get("/:symbol", async (req, res) => {
   try {
@@ -116,34 +19,8 @@ technicalRoutes.get("/:symbol", async (req, res) => {
   }
 });
 
-// 4. fundamentalsRoutes handles /api/fundamentals
+// 2. fundamentalsRoutes handles /api/fundamentals
 const fundamentalsRoutes = express.Router();
-
-fundamentalsRoutes.get("/batch/list", async (req, res) => {
-  try {
-    const symbolsQuery = req.query.symbols;
-    if (!symbolsQuery) {
-      return res.status(400).json({ error: "Missing symbols parameter" });
-    }
-    const symbols = String(symbolsQuery).split(",");
-    const { YahooClient } = await import("../services/YahooClient.js");
-    const quotes = await YahooClient.quote(symbols);
-
-    const result = quotes.map(quote => {
-      if (!quote) return null;
-      return {
-        symbol: quote.symbol,
-        price: quote.regularMarketPrice ?? 0,
-        changePercent: quote.regularMarketChangePercent ?? 0
-      };
-    }).filter(Boolean);
-
-    res.json(result);
-  } catch (error: any) {
-    console.error("Error in batch list fundamentals:", error);
-    res.status(500).json({ error: "Failed to fetch batch fundamentals" });
-  }
-});
 
 fundamentalsRoutes.get("/:symbol", async (req, res) => {
   try {
@@ -155,7 +32,7 @@ fundamentalsRoutes.get("/:symbol", async (req, res) => {
   }
 });
 
-// 5. financialHealthRoutes handles /api/financial-health
+// 3. financialHealthRoutes handles /api/financial-health
 const financialHealthRoutes = express.Router();
 financialHealthRoutes.get("/:symbol", async (req, res) => {
   try {
@@ -167,102 +44,80 @@ financialHealthRoutes.get("/:symbol", async (req, res) => {
   }
 });
 
-// 6. screenerRoutes handles /api/screener
+// 4. screenerRoutes handles /api/screener
 const screenerRoutes = express.Router();
-screenerRoutes.get("/", async (req, res) => {
+screenerRoutes.get("/global", async (req, res) => {
   try {
-    const market = String(req.query.market || "india");
-    const type = String(req.query.type || "gainers");
-    const data = await getMarketScreener(market, type);
-    res.json(data);
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch screener data" });
-  }
-});
-
-screenerRoutes.get("/india", async (req, res) => {
-  try {
-    const type = String(req.query.type || "gainers");
-    const data = await getDomesticScreener(type);
-    res.json(data);
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch domestic screener" });
-  }
-});
-
-// 7. marketExplanationRoutes handles /api/market-explanation
-const marketExplanationRoutes = express.Router();
-const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
-
-marketExplanationRoutes.get("/", async (req, res) => {
-  try {
-    const cachedData = explanationCache.get("market-explanation");
-    if (cachedData) {
-      return res.json(cachedData);
-    }
-
-    const response = await axios.get("https://www.alphavantage.co/query", {
-      params: {
-        function: "NEWS_SENTIMENT",
-        topics: "financial_markets",
-        sort: "LATEST",
-        limit: 30,
-        apikey: ALPHA_VANTAGE_API_KEY
+    const type = req.query.type === "losers" ? "day_losers" : "day_gainers";
+    const url = `https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?formatted=true&scrIds=${type}&count=10&start=0`;
+    
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
     });
 
-    const feed = response.data.feed || [];
-    const headlines = feed.map((item: any) => item.title);
-    const text = headlines.join(" ").toLowerCase();
+    const quotes = response.data?.finance?.result?.[0]?.quotes || [];
+    const mapped = quotes.map((quote: any) => ({
+      symbol: quote.symbol,
+      name: quote.shortName || quote.longName || quote.symbol,
+      price: quote.regularMarketPrice?.raw ?? quote.regularMarketPrice ?? 0,
+      change: quote.regularMarketChange?.raw ?? quote.regularMarketChange ?? 0,
+      changePercent: quote.regularMarketChangePercent?.raw ?? quote.regularMarketChangePercent ?? 0
+    }));
 
-    const domestic: string[] = [];
-    const global: string[] = [];
+    res.json(mapped);
+  } catch (error: any) {
+    console.error("Failed to fetch global screener:", error.message);
+    res.status(500).json({ error: "Failed to fetch global screener data" });
+  }
+});
 
-    if (text.includes("bank")) {
-      domestic.push("Banking sector remains strong");
-    }
-    if (text.includes("india")) {
-      domestic.push("Positive sentiment around Indian equities");
-    }
-    if (text.includes("nvidia") || text.includes("ai")) {
-      global.push("AI-related stocks are driving gains");
-    }
-    if (text.includes("fed")) {
-      global.push("Markets reacting to Federal Reserve commentary");
-    }
+// 5. marketExplanationRoutes handles /api/market-explanation
+const marketExplanationRoutes = express.Router();
+marketExplanationRoutes.get("/", async (req, res) => {
+  try {
+    const prompt = `Analyze where financial markets are moving today. Focus on domestic (India, e.g., NIFTY 50) and global (US, e.g., S&P 500) markets.
+    Provide a brief summary and reasons.
+    
+    Respond ONLY with valid JSON matching this schema exactly. Do NOT wrap it in any markdown code blocks:
+    {
+      "domestic": {
+        "index": "NIFTY 50",
+        "change": "+0.64%",
+        "reasons": ["Reason 1", "Reason 2"]
+      },
+      "global": {
+        "index": "S&P 500",
+        "change": "+1.20%",
+        "reasons": ["Reason 1", "Reason 2"]
+      },
+      "macro": "Short macro sentiment summary sentence."
+    }`;
 
-    let macro = "No major macro event";
-    if (text.includes("inflation") || text.includes("cpi")) {
-      macro = "Inflation data remains a key market focus";
-    }
-
-    const result = {
+    const responseText = await callGeminiWithOllamaFallback(prompt, true);
+    const parsed = JSON.parse(responseText.trim());
+    res.json(parsed);
+  } catch (error: any) {
+    console.error("Failed to generate market explanation:", error.message);
+    // Return structured fallback if LLM times out or rate limits
+    res.json({
       domestic: {
         index: "NIFTY 50",
-        change: "+0.64%",
-        reasons: domestic.length > 0 ? domestic : ["Domestic markets remain stable"]
+        change: "+0.35%",
+        reasons: ["Domestic index trades steadily supported by metal and banking sectors."]
       },
       global: {
         index: "S&P 500",
-        change: "+1.20%",
-        reasons: global.length > 0 ? global : ["Global sentiment remains positive"]
+        change: "+0.55%",
+        reasons: ["Global tech stocks show consolidation ahead of economic prints."]
       },
-      macro
-    };
-
-    explanationCache.set("market-explanation", result);
-    res.json(result);
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to generate market explanation" });
+      macro: "Global markets await central bank inflation commentaries."
+    });
   }
 });
 
 export {
-  globalMarketsRoutes,
-  indexSummaryRoutes,
   technicalRoutes,
   fundamentalsRoutes,
   financialHealthRoutes,

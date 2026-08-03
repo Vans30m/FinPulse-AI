@@ -3,12 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { fetchGlobalMarkets } from "../services/marketService";
 
-import ForexCryptoRibbon from "../features/dashboard/components/ForexCryptoRibbon";
 import AIMarketSentiment from "../features/dashboard/components/AIMarketSentiment";
 import MarketExplanation from "../features/dashboard/components/MarketExplanation";
 import AIBulletSummary from "../features/dashboard/components/AIBulletSummary";
 import TrendingSectorStreaks from "../features/dashboard/components/TrendingSectorStreaks";
-import VolatilityGauges from "../features/dashboard/components/VolatilityGauges";
 import { GlobalMarketClock } from "../features/dashboard/components/GlobalMarketClock";
 import FearGreedIndex from "../features/dashboard/components/FearGreedIndex";
 import AIPickOfTheDay from "../features/dashboard/components/AIPickOfTheDay";
@@ -35,9 +33,6 @@ export default function Pulse() {
       transition={{ duration: 0.2 }}
     >
       <div className="space-y-8">
-        {/* Horizontal marquee ticker at the top */}
-        <ForexCryptoRibbon />
-
         <AIMarketSentiment />
         <MarketExplanation />
 
@@ -51,8 +46,7 @@ export default function Pulse() {
 
           {/* Right Column (1 col wide on desktop) */}
           <div className="flex flex-col space-y-6 sm:space-y-8 h-full justify-between">
-            <FearGreedIndex className="flex-1 h-full" />
-            <VolatilityGauges />
+            <FearGreedIndex className="flex-1 h-full animate-pulse-slow" />
           </div>
         </div>
 

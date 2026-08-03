@@ -4,7 +4,6 @@ import AlertsTimeline from "../features/dashboard/components/AlertsTimeline";
 import API_BASE_URL from "../config/api";
 import { pageCache } from "../utils/cache";
 import PageLoader from "../components/ui/PageLoader";
-import GlobalEarningsCalendar from "../components/home/GlobalEarningsCalendar";
 
 interface EconomicEvent {
   time: string;
@@ -190,11 +189,6 @@ export default function News() {
             Real-time global coverage aggregated from premium networks and macroeconomic schedules.
           </p>
         </div>
-      </div>
-
-      {/* Global Earnings Calendar */}
-      <div className="mt-4">
-        <GlobalEarningsCalendar />
       </div>
 
       {/* Feed & Calendar Grid */}

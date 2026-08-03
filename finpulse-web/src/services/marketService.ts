@@ -254,11 +254,7 @@ export async function getFundamentals(symbol: string): Promise<FundamentalData> 
   return response.json();
 }
 
-export async function getFundamentalsBatch(symbols: string[]): Promise<any[]> {
-  const response = await fetch(`${API_BASE_URL}/api/fundamentals/batch/list?symbols=${symbols.join(",")}`);
-  if (!response.ok) throw new Error("Failed to fetch batch fundamentals");
-  return response.json();
-}
+
 
 export async function getUnifiedAssetDetails(symbol: string): Promise<any> {
   const response = await fetch(`${API_BASE_URL}/api/asset-details/${encodeURIComponent(symbol)}`);
@@ -459,7 +455,7 @@ export async function getMarketHistory(symbol: string, range: string = "1mo") {
 }
 
 export async function getMarketScreener(market: string, type: string) {
-  const endpoint = market === "india" ? `/api/screener/india?type=${type}` : `/api/screener?market=us&type=${type}`;
+  const endpoint = `/api/screener/global?type=${type}`;
   const response = await fetch(`${API_BASE_URL}${endpoint}`);
   if (!response.ok) throw new Error("Failed to fetch screener");
   return response.json();
