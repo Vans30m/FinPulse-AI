@@ -9,7 +9,6 @@ export default function AssetTabs({ tabs, activeTab, onChangeTab }: AssetTabsPro
     const labelMap: Record<string, string> = {
       overview: "Overview",
       chart: "Interactive Chart",
-      financials: "Financial Data",
       technicals: "Structural Levels",
       news: "News Feed",
       ai_analysis: "AI Sentiment",

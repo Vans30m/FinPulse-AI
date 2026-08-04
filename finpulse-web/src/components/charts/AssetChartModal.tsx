@@ -35,7 +35,6 @@ interface Props {
 
 type TabType =
   | "overview"
-  | "financials"
   | "analysts"
   | "sentiment"
   | "events"
@@ -240,7 +239,6 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const availableTabs = useMemo(() => {
     const allTabs = [
       { id: "overview", label: "Overview", icon: Layers },
-      { id: "financials", label: "Financials", icon: Briefcase },
       { id: "analysts", label: "Analyst Targets", icon: Compass },
       { id: "sentiment", label: "Stock Sentiment", icon: Brain },
       { id: "ownership", label: "Ownership", icon: Users },
@@ -252,7 +250,6 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
     if (isSpecialAsset) {
       return allTabs.filter(tab =>
         tab.id !== "overview" &&
-        tab.id !== "financials" &&
         tab.id !== "analysts" &&
         tab.id !== "ownership" &&
         tab.id !== "events"
@@ -260,10 +257,6 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
     }
     return allTabs;
   }, [isSpecialAsset]);
-
-  // Financials state
-  const [financialsPeriod, setFinancialsPeriod] = useState<"annual" | "quarterly">("annual");
-  const [financialsTab, setFinancialsTab] = useState<"income" | "balance" | "cashflow">("income");
 
   useEffect(() => {
     if (!open || !symbol) return;
@@ -882,204 +875,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       </div>
                     </motion.div>
                   )}
-                  {/* FINANCIALS TAB */}
-                  {activeTab === "financials" && data && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-between sm:items-center bg-[#090d1a] border border-slate-900 p-3 sm:p-4 rounded-xl">
-                        <div className="flex gap-1.5 justify-center sm:justify-start">
-                          {["income", "cashflow"].map((ft) => (
-                            <button
-                              key={ft}
-                              onClick={() => setFinancialsTab(ft as any)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${financialsTab === ft
-                                ? "bg-blue-600/20 text-blue-400 border border-blue-500/20"
-                                : "text-slate-450 hover:text-white"
-                                }`}
-                            >
-                              {ft}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="flex gap-1.5 justify-center sm:justify-end">
-                          {["annual", "quarterly"].map((fp) => (
-                            <button
-                              key={fp}
-                              onClick={() => setFinancialsPeriod(fp as any)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${financialsPeriod === fp
-                                ? "bg-emerald-600/20 text-emerald-450 border border-emerald-500/20"
-                                : "text-slate-400 hover:text-white"
-                                }`}
-                            >
-                              {fp}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
 
-                      {/* Highlight Summary Cards */}
-                      {(() => {
-                        const moduleKey = `${financialsTab}StatementHistory${financialsPeriod === "quarterly" ? "Quarterly" : ""}`;
-                        const baseKey = financialsTab === "income"
-                          ? "incomeStatementHistory"
-                          : "cashflowStatements";
-                        const reports = data.financials?.[moduleKey]?.[baseKey] || data.financials?.[moduleKey]?.statements || [];
-                        if (reports.length === 0) return null;
-
-                        const reportLatest = reports[0];
-                        const reportPrev = reports[1];
-
-                        const title1 = financialsTab === "income" ? "Latest Total Revenue" : "Latest Operating Cash Flow";
-                        const val1 = reportLatest?.totalRevenue ?? reportLatest?.totalCashFlowsFromOperatingActivities ?? (financialsTab === "income" ? data.financialHealth?.revenue : data.financialHealth?.operatingCashFlow);
-                        const prevVal1 = reportPrev?.totalRevenue ?? reportPrev?.totalCashFlowsFromOperatingActivities;
-
-                        const title2 = financialsTab === "income" ? "Latest Net Income" : "Latest Net Cash Flow";
-                        const val2 = reportLatest?.netIncome ?? reportLatest?.netIncomeFromContinuingOperations ?? (financialsTab === "income" ? data.financialHealth?.netIncome : data.financialHealth?.freeCashFlow);
-                        const prevVal2 = reportPrev?.netIncome ?? reportPrev?.netIncomeFromContinuingOperations;
-
-                        const getGrowth = (latest: number | undefined, prev: number | undefined) => {
-                          if (latest === undefined || prev === undefined || prev === 0) return null;
-                          const pct = ((latest - prev) / Math.abs(prev)) * 100;
-                          return pct;
-                        };
-
-                        const pct1 = getGrowth(val1, prevVal1);
-                        const pct2 = getGrowth(val2, prevVal2);
-
-                        return (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Card 1 */}
-                            <div className="bg-gradient-to-br from-[#0a0d1e] to-[#05070e] border border-blue-500/10 rounded-2xl p-4 sm:p-5 shadow-lg relative overflow-hidden flex flex-col justify-between">
-                              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />
-                              <div>
-                                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">{title1}</span>
-                                <h4 className="text-xl sm:text-2xl font-black text-white font-mono mt-1.5">{formatVal(val1, true)}</h4>
-                              </div>
-                              {pct1 !== null && (
-                                <div className="mt-3 flex items-center gap-2">
-                                  <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${pct1 >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                    {pct1 >= 0 ? '↑ +' : '↓ '}{pct1.toFixed(2)}%
-                                  </span>
-                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">vs prev</span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Card 2 */}
-                            <div className="bg-gradient-to-br from-[#0a0d1e] to-[#05070e] border border-emerald-500/10 rounded-2xl p-4 sm:p-5 shadow-lg relative overflow-hidden flex flex-col justify-between">
-                              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
-                              <div>
-                                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">{title2}</span>
-                                <h4 className="text-xl sm:text-2xl font-black text-white font-mono mt-1.5">{formatVal(val2, true)}</h4>
-                              </div>
-                              {pct2 !== null && (
-                                <div className="mt-3 flex items-center gap-2">
-                                  <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${pct2 >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                    {pct2 >= 0 ? '↑ +' : '↓ '}{pct2.toFixed(2)}%
-                                  </span>
-                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">vs prev</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Multi-column Financials Data Table */}
-                      <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-3 sm:p-6 shadow-md overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left text-xs font-mono border-collapse">
-                          <thead>
-                            {(() => {
-                              const moduleKey = `${financialsTab}StatementHistory${financialsPeriod === "quarterly" ? "Quarterly" : ""}`;
-                              const baseKey = financialsTab === "income"
-                                ? "incomeStatementHistory"
-                                : "cashflowStatements";
-                              const reports = data.financials?.[moduleKey]?.[baseKey] || data.financials?.[moduleKey]?.statements || [];
-                              if (reports.length === 0) return null;
-
-                              return (
-                                <tr className="border-b border-slate-800 text-slate-500 font-sans">
-                                  <th className="py-2.5 font-black uppercase text-[10px] tracking-wider whitespace-nowrap pr-6">Statement Item</th>
-                                  {reports.map((report: any, idx: number) => {
-                                    const d = new Date(report.endDate || report.date);
-                                    const label = financialsPeriod === "quarterly"
-                                      ? d.toLocaleDateString("en-US", { month: "short", year: "2-digit" })
-                                      : d.getFullYear().toString();
-                                    return (
-                                      <th key={idx} className="py-2.5 text-right font-black uppercase text-[10px] tracking-wider pr-4 whitespace-nowrap">
-                                        {label}
-                                      </th>
-                                    );
-                                  })}
-                                  <th className="py-2.5 text-right font-black uppercase text-[10px] tracking-wider pl-4">Trend</th>
-                                </tr>
-                              );
-                            })()}
-                          </thead>
-                          <tbody>
-                            {(() => {
-                              const moduleKey = `${financialsTab}StatementHistory${financialsPeriod === "quarterly" ? "Quarterly" : ""}`;
-                              const baseKey = financialsTab === "income"
-                                ? "incomeStatementHistory"
-                                : "cashflowStatements";
-                              const reports = data.financials?.[moduleKey]?.[baseKey] || data.financials?.[moduleKey]?.statements || [];
-                              if (reports.length === 0) {
-                                return (
-                                  <tr>
-                                    <td colSpan={6} className="py-4 text-center text-slate-500 font-sans">
-                                      No Statement Data Available
-                                    </td>
-                                  </tr>
-                                );
-                              }
-
-                              const keys = Object.keys(reports[0]).filter(
-                                (k) => k !== "date" && k !== "maxAge" && k !== "endDate"
-                              );
-
-                              return keys.map((key) => {
-                                const valLatest = reports[0]?.[key];
-                                const valPrev = reports[1]?.[key];
-                                let trendBadge = null;
-
-                                if (typeof valLatest === 'number' && typeof valPrev === 'number' && valPrev !== 0) {
-                                  const pct = ((valLatest - valPrev) / Math.abs(valPrev)) * 100;
-                                  const isPositive = pct >= 0;
-                                  trendBadge = (
-                                    <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black font-mono leading-none ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-455'
-                                      }`}>
-                                      {isPositive ? '↑' : '↓'} {Math.abs(pct).toFixed(1)}%
-                                    </span>
-                                  );
-                                }
-
-                                return (
-                                  <tr key={key} className="border-b border-slate-900/40 hover:bg-slate-900/20 group transition-colors">
-                                    <td className="py-2.5 font-sans capitalize text-slate-400 group-hover:text-slate-200 transition-colors whitespace-nowrap pr-6">
-                                      {key.replace(/([A-Z])/g, ' $1')}
-                                    </td>
-                                    {reports.map((report: any, idx: number) => (
-                                      <td key={idx} className={`py-2.5 text-right font-bold transition-colors pr-4 whitespace-nowrap ${idx === 0 ? 'text-slate-200 group-hover:text-white' : 'text-slate-500 group-hover:text-slate-350'
-                                        }`}>
-                                        {formatVal(report[key], true)}
-                                      </td>
-                                    ))}
-                                    <td className="py-2.5 text-right pl-4 whitespace-nowrap">
-                                      {trendBadge || <span className="text-slate-650 font-sans">-</span>}
-                                    </td>
-                                  </tr>
-                                );
-                              });
-                            })()}
-                          </tbody>
-                        </table>
-                      </div>
-                    </motion.div>
-                  )}
 
                   {/* ANALYST TARGETS */}
                   {activeTab === "analysts" && data && (

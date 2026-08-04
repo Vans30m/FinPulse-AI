@@ -33,7 +33,6 @@ import AISummaryCard from "../components/asset/AISummaryCard";
 
 type TabType =
   | "overview"
-  | "financials"
   | "analysts"
   | "sentiment"
   | "events"
@@ -286,7 +285,6 @@ export default function AssetDetails() {
   const availableTabs = useMemo(() => {
     const allTabs = [
       { id: "overview", label: "Overview", icon: Layers },
-      { id: "financials", label: "Financials", icon: Briefcase },
       { id: "analysts", label: "Analyst Targets", icon: Compass },
       { id: "sentiment", label: "Stock Sentiment", icon: Brain },
       { id: "ownership", label: "Ownership", icon: Users },
@@ -298,7 +296,6 @@ export default function AssetDetails() {
     if (isSpecialAsset) {
       return allTabs.filter(tab =>
         tab.id !== "overview" &&
-        tab.id !== "financials" &&
         tab.id !== "analysts" &&
         tab.id !== "ownership" &&
         tab.id !== "events"
@@ -306,10 +303,6 @@ export default function AssetDetails() {
     }
     return allTabs;
   }, [isSpecialAsset]);
-
-  // Financials state
-  const [financialsPeriod, setFinancialsPeriod] = useState<"annual" | "quarterly">("annual");
-  const [financialsTab, setFinancialsTab] = useState<"income" | "balance" | "cashflow">("income");
 
   useEffect(() => {
     if (!symbol) return;
@@ -818,199 +811,7 @@ export default function AssetDetails() {
               </div>
             )}
 
-            {/* FINANCIALS TAB */}
-            {activeTab === "financials" && data && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center bg-[#090d1a] border border-slate-900 p-4 rounded-xl">
-                  <div className="flex gap-2">
-                    {["income", "cashflow"].map((ft) => (
-                      <button
-                        key={ft}
-                        onClick={() => setFinancialsTab(ft as any)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase ${financialsTab === ft
-                          ? "bg-blue-600/20 text-blue-400 border border-blue-500/20"
-                          : "text-slate-450 hover:text-white"
-                          }`}
-                      >
-                        {ft}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    {["annual", "quarterly"].map((fp) => (
-                      <button
-                        key={fp}
-                        onClick={() => setFinancialsPeriod(fp as any)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase ${financialsPeriod === fp
-                          ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/20"
-                          : "text-slate-450 hover:text-white"
-                          }`}
-                      >
-                        {fp}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Highlight Summary Cards */}
-                {(() => {
-                  const moduleKey = `${financialsTab}StatementHistory${financialsPeriod === "quarterly" ? "Quarterly" : ""}`;
-                  const baseKey = financialsTab === "income"
-                    ? "incomeStatementHistory"
-                    : "cashflowStatements";
-                  const reports = data.financials?.[moduleKey]?.[baseKey] || data.financials?.[moduleKey]?.statements || [];
-                  if (reports.length === 0) return null;
-
-                  const reportLatest = reports[0];
-                  const reportPrev = reports[1];
-
-                  const title1 = financialsTab === "income" ? "Latest Total Revenue" : "Latest Operating Cash Flow";
-                  const val1 = reportLatest?.totalRevenue ?? reportLatest?.totalCashFlowsFromOperatingActivities ?? (financialsTab === "income" ? data.financialHealth?.revenue : data.financialHealth?.operatingCashFlow);
-                  const prevVal1 = reportPrev?.totalRevenue ?? reportPrev?.totalCashFlowsFromOperatingActivities;
-
-                  const title2 = financialsTab === "income" ? "Latest Net Income" : "Latest Net Cash Flow";
-                  const val2 = reportLatest?.netIncome ?? reportLatest?.netIncomeFromContinuingOperations ?? (financialsTab === "income" ? data.financialHealth?.netIncome : data.financialHealth?.freeCashFlow);
-                  const prevVal2 = reportPrev?.netIncome ?? reportPrev?.netIncomeFromContinuingOperations;
-
-                  const getGrowth = (latest: number | undefined, prev: number | undefined) => {
-                    if (latest === undefined || prev === undefined || prev === 0) return null;
-                    const pct = ((latest - prev) / Math.abs(prev)) * 100;
-                    return pct;
-                  };
-
-                  const pct1 = getGrowth(val1, prevVal1);
-                  const pct2 = getGrowth(val2, prevVal2);
-
-                  return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Card 1 */}
-                      <div className="bg-gradient-to-br from-[#0a0d1e] to-[#05070e] border border-blue-500/10 rounded-2xl p-5 shadow-lg relative overflow-hidden flex flex-col justify-between">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />
-                        <div>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">{title1}</span>
-                          <h4 className="text-2xl font-black text-white font-mono mt-2">{formatVal(val1, true)}</h4>
-                        </div>
-                        {pct1 !== null && (
-                          <div className="mt-4 flex items-center gap-2">
-                            <span className={`text-xs font-mono font-black px-1.5 py-0.5 rounded ${pct1 >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                              {pct1 >= 0 ? '↑ +' : '↓ '}{pct1.toFixed(2)}%
-                            </span>
-                            <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">vs previous period</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Card 2 */}
-                      <div className="bg-gradient-to-br from-[#0a0d1e] to-[#05070e] border border-emerald-500/10 rounded-2xl p-5 shadow-lg relative overflow-hidden flex flex-col justify-between">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
-                        <div>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">{title2}</span>
-                          <h4 className="text-2xl font-black text-white font-mono mt-2">{formatVal(val2, true)}</h4>
-                        </div>
-                        {pct2 !== null && (
-                          <div className="mt-4 flex items-center gap-2">
-                            <span className={`text-xs font-mono font-black px-1.5 py-0.5 rounded ${pct2 >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                              {pct2 >= 0 ? '↑ +' : '↓ '}{pct2.toFixed(2)}%
-                            </span>
-                            <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">vs previous period</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Multi-column Financials Data Table */}
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono border-collapse">
-                    <thead>
-                      {(() => {
-                        const moduleKey = `${financialsTab}StatementHistory${financialsPeriod === "quarterly" ? "Quarterly" : ""}`;
-                        const baseKey = financialsTab === "income"
-                          ? "incomeStatementHistory"
-                          : "cashflowStatements";
-                        const reports = data.financials?.[moduleKey]?.[baseKey] || data.financials?.[moduleKey]?.statements || [];
-                        if (reports.length === 0) return null;
-
-                        return (
-                          <tr className="border-b border-slate-800 text-slate-500 font-sans">
-                            <th className="py-3 font-black uppercase text-[10px] tracking-wider">Statement Item</th>
-                            {reports.map((report: any, idx: number) => {
-                              const d = new Date(report.endDate || report.date);
-                              const label = financialsPeriod === "quarterly"
-                                ? d.toLocaleDateString("en-US", { month: "short", year: "2-digit" })
-                                : d.getFullYear().toString();
-                              return (
-                                <th key={idx} className="py-3 text-right font-black uppercase text-[10px] tracking-wider">
-                                  {label}
-                                </th>
-                              );
-                            })}
-                            <th className="py-3 text-right font-black uppercase text-[10px] tracking-wider pl-4">Trend</th>
-                          </tr>
-                        );
-                      })()}
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const moduleKey = `${financialsTab}StatementHistory${financialsPeriod === "quarterly" ? "Quarterly" : ""}`;
-                        const baseKey = financialsTab === "income"
-                          ? "incomeStatementHistory"
-                          : "cashflowStatements";
-                        const reports = data.financials?.[moduleKey]?.[baseKey] || data.financials?.[moduleKey]?.statements || [];
-                        if (reports.length === 0) {
-                          return (
-                            <tr>
-                              <td colSpan={6} className="py-4 text-center text-slate-500 font-sans">
-                                No Statement Data Available
-                              </td>
-                            </tr>
-                          );
-                        }
-
-                        const keys = Object.keys(reports[0]).filter(
-                          (k) => k !== "date" && k !== "maxAge" && k !== "endDate"
-                        );
-
-                        return keys.map((key) => {
-                          const valLatest = reports[0]?.[key];
-                          const valPrev = reports[1]?.[key];
-                          let trendBadge = null;
-
-                          if (typeof valLatest === 'number' && typeof valPrev === 'number' && valPrev !== 0) {
-                            const pct = ((valLatest - valPrev) / Math.abs(valPrev)) * 100;
-                            const isPositive = pct >= 0;
-                            trendBadge = (
-                              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black font-mono leading-none ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-455'
-                                }`}>
-                                {isPositive ? '↑' : '↓'} {Math.abs(pct).toFixed(1)}%
-                              </span>
-                            );
-                          }
-
-                          return (
-                            <tr key={key} className="border-b border-slate-900/40 hover:bg-slate-900/20 group transition-colors">
-                              <td className="py-3 font-sans capitalize text-slate-400 group-hover:text-slate-200 transition-colors">
-                                {key.replace(/([A-Z])/g, ' $1')}
-                              </td>
-                              {reports.map((report: any, idx: number) => (
-                                <td key={idx} className={`py-3 text-right font-bold transition-colors ${idx === 0 ? 'text-slate-200 group-hover:text-white' : 'text-slate-500 group-hover:text-slate-350'
-                                  }`}>
-                                  {formatVal(report[key], true)}
-                                </td>
-                              ))}
-                              <td className="py-3 text-right pl-4">
-                                {trendBadge || <span className="text-slate-600 font-sans">-</span>}
-                              </td>
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
 
             {/* ANALYST TARGETS */}
             {activeTab === "analysts" && data && (

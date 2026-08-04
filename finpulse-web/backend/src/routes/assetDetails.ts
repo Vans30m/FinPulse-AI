@@ -9,7 +9,7 @@ const router = express.Router();
 // Caches with custom TTLs
 const quoteCache = new NodeCache({ stdTTL: 30 });
 const chartCache = new NodeCache({ stdTTL: 120 });
-const financialsCache = new NodeCache({ stdTTL: 21600 }); // 6 hours
+
 const newsCache = new NodeCache({ stdTTL: 600 }); // 10 mins
 const analystCache = new NodeCache({ stdTTL: 21600 }); // 6 hours
 const eventsCache = new NodeCache({ stdTTL: 3600 }); // 1 hour
@@ -343,203 +343,6 @@ router.get("/:symbol", async (req, res) => {
       }
     }
 
-    // 2. Fetch Financial Statements (Income, Balance, CashFlow - Quarterly & Annual)
-    let financialsData: any = financialsCache.get(symbol);
-    if (!financialsData) {
-      try {
-        const now = new Date();
-        const startDate = new Date();
-        startDate.setFullYear(now.getFullYear() - 4); // Fetch 4 years of history
-
-        const [annual, quarterly] = await Promise.all([
-          YahooClient.fundamentalsTimeSeries(symbol, {
-            period1: startDate,
-            period2: now,
-            type: 'annual',
-            module: 'all'
-          }).catch(() => []),
-          YahooClient.fundamentalsTimeSeries(symbol, {
-            period1: startDate,
-            period2: now,
-            type: 'quarterly',
-            module: 'all'
-          }).catch(() => [])
-        ]);
-
-        const sortByDateDesc = (arr: any[]) => {
-          if (!arr || !Array.isArray(arr)) return [];
-          return [...arr]
-            .filter(item => item && item.date)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .map((item: any) => {
-              const dateStr = item.date instanceof Date ? item.date.toISOString() : item.date;
-              const { TYPE, periodType, ...rest } = item;
-              return {
-                ...rest,
-                date: dateStr,
-                endDate: dateStr
-              };
-            });
-        };
-
-        let annualStatements = sortByDateDesc(annual);
-        let quarterlyStatements = sortByDateDesc(quarterly);
-
-        if (annualStatements.length === 0 && quarterlyStatements.length === 0) {
-          console.log(`[Asset Details] Financials empty for ${symbol}. Injecting mock statements...`);
-          
-          annualStatements = [
-            {
-              date: "2025-12-31T00:00:00.000Z",
-              endDate: "2025-12-31T00:00:00.000Z",
-              totalRevenue: 285600000,
-              costOfRevenue: 165000000,
-              grossProfit: 120600000,
-              operatingExpenses: 54000000,
-              operatingIncome: 66600000,
-              netIncome: 52400000,
-              totalAssets: 345000000,
-              totalLiabilitiesNetMinorityInterest: 162000000,
-              totalEquityGrossMinorityInterest: 183000000,
-              operatingCashFlow: 72000000,
-              capitalExpenditure: -15000000,
-              freeCashFlow: 57000000
-            },
-            {
-              date: "2024-12-31T00:00:00.000Z",
-              endDate: "2024-12-31T00:00:00.000Z",
-              totalRevenue: 260200000,
-              costOfRevenue: 151000000,
-              grossProfit: 109200000,
-              operatingExpenses: 49000000,
-              operatingIncome: 60200000,
-              netIncome: 47200000,
-              totalAssets: 320000000,
-              totalLiabilitiesNetMinorityInterest: 154000000,
-              totalEquityGrossMinorityInterest: 166000000,
-              operatingCashFlow: 65000000,
-              capitalExpenditure: -14000000,
-              freeCashFlow: 51000000
-            },
-            {
-              date: "2023-12-31T00:00:00.000Z",
-              endDate: "2023-12-31T00:00:00.000Z",
-              totalRevenue: 235800000,
-              costOfRevenue: 138000000,
-              grossProfit: 97800000,
-              operatingExpenses: 44000000,
-              operatingIncome: 53800000,
-              netIncome: 41800000,
-              totalAssets: 298000000,
-              totalLiabilitiesNetMinorityInterest: 148000000,
-              totalEquityGrossMinorityInterest: 150000000,
-              operatingCashFlow: 58000000,
-              capitalExpenditure: -13000000,
-              freeCashFlow: 45000000
-            }
-          ];
-
-          quarterlyStatements = [
-            {
-              date: "2026-03-31T00:00:00.000Z",
-              endDate: "2026-03-31T00:00:00.000Z",
-              totalRevenue: 72400000,
-              costOfRevenue: 42000000,
-              grossProfit: 30400000,
-              operatingExpenses: 13800000,
-              operatingIncome: 16600000,
-              netIncome: 13100000,
-              totalAssets: 345000000,
-              totalLiabilitiesNetMinorityInterest: 162000000,
-              totalEquityGrossMinorityInterest: 183000000,
-              operatingCashFlow: 18200000,
-              capitalExpenditure: -3800000,
-              freeCashFlow: 14400000
-            },
-            {
-              date: "2025-12-31T00:00:00.000Z",
-              endDate: "2025-12-31T00:00:00.000Z",
-              totalRevenue: 71200000,
-              costOfRevenue: 41500000,
-              grossProfit: 29700000,
-              operatingExpenses: 13500000,
-              operatingIncome: 16200000,
-              netIncome: 12800000,
-              totalAssets: 345000000,
-              totalLiabilitiesNetMinorityInterest: 162000000,
-              totalEquityGrossMinorityInterest: 183000000,
-              operatingCashFlow: 17800000,
-              capitalExpenditure: -3700000,
-              freeCashFlow: 14100000
-            },
-            {
-              date: "2025-09-30T00:00:00.000Z",
-              endDate: "2025-09-30T00:00:00.000Z",
-              totalRevenue: 70100000,
-              costOfRevenue: 41000000,
-              grossProfit: 29100000,
-              operatingExpenses: 13200000,
-              operatingIncome: 15900000,
-              netIncome: 12500000,
-              totalAssets: 338000000,
-              totalLiabilitiesNetMinorityInterest: 160000000,
-              totalEquityGrossMinorityInterest: 178000000,
-              operatingCashFlow: 17500000,
-              capitalExpenditure: -3600000,
-              freeCashFlow: 13900000
-            },
-            {
-              date: "2025-06-30T00:00:00.000Z",
-              endDate: "2025-06-30T00:00:00.000Z",
-              totalRevenue: 68900000,
-              costOfRevenue: 40500000,
-              grossProfit: 28400000,
-              operatingExpenses: 12900000,
-              operatingIncome: 15500000,
-              netIncome: 12100000,
-              totalAssets: 332000000,
-              totalLiabilitiesNetMinorityInterest: 158000000,
-              totalEquityGrossMinorityInterest: 174000000,
-              operatingCashFlow: 17000000,
-              capitalExpenditure: -3500000,
-              freeCashFlow: 13500000
-            }
-          ];
-        }
-
-        financialsData = {
-          incomeStatementHistory: {
-            incomeStatementHistory: annualStatements,
-            statements: annualStatements
-          },
-          incomeStatementHistoryQuarterly: {
-            incomeStatementHistory: quarterlyStatements,
-            statements: quarterlyStatements
-          },
-          balanceSheetHistory: {
-            balanceSheetHistory: annualStatements,
-            statements: annualStatements
-          },
-          balanceSheetHistoryQuarterly: {
-            balanceSheetHistory: quarterlyStatements,
-            statements: quarterlyStatements
-          },
-          cashflowStatementHistory: {
-            cashflowStatements: annualStatements,
-            statements: annualStatements
-          },
-          cashflowStatementHistoryQuarterly: {
-            cashflowStatements: quarterlyStatements,
-            statements: quarterlyStatements
-          }
-        };
-      } catch (err) {
-        console.error(`Failed to construct financials via fundamentalsTimeSeries for ${symbol}:`, err);
-        financialsData = {};
-      }
-      financialsCache.set(symbol, financialsData);
-    }
-
     // 3. Fetch News Stream
     let newsData: any = newsCache.get(symbol);
     if (!newsData) {
@@ -720,7 +523,7 @@ router.get("/:symbol", async (req, res) => {
         numberOfAnalysts: financialData.numberOfAnalystOpinions || "Not Available",
         upgradesDowngrades: upgradesDowngrades.history || []
       },
-      financials: financialsData,
+      financials: {},
       events: {
         earnings: calendarEvents.earnings || "Not Available",
         exDividendDate: calendarEvents.exDividendDate || "Not Available",
