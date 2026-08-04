@@ -598,82 +598,111 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                   </div>
                 </div>
 
-                {activePosition && (
-                  <div className="bg-gradient-to-br from-[#0e122b]/90 to-[#090d1f]/95 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-md hover:border-slate-700/50 transition-all duration-300">
-                    <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr_2.5fr_1.5fr] gap-6 items-center">
-                      
-                      {/* Section 1: Header */}
-                      <div className="flex flex-col justify-center md:border-r border-slate-800/60 md:pr-4 h-full">
-                        <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Active Position</span>
-                        <div className="mt-2">
-                          <span className={`px-2 py-0.5 text-[9px] font-black rounded border tracking-wider inline-block ${activePosition.shares < 0
-                            ? 'bg-rose-500/10 text-rose-400 border-rose-500/25 shadow-[0_0_10px_rgba(244,63,94,0.1)]'
-                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
-                            }`}>
-                            {activePosition.shares < 0 ? 'SHORT POSITION' : 'LONG POSITION'}
-                          </span>
-                        </div>
-                      </div>
+                {activePosition && (() => {
+                  const currentPrice = meta?.price || data?.statistics?.price || activePosition.avgCost || 0;
+                  const isShort = activePosition.shares < 0;
+                  const qty = Math.abs(activePosition.shares);
+                  
+                  // Calculate Unrealized P&L
+                  const pnl = isShort 
+                    ? (activePosition.avgCost - currentPrice) * qty
+                    : (currentPrice - activePosition.avgCost) * qty;
+                    
+                  const pnlPercent = activePosition.avgCost > 0 
+                    ? (isShort
+                        ? ((activePosition.avgCost - currentPrice) / activePosition.avgCost) * 100
+                        : ((currentPrice - activePosition.avgCost) / activePosition.avgCost) * 100)
+                    : 0;
+                    
+                  const isProfit = pnl >= 0;
+                  const pnlColorClass = isProfit ? "text-emerald-400" : "text-rose-400";
+                  const pnlBgClass = isProfit ? "bg-emerald-500/10 border-emerald-500/20" : "bg-rose-500/10 border-rose-500/20";
+                  const pnlSign = isProfit ? "+" : "";
 
-                      {/* Section 2: Stats */}
-                      <div className="grid grid-cols-2 gap-3 md:border-r border-slate-800/60 md:pr-4 h-full items-center">
-                        <div className="bg-[#070914]/80 border border-slate-900/65 p-2 rounded-xl text-center">
-                          <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5 font-mono">Quantity</span>
-                          <span className="text-sm font-black text-slate-100 font-mono">{Math.abs(activePosition.shares).toLocaleString()}</span>
-                        </div>
-                        <div className="bg-[#070914]/80 border border-slate-900/65 p-2 rounded-xl text-center font-mono">
-                          <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5">Entry Price</span>
-                          <span className="text-sm font-black text-slate-100">${activePosition.avgCost.toFixed(2)}</span>
-                        </div>
-                      </div>
-
-                      {/* Section 3: SL / TP Form */}
-                      <form onSubmit={handleSaveSlTp} className="flex flex-col sm:flex-row items-end gap-3 md:border-r border-slate-800/60 md:pr-4 h-full justify-center">
-                        <div className="flex-1 w-full grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="text-[8px] text-slate-500 uppercase tracking-wider block mb-1 font-mono">Stop Loss</label>
-                            <input
-                              type="number"
-                              step="any"
-                              placeholder="None"
-                              value={slInput}
-                              onChange={e => setSlInput(e.target.value)}
-                              className="w-full bg-[#05070e] border border-slate-850 px-3 py-1.5 text-xs rounded-xl outline-none text-slate-200 focus:border-red-500/60 focus:ring-1 focus:ring-red-500/20 font-mono transition-all placeholder-slate-600"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[8px] text-slate-500 uppercase tracking-wider block mb-1 font-mono">Take Profit</label>
-                            <input
-                              type="number"
-                              step="any"
-                              placeholder="None"
-                              value={tpInput}
-                              onChange={e => setTpInput(e.target.value)}
-                              className="w-full bg-[#05070e] border border-slate-850 px-3 py-1.5 text-xs rounded-xl outline-none text-slate-200 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 font-mono transition-all placeholder-slate-600"
-                            />
+                  return (
+                    <div className="bg-gradient-to-br from-[#0e122b]/95 via-[#0b0e24]/98 to-[#090d1f]/99 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-md hover:border-slate-700/50 transition-all duration-300">
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_2.5fr_2.5fr_1.3fr] gap-6 items-center">
+                        
+                        {/* Section 1: Header */}
+                        <div className="flex flex-col justify-center md:border-r border-slate-800/60 md:pr-4 h-full">
+                          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Active Position</span>
+                          <div className="mt-2">
+                            <span className={`px-2 py-0.5 text-[9px] font-black rounded border tracking-wider inline-block ${isShort
+                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/25 shadow-[0_0_10px_rgba(244,63,94,0.1)]'
+                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+                              }`}>
+                              {isShort ? 'SHORT' : 'LONG'}
+                            </span>
                           </div>
                         </div>
-                        <button
-                          type="submit"
-                          className="sm:w-auto w-full px-4 py-2 rounded-xl bg-gradient-to-r from-slate-900 to-slate-850 hover:from-slate-850 hover:to-slate-800 border border-slate-800 text-[8px] font-black uppercase tracking-wider text-slate-350 hover:text-white transition-all shadow-md shrink-0 h-[34px]"
-                        >
-                          Update
-                        </button>
-                      </form>
 
-                      {/* Section 4: Close Button */}
-                      <div className="flex justify-center w-full">
-                        <button
-                          onClick={handleClosePosition}
-                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-650 to-rose-600 hover:from-rose-600 hover:to-rose-550 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-500/15 transition-all active:scale-98"
-                        >
-                          Close Position
-                        </button>
+                        {/* Section 2: Stats & P&L */}
+                        <div className="grid grid-cols-3 gap-3 md:border-r border-slate-800/60 md:pr-4 h-full items-center">
+                          <div className="bg-[#070914]/80 border border-slate-900/65 p-2 rounded-xl text-center">
+                            <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5 font-mono">Quantity</span>
+                            <span className="text-xs font-black text-slate-100 font-mono">{qty.toLocaleString()}</span>
+                          </div>
+                          <div className="bg-[#070914]/80 border border-slate-900/65 p-2 rounded-xl text-center font-mono">
+                            <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5">Entry Price</span>
+                            <span className="text-xs font-black text-slate-100">${activePosition.avgCost.toFixed(2)}</span>
+                          </div>
+                          <div className={`border p-2 rounded-xl text-center font-mono transition-all ${pnlBgClass}`}>
+                            <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5">Unrealized P&L</span>
+                            <span className={`text-[10px] font-black block leading-tight ${pnlColorClass}`}>
+                              {pnlSign}${pnl.toFixed(2)}<br />
+                              <span className="text-[8px] opacity-90">{pnlSign}{pnlPercent.toFixed(2)}%</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Section 3: SL / TP Form */}
+                        <form onSubmit={handleSaveSlTp} className="flex flex-col sm:flex-row items-end gap-3 md:border-r border-slate-800/60 md:pr-4 h-full justify-center">
+                          <div className="flex-1 w-full grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[8px] text-slate-500 uppercase tracking-wider block mb-1 font-mono">Stop Loss</label>
+                              <input
+                                type="number"
+                                step="any"
+                                placeholder="None"
+                                value={slInput}
+                                onChange={e => setSlInput(e.target.value)}
+                                className="w-full bg-[#05070e] border border-slate-850 px-2 py-1.5 text-xs rounded-xl outline-none text-slate-200 focus:border-red-500/60 focus:ring-1 focus:ring-red-500/20 font-mono transition-all placeholder-slate-600"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[8px] text-slate-500 uppercase tracking-wider block mb-1 font-mono">Take Profit</label>
+                              <input
+                                type="number"
+                                step="any"
+                                placeholder="None"
+                                value={tpInput}
+                                onChange={e => setTpInput(e.target.value)}
+                                className="w-full bg-[#05070e] border border-slate-850 px-2 py-1.5 text-xs rounded-xl outline-none text-slate-200 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 font-mono transition-all placeholder-slate-600"
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="submit"
+                            className="sm:w-auto w-full px-4 py-2 rounded-xl bg-gradient-to-r from-slate-900 to-slate-850 hover:from-slate-850 hover:to-slate-800 border border-slate-800 text-[8px] font-black uppercase tracking-wider text-slate-350 hover:text-white transition-all shadow-md shrink-0 h-[32px]"
+                          >
+                            Update
+                          </button>
+                        </form>
+
+                        {/* Section 4: Close Button */}
+                        <div className="flex justify-center w-full">
+                          <button
+                            onClick={handleClosePosition}
+                            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-650 to-rose-600 hover:from-rose-600 hover:to-rose-550 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-500/15 transition-all active:scale-98"
+                          >
+                            Close Position
+                          </button>
+                        </div>
+
                       </div>
-
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Right Side Sidebar Analytics */}
