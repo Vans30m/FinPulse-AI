@@ -583,90 +583,101 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                 {error}
               </div>
             )}
-
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-              {/* Left Side: Chart Terminal Frame */}
-              <div className="bg-[#090d1a]/80 border border-slate-800/80 rounded-2xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-xl hover:border-slate-700/50 transition-all duration-300">
-                {/* Live Core Chart Port */}
-                <div className="flex-1 min-h-[400px] relative p-3 bg-gradient-to-b from-[#060812] to-[#0a0d24] rounded-t-2xl">
-                  <CandlestickChart
-                    symbol={symbol}
-                    timeframe={timeframe}
-                    onCompareChange={(compareSym) => setHasComparison(!!compareSym)}
-                    onMetaLoaded={setMeta}
-                  />
+              {/* Left Side: Chart Terminal Frame & Position Info */}
+              <div className="space-y-6 flex flex-col">
+                <div className="bg-[#090d1a]/80 border border-slate-800/80 rounded-2xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-xl hover:border-slate-700/50 transition-all duration-300">
+                  {/* Live Core Chart Port */}
+                  <div className="flex-1 min-h-[400px] relative p-3 bg-gradient-to-b from-[#060812] to-[#0a0d24] rounded-t-2xl">
+                    <CandlestickChart
+                      symbol={symbol}
+                      timeframe={timeframe}
+                      onCompareChange={(compareSym) => setHasComparison(!!compareSym)}
+                      onMetaLoaded={setMeta}
+                    />
+                  </div>
                 </div>
+
+                {activePosition && (
+                  <div className="bg-gradient-to-br from-[#0e122b]/90 to-[#090d1f]/95 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-md hover:border-slate-700/50 transition-all duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1.8fr_2.5fr_1.5fr] gap-6 items-center">
+                      
+                      {/* Section 1: Header */}
+                      <div className="flex flex-col justify-center md:border-r border-slate-800/60 md:pr-4 h-full">
+                        <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Active Position</span>
+                        <div className="mt-2">
+                          <span className={`px-2 py-0.5 text-[9px] font-black rounded border tracking-wider inline-block ${activePosition.shares < 0
+                            ? 'bg-rose-500/10 text-rose-400 border-rose-500/25 shadow-[0_0_10px_rgba(244,63,94,0.1)]'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+                            }`}>
+                            {activePosition.shares < 0 ? 'SHORT POSITION' : 'LONG POSITION'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Stats */}
+                      <div className="grid grid-cols-2 gap-3 md:border-r border-slate-800/60 md:pr-4 h-full items-center">
+                        <div className="bg-[#070914]/80 border border-slate-900/65 p-2 rounded-xl text-center">
+                          <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5 font-mono">Quantity</span>
+                          <span className="text-sm font-black text-slate-100 font-mono">{Math.abs(activePosition.shares).toLocaleString()}</span>
+                        </div>
+                        <div className="bg-[#070914]/80 border border-slate-900/65 p-2 rounded-xl text-center font-mono">
+                          <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5">Entry Price</span>
+                          <span className="text-sm font-black text-slate-100">${activePosition.avgCost.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* Section 3: SL / TP Form */}
+                      <form onSubmit={handleSaveSlTp} className="flex flex-col sm:flex-row items-end gap-3 md:border-r border-slate-800/60 md:pr-4 h-full justify-center">
+                        <div className="flex-1 w-full grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[8px] text-slate-500 uppercase tracking-wider block mb-1 font-mono">Stop Loss</label>
+                            <input
+                              type="number"
+                              step="any"
+                              placeholder="None"
+                              value={slInput}
+                              onChange={e => setSlInput(e.target.value)}
+                              className="w-full bg-[#05070e] border border-slate-850 px-3 py-1.5 text-xs rounded-xl outline-none text-slate-200 focus:border-red-500/60 focus:ring-1 focus:ring-red-500/20 font-mono transition-all placeholder-slate-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[8px] text-slate-500 uppercase tracking-wider block mb-1 font-mono">Take Profit</label>
+                            <input
+                              type="number"
+                              step="any"
+                              placeholder="None"
+                              value={tpInput}
+                              onChange={e => setTpInput(e.target.value)}
+                              className="w-full bg-[#05070e] border border-slate-850 px-3 py-1.5 text-xs rounded-xl outline-none text-slate-200 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 font-mono transition-all placeholder-slate-600"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="submit"
+                          className="sm:w-auto w-full px-4 py-2 rounded-xl bg-gradient-to-r from-slate-900 to-slate-850 hover:from-slate-850 hover:to-slate-800 border border-slate-800 text-[8px] font-black uppercase tracking-wider text-slate-350 hover:text-white transition-all shadow-md shrink-0 h-[34px]"
+                        >
+                          Update
+                        </button>
+                      </form>
+
+                      {/* Section 4: Close Button */}
+                      <div className="flex justify-center w-full">
+                        <button
+                          onClick={handleClosePosition}
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-650 to-rose-600 hover:from-rose-600 hover:to-rose-550 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-500/15 transition-all active:scale-98"
+                        >
+                          Close Position
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Right Side Sidebar Analytics */}
               <div className="space-y-4">
-                {/* Position Controls Panel */}
-                {activePosition && (
-                  <div className="bg-gradient-to-br from-[#0e122b]/90 to-[#090d1f]/95 border border-slate-800/80 rounded-2xl p-4 shadow-2xl backdrop-blur-md space-y-4 hover:border-slate-700/50 transition-all duration-300">
-                    <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
-                      <span className="text-xs font-bold text-slate-200 tracking-wide">Active Position</span>
-                      <span className={`px-2 py-0.5 text-[9px] font-black rounded border tracking-wider ${activePosition.shares < 0
-                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/25 shadow-[0_0_10px_rgba(244,63,94,0.1)]'
-                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
-                        }`}>
-                      {activePosition.shares < 0 ? 'SHORT' : 'LONG'}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                      <div className="bg-[#070914]/80 border border-slate-900/65 p-2.5 rounded-xl text-center">
-                        <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5">Quantity</span>
-                        <span className="text-sm font-black text-slate-100">{Math.abs(activePosition.shares).toLocaleString()}</span>
-                      </div>
-                      <div className="bg-[#070914]/80 border border-slate-900/65 p-2.5 rounded-xl text-center">
-                        <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5">Entry Price</span>
-                        <span className="text-sm font-black text-slate-100">${activePosition.avgCost.toFixed(2)}</span>
-                      </div>
-                    </div>
-
-                    {/* SL / TP Form */}
-                    <form onSubmit={handleSaveSlTp} className="space-y-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[8px] text-slate-550 uppercase tracking-wider block mb-1">Stop Loss</label>
-                          <input
-                            type="number"
-                            step="any"
-                            placeholder="None"
-                            value={slInput}
-                            onChange={e => setSlInput(e.target.value)}
-                            className="w-full bg-[#05070e] border border-slate-850 px-3 py-2 text-xs rounded-xl outline-none text-slate-200 focus:border-red-500/60 focus:ring-1 focus:ring-red-500/20 font-mono transition-all placeholder-slate-600"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[8px] text-slate-550 uppercase tracking-wider block mb-1">Take Profit</label>
-                          <input
-                            type="number"
-                            step="any"
-                            placeholder="None"
-                            value={tpInput}
-                            onChange={e => setTpInput(e.target.value)}
-                            className="w-full bg-[#05070e] border border-slate-850 px-3 py-2 text-xs rounded-xl outline-none text-slate-200 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 font-mono transition-all placeholder-slate-600"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        type="submit"
-                        className="w-full py-2 rounded-xl bg-gradient-to-r from-slate-900 to-slate-850 hover:from-slate-850 hover:to-slate-800 border border-slate-800 text-[9px] font-black uppercase tracking-wider text-slate-350 hover:text-white transition-all shadow-md active:scale-98"
-                      >
-                        Update SL / TP
-                      </button>
-                    </form>
-
-                    <button
-                      onClick={handleClosePosition}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-650 to-rose-600 hover:from-rose-600 hover:to-rose-550 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-500/15 transition-all active:scale-98"
-                    >
-                      Close Position
-                    </button>
-                  </div>
-                )}
-
                 {/* Tab Navigation Menu */}
                 <div className="bg-gradient-to-br from-[#090d1a]/90 to-[#0c102b]/95 border border-slate-800/80 rounded-2xl p-3 sm:p-4 shadow-2xl backdrop-blur-xl">
                   <div className="flex items-center justify-between border-b border-slate-800/60 pb-2 mb-3">
