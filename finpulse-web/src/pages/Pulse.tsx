@@ -12,7 +12,6 @@ import FearGreedIndex from "../features/dashboard/components/FearGreedIndex";
 import AIPickOfTheDay from "../features/dashboard/components/AIPickOfTheDay";
 import MarketScreeners from "../features/dashboard/components/MarketScreeners";
 import InvestmentCalculator from "../features/dashboard/components/InvestmentCalculator";
-import AlertsTimeline from "../features/dashboard/components/AlertsTimeline";
 
 export default function Pulse() {
   const queryClient = useQueryClient();
@@ -60,14 +59,9 @@ export default function Pulse() {
           <MarketScreeners />
         </div>
 
-        {/* Bottom Full-width Row: Lumpsum Calculator & Live News side-by-side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8 items-stretch">
-          <div className="h-auto lg:h-[600px]">
-            <InvestmentCalculator />
-          </div>
-          <div className="h-auto lg:h-[600px]">
-            <AlertsTimeline fullPage={true} />
-          </div>
+        {/* Bottom Full-width Row: Lumpsum Calculator */}
+        <div className="mt-8">
+          <InvestmentCalculator />
         </div>
       </div>
     </motion.div>

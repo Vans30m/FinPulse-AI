@@ -208,9 +208,9 @@ class CentralYahooClient {
         { symbol: 'EURUSD=X', name: 'EUR/USD', exchange: 'CCY', type: 'CURRENCY' },
         { symbol: 'GBPUSD=X', name: 'GBP/USD', exchange: 'CCY', type: 'CURRENCY' },
       ];
-      
-      const filtered = mockAssets.filter(asset => 
-        asset.symbol.toLowerCase().includes(query.toLowerCase()) || 
+
+      const filtered = mockAssets.filter(asset =>
+        asset.symbol.toLowerCase().includes(query.toLowerCase()) ||
         asset.name.toLowerCase().includes(query.toLowerCase())
       ).map(item => ({
         symbol: item.symbol,
@@ -219,7 +219,7 @@ class CentralYahooClient {
         exchDisp: item.exchange,
         quoteType: item.type,
       }));
-      
+
       return { quotes: filtered, news: [] };
     }
     return null;

@@ -398,20 +398,7 @@ export default function PerformanceComparison() {
                       <span className="text-xs font-black uppercase tracking-wider text-slate-400">Cumulative Return Comparison</span>
                     </div>
 
-                    <div className="flex flex-row overflow-x-auto scrollbar-none flex-nowrap bg-slate-100 dark:bg-[#050711] p-1 rounded-xl border border-slate-200 dark:border-slate-900 gap-1 w-full sm:w-auto">
-                      {["1D", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "MAX"].map((tf) => (
-                        <button
-                          key={tf}
-                          onClick={() => setBenchmarkTimeframe(tf)}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${benchmarkTimeframe === tf
-                              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                              : "text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                            }`}
-                        >
-                          {tf}
-                        </button>
-                      ))}
-                    </div>
+
                   </div>
 
                   {/* Benchmarks Selector Row */}

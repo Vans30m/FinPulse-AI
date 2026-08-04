@@ -1,6 +1,5 @@
 import { Newspaper, Calendar, Loader2 } from "lucide-react";
 import { useEffect, useState, memo, useMemo } from "react";
-import AlertsTimeline from "../features/dashboard/components/AlertsTimeline";
 import API_BASE_URL from "../config/api";
 import { pageCache } from "../utils/cache";
 import PageLoader from "../components/ui/PageLoader";
@@ -192,13 +191,8 @@ export default function News() {
       </div>
 
       {/* Feed & Calendar Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
-        <div className="lg:col-span-2 h-full">
-          <AlertsTimeline fullPage />
-        </div>
-        <div className="lg:col-span-1 h-fit">
-          <MemoizedCustomEconomicCalendar />
-        </div>
+      <div className="max-w-4xl mx-auto">
+        <MemoizedCustomEconomicCalendar />
       </div>
 
     </div>

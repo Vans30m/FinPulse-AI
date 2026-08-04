@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Header from './components/layout/header';
 import Footer from './components/layout/footer';
-import AlertsTimeline from './features/dashboard/components/AlertsTimeline';
 import InvestmentCalculator from './features/dashboard/components/InvestmentCalculator';
 import MarketScreeners from './features/dashboard/components/MarketScreeners';
 import Watchlist from './features/dashboard/components/Watchlist';
