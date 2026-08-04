@@ -723,6 +723,9 @@ const CHART_CACHE_TTL_MS = 10 * 60 * 1000; // Cache chart data for 10 minutes (r
 const SEARCH_CACHE = new Map<string, { data: any; timestamp: number }>();
 const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000; // Cache searches for 5 minutes
 
+const SUMMARY_CACHE = new Map<string, { data: any; timestamp: number }>();
+const SUMMARY_CACHE_TTL_MS = 10 * 60 * 1000; // Cache summaries for 10 minutes
+
 const inflightQuotePromises = new Map<string, Promise<any[]>>();
 
 function getCachedQuote(symbol: string): any | null {
@@ -913,6 +916,56 @@ const originalQuote = yahooFinance.quote;
     return finalResults;
   } else {
     return finalResults[0];
+  }
+};
+
+// Monkey-patch yahooFinance.quoteSummary to use resilient axios with session cookies/crumbs on failure
+const originalQuoteSummary = yahooFinance.quoteSummary;
+(yahooFinance as any).quoteSummary = async function (symbol: string, options?: any) {
+  const modules = Array.isArray(options?.modules) ? [...options.modules].sort().join(',') : (options?.modules || '');
+  const cacheKey = `${symbol.toUpperCase()}_SUMMARY_${modules}`;
+  const cached = SUMMARY_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < SUMMARY_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  let result: any;
+  if (!isYahooRateLimited()) {
+    try {
+      result = await originalQuoteSummary.call(this, symbol, options);
+      SUMMARY_CACHE.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401') || msg.includes('crumb')) {
+        setYahooRateLimited();
+      }
+    }
+  }
+
+  try {
+    const params: any = {
+      modules: Array.isArray(options?.modules) ? options.modules.join(',') : options?.modules
+    };
+    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}`;
+    const response = await axiosGetResilient(url, {
+      params,
+      headers: {
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'https://finance.yahoo.com/',
+        'Origin': 'https://finance.yahoo.com'
+      }
+    }, 3, true); // Use cookies and crumbs
+
+    const json = response.data?.quoteSummary?.result?.[0];
+    if (!json) throw new Error("No summary data returned from Yahoo fallback");
+
+    SUMMARY_CACHE.set(cacheKey, { data: json, timestamp: Date.now() });
+    return json;
+  } catch (fallbackErr: any) {
+    console.warn(`[Yahoo Service] Resilient quoteSummary fallback failed for ${symbol}:`, fallbackErr.message);
+    throw fallbackErr;
   }
 };
 
