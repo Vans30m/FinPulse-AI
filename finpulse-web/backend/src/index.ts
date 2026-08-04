@@ -20,7 +20,8 @@ import {
   fundamentalsRoutes,
   financialHealthRoutes,
   screenerRoutes,
-  marketExplanationRoutes
+  marketExplanationRoutes,
+  globalMarketsRoutes
 } from "./routes/markets.js";
 import {
   aiScoreRoutes,
@@ -191,6 +192,7 @@ app.use("/api/company-news", companyNewsRoutes);
 app.use("/api/ai-score", aiScoreRoutes);
 app.use("/api/ai", marketBriefRoutes);
 app.use("/api/screener", screenerRoutes);
+app.use("/api/global-markets", globalMarketsRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/ai-chat", aiHistoryRouter);
 app.use("/api/profile", profileRoutes);

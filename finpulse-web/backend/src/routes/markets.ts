@@ -3,7 +3,8 @@ import axios from "axios";
 import {
   getTechnicalIndicators,
   getFundamentals,
-  getFinancialHealth
+  getFinancialHealth,
+  getMarketHistory
 } from "../services/yahooService.js";
 import { callGeminiWithOllamaFallback } from "./ai.js";
 
@@ -116,11 +117,26 @@ marketExplanationRoutes.get("/", async (req, res) => {
     });
   }
 });
+// 6. globalMarketsRoutes handles /api/global-markets
+const globalMarketsRoutes = express.Router();
+globalMarketsRoutes.get("/history/:symbol", async (req, res) => {
+  try {
+    const history = await getMarketHistory(
+      req.params.symbol,
+      String(req.query.range || "1mo")
+    );
+    res.json(history);
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch history" });
+  }
+});
 
 export {
   technicalRoutes,
   fundamentalsRoutes,
   financialHealthRoutes,
   screenerRoutes,
-  marketExplanationRoutes
+  marketExplanationRoutes,
+  globalMarketsRoutes
 };
