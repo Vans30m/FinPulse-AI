@@ -13,7 +13,8 @@ import {
   Calendar,
   Users,
   Scissors,
-  DollarSign
+  DollarSign,
+  Globe
 } from "lucide-react";
 import {
   getUnifiedAssetDetails,
@@ -577,7 +578,7 @@ export default function AssetDetails() {
       </div>
 
       {/* Header Info */}
-      <div className="bg-[#0a0d1d]/60 border border-slate-850 p-6 rounded-2xl backdrop-blur-md">
+      <div className="bg-gradient-to-r from-[#0d122e]/80 via-[#0a0d1d]/85 to-[#080b18]/90 border border-slate-800/80 p-6 rounded-2xl shadow-xl backdrop-blur-md">
         {meta ? (
           <ChartHeader
             name={meta.name}
@@ -596,9 +597,9 @@ export default function AssetDetails() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         {/* Left Side: Chart Terminal Frame */}
-        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl flex flex-col overflow-hidden shadow-inner">
+        <div className="bg-[#090d1a]/80 border border-slate-800/80 rounded-2xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-xl hover:border-slate-700/50 transition-all duration-300">
           {/* Live Core Chart Port */}
-          <div className="flex-1 min-h-[380px] relative p-2 bg-[#060812]">
+          <div className="flex-1 min-h-[400px] relative p-3 bg-gradient-to-b from-[#060812] to-[#0a0d24] rounded-t-2xl">
             <CandlestickChart
               symbol={symbol}
               timeframe={timeframe}
@@ -611,8 +612,8 @@ export default function AssetDetails() {
         {/* Right Side Sidebar Analytics */}
         <div className="space-y-4">
           {/* Tab Navigation Menu */}
-          <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 shadow-lg">
-            <div className="flex items-center justify-between border-b border-slate-900/60 pb-2 mb-3">
+          <div className="bg-gradient-to-br from-[#090d1a]/90 to-[#0c102b]/95 border border-slate-800/80 rounded-2xl p-4 shadow-2xl backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-slate-800/60 pb-2 mb-3">
               <span className="text-xs font-bold text-slate-350 tracking-wide">Navigation Control</span>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -625,9 +626,9 @@ export default function AssetDetails() {
                       tabContentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }, 80);
                   }}
-                  className={`w-full px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all flex items-center gap-2.5 ${activeTab === tab.id
-                    ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner"
-                    : "text-slate-400 hover:text-white hover:bg-slate-900/40"
+                  className={`w-full px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all duration-200 flex items-center gap-2.5 ${activeTab === tab.id
+                    ? "bg-gradient-to-r from-blue-600/15 to-indigo-600/10 text-blue-400 border border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.1)] border-l-4 border-l-blue-500"
+                    : "text-slate-400 hover:text-white hover:bg-slate-900/40 border border-transparent"
                     }`}
                 >
                   <tab.icon size={14} />
@@ -654,124 +655,162 @@ export default function AssetDetails() {
             {/* OVERVIEW TAB */}
             {activeTab === "overview" && data && (
               <div className="space-y-6">
-                <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md">
-                  <h3 className="text-sm font-black uppercase text-slate-300 border-b border-slate-900 pb-3 mb-4">
+                <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl">
+                  <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-3 mb-5">
                     Company Profile
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-450">
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Sector</span>
-                      <span className="text-sm font-bold text-slate-300 mt-1 block">{data.profile.sector}</span>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Sector */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
+                        <Compass className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Sector</span>
+                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.sector}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Industry</span>
-                      <span className="text-sm font-bold text-slate-300 mt-1 block">{data.profile.industry}</span>
+                    {/* Industry */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/15">
+                        <Layers className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Industry</span>
+                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.industry}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Country</span>
-                      <span className="text-sm font-bold text-slate-300 mt-1 block">{data.profile.country}</span>
+                    {/* Country */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+                        <Globe className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Country</span>
+                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.country}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Employees</span>
-                      <span className="text-sm font-bold text-slate-300 mt-1 block">{formatVal(data.profile.employees)}</span>
+                    {/* Employees */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/15">
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Employees</span>
+                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{formatVal(data.profile.employees)}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block">CEO</span>
-                      <span className="text-sm font-bold text-slate-300 mt-1 block">{data.profile.ceo}</span>
+                    {/* CEO */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/15">
+                        <Briefcase className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">CEO</span>
+                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.ceo}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Website</span>
-                      {data.profile.website !== "Not Available" ? (
-                        <a
-                          href={data.profile.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1 mt-1"
-                        >
-                          <span>Visit Website</span>
-                          <ExternalLink size={12} />
-                        </a>
-                      ) : (
-                        <span className="text-sm font-bold text-slate-300 mt-1 block">N/A</span>
-                      )}
+                    {/* Website */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">
+                        <ExternalLink className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Website</span>
+                        {data.profile.website !== "Not Available" && data.profile.website !== "N/A" ? (
+                          <a
+                            href={data.profile.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1 mt-0.5"
+                          >
+                            <span>Visit Website</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        ) : (
+                          <span className="text-sm font-bold text-slate-300 mt-0.5 block">N/A</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-450 leading-relaxed mt-6 pt-6 border-t border-slate-900/60">
+
+                  <p className="text-xs text-slate-400 leading-relaxed mt-6 pt-6 border-t border-slate-800/60 pl-4 border-l-2 border-l-slate-700/40">
                     {data.profile.description}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Statistics Grid */}
-                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4">
-                    <h4 className="text-xs font-black uppercase text-slate-300 border-b border-slate-900 pb-2">
+                  <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                    <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-2.5 mb-2">
                       Key Ratios & Statistics
                     </h4>
-                    <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Market Cap</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.statistics.marketCap, true)}</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><TrendingUp size={12} className="text-blue-450" /> Market Cap</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.marketCap, true)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">EV</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.statistics.enterpriseValue, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Layers size={12} className="text-indigo-405" /> EV</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.enterpriseValue, true)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Shares Outstanding</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.statistics.sharesOutstanding)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Users size={12} className="text-purple-400" /> Shares Out.</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.sharesOutstanding)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">PE Ratio</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.statistics.pe)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-450" /> PE Ratio</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.pe)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Forward PE</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.statistics.forwardPe)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-sky-400" /> Forward PE</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.forwardPe)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">PEG Ratio</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.statistics.peg)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-teal-400" /> PEG Ratio</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.peg)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Beta</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.statistics.beta)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-400" /> Beta</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.beta)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Dividend Yield</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.statistics.dividendYield * 100, false, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-yellow-500" /> Div. Yield</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.dividendYield * 100, false, true)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Financial Health Grid */}
-                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4">
-                    <h4 className="text-xs font-black uppercase text-slate-300 border-b border-slate-900 pb-2">
+                  <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                    <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-2.5 mb-2">
                       Financial Condition
                     </h4>
-                    <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Total Cash</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.cash, true)}</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-400" /> Total Cash</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.cash, true)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Total Debt</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.debt, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Briefcase size={12} className="text-rose-400" /> Total Debt</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.debt, true)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Revenue</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.revenue, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><TrendingUp size={12} className="text-blue-400" /> Revenue</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.revenue, true)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">EBITDA</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.ebitda, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-indigo-400" /> EBITDA</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.ebitda, true)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Operating Margin</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.operatingMargin * 100, false, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-yellow-500" /> Oper. Margin</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.operatingMargin * 100, false, true)}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-slate-900/40">
-                        <span className="text-slate-500">Profit Margin</span>
-                        <span className="text-slate-300 font-bold">{formatVal(data.financialHealth.profitMargin * 100, false, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-400" /> Prof. Margin</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.profitMargin * 100, false, true)}</span>
                       </div>
                     </div>
                   </div>
