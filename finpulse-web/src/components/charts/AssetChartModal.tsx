@@ -635,6 +635,10 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
               const isShort = activePosition.shares < 0;
               const qty = Math.abs(activePosition.shares);
               
+              // Determine dynamic currency symbol based on asset properties
+              const currencyCode = meta?.currency || data?.quote?.currency || (symbol.toUpperCase().endsWith('.NS') || symbol.toUpperCase().endsWith('.BO') ? 'INR' : 'USD');
+              const curSym = currencyCode.toUpperCase() === 'INR' ? '₹' : '$';
+              
               // Calculate Unrealized P&L
               const pnl = isShort 
                 ? (activePosition.avgCost - currentPrice) * qty
@@ -676,12 +680,12 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       </div>
                       <div className="bg-[#070914]/80 border border-slate-900/65 p-2 rounded-xl text-center font-mono">
                         <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5">Entry Price</span>
-                        <span className="text-xs font-black text-slate-100">${activePosition.avgCost.toFixed(2)}</span>
+                        <span className="text-xs font-black text-slate-100">{curSym}{activePosition.avgCost.toFixed(2)}</span>
                       </div>
                       <div className={`border p-2 rounded-xl text-center font-mono transition-all ${pnlBgClass}`}>
                         <span className="text-[8px] text-slate-500 uppercase tracking-wider block mb-0.5">Unrealized P&L</span>
                         <span className={`text-[10px] font-black block leading-tight ${pnlColorClass}`}>
-                          {pnlSign}${pnl.toFixed(2)}<br />
+                          {pnlSign}{curSym}{pnl.toFixed(2)}<br />
                           <span className="text-[8px] opacity-90">{pnlSign}{pnlPercent.toFixed(2)}%</span>
                         </span>
                       </div>

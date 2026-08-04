@@ -42,6 +42,21 @@ function formatProxyUrl(rawUrl: string): string {
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     url = `http://${url}`;
   }
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname;
+    // Validate host: must be 'localhost', an IP (contains numbers/colons), or contain at least one dot
+    const hasDot = host.includes('.');
+    const isLocal = host === 'localhost' || host === '127.0.0.1';
+    if (!hasDot && !isLocal) {
+      console.warn(`[Yahoo Service] Ignoring invalid proxy host: ${host}`);
+      return '';
+    }
+  } catch {
+    return '';
+  }
+
   return url;
 }
 
