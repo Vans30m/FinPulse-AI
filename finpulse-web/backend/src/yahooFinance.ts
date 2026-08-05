@@ -116,7 +116,7 @@ interface ProxyObject {
 }
 
 const proxyList: ProxyObject[] = proxyUrls.map(url => ({
-  agent: new HttpsProxyAgent<string>(url),
+  agent: new HttpsProxyAgent<string>(url, { rejectUnauthorized: false }),
   cooldownUntil: 0,
   url
 }));
@@ -439,6 +439,10 @@ function yahooToTwelveDataSymbol(symbol: string): string {
       return `${pair.substring(0, 3)}/${pair.substring(3)}`;
     }
   }
+  // Commodities: GC=F -> XAU/USD, etc.
+  if (s === 'GC=F') return 'XAU/USD';
+  if (s === 'SI=F') return 'XAG/USD';
+  if (s === 'CL=F') return 'WTI/USD';
   return s;
 }
 
@@ -715,10 +719,10 @@ function setTwelveDataRateLimited() {
 
 // Memory cache to prevent parallel/frequent requests from spamming Yahoo Finance APIs (triggers 429)
 const QUOTE_CACHE = new Map<string, { data: any; timestamp: number }>();
-const QUOTE_CACHE_TTL_MS = 5 * 60 * 1000; // Cache quotes for 5 minutes (reduced Yahoo call frequency)
+const QUOTE_CACHE_TTL_MS = 60 * 1000; // Cache quotes for 60 seconds
 
 const CHART_CACHE = new Map<string, { data: any; timestamp: number }>();
-const CHART_CACHE_TTL_MS = 10 * 60 * 1000; // Cache chart data for 10 minutes (reduced Yahoo call frequency)
+const CHART_CACHE_TTL_MS = 60 * 1000; // Cache chart data for 60 seconds
 
 const SEARCH_CACHE = new Map<string, { data: any; timestamp: number }>();
 const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000; // Cache searches for 5 minutes
@@ -1179,9 +1183,12 @@ function getFallbackQuote(symbol: string): any {
   }
 
   const hash = sym.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const basePrice = (hash % 1000) + 50.5;
-  const change = ((hash % 100) / 10) - 5;
-  const changePercent = (change / basePrice) * 100;
+  let basePrice = ((hash % 1000) / 10) + 50.5;
+  if (sym === 'GC=F') {
+    basePrice = 2438.39;
+  }
+  const change = ((hash % 100) / 100) - 0.5;
+  const changePercent = (change / (basePrice - change)) * 100;
 
   let cleanName = sym.split('.')[0];
   if (sym.endsWith('.NS')) {

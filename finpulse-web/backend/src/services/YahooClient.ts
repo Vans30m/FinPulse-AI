@@ -256,104 +256,23 @@ class CentralYahooClient {
     ]);
 
     const results: any[] = [];
-    const finnhubSymbolsToFetch: string[] = [];
-    const cryptoForexToFetch: string[] = [];
-    const yahooSymbols: string[] = [];
-
-    for (const symbol of symbolList) {
-      const symUpper = symbol.toUpperCase();
-      if (usIndices.has(symUpper) || isUsStock(symUpper)) {
-        finnhubSymbolsToFetch.push(symUpper);
-      } else if (cryptos.has(symUpper) || forexPairs.has(symUpper)) {
-        cryptoForexToFetch.push(symUpper);
-      } else {
-        yahooSymbols.push(symbol);
+    const yahooSymbols = [...symbolList];
+    const sortedKey = [...yahooSymbols].map(s => s.toUpperCase()).sort().join(',');
+    const cacheKey = `quote_${sortedKey}`;
+    const yahooResults = await this.executeQuery(cacheKey, 60, async () => {
+      const res = await yahooFinance.quote(yahooSymbols, options);
+      const list = Array.isArray(res) ? res : [res];
+      const isInvalid = list.every(q => !q || q.regularMarketPrice === 0 || q.regularMarketPrice === undefined || q.regularMarketPrice === null);
+      if (isInvalid) {
+        throw new Error("Yahoo Finance returned invalid/empty quotes due to rate limit/block");
       }
-    }
+      return res;
+    });
 
-    if (cryptoForexToFetch.length > 0) {
-      try {
-        const { fetchTwelveDataQuotes } = await import("./twelveDataService.js");
-        const sortedKey = [...cryptoForexToFetch].map(s => s.toUpperCase()).sort().join(',');
-        const cacheKey = `twelvedata_${sortedKey}`;
-        const quotes = await this.executeQuery(cacheKey, 300, () => fetchTwelveDataQuotes(cryptoForexToFetch));
-        for (const sym of cryptoForexToFetch) {
-          const q = quotes[sym];
-          if (q) {
-            results.push({
-              symbol: sym,
-              ...q,
-              fiftyTwoWeekHigh: q.regularMarketDayHigh,
-              fiftyTwoWeekLow: q.regularMarketDayLow,
-              shortName: sym,
-              longName: sym
-            });
-          } else {
-            yahooSymbols.push(sym);
-          }
-        }
-      } catch (e) {
-        console.warn("[YahooClient] Twelve Data fetch failed, falling back to Yahoo:", e);
-        yahooSymbols.push(...cryptoForexToFetch);
-      }
-    }
-
-    if (finnhubSymbolsToFetch.length > 0) {
-      try {
-        const { getFinnhubQuote } = await import("./finnhubService.js");
-        const { getPolygonQuote } = await import("./polygonService.js");
-        for (const sym of finnhubSymbolsToFetch) {
-          let q = await getFinnhubQuote(sym);
-          if (!q) {
-            // Try Polygon as a secondary backup!
-            q = await getPolygonQuote(sym);
-          }
-
-          if (q) {
-            results.push({
-              symbol: sym,
-              regularMarketPrice: q.price,
-              regularMarketChange: q.change,
-              regularMarketChangePercent: q.changePercent,
-              regularMarketVolume: 0,
-              regularMarketDayHigh: q.dayHigh,
-              regularMarketDayLow: q.dayLow,
-              regularMarketOpen: q.open,
-              regularMarketPreviousClose: q.previousClose,
-              fiftyTwoWeekHigh: q.dayHigh,
-              fiftyTwoWeekLow: q.dayLow,
-              currency: "USD",
-              exchange: "Finnhub/Polygon",
-              shortName: sym,
-              longName: sym
-            });
-          } else {
-            yahooSymbols.push(sym);
-          }
-        }
-      } catch (e) {
-        console.warn("[YahooClient] Finnhub/Polygon fetch failed, falling back to Yahoo:", e);
-        yahooSymbols.push(...finnhubSymbolsToFetch);
-      }
-    }
-
-    if (yahooSymbols.length > 0) {
-      const sortedKey = [...yahooSymbols].map(s => s.toUpperCase()).sort().join(',');
-      const cacheKey = `quote_${sortedKey}`;
-      const yahooResults = await this.executeQuery(cacheKey, 120, async () => {
-        const res = await yahooFinance.quote(yahooSymbols, options);
-        const list = Array.isArray(res) ? res : [res];
-        const isInvalid = list.every(q => !q || q.regularMarketPrice === 0 || q.regularMarketPrice === undefined || q.regularMarketPrice === null);
-        if (isInvalid) {
-          throw new Error("Yahoo Finance returned invalid/empty quotes due to rate limit/block");
-        }
-        return res;
-      });
-      if (Array.isArray(yahooResults)) {
-        results.push(...yahooResults);
-      } else if (yahooResults) {
-        results.push(yahooResults);
-      }
+    if (Array.isArray(yahooResults)) {
+      results.push(...yahooResults);
+    } else if (yahooResults) {
+      results.push(yahooResults);
     }
 
     const resultMap = new Map(results.filter(r => r?.symbol).map(r => [r.symbol.toUpperCase(), r]));
@@ -369,12 +288,12 @@ class CentralYahooClient {
 
   async chart(symbol: string, options: any): Promise<any> {
     const cacheKey = `chart_${symbol.toUpperCase()}_${options.range || ''}_${options.interval || ''}`;
-    return this.executeQuery(cacheKey, 180, () => yahooFinance.chart(symbol, options));
+    return this.executeQuery(cacheKey, 60, () => yahooFinance.chart(symbol, options));
   }
 
   async historical(symbol: string, options: any): Promise<any> {
     const cacheKey = `historical_${symbol.toUpperCase()}_${options.range || ''}_${options.interval || ''}`;
-    return this.executeQuery(cacheKey, 180, () => yahooFinance.historical(symbol, options));
+    return this.executeQuery(cacheKey, 60, () => yahooFinance.historical(symbol, options));
   }
 
   async quoteSummary(symbol: string, options: any): Promise<any> {

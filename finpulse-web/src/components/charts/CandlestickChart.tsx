@@ -1002,37 +1002,37 @@ export default function CandlestickChart({
 
     const interval = setInterval(() => {
       const changePercent = (Math.random() - 0.5) * 0.0004; // small fluctuation
-      
+
       setCandles(prev => {
         if (!prev.length) return prev;
         const next = [...prev];
         const lastIndex = next.length - 1;
         const lastCandle = { ...next[lastIndex] };
-        
+
         const oldClose = lastCandle.close;
         const newClose = Number((oldClose * (1 + changePercent)).toFixed(2));
-        
+
         lastCandle.close = newClose;
         if (newClose > lastCandle.high) lastCandle.high = newClose;
         if (newClose < lastCandle.low) lastCandle.low = newClose;
-        
+
         if (candleSeriesRef.current) {
           candleSeriesRef.current.update(lastCandle);
         }
-        
+
         setMeta(prevMeta => {
           const delta = newClose - (prevMeta.price || oldClose);
           const newPrice = newClose;
           const newChange = prevMeta.change + delta;
           const newChangePercent = (newChange / (newPrice - newChange)) * 100;
-          
+
           const updatedMeta = {
             ...prevMeta,
             price: newPrice,
             change: newChange,
             changePercent: newChangePercent
           };
-          
+
           if (onMetaLoaded) {
             onMetaLoaded(updatedMeta);
           }

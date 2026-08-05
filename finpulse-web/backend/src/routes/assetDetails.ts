@@ -7,8 +7,8 @@ import { getFundamentals } from "../services/companyService.js";
 const router = express.Router();
 
 // Caches with custom TTLs
-const quoteCache = new NodeCache({ stdTTL: 30 });
-const chartCache = new NodeCache({ stdTTL: 120 });
+const quoteCache = new NodeCache({ stdTTL: 60 });
+const chartCache = new NodeCache({ stdTTL: 60 });
 
 const newsCache = new NodeCache({ stdTTL: 600 }); // 10 mins
 const analystCache = new NodeCache({ stdTTL: 21600 }); // 6 hours
@@ -70,7 +70,7 @@ function calculateTechnicals(quotes: any[]) {
     if (data.length < 26) return null;
     const ema12List: number[] = [];
     const ema26List: number[] = [];
-    
+
     // Compute EMA lists
     let ema12 = getSMA(data.slice(0, 12), 12) || data[0];
     let ema26 = getSMA(data.slice(0, 26), 26) || data[0];
@@ -131,11 +131,11 @@ function calculatePerformance(quotes: any[], currentPrice: number, previousClose
   const findReturn = (daysAgo: number) => {
     const targetDate = new Date();
     targetDate.setDate(now.getDate() - daysAgo);
-    
+
     // Find quote closest to targetDate
     let closestQuote = quotes[0];
     let minDiff = Math.abs(new Date(quotes[0].date).getTime() - targetDate.getTime());
-    
+
     for (let i = 1; i < quotes.length; i++) {
       if (!quotes[i].date) continue;
       const diff = Math.abs(new Date(quotes[i].date).getTime() - targetDate.getTime());
@@ -144,7 +144,7 @@ function calculatePerformance(quotes: any[], currentPrice: number, previousClose
         closestQuote = quotes[i];
       }
     }
-    
+
     if (closestQuote && closestQuote.close) {
       return ((latestPrice - closestQuote.close) / closestQuote.close) * 100;
     }
@@ -155,7 +155,7 @@ function calculatePerformance(quotes: any[], currentPrice: number, previousClose
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     let closestQuote = quotes[0];
     let minDiff = Math.abs(new Date(quotes[0].date).getTime() - startOfYear.getTime());
-    
+
     for (let i = 1; i < quotes.length; i++) {
       if (!quotes[i].date) continue;
       const diff = Math.abs(new Date(quotes[i].date).getTime() - startOfYear.getTime());
@@ -164,7 +164,7 @@ function calculatePerformance(quotes: any[], currentPrice: number, previousClose
         closestQuote = quotes[i];
       }
     }
-    
+
     if (closestQuote && closestQuote.close) {
       return ((latestPrice - closestQuote.close) / closestQuote.close) * 100;
     }
@@ -181,7 +181,7 @@ function calculatePerformance(quotes: any[], currentPrice: number, previousClose
   const returnYTD = findReturnYTD();
   const return1Y = findReturn(365);
   const return5Y = findReturn(365 * 5);
-  
+
   // All Time (using oldest quote in 5y chart)
   const oldestClose = quotes[0]?.close;
   const returnAllTime = oldestClose ? ((latestPrice - oldestClose) / oldestClose) * 100 : return5Y;
@@ -232,7 +232,7 @@ router.get("/:symbol", async (req, res) => {
     if (!quoteData.quote || !quoteData.summary || Object.keys(quoteData.summary).length === 0) {
       console.log(`[Asset Details] Live quote and summary failed or empty for ${symbol}. Injecting mock base to allow full payload execution...`);
       const fallbackData = generateLocalMockData(symbol);
-      
+
       if (!quoteData.quote || Object.keys(quoteData.quote).length === 0) {
         quoteData.quote = {
           currency: fallbackData?.currency || "USD",
@@ -253,7 +253,7 @@ router.get("/:symbol", async (req, res) => {
           epsTrailingTwelveMonths: fallbackData?.eps || 4
         };
       }
-      
+
       if (!quoteData.summary || Object.keys(quoteData.summary).length === 0) {
         const estShares = (fallbackData?.marketCap || 500000000) / (fallbackData?.price || 100);
         quoteData.summary = {
@@ -347,13 +347,13 @@ router.get("/:symbol", async (req, res) => {
     let newsData: any = newsCache.get(symbol);
     if (!newsData) {
       const cleanBaseSymbol = symbol.split('.')[0];
-      
+
       // Perform a single news search query on the symbol to protect Yahoo Finance rate limit
       const searchSymbol = await YahooClient.search(symbol).catch(() => null);
-      
+
       const newsList: any[] = [];
       const seenLinks = new Set<string>();
-      
+
       const addNews = (newsArray: any[]) => {
         if (!newsArray) return;
         for (const item of newsArray) {
@@ -363,9 +363,9 @@ router.get("/:symbol", async (req, res) => {
           }
         }
       };
-      
+
       addNews(searchSymbol?.news || []);
-      
+
       // Sort by publish time descending (latest news first)
       const getTimestamp = (item: any) => {
         if (!item.providerPublishTime) return 0;
@@ -377,9 +377,9 @@ router.get("/:symbol", async (req, res) => {
         const parsed = new Date(val).getTime();
         return isNaN(parsed) ? 0 : parsed;
       };
-      
+
       newsList.sort((a, b) => getTimestamp(b) - getTimestamp(a));
-      
+
       if (newsList.length === 0) {
         const cleanSymbol = symbol.toUpperCase().split('.')[0];
         newsList.push(
@@ -406,7 +406,7 @@ router.get("/:symbol", async (req, res) => {
           }
         );
       }
-      
+
       newsData = newsList;
       newsCache.set(symbol, newsData);
     }
@@ -444,12 +444,17 @@ router.get("/:symbol", async (req, res) => {
     // Calculate blended sentiment
     const sentiment = await calculateBlendedSentiment(symbol, chart5yData, financialData);
 
+    // Crypto, Forex, and Commodities trade 24/7 or 24/5 — show them open
+    const symUpper = symbol.toUpperCase();
+    const is24x7 = symUpper.endsWith('-USD') || symUpper.endsWith('=X') || symUpper.endsWith('=F');
+    const resolvedMarketState = is24x7 ? 'REGULAR' : (quote.marketState || 'CLOSED');
+
     res.json({
       symbol,
       quote: {
         currency: quote.currency || "USD",
         exchangeName: quote.exchangeName || "GLOBAL",
-        marketState: quote.marketState || "CLOSED"
+        marketState: resolvedMarketState
       },
       profile: {
         name: quote.longName || quote.shortName || quote.displayName || symbol,
@@ -493,8 +498,8 @@ router.get("/:symbol", async (req, res) => {
         forwardEps: defaultKeyStats.forwardEps || "Not Available",
         bookValue: defaultKeyStats.bookValue || "Not Available",
         performance: calculatePerformance(
-          chart5yData, 
-          quote.regularMarketPrice || resolvedPriceFallback(quote, summaryDetail, chart5yData), 
+          chart5yData,
+          quote.regularMarketPrice || resolvedPriceFallback(quote, summaryDetail, chart5yData),
           summaryDetail.previousClose || quote.regularMarketPreviousClose
         )
       },
@@ -589,8 +594,8 @@ async function calculateBlendedSentiment(symbol: string, quotes: any[], financia
     const return5y = price5y ? (currentPrice - price5y) / price5y : 0;
 
     const closes = quotes.map(q => q.close).filter((c): c is number => typeof c === 'number');
-    const sma50 = closes.length >= 50 ? closes.slice(-50).reduce((a,b) => a+b, 0) / 50 : currentPrice;
-    const sma200 = closes.length >= 200 ? closes.slice(-200).reduce((a,b) => a+b, 0) / 200 : currentPrice;
+    const sma50 = closes.length >= 50 ? closes.slice(-50).reduce((a, b) => a + b, 0) / 50 : currentPrice;
+    const sma200 = closes.length >= 200 ? closes.slice(-200).reduce((a, b) => a + b, 0) / 200 : currentPrice;
 
     let scoreModifiers = 0;
 
@@ -653,34 +658,38 @@ async function calculateBlendedSentiment(symbol: string, quotes: any[], financia
 }
 
 function resolvedPriceFallback(quote: any, summaryDetail: any, chartData: any[]) {
-  if (quote?.regularMarketPrice) return quote.regularMarketPrice;
-  if (summaryDetail?.regularMarketPrice) return summaryDetail.regularMarketPrice;
   if (chartData && chartData.length > 0) {
     const last = chartData[chartData.length - 1];
-    return last?.close || 0;
+    if (last && last.close) return last.close;
   }
+  if (quote?.regularMarketPrice) return quote.regularMarketPrice;
+  if (summaryDetail?.regularMarketPrice) return summaryDetail.regularMarketPrice;
   return 0;
 }
 
 function generateLocalMockData(symbol: string) {
   const hash = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  let mockPrice = (hash % 150) + 50.5;
+  let mockPrice = ((hash % 1000) / 10) + 50.5;
   if (symbol === 'USDINR=X') {
     mockPrice = 83.45;
   } else if (symbol === 'USDEUR=X') {
     mockPrice = 0.91;
   } else if (symbol === 'USDGBP=X') {
     mockPrice = 0.78;
+  } else if (symbol === 'GC=F') {
+    mockPrice = 2438.39; // Corrected Gold Spot Price
   }
+  const change = ((hash % 100) / 100) - 0.5;
+  const changePercent = (change / (mockPrice - change)) * 100;
   return {
     name: symbol.split('.')[0] || symbol,
     price: mockPrice,
-    change: 0.75,
-    changePercent: 1.25,
-    open: mockPrice - 0.5,
-    previousClose: mockPrice - 0.75,
-    dayHigh: mockPrice + 1.2,
-    dayLow: mockPrice - 0.8,
+    change: change,
+    changePercent: changePercent,
+    open: mockPrice - change,
+    previousClose: mockPrice - change,
+    dayHigh: mockPrice + Math.abs(change) * 0.2,
+    dayLow: mockPrice - Math.abs(change) * 0.2,
     fiftyTwoWeekHigh: mockPrice * 1.3,
     fiftyTwoWeekLow: mockPrice * 0.8,
     volume: 1250000,

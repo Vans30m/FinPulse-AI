@@ -21,13 +21,17 @@ export function setTwelveDataRateLimited() {
 // BTC-USD -> BTC/USD
 // EURUSD=X -> EUR/USD
 export function toTwelveDataSymbol(yahooSymbol: string): string {
-  if (yahooSymbol.endsWith("=X")) {
-    const raw = yahooSymbol.replace("=X", "");
+  const s = yahooSymbol.toUpperCase();
+  if (s === 'GC=F') return 'XAU/USD';
+  if (s === 'SI=F') return 'XAG/USD';
+  if (s === 'CL=F') return 'WTI/USD';
+  if (s.endsWith("=X")) {
+    const raw = s.replace("=X", "");
     if (raw.length === 6) {
       return `${raw.substring(0, 3)}/${raw.substring(3, 6)}`;
     }
   }
-  return yahooSymbol.replace("-USD", "/USD");
+  return s.replace("-USD", "/USD");
 }
 
 export async function fetchTwelveDataQuotes(yahooSymbols: string[]): Promise<Record<string, any>> {
