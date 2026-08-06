@@ -2,13 +2,13 @@ import express from "express";
 import { YahooClient } from "../services/YahooClient.js";
 import NodeCache from "node-cache";
 import axios from "axios";
-import { getFundamentals } from "../services/companyService.js";
 
 const router = express.Router();
 
 // Caches with custom TTLs
 const quoteCache = new NodeCache({ stdTTL: 60 });
 const chartCache = new NodeCache({ stdTTL: 60 });
+const chart5yCache = new NodeCache({ stdTTL: 3600 }); // 5-year daily chart cached for 1 hour
 
 const newsCache = new NodeCache({ stdTTL: 600 }); // 10 mins
 const analystCache = new NodeCache({ stdTTL: 21600 }); // 6 hours
@@ -209,28 +209,55 @@ router.get("/:symbol", async (req, res) => {
     // 1. Fetch Quote and Summary Details
     let quoteData: any = quoteCache.get(symbol);
     if (!quoteData) {
-      const [quotes, summary] = await Promise.all([
-        YahooClient.quote([symbol]).catch(() => []),
-        YahooClient.quoteSummary(symbol, {
-          modules: [
-            "assetProfile",
-            "summaryDetail",
-            "defaultKeyStatistics",
-            "financialData",
-            "majorHoldersBreakdown",
-            "recommendationTrend",
-            "upgradeDowngradeHistory",
-            "calendarEvents"
-          ]
-        }).catch(() => null)
-      ]);
-      const quote = quotes[0] || null;
+      const symUpper = symbol.toUpperCase();
+      const isCrypto = symUpper.endsWith('-USD');
+      const isForex = symUpper.endsWith('=X');
+      const isCommodity = symUpper.endsWith('=F');
+      const isSpecial = isCrypto || isForex || isCommodity;
+
+      let quote: any = null;
+      let summary: any = null;
+
+      if (isSpecial) {
+        // Fetch Yahoo quote directly to match the chart data source exactly
+        const quotes = await YahooClient.quote([symbol]).catch(() => []);
+        quote = quotes[0] || null;
+      } else {
+        // Standard asset (Stock/Index): Fetch both quote and summary details
+        const [quotes, summaryResult] = await Promise.all([
+          YahooClient.quote([symbol]).catch(() => []),
+          YahooClient.quoteSummary(symbol, {
+            modules: [
+              "assetProfile",
+              "summaryDetail",
+              "defaultKeyStatistics",
+              "financialData",
+              "majorHoldersBreakdown",
+              "recommendationTrend",
+              "upgradeDowngradeHistory",
+              "calendarEvents"
+            ]
+          }).catch(() => null)
+        ]);
+        quote = quotes[0] || null;
+        summary = summaryResult;
+      }
+
       quoteData = { quote, summary };
       quoteCache.set(symbol, quoteData);
     }
 
-    if (!quoteData.quote || !quoteData.summary || Object.keys(quoteData.summary).length === 0) {
-      console.log(`[Asset Details] Live quote and summary failed or empty for ${symbol}. Injecting mock base to allow full payload execution...`);
+    const sUpper = symbol.toUpperCase();
+    const isCryptoAsset = sUpper.endsWith('-USD');
+    const isForexAsset = sUpper.endsWith('=X');
+    const isCommodityAsset = sUpper.endsWith('=F');
+    const isSpecialAssetType = isCryptoAsset || isForexAsset || isCommodityAsset;
+
+    const isQuoteMissing = !quoteData.quote || Object.keys(quoteData.quote).length === 0;
+    const isSummaryMissing = !isSpecialAssetType && (!quoteData.summary || Object.keys(quoteData.summary).length === 0);
+
+    if (isQuoteMissing || isSummaryMissing) {
+      console.log(`[Asset Details] Live quote or summary failed/empty for ${symbol} (Quote missing: ${isQuoteMissing}, Summary missing: ${isSummaryMissing}). Injecting mock base...`);
       const fallbackData = generateLocalMockData(symbol);
 
       if (!quoteData.quote || Object.keys(quoteData.quote).length === 0) {
@@ -346,39 +373,44 @@ router.get("/:symbol", async (req, res) => {
     // 3. Fetch News Stream
     let newsData: any = newsCache.get(symbol);
     if (!newsData) {
-      const cleanBaseSymbol = symbol.split('.')[0];
-
-      // Perform a single news search query on the symbol to protect Yahoo Finance rate limit
-      const searchSymbol = await YahooClient.search(symbol).catch(() => null);
+      const symUpper = symbol.toUpperCase();
+      const isCrypto = symUpper.endsWith('-USD');
+      const isForex = symUpper.endsWith('=X');
+      const isCommodity = symUpper.endsWith('=F');
+      const isSpecial = isCrypto || isForex || isCommodity;
 
       const newsList: any[] = [];
-      const seenLinks = new Set<string>();
 
-      const addNews = (newsArray: any[]) => {
-        if (!newsArray) return;
-        for (const item of newsArray) {
-          if (item && item.link && !seenLinks.has(item.link)) {
-            newsList.push(item);
-            seenLinks.add(item.link);
+      if (!isSpecial) {
+        // Perform a single news search query on the symbol to protect Yahoo Finance rate limit
+        const searchSymbol = await YahooClient.search(symbol).catch(() => null);
+        const seenLinks = new Set<string>();
+
+        const addNews = (newsArray: any[]) => {
+          if (!newsArray) return;
+          for (const item of newsArray) {
+            if (item && item.link && !seenLinks.has(item.link)) {
+              newsList.push(item);
+              seenLinks.add(item.link);
+            }
           }
-        }
-      };
+        };
 
-      addNews(searchSymbol?.news || []);
+        addNews(searchSymbol?.news || []);
 
-      // Sort by publish time descending (latest news first)
-      const getTimestamp = (item: any) => {
-        if (!item.providerPublishTime) return 0;
-        const val = item.providerPublishTime;
-        if (typeof val === 'number') {
-          // If it's in seconds, convert to ms
-          return val < 1e11 ? val * 1000 : val;
-        }
-        const parsed = new Date(val).getTime();
-        return isNaN(parsed) ? 0 : parsed;
-      };
+        // Sort by publish time descending (latest news first)
+        const getTimestamp = (item: any) => {
+          if (!item.providerPublishTime) return 0;
+          const val = item.providerPublishTime;
+          if (typeof val === 'number') {
+            return val < 1e11 ? val * 1000 : val;
+          }
+          const parsed = new Date(val).getTime();
+          return isNaN(parsed) ? 0 : parsed;
+        };
 
-      newsList.sort((a, b) => getTimestamp(b) - getTimestamp(a));
+        newsList.sort((a, b) => getTimestamp(b) - getTimestamp(a));
+      }
 
       if (newsList.length === 0) {
         const cleanSymbol = symbol.toUpperCase().split('.')[0];
@@ -412,7 +444,7 @@ router.get("/:symbol", async (req, res) => {
     }
 
     // 4. Fetch 5-year historical daily chart candles for Technical indicators
-    let chart5yData: any = chartCache.get(symbol);
+    let chart5yData: any = chart5yCache.get(symbol);
     if (!chart5yData) {
       const now = new Date();
       const startDate = new Date();
@@ -423,7 +455,7 @@ router.get("/:symbol", async (req, res) => {
         interval: '1d'
       }).catch(() => null);
       chart5yData = chartResult?.quotes || [];
-      chartCache.set(symbol, chart5yData);
+      chart5yCache.set(symbol, chart5yData);
     }
 
     // Build consolidated payload conforming strictly to requested data

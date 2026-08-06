@@ -217,9 +217,6 @@ app.get("/api/events/:symbol", async (req: Request, res: Response) => {
   }
 });
 
-// ==========================================
-// 1. OMNI-SEARCH: YAHOO FINANCE
-// ==========================================
 app.get("/api/search", async (req: Request, res: Response) => {
   try {
     const q = String(req.query['q'] || "").trim();
@@ -506,15 +503,13 @@ const server = app.listen(PORT, () => {
   }
 
   // Start background price alert evaluations.
-  // Delayed 15s on startup so the cold-start Yahoo warm-up completes first
-  // before the alert evaluator adds another wave of quote requests.
-  // NOTE: 2-minute interval to avoid saturating the Yahoo Finance API rate limit.
-  setTimeout(() => {
-    void evaluateAlerts();
-    setInterval(() => {
-      void evaluateAlerts();
-    }, 2 * 60 * 1000); // every 2 minutes
-  }, 15000); // 15-second startup delay
+  // Disabled to avoid background requests saturating the Yahoo Finance API rate limit.
+  // setTimeout(() => {
+  //   void evaluateAlerts();
+  //   setInterval(() => {
+  //     void evaluateAlerts();
+  //   }, 2 * 60 * 1000); // every 2 minutes
+  // }, 15000); // 15-second startup delay
 });
 
 // ==========================================

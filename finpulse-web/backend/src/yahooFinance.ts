@@ -126,10 +126,8 @@ if (proxyList.length > 0) {
 }
 
 export function getProxyAgent(): HttpsProxyAgent<string> | undefined {
-  const available = proxyList.filter(p => Date.now() >= p.cooldownUntil);
-  if (available.length === 0) return undefined;
-  const index = Math.floor(Math.random() * available.length);
-  return available[index].agent;
+  // Proxies completely disabled to run directly against Yahoo Finance
+  return undefined;
 }
 
 // Rotate between Yahoo Finance query hosts to spread load and avoid per-host rate limits
@@ -696,7 +694,7 @@ async function waitForColdStart(): Promise<void> {
 }
 
 function isYahooRateLimited(): boolean {
-  return Date.now() < YAHOO_COOLDOWN_UNTIL;
+  return false;
 }
 
 function isTwelveDataRateLimited(): boolean {
@@ -810,25 +808,7 @@ async function performRawQuoteFetch(symbolList: string[], options?: any): Promis
     }
   }
 
-  // 1. Twelve Data Fallback FIRST – completely different API, not affected by Yahoo 429 bans
-  // NOTE: Spark and Chart fallbacks below also use Yahoo Finance endpoints and will fail identically
-  // during a 429 ban. Twelve Data is tried first to avoid wasteful retries against a banned IP.
-  if (!isTwelveDataRateLimited()) {
-    try {
-      const tdResults = await fetchTwelveDataQuotes(symbolList);
-      if (tdResults && tdResults.length > 0) {
-        console.log(`[Yahoo Service] Twelve Data fallback succeeded for ${tdResults.length} symbols.`);
-        return tdResults;
-      }
-    } catch (tdErr: any) {
-      const msg = tdErr?.message || '';
-      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
-        setTwelveDataRateLimited();
-      } else {
-        console.warn(`[Yahoo Service] Twelve Data fallback failed, trying Yahoo Spark:`, msg);
-      }
-    }
-  }
+  // Twelve Data Fallback removed as requested
 
   // 2. Spark Fallback (Yahoo direct API – only useful if Yahoo isn't fully banned)
   try {
@@ -989,21 +969,7 @@ const originalChart = yahooFinance.chart;
     }
   }
 
-  if (!isTwelveDataRateLimited()) {
-    try {
-      const tdChart = await fetchTwelveDataTimeSeries(symbol, options);
-      CHART_CACHE.set(cacheKey, { data: tdChart, timestamp: Date.now() });
-      console.log(`[Yahoo Service] Twelve Data chart fallback succeeded for ${symbol}`);
-      return tdChart;
-    } catch (tdErr: any) {
-      const msg = tdErr?.message || '';
-      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
-        setTwelveDataRateLimited();
-      } else {
-        console.warn(`[Yahoo Service] Twelve Data chart fallback failed for ${symbol}:`, msg);
-      }
-    }
-  }
+  // Twelve Data chart fallback removed as requested
 
   try {
     const params: any = {};
@@ -1084,21 +1050,7 @@ const originalHistorical = yahooFinance.historical;
     }
   }
 
-  if (!isTwelveDataRateLimited()) {
-    try {
-      const tdChart = await fetchTwelveDataTimeSeries(symbol, options);
-      CHART_CACHE.set(cacheKey, { data: tdChart.quotes, timestamp: Date.now() });
-      console.log(`[Yahoo Service] Twelve Data historical fallback succeeded for ${symbol}`);
-      return tdChart.quotes;
-    } catch (tdErr: any) {
-      const msg = tdErr?.message || '';
-      if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('401')) {
-        setTwelveDataRateLimited();
-      } else {
-        console.warn(`[Yahoo Service] Twelve Data historical fallback failed for ${symbol}:`, msg);
-      }
-    }
-  }
+  // Twelve Data historical fallback removed as requested
 
   try {
     const params: any = {};
@@ -1233,53 +1185,46 @@ export async function fetchQuotesResilient(symbols: string[]): Promise<any[]> {
     updateLkvCache(quoteList);
     return quoteList;
   } catch (err: any) {
-    console.warn(`[Yahoo Service] Quote fetch failed, trying Twelve Data batch fallback:`, err.message);
+    console.warn(`[Yahoo Service] Quote fetch failed. Trying Yahoo spark fallback:`, err.message);
     try {
-      const tdQuotes = await fetchTwelveDataQuotes(symbols);
-      updateLkvCache(tdQuotes);
-      return tdQuotes;
-    } catch (tdErr: any) {
-      console.warn(`[Yahoo Service] Twelve Data fallback failed: ${tdErr.message}. Trying Yahoo spark fallback.`);
+      const sparkQuotes = await fetchYahooSparkQuotes(symbols);
+      updateLkvCache(sparkQuotes);
+      return sparkQuotes;
+    } catch (fallbackErr: any) {
+      console.error(`[Yahoo Service] Resilient spark fallback failed:`, fallbackErr.message);
+
+      // Try Alpha Vantage last resort fallback!
       try {
-        const sparkQuotes = await fetchYahooSparkQuotes(symbols);
-        updateLkvCache(sparkQuotes);
-        return sparkQuotes;
-      } catch (fallbackErr: any) {
-        console.error(`[Yahoo Service] Resilient spark fallback failed:`, fallbackErr.message);
-
-        // Try Alpha Vantage last resort fallback!
-        try {
-          const { getAlphaVantageQuote } = await import("./services/alphaVantageService.js");
-          const avQuotes = [];
-          for (const s of symbols) {
-            const avQ = await getAlphaVantageQuote(s);
-            if (avQ) {
-              avQuotes.push({
-                symbol: s,
-                regularMarketPrice: avQ.price,
-                regularMarketChange: avQ.change,
-                regularMarketChangePercent: avQ.changePercent,
-                regularMarketVolume: avQ.volume,
-                currency: s.endsWith('.NS') || s.endsWith('.BO') ? 'INR' : 'USD',
-                exchange: "AlphaVantage",
-                shortName: s.split('.')[0],
-                longName: s
-              });
-            }
+        const { getAlphaVantageQuote } = await import("./services/alphaVantageService.js");
+        const avQuotes = [];
+        for (const s of symbols) {
+          const avQ = await getAlphaVantageQuote(s);
+          if (avQ) {
+            avQuotes.push({
+              symbol: s,
+              regularMarketPrice: avQ.price,
+              regularMarketChange: avQ.change,
+              regularMarketChangePercent: avQ.changePercent,
+              regularMarketVolume: avQ.volume,
+              currency: s.endsWith('.NS') || s.endsWith('.BO') ? 'INR' : 'USD',
+              exchange: "AlphaVantage",
+              shortName: s.split('.')[0],
+              longName: s
+            });
           }
-          if (avQuotes.length > 0) {
-            console.log(`[Yahoo Service] Alpha Vantage fallback succeeded for ${avQuotes.length} symbols.`);
-            updateLkvCache(avQuotes);
-            return avQuotes;
-          }
-        } catch (avErr: any) {
-          console.warn("[Yahoo Service] Alpha Vantage fallback failed:", avErr.message);
         }
-
-        // Fall back to LKV or deterministic mock quotes instead of throwing
-        console.log(`[Yahoo Service] All API options failed. Serving LKV/Mock fallback quotes for ${symbols.length} symbols.`);
-        return symbols.map(s => getFallbackQuote(s));
+        if (avQuotes.length > 0) {
+          console.log(`[Yahoo Service] Alpha Vantage fallback succeeded for ${avQuotes.length} symbols.`);
+          updateLkvCache(avQuotes);
+          return avQuotes;
+        }
+      } catch (avErr: any) {
+        console.warn("[Yahoo Service] Alpha Vantage fallback failed:", avErr.message);
       }
+
+      // Fall back to LKV or deterministic mock quotes instead of throwing
+      console.log(`[Yahoo Service] All API options failed. Serving LKV/Mock fallback quotes for ${symbols.length} symbols.`);
+      return symbols.map(s => getFallbackQuote(s));
     }
   }
 }
