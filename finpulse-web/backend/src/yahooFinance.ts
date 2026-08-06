@@ -1149,7 +1149,8 @@ function getFallbackQuote(symbol: string): any {
       regularMarketChangePercent: LKV_CACHE[sym].changePercent,
       shortName: LKV_CACHE[sym].name,
       longName: LKV_CACHE[sym].name,
-      currency: sym.endsWith('.NS') || sym.endsWith('.BO') ? 'INR' : 'USD'
+      currency: sym.endsWith('.NS') || sym.endsWith('.BO') ? 'INR' : 'USD',
+      marketState: sym.endsWith('-USD') || sym.endsWith('=X') || sym.endsWith('=F') ? 'REGULAR' : 'CLOSED'
     };
   }
 
