@@ -10,28 +10,42 @@ const rssParser = new Parser();
 import { getCachedData, setCachedData } from "../services/cacheService.js";
 
 export async function callGeminiWithOllamaFallback(prompt: string, jsonMode = false): Promise<string> {
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
-  
-  try {
-    const response = await axios.post(geminiUrl, {
+  const tryGemini = async (key: string): Promise<string> => {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const response = await axios.post(url, {
       contents: [{
         parts: [{ text: prompt }]
       }],
       generationConfig: jsonMode ? { responseMimeType: "application/json" } : undefined
-    }, { timeout: 45000 }); // 45s – Gemini 2.5 Flash is a thinking model and needs extra time
+    }, { timeout: 45000 });
     
     if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
       return response.data.candidates[0].content.parts[0].text;
     }
     throw new Error("Invalid response structure from Gemini API");
+  };
+
+  try {
+    return await tryGemini(process.env.GEMINI_API_KEY || '');
   } catch (error: any) {
     const status = error.response?.status;
     const isRateLimit = status === 429 || 
                         (error.message && error.message.includes("429")) || 
                         (error.response?.data?.error?.message && error.response.data.error.message.includes("quota"));
     
-    console.warn(`Gemini API call failed${isRateLimit ? " due to rate limit/quota" : ""}. Trying Ollama fallback... Error: ${error.message}`);
+    console.warn(`Primary Gemini API call failed${isRateLimit ? " due to rate limit/quota" : ""}. Error: ${error.message}`);
+
+    // Try Backup Gemini Key if configured
+    if (process.env.GEMINI_API_KEY_BACKUP) {
+      try {
+        console.log("Attempting call with backup Gemini API key...");
+        return await tryGemini(process.env.GEMINI_API_KEY_BACKUP);
+      } catch (backupError: any) {
+        console.warn(`Backup Gemini API call also failed. Error: ${backupError.message}`);
+      }
+    }
     
+    console.log("Trying Ollama fallback...");
     try {
       const ollamaUrl = process.env.OLLAMA_API_URL || "http://localhost:11434/api/generate";
       const ollamaModel = process.env.OLLAMA_MODEL || "llama3";
