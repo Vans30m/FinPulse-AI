@@ -184,7 +184,59 @@ class CentralYahooClient {
       return symbols.map(s => this.getDeterministicMockQuote(s));
     }
     if (cacheKey.startsWith('chart_')) {
-      return { quotes: [], meta: { symbol: cacheKey.split('_')[1] || 'UNKNOWN' } };
+      const parts = cacheKey.split('_');
+      const symbol = parts[1] || 'UNKNOWN';
+      const range = parts[2] || '1y';
+      const interval = parts[3] || '1d';
+      
+      const quotes: any[] = [];
+      // End mock candles 5 minutes in the past to prevent timestamp collisions with active client ticking
+      const now = Date.now() - 5 * 60 * 1000;
+      
+      let step = 24 * 60 * 60 * 1000; // default 1d
+      if (interval.includes('m') || interval.includes('min')) {
+        step = 60 * 1000;
+      } else if (interval.includes('h')) {
+        step = 60 * 60 * 1000;
+      }
+      
+      let basePrice = 150.0;
+      if (symbol.endsWith('-USD')) basePrice = 64000.0;
+      else if (symbol === 'GC=F') basePrice = 2400.0;
+
+      for (let i = 100; i >= 0; i--) {
+        const time = now - i * step;
+        const change = (Math.random() - 0.5) * (basePrice * 0.005);
+        const open = basePrice;
+        const close = basePrice + change;
+        const high = Math.max(open, close) + Math.random() * (basePrice * 0.002);
+        const low = Math.min(open, close) - Math.random() * (basePrice * 0.002);
+        basePrice = close;
+
+        quotes.push({
+          date: new Date(time).toISOString(),
+          open,
+          high,
+          low,
+          close,
+          volume: Math.floor(Math.random() * 500000) + 100000,
+          adjclose: close
+        });
+      }
+
+      return {
+        meta: {
+          currency: 'USD',
+          symbol: symbol,
+          exchangeName: 'GLOBAL',
+          instrumentType: 'EQUITY',
+          regularMarketPrice: basePrice,
+          chartPreviousClose: basePrice,
+          dataGranularity: interval,
+          range: range
+        },
+        quotes
+      };
     }
     if (cacheKey.startsWith('summary_')) {
       return {};
