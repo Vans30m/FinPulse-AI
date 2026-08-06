@@ -13,10 +13,22 @@ const BINANCE_US_BASE = 'https://api.binance.us'; // US fallback
 // In-memory cache for Binance responses
 const binanceCache = new NodeCache({ useClones: false });
 
+// Explicit Yahoo symbol → Binance symbol overrides
+// GC=F (Gold futures, CME) → PAXGUSDT (PAX Gold, 1 token = 1 troy oz physical gold)
+// Both the chart endpoint AND the fundamentals/price endpoint use Binance for GC=F,
+// so chart and header price are consistent (both show ~$4265 spot gold, same as TradingView).
+const COMMODITY_BINANCE_MAP: Record<string, string> = {
+  'GC=F': 'PAXGUSDT',   // Gold (PAX Gold token, matches TradingView spot gold CFD)
+};
+
 // Convert Yahoo-style crypto symbol to Binance pair
-// BTC-USD -> BTCUSDT  |  ETH-USD -> ETHUSDT
+// BTC-USD -> BTCUSDT  |  ETH-USD -> ETHUSDT  |  GC=F -> PAXGUSDT
 export function toBinanceSymbol(yahooSymbol: string): string | null {
   const upper = yahooSymbol.toUpperCase();
+  // Check commodity overrides first
+  const commoditySymbol = COMMODITY_BINANCE_MAP[upper];
+  if (commoditySymbol) return commoditySymbol;
+  // Crypto -USD pairs
   if (!upper.endsWith('-USD')) return null;
   const base = upper.replace('-USD', '');
   return `${base}USDT`;
@@ -195,7 +207,16 @@ export async function getBinanceLiveQuote(yahooSymbol: string): Promise<any | nu
   }
 }
 
-// Helper: is this symbol a crypto pair handled by Binance?
-export function isBinanceCrypto(symbol: string): boolean {
-  return symbol.toUpperCase().endsWith('-USD');
+// Helper: is this symbol supported by Binance?
+// - All crypto -USD pairs: YES (BTC-USD, ETH-USD, SOL-USD, ...)
+// - Gold (GC=F): YES via PAXGUSDT
+// - Silver (SI=F), Oil (CL=F), Forex (=X), Indices (^): NO → Yahoo
+export function isBinanceSupported(symbol: string): boolean {
+  const upper = symbol.toUpperCase();
+  if (upper.endsWith('-USD')) return true;           // All crypto
+  if (COMMODITY_BINANCE_MAP[upper]) return true;     // Mapped commodities (Gold)
+  return false;
 }
+
+// Legacy alias kept for any callers that still use the old name
+export const isBinanceCrypto = isBinanceSupported;

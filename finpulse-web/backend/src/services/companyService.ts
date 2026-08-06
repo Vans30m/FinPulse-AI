@@ -1,4 +1,6 @@
 import { YahooClient } from './YahooClient.js';
+import { getBinanceLiveQuote, getBinanceCandles, isBinanceSupported } from './binanceService.js';
+
 import { fetchQuotesResilient } from '../yahooFinance.js';
 
 export async function getCompanyNews(
@@ -80,22 +82,36 @@ function calculateHistoryReturns(history: any[], currentPrice: number, changePer
 
 export async function getFundamentals(symbol: string) {
   try {
+    // ── Try Binance first for supported assets (crypto + PAXG/Gold) ──────────
+    let binanceQuote: any = null;
+    if (isBinanceSupported(symbol)) {
+      binanceQuote = await getBinanceLiveQuote(symbol).catch(() => null);
+    }
+
     const quotes = await YahooClient.quote([symbol]);
     const quote = quotes[0];
-    if (!quote) throw new Error(`No quote found for symbol: ${symbol}`);
-    const name = quote.longName || quote.shortName || quote.displayName || symbol;
-    const resolvedPrice = quote.regularMarketPrice ?? (quote as any).regularMarketOpen ?? (quote as any).previousClose ?? 0;
+    if (!quote && !binanceQuote) throw new Error(`No quote found for symbol: ${symbol}`);
 
-    let bookValue = quote.bookValue;
-    let dividendYield = quote.dividendYield;
-    let roe: number | undefined = (quote as any).returnOnEquity;
-    let roce: number | undefined = (quote as any).returnOnAssets;
+    // Prefer Binance price for supported assets (real-time, no rate limits)
+    const activeQuote = binanceQuote || quote || {};
+    const name = (quote?.longName || quote?.shortName || quote?.displayName || binanceQuote?.longName || symbol);
+    const resolvedPrice = binanceQuote?.regularMarketPrice
+      ?? quote?.regularMarketPrice
+      ?? (quote as any)?.regularMarketOpen
+      ?? (quote as any)?.previousClose
+      ?? 0;
+
+    let bookValue = quote?.bookValue;
+    let dividendYield = quote?.dividendYield;
+    let roe: number | undefined = (quote as any)?.returnOnEquity;
+    let roce: number | undefined = (quote as any)?.returnOnAssets;
     let about = "";
 
     const isCurrency = symbol.includes('=X');
     const isIndex = symbol.startsWith('^');
     const isCrypto = symbol.includes('-USD') || symbol.endsWith('BTC') || symbol.endsWith('ETH');
-    const hasNoFundamentals = isCurrency || isIndex || isCrypto;
+    const isCommodity = symbol.endsWith('=F'); // Gold, Silver, Oil futures — no PE/EPS
+    const hasNoFundamentals = isCurrency || isIndex || isCrypto || isCommodity;
 
     if (!hasNoFundamentals) {
       try {
@@ -122,52 +138,60 @@ export async function getFundamentals(symbol: string) {
     let firstEverQuoteClose: number | null = null;
 
     try {
-      const [chartResult, chartMaxResult] = await Promise.all([
-        YahooClient.chart(symbol, {
-          period1: startDate,
-          period2: now,
-          interval: '1d'
-        }).catch(() => null),
-        YahooClient.chart(symbol, {
-          period1: new Date(0),
-          period2: now,
-          interval: '1mo'
-        }).catch(() => null)
-      ]);
-
-      history = chartResult?.quotes || [];
-      const maxQuotes = chartMaxResult?.quotes || [];
-      if (maxQuotes.length > 0) {
-        const firstQuote = maxQuotes.find(q => q && q.close != null);
-        if (firstQuote) {
-          firstEverQuoteClose = firstQuote.close;
-        }
+      if (isBinanceSupported(symbol)) {
+        // ── Binance history: no rate limits, real-time data ───────────────────
+        const [binance5Y, binanceMax] = await Promise.all([
+          getBinanceCandles(symbol, '5y', '1d').catch(() => null),
+          getBinanceCandles(symbol, 'max', '1wk').catch(() => null),
+        ]);
+        history = binance5Y?.quotes || [];
+        const maxQuotes = binanceMax?.quotes || [];
+        const firstQuote = maxQuotes.find((q: any) => q && q.close != null);
+        if (firstQuote) firstEverQuoteClose = firstQuote.close;
+      } else {
+        // ── Yahoo history: stocks, forex, indices, Silver, Oil ────────────────
+        const [chartResult, chartMaxResult] = await Promise.all([
+          YahooClient.chart(symbol, {
+            period1: startDate,
+            period2: now,
+            interval: '1d'
+          }).catch(() => null),
+          YahooClient.chart(symbol, {
+            period1: new Date(0),
+            period2: now,
+            interval: '1mo'
+          }).catch(() => null)
+        ]);
+        history = chartResult?.quotes || [];
+        const maxQuotes = chartMaxResult?.quotes || [];
+        const firstQuote = maxQuotes.find((q: any) => q && q.close != null);
+        if (firstQuote) firstEverQuoteClose = firstQuote.close;
       }
     } catch (e) {
       console.error(`Failed to fetch chart histories in getFundamentals for ${symbol}:`, e);
     }
 
-    const historyReturns = calculateHistoryReturns(history, resolvedPrice, quote.regularMarketChangePercent ?? 0, firstEverQuoteClose);
+    const historyReturns = calculateHistoryReturns(history, resolvedPrice, activeQuote?.regularMarketChangePercent ?? quote?.regularMarketChangePercent ?? 0, firstEverQuoteClose);
 
     return {
       name,
       price: resolvedPrice,
-      change: quote.regularMarketChange ?? 0,
-      changePercent: quote.regularMarketChangePercent ?? 0,
-      open: quote.regularMarketOpen,
-      previousClose: quote.regularMarketPreviousClose,
-      dayHigh: quote.regularMarketDayHigh,
-      dayLow: quote.regularMarketDayLow,
-      fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
-      fiftyTwoWeekLow: quote.fiftyTwoWeekLow,
-      volume: quote.regularMarketVolume || (quote as any).averageDailyVolume3Month || 0,
-      averageVolume: (quote as any).averageDailyVolume3Month || (quote as any).averageDailyVolume10Day || 0,
-      marketCap: quote.marketCap,
-      circulatingSupply: quote.circulatingSupply,
-      currency: quote.currency,
-      marketState: quote.marketState,
-      peRatio: quote.trailingPE,
-      eps: quote.trailingEps,
+      change: binanceQuote?.regularMarketChange ?? quote?.regularMarketChange ?? 0,
+      changePercent: binanceQuote?.regularMarketChangePercent ?? quote?.regularMarketChangePercent ?? 0,
+      open: binanceQuote?.regularMarketOpen ?? quote?.regularMarketOpen,
+      previousClose: binanceQuote?.regularMarketPreviousClose ?? quote?.regularMarketPreviousClose,
+      dayHigh: binanceQuote?.regularMarketDayHigh ?? quote?.regularMarketDayHigh,
+      dayLow: binanceQuote?.regularMarketDayLow ?? quote?.regularMarketDayLow,
+      fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh,
+      fiftyTwoWeekLow: quote?.fiftyTwoWeekLow,
+      volume: binanceQuote?.regularMarketVolume ?? quote?.regularMarketVolume ?? (quote as any)?.averageDailyVolume3Month ?? 0,
+      averageVolume: (quote as any)?.averageDailyVolume3Month ?? (quote as any)?.averageDailyVolume10Day ?? 0,
+      marketCap: quote?.marketCap,
+      circulatingSupply: quote?.circulatingSupply,
+      currency: binanceQuote?.currency ?? quote?.currency,
+      marketState: binanceQuote?.marketState ?? quote?.marketState,
+      peRatio: quote?.trailingPE,
+      eps: quote?.trailingEps,
       performance: historyReturns,
       bookValue,
       dividendYield,

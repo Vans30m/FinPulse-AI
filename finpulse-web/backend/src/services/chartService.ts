@@ -1,5 +1,5 @@
 import { YahooClient } from './YahooClient.js';
-import { getBinanceCandles, isBinanceCrypto } from './binanceService.js';
+import { getBinanceCandles, isBinanceSupported } from './binanceService.js';
 
 
 // ==========================================
@@ -137,8 +137,8 @@ export async function getYahooCandles(
       period1 = new Date(Date.now() - offset);
     }
 
-    // ── Crypto: route through Binance (no rate limits, no API key) ──────────
-    if (isBinanceCrypto(symbol)) {
+    // ── Binance: crypto + Gold (no rate limits, no API key) ─────────────────
+    if (isBinanceSupported(symbol)) {
       try {
         const result = await getBinanceCandles(symbol, range, interval);
         console.log(`[ChartService] Binance served ${result.quotes.length} candles for ${symbol}`);
