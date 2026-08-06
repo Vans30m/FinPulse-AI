@@ -1047,6 +1047,65 @@ export default function CandlestickChart({
     return () => clearInterval(interval);
   }, [loading, candles.length, onMetaLoaded, meta.marketState]);
 
+  // Real-time polling to fetch actual updated quotes
+  useEffect(() => {
+    if (loading || !symbol || !candles.length) return;
+
+    const interval = setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        const fundamentalsResponse = await getFundamentals(symbol);
+        if (fundamentalsResponse) {
+          setFundamentals(fundamentalsResponse);
+
+          setMeta(prevMeta => {
+            const newPrice = fundamentalsResponse.price || prevMeta.price;
+            const updatedMeta = {
+              ...prevMeta,
+              name: fundamentalsResponse.name || prevMeta.name,
+              price: newPrice,
+              change: fundamentalsResponse.change !== undefined ? fundamentalsResponse.change : prevMeta.change,
+              changePercent: fundamentalsResponse.changePercent !== undefined ? fundamentalsResponse.changePercent : prevMeta.changePercent,
+              marketState: fundamentalsResponse.marketState || prevMeta.marketState,
+              currency: fundamentalsResponse.currency || prevMeta.currency,
+              performance: fundamentalsResponse.performance || prevMeta.performance
+            };
+            if (onMetaLoaded) {
+              onMetaLoaded(updatedMeta);
+            }
+            return updatedMeta;
+          });
+
+          setCandles(prev => {
+            if (!prev.length) return prev;
+            const next = [...prev];
+            const lastIndex = next.length - 1;
+            const lastCandle = { ...next[lastIndex] };
+            
+            lastCandle.close = fundamentalsResponse.price;
+            if (fundamentalsResponse.price > lastCandle.high) lastCandle.high = fundamentalsResponse.price;
+            if (fundamentalsResponse.price < lastCandle.low) lastCandle.low = fundamentalsResponse.price;
+
+            if (candleSeriesRef.current) {
+              candleSeriesRef.current.update(lastCandle);
+            }
+            next[lastIndex] = lastCandle;
+            return next;
+          });
+
+          if (candleSeriesRef.current) {
+            const computedMetrics = mergeDailyMetrics(candles, fundamentalsResponse);
+            setMetrics(computedMetrics);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to poll fundamentals in chart:", err);
+      }
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [loading, symbol, candles.length, onMetaLoaded]);
+
   // Effect: Render main chart overlay indicators (EMA, SMA, VWAP, Bollinger Bands) & Comparison line
   useEffect(() => {
     const chart = chartRef.current;

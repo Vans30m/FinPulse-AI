@@ -1174,6 +1174,7 @@ function getFallbackQuote(symbol: string): any {
     shortName: cleanName,
     longName: cleanName,
     currency: sym.endsWith('.NS') || sym.endsWith('.BO') ? 'INR' : 'USD',
+    marketState: sym.endsWith('-USD') || sym.endsWith('=X') || sym.endsWith('=F') ? 'REGULAR' : 'CLOSED',
     regularMarketDayHigh: basePrice + Math.abs(change) * 0.2,
     regularMarketDayLow: basePrice - Math.abs(change) * 0.2,
     regularMarketOpen: basePrice - change,
