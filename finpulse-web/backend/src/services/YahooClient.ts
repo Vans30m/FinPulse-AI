@@ -166,11 +166,9 @@ class CentralYahooClient {
           console.error(`[YahooClient Miss Fetch Failed] Key: ${cacheKey}, Error: ${err.message}`);
         }
         const fallback = this.getFallbackValue(cacheKey);
-        // Cache fallback briefly (15s) so the client retries fresh data soon.
-        // Do NOT cache with the full TTL — that would lock in stale data for an hour.
-        if (fallback !== null && fallback !== undefined) {
-          this.cache.set(cacheKey, { data: fallback, freshUntil: Date.now() + 15 * 1000 });
-        }
+        // Do NOT cache fallback/mock data. Mock candles are anchored to Date.now() at
+        // generation time — caching them (even briefly) means they become stale.
+        // Returning without caching forces every request to regenerate fresh candles.
         return fallback;
       }
     }).finally(() => {

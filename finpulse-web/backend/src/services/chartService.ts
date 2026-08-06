@@ -1,4 +1,6 @@
 import { YahooClient } from './YahooClient.js';
+import { getBinanceCandles, isBinanceCrypto } from './binanceService.js';
+
 
 // ==========================================
 // NEW WORKING HISTORICAL RECHARTS TIMELINE METHOD
@@ -135,6 +137,19 @@ export async function getYahooCandles(
       period1 = new Date(Date.now() - offset);
     }
 
+    // ── Crypto: route through Binance (no rate limits, no API key) ──────────
+    if (isBinanceCrypto(symbol)) {
+      try {
+        const result = await getBinanceCandles(symbol, range, interval);
+        console.log(`[ChartService] Binance served ${result.quotes.length} candles for ${symbol}`);
+        return result;
+      } catch (binanceErr: any) {
+        console.warn(`[ChartService] Binance failed for ${symbol}, falling back to Yahoo: ${binanceErr.message}`);
+        // Fall through to Yahoo below
+      }
+    }
+
+    // ── Stocks / indices / forex: use Yahoo Finance ────────────────────────
     const result =
       await YahooClient.chart(
         symbol,
