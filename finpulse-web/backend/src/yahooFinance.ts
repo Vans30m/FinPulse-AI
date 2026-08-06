@@ -91,7 +91,7 @@ try {
 
 // Fall back to environment variables if proxies.txt wasn't found or was empty
 if (proxyUrls.length === 0) {
-  const proxyUrlString = process.env.PROXIES || process.env.PROXY_URL || process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+  const proxyUrlString = process.env.PROXIES || process.env.PROXY_URL;
   if (proxyUrlString) {
     proxyUrls = proxyUrlString.split(',')
       .map(p => p.trim())

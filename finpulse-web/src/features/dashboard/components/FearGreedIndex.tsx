@@ -230,7 +230,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
           </span>
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2 leading-relaxed">{brief.opportunity}</p>
         </div>
-        
+
         <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.03] hover:bg-rose-500/[0.06] hover:border-rose-500/30 p-4 transition-all duration-305 group">
           <span className="text-[10px] uppercase font-black text-rose-600 dark:text-rose-400 flex items-center gap-1.5 tracking-wider">
             <TrendingDown className="h-3.5 w-3.5 group-hover:translate-y-[1px] transition-transform" /> Monitor Risk
@@ -250,7 +250,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
             {getHistoricalLabel(brief.yesterday)}
           </span>
         </div>
-        
+
         <div className="flex flex-col bg-slate-50/40 dark:bg-slate-900/40 p-2 sm:p-2.5 rounded-lg border border-slate-100/50 dark:border-slate-850">
           <span className="text-[9px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-wider">Last Week</span>
           <span className="font-black text-slate-800 dark:text-slate-200 mt-1 block">
