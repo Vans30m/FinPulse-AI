@@ -126,11 +126,9 @@ class CentralYahooClient {
             });
           } catch (err: any) {
             console.warn(`[YahooClient SWR Background Fetch Failed] Key: ${cacheKey}, Error: ${err.message}`);
-            // Push freshness slightly to prevent spamming background retries immediately
-            this.cache.set(cacheKey, {
-              data: cached.data,
-              freshUntil: Date.now() + 30 * 1000 // try again in 30s
-            });
+            // Delete the stale entry entirely so the next request is forced to fetch fresh data.
+            // Keeping old data re-cached leads to serving hours-old chart data when Yahoo rate-limits.
+            this.cache.del(cacheKey);
           }
         }).finally(() => {
           this.inflight.delete(cacheKey);
@@ -167,8 +165,13 @@ class CentralYahooClient {
         } else {
           console.error(`[YahooClient Miss Fetch Failed] Key: ${cacheKey}, Error: ${err.message}`);
         }
-        // Return fallback quotes/data instead of throwing to prevent crashing the response
-        return this.getFallbackValue(cacheKey);
+        const fallback = this.getFallbackValue(cacheKey);
+        // Cache fallback briefly (15s) so the client retries fresh data soon.
+        // Do NOT cache with the full TTL — that would lock in stale data for an hour.
+        if (fallback !== null && fallback !== undefined) {
+          this.cache.set(cacheKey, { data: fallback, freshUntil: Date.now() + 15 * 1000 });
+        }
+        return fallback;
       }
     }).finally(() => {
       this.inflight.delete(cacheKey);

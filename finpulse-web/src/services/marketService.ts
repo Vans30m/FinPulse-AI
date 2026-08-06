@@ -67,7 +67,17 @@ export const ADVANCED_TIMEFRAME_MAPPS: Record<string, AdvancedTimeframeConfig> =
   "3 months": { interval: "1wk", range: "max", aggregateType: "monthly", aggregateFactor: 3 }
 };
 
-const advancedChartCache = new Map<string, any>();
+interface ChartCacheEntry {
+  data: any;
+  expiresAt: number;
+}
+const advancedChartCache = new Map<string, ChartCacheEntry>();
+const INTRADAY_INTERVALS = new Set(['1m', '2m', '5m', '15m', '30m', '60m', '1h']);
+
+function getChartCacheTtlMs(interval: string): number {
+  return INTRADAY_INTERVALS.has(interval) ? 60_000 : 5 * 60_000;
+}
+
 
 export function aggregateToMonthly(quotes: any[], monthsPerCandle: number = 1): any[] {
   if (!quotes || !Array.isArray(quotes) || quotes.length === 0) return [];
@@ -168,8 +178,9 @@ export async function getAdvancedStockCandles(symbol: string, timeframeLabel: st
   const cacheKey = `${symbol}-${config.interval}-${config.range}`;
 
   let rawData: any;
-  if (advancedChartCache.has(cacheKey)) {
-    rawData = advancedChartCache.get(cacheKey);
+  const cached = advancedChartCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    rawData = cached.data;
   } else {
     const response = await fetch(
       `${API_BASE_URL}/api/charts/${symbol}?range=${config.range}&interval=${config.interval}`
@@ -180,7 +191,10 @@ export async function getAdvancedStockCandles(symbol: string, timeframeLabel: st
     }
 
     rawData = await response.json();
-    advancedChartCache.set(cacheKey, rawData);
+    advancedChartCache.set(cacheKey, {
+      data: rawData,
+      expiresAt: Date.now() + getChartCacheTtlMs(config.interval)
+    });
   }
 
   if (config.aggregateType === "monthly" && rawData?.quotes) {
@@ -197,6 +211,7 @@ export async function getAdvancedStockCandles(symbol: string, timeframeLabel: st
 
   return rawData;
 }
+
 
 export async function getStockCandles(symbol: string, timeframe: string) {
   // Graceful configuration extraction with fallback safety
