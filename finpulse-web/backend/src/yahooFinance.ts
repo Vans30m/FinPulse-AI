@@ -683,7 +683,8 @@ async function fetchYahooSparkQuotes(symbols: string[]): Promise<any[]> {
       fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh || price,
       fiftyTwoWeekLow: meta.fiftyTwoWeekLow || price,
       shortName: meta.shortName || symbol.split('.')[0],
-      longName: meta.longName || symbol
+      longName: meta.longName || symbol,
+      marketState: symbol.endsWith('-USD') || symbol.endsWith('=X') || symbol.endsWith('=F') ? 'REGULAR' : (meta.marketState || 'CLOSED')
     };
   }).filter(Boolean);
 }
@@ -800,7 +801,8 @@ async function fetchYahooChartQuote(symbol: string): Promise<any | null> {
       fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh || price,
       fiftyTwoWeekLow: meta.fiftyTwoWeekLow || price,
       shortName: meta.shortName || symbol.split('.')[0],
-      longName: meta.longName || symbol
+      longName: meta.longName || symbol,
+      marketState: symbol.endsWith('-USD') || symbol.endsWith('=X') || symbol.endsWith('=F') ? 'REGULAR' : (meta.marketState || 'CLOSED')
     };
   } catch (err: any) {
     console.warn(`[Yahoo Service] Chart fallback quote failed for ${symbol}:`, err.message);
