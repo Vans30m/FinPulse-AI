@@ -126,8 +126,15 @@ if (proxyList.length > 0) {
 }
 
 export function getProxyAgent(): HttpsProxyAgent<string> | undefined {
-  // Proxies completely disabled to run directly against Yahoo Finance
-  return undefined;
+  if (proxyList.length === 0) return undefined;
+  const available = proxyList.filter(p => Date.now() >= p.cooldownUntil);
+  if (available.length === 0) {
+    // Fall back to any proxy if all are in cooldown to avoid total failure
+    const idx = Math.floor(Math.random() * proxyList.length);
+    return proxyList[idx].agent;
+  }
+  const idx = Math.floor(Math.random() * available.length);
+  return available[idx].agent;
 }
 
 // Rotate between Yahoo Finance query hosts to spread load and avoid per-host rate limits
@@ -167,9 +174,16 @@ async function fetchYahooSession(): Promise<YahooSession | null> {
   if (sessionFetchPromise) return sessionFetchPromise;
 
   sessionFetchPromise = (async () => {
+    // Get an available proxy object to determine if it is ScraperAPI
+    const available = proxyList.filter(p => Date.now() >= p.cooldownUntil);
+    const proxyObj = available.length > 0
+      ? available[Math.floor(Math.random() * available.length)]
+      : (proxyList.length > 0 ? proxyList[Math.floor(Math.random() * proxyList.length)] : undefined);
+    const agent = proxyObj?.agent;
+    const isScraperApi = proxyObj?.url.includes('scraperapi');
+
     try {
       const ua = getRandomUserAgent();
-      const agent = getProxyAgent();
 
       // Step 1 – hit the Yahoo Finance home page to get a session cookie
       const consentRes = await axios.get('https://finance.yahoo.com/', {
@@ -179,7 +193,7 @@ async function fetchYahooSession(): Promise<YahooSession | null> {
           'Accept-Language': 'en-US,en;q=0.5',
         },
         httpsAgent: agent,
-        timeout: 12000,
+        timeout: agent ? (isScraperApi ? 25000 : 12000) : 12000,
         maxRedirects: 5,
       });
 
@@ -207,7 +221,7 @@ async function fetchYahooSession(): Promise<YahooSession | null> {
           'Cookie': cookieHeader,
         },
         httpsAgent: agent,
-        timeout: 10000,
+        timeout: agent ? (isScraperApi ? 25000 : 10000) : 10000,
       });
 
       const crumb = typeof crumbRes.data === 'string' ? crumbRes.data.trim() : '';
@@ -220,6 +234,10 @@ async function fetchYahooSession(): Promise<YahooSession | null> {
       return { crumb, cookie: cookieHeader, fetchedAt: Date.now() };
     } catch (err: any) {
       console.warn('[Yahoo Session] Failed to fetch crumb/cookie:', err.message);
+      if (proxyObj) {
+        proxyObj.cooldownUntil = Date.now() + 30 * 60 * 1000;
+        console.warn(`[Yahoo Session] Proxy ${proxyObj.url.split('@')[1] || proxyObj.url.substring(0, 30)} cooled down for 30m due to session fetch failure.`);
+      }
       return null;
     } finally {
       sessionFetchPromise = null;
@@ -279,6 +297,7 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3, use
       ? available[Math.floor(Math.random() * available.length)]
       : undefined;
     const agent = proxyObj?.agent;
+    const isScraperApi = proxyObj?.url.includes('scraperapi');
 
     // Fetch (or reuse) a valid Yahoo crumb + cookie session only if requested
     let session: YahooSession | null = null;
@@ -302,7 +321,7 @@ async function axiosGetResilient(url: string, config: any = {}, retries = 3, use
         params: { ...config.params, ...extraParams },
         headers,
         httpsAgent: agent,
-        timeout: agent ? 6000 : 12000
+        timeout: agent ? (isScraperApi ? 25000 : 8000) : 12000
       });
       return response;
     } catch (err: any) {
