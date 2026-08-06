@@ -288,12 +288,18 @@ class CentralYahooClient {
 
   async chart(symbol: string, options: any): Promise<any> {
     const cacheKey = `chart_${symbol.toUpperCase()}_${options.range || ''}_${options.interval || ''}`;
-    return this.executeQuery(cacheKey, 60, () => yahooFinance.chart(symbol, options));
+    const interval = options.interval || '';
+    const isDailyOrMore = ['1d', '1wk', '1mo', '1y', '5d'].includes(interval) || (!interval.includes('m') && !interval.includes('h') && !interval.includes('min'));
+    const ttl = isDailyOrMore ? 3600 : 60;
+    return this.executeQuery(cacheKey, ttl, () => yahooFinance.chart(symbol, options));
   }
 
   async historical(symbol: string, options: any): Promise<any> {
     const cacheKey = `historical_${symbol.toUpperCase()}_${options.range || ''}_${options.interval || ''}`;
-    return this.executeQuery(cacheKey, 60, () => yahooFinance.historical(symbol, options));
+    const interval = options.interval || '';
+    const isDailyOrMore = ['1d', '1wk', '1mo', '1y', '5d'].includes(interval) || (!interval.includes('m') && !interval.includes('h') && !interval.includes('min'));
+    const ttl = isDailyOrMore ? 3600 : 60;
+    return this.executeQuery(cacheKey, ttl, () => yahooFinance.historical(symbol, options));
   }
 
   async quoteSummary(symbol: string, options: any): Promise<any> {

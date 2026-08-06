@@ -75,6 +75,7 @@ interface Props {
   onCompareChange?: (symbol: string) => void;
   onMetaLoaded?: (meta: any) => void;
   currencySymbol?: string;
+  liveQuote?: any;
 }
 
 export default function CandlestickChart({
@@ -89,6 +90,7 @@ export default function CandlestickChart({
   onCompareChange,
   onMetaLoaded,
   currencySymbol = "$",
+  liveQuote,
 }: Props) {
   const chartWrapperRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -1058,7 +1060,7 @@ export default function CandlestickChart({
 
   // Real-time polling to fetch actual updated quotes
   useEffect(() => {
-    if (loading || !symbol || !candles.length) return;
+    if (loading || !symbol || !candles.length || liveQuote) return;
 
     const interval = setInterval(async () => {
       if (document.hidden) return;
@@ -1114,6 +1116,55 @@ export default function CandlestickChart({
 
     return () => clearInterval(interval);
   }, [loading, symbol, candles.length, onMetaLoaded]);
+
+  // Listen to parent's liveQuote updates to update meta and candles (eliminates duplicate polling)
+  useEffect(() => {
+    if (!liveQuote || !candles.length) return;
+
+    setMeta(prevMeta => {
+      const newPrice = liveQuote.price || prevMeta.price;
+      const updatedMeta = {
+        ...prevMeta,
+        price: newPrice,
+        change: liveQuote.change !== undefined ? liveQuote.change : prevMeta.change,
+        changePercent: liveQuote.changePercent !== undefined ? liveQuote.changePercent : prevMeta.changePercent,
+        marketState: liveQuote.marketState || prevMeta.marketState,
+        currency: liveQuote.currency || prevMeta.currency
+      };
+      if (onMetaLoaded) {
+        onMetaLoaded(updatedMeta);
+      }
+      return updatedMeta;
+    });
+
+    setCandles(prev => {
+      if (!prev.length) return prev;
+      const next = [...prev];
+      const lastIndex = next.length - 1;
+      const lastCandle = { ...next[lastIndex] };
+      
+      lastCandle.close = liveQuote.price;
+      if (liveQuote.price > lastCandle.high) lastCandle.high = liveQuote.price;
+      if (liveQuote.price < lastCandle.low) lastCandle.low = liveQuote.price;
+
+      if (candleSeriesRef.current) {
+        candleSeriesRef.current.update(lastCandle);
+      }
+      next[lastIndex] = lastCandle;
+      return next;
+    });
+
+    if (candleSeriesRef.current && fundamentals) {
+      const computedMetrics = mergeDailyMetrics(candles, {
+        ...fundamentals,
+        price: liveQuote.price,
+        change: liveQuote.change,
+        changePercent: liveQuote.changePercent,
+        marketState: liveQuote.marketState
+      });
+      setMetrics(computedMetrics);
+    }
+  }, [liveQuote, candles.length, onMetaLoaded, fundamentals]);
 
   // Effect: Render main chart overlay indicators (EMA, SMA, VWAP, Bollinger Bands) & Comparison line
   useEffect(() => {

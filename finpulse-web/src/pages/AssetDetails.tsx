@@ -177,7 +177,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
 
         <div className="transition-all duration-300">
           {activeTab === "chart" && (
-            <CandlestickChart symbol={symbol} timeframe={timeframe} />
+            <CandlestickChart symbol={symbol} timeframe={timeframe} liveQuote={quoteData} />
           )}
 
           {activeTab === "overview" && (
