@@ -271,7 +271,16 @@ export default function CandlestickChart({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [compareSymbol, setCompareSymbol] = useState("");
   const [compareCandles, setCompareCandles] = useState<any[]>([]);
-  const [meta, setMeta] = useState({
+  const [meta, setMeta] = useState<{
+    name: string;
+    exchange: string;
+    price: number;
+    change: number;
+    changePercent: number;
+    marketState: string;
+    currency: string;
+    performance?: any;
+  }>({
     name: "Asset",
     exchange: "GLOBAL",
     price: 0,
