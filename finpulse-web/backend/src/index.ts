@@ -33,14 +33,12 @@ import {
 import portfolioRoutes from "./routes/portfolio.js";
 import profileRoutes from "./routes/profile.js";
 import watchlistsRouter from "./routes/watchlists.js";
-import alertsRouter from "./routes/alerts.js";
 import recentRouter from "./routes/recent.js";
 import customScreenerRouter from "./routes/screeners.js";
 import aiHistoryRouter from "./routes/aiHistory.js";
 import { getAssetEvents } from "./services/yahooService.js";
 import authRoutes from "./routes/auth.js";
 import assetDetailsRoute from "./routes/assetDetails.js";
-import { evaluateAlerts } from "./services/alertEvaluator.js";
 
 // ==========================================
 // INITIALISE CORE SERVICES
@@ -198,7 +196,6 @@ app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/ai-chat", aiHistoryRouter);
 app.use("/api/profile", profileRoutes);
 app.use("/api/watchlists", watchlistsRouter);
-app.use("/api/alerts-custom", alertsRouter);
 app.use("/api/recent", recentRouter);
 app.use("/api/saved-screeners", customScreenerRouter);
 app.use("/api/auth", authRoutes);
@@ -501,15 +498,6 @@ const server = app.listen(PORT, () => {
     }, 10 * 60 * 1000); // every 10 minutes
     console.log(`[Keep-Alive] Self-ping enabled → ${SELF_URL}/health (every 10 min)`);
   }
-
-  // Start background price alert evaluations.
-  // Disabled to avoid background requests saturating the Yahoo Finance API rate limit.
-  // setTimeout(() => {
-  //   void evaluateAlerts();
-  //   setInterval(() => {
-  //     void evaluateAlerts();
-  //   }, 2 * 60 * 1000); // every 2 minutes
-  // }, 15000); // 15-second startup delay
 });
 
 // ==========================================

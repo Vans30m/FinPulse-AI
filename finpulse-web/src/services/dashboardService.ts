@@ -99,62 +99,6 @@ export const dashboardService = {
     return res.json();
   },
 
-  // ALERTS
-  async getAlerts(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/alerts-custom`, {
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch alerts');
-    return res.json();
-  },
-
-  async createAlert(data: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/alerts-custom`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error('Failed to create alert');
-    return res.json();
-  },
-
-  async updateAlert(id: string, data: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/alerts-custom/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error('Failed to update alert');
-    return res.json();
-  },
-
-  async toggleAlertStatus(id: string, data: { enabled?: boolean; status?: string }): Promise<any> {
-    const res = await fetch(`${API_BASE}/alerts-custom/${id}/status`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error('Failed to update alert status');
-    return res.json();
-  },
-
-  async getAlertHistory(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/alerts-custom/history`, {
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch alert history');
-    return res.json();
-  },
-
-  async deleteAlert(id: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/alerts-custom/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to delete alert');
-    return res.json();
-  },
-
   // SAVED SCREENERS
   async getSavedScreeners(): Promise<any[]> {
     const res = await fetch(`${API_BASE}/saved-screeners`, {

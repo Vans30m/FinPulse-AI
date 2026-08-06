@@ -198,66 +198,6 @@ export function useDeleteWatchlistTag() {
   });
 }
 
-// ALERTS
-export function useAlerts() {
-  return useQuery({
-    queryKey: ['alerts-custom'],
-    queryFn: dashboardService.getAlerts
-  });
-}
-
-export function useCreateAlert() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: dashboardService.createAlert,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alerts-custom'] });
-      toast.success('Alert set successfully');
-    }
-  });
-}
-
-export function useUpdateAlert() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      dashboardService.updateAlert(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alerts-custom'] });
-      toast.success('Alert updated successfully');
-    }
-  });
-}
-
-export function useToggleAlertStatus() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { enabled?: boolean; status?: string } }) =>
-      dashboardService.toggleAlertStatus(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alerts-custom'] });
-    }
-  });
-}
-
-export function useAlertHistory() {
-  return useQuery({
-    queryKey: ['alerts-history'],
-    queryFn: dashboardService.getAlertHistory
-  });
-}
-
-export function useDeleteAlert() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: dashboardService.deleteAlert,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alerts-custom'] });
-      toast.success('Alert removed');
-    }
-  });
-}
-
 // SAVED SCREENERS
 export function useSavedScreeners() {
   return useQuery({

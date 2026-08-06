@@ -11,7 +11,6 @@ import LoginModal from './features/auth/LoginModal';
 import { Toaster, toast } from 'react-hot-toast';
 import PortfolioDashboard from './features/portfolio/components/PortfolioDashboard';
 import PerformanceComparison from './features/dashboard/components/PerformanceComparison';
-import MyAlertsDashboard from './features/dashboard/components/MyAlertsDashboard';
 import AssetDetails from "./pages/AssetDetails";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -103,7 +102,6 @@ export default function App() {
     { id: 'portfolio', label: 'Portfolio' },
     { id: 'performance', label: 'Performance' },
     { id: 'watchlist', label: 'Watchlist' },
-    { id: 'alerts', label: 'Alerts' },
     { id: "news", label: "News" },
   ];
 
@@ -268,25 +266,6 @@ export default function App() {
                     className="w-full"
                   >
                     <PerformanceComparison />
-                  </motion.div>
-                ) : (
-                  <Navigate to="/pulse" replace />
-                )
-              }
-            />
-
-            <Route
-              path="/alerts"
-              element={
-                isLoggedIn ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="w-full"
-                  >
-                    <MyAlertsDashboard />
                   </motion.div>
                 ) : (
                   <Navigate to="/pulse" replace />

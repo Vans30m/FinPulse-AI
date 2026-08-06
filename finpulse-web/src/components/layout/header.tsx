@@ -5,7 +5,6 @@ import {
   UserCircle,
   ChevronDown,
   LogOut,
-  Bell,
   Menu,
   X,
   Sun,
@@ -19,15 +18,6 @@ import { Link, NavLink } from "react-router-dom";
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useChart } from "../../context/ChartContext";
 import API_BASE_URL from "../../config/api";
-
-interface UserAlert {
-  id: string;
-  ticker: string;
-  targetPrice: number;
-  direction: 'ABOVE' | 'BELOW';
-  isTriggered: boolean;
-  createdAt: string;
-}
 
 interface NavItem {
   id: string;
@@ -50,49 +40,9 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { chartOpen } = useChart();
 
-  const [alerts, setAlerts] = useState<UserAlert[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    const fetchAlerts = async () => {
-      if (document.hidden) return;
-      try {
-        const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || '';
-        const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
-        const userId = storedUser.id || '';
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        if (userId) headers['X-User-Id'] = userId;
-
-        const res = await fetch(`${API_BASE_URL}/api/alerts-custom`, { headers });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            setAlerts(data);
-            const triggered = data.filter(a => a.isTriggered).length;
-            setUnreadCount(triggered);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch notifications in navbar:", error);
-      }
-    };
-
-    fetchAlerts();
-    const interval = setInterval(fetchAlerts, 10000);
-    return () => clearInterval(interval);
-  }, [isLoggedIn]);
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Element;
-      if (showNotifications && !target.closest('.notification-container')) {
-        setShowNotifications(false);
-      }
       if (showProfileMenu && !target.closest('.profile-menu-container')) {
         setShowProfileMenu(false);
       }
@@ -102,7 +52,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showNotifications, showProfileMenu, isMobileMenuOpen]);
+  }, [showProfileMenu, isMobileMenuOpen]);
 
   // Track scroll position to change styling dynamically (Stripe-like effect)
   useEffect(() => {
@@ -172,7 +122,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                     end={item.id === "pulse"}
                     onMouseEnter={() => setHoveredTab(item.id)}
                     onClick={(e) => {
-                      const protectedIds = ['portfolio', 'watchlist', 'alerts', 'performance', 'profile'];
+                      const protectedIds = ['portfolio', 'watchlist', 'performance', 'profile'];
                       if (protectedIds.includes(item.id.toLowerCase()) && !isLoggedIn) {
                         e.preventDefault();
                         onLoginClick();
@@ -226,87 +176,6 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
             </div>
             <kbd className="hidden sm:inline-block rounded bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-500 dark:text-slate-400">Ctrl K</kbd>
           </button>
-
-          {/* Notification Bell */}
-          {isLoggedIn && (
-            <div className="relative notification-container">
-              <button
-                onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  setShowProfileMenu(false);
-                }}
-                className="relative p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all flex items-center justify-center"
-                title="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white dark:ring-night-950">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              <AnimatePresence>
-                {showNotifications && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="fixed top-16 left-4 right-4 md:absolute md:top-auto md:left-auto md:right-0 md:mt-2 md:w-80 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-xl overflow-hidden z-50 p-3"
-                  >
-                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-2 mb-2">
-                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Alerts & Notifications</span>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={() => {
-                            setUnreadCount(0);
-                          }}
-                          className="text-[10px] font-bold text-blue-600 dark:text-cyan-400 hover:underline"
-                        >
-                          Mark all as read
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="max-h-64 overflow-y-auto space-y-1.5 custom-scrollbar pr-0.5">
-                      {alerts.length === 0 ? (
-                        <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">
-                          No active notifications.
-                        </div>
-                      ) : (
-                        alerts.map((alert) => (
-                          <div
-                            key={alert.id}
-                            className={`p-2.5 rounded-xl border text-xs transition-all ${alert.isTriggered
-                              ? "bg-rose-500/5 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-800 dark:text-rose-200"
-                              : "bg-slate-50 dark:bg-white/[0.02] border-slate-100 dark:border-white/5 text-slate-700 dark:text-slate-350"
-                              }`}
-                          >
-                            <div className="flex justify-between items-start">
-                              <span className="font-extrabold tracking-wide uppercase text-slate-900 dark:text-white">{alert.ticker}</span>
-                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${alert.isTriggered
-                                ? "bg-rose-500 text-white"
-                                : "bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400"
-                                }`}>
-                                {alert.isTriggered ? "Triggered" : "Active"}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-[11px]">
-                              Price went {alert.direction.toLowerCase()} target of <span className="font-extrabold">${alert.targetPrice.toFixed(2)}</span>.
-                            </p>
-                            <span className="text-[9px] text-slate-400 mt-1 block">
-                              {new Date(alert.createdAt).toLocaleDateString()} at {new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
 
           <div className="hidden sm:block h-6 w-px bg-slate-200 dark:bg-white/10 mx-1"></div>
 
@@ -417,7 +286,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                     end={item.id === "pulse"}
                     onClick={(e) => {
                       setIsMobileMenuOpen(false);
-                      const protectedIds = ['portfolio', 'watchlist', 'alerts', 'performance', 'profile'];
+                      const protectedIds = ['portfolio', 'watchlist', 'performance', 'profile'];
                       if (protectedIds.includes(item.id.toLowerCase()) && !isLoggedIn) {
                         e.preventDefault();
                         onLoginClick();
