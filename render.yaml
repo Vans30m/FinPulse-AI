@@ -53,7 +53,7 @@ services:
   - type: web
     name: finpulse-frontend
     runtime: static
-    rootDir: finpulse-web
+    rootDir: finpulse-web/frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     routes:
