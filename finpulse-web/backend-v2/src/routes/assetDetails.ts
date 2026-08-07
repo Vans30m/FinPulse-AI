@@ -224,23 +224,33 @@ router.get("/:symbol", async (req, res) => {
         quote = quotes[0] || null;
       } else {
         // Standard asset (Stock/Index): Fetch both quote and summary details
-        const [quotes, summaryResult] = await Promise.all([
-          YahooClient.quote([symbol]).catch(() => []),
-          YahooClient.quoteSummary(symbol, {
-            modules: [
-              "assetProfile",
-              "summaryDetail",
-              "defaultKeyStatistics",
-              "financialData",
-              "majorHoldersBreakdown",
-              "recommendationTrend",
-              "upgradeDowngradeHistory",
-              "calendarEvents"
-            ]
-          }).catch(() => null)
-        ]);
+        // 1. Fetch Quote
+        const quotes = await YahooClient.quote([symbol]).catch(() => []);
         quote = quotes[0] || null;
-        summary = summaryResult;
+
+        // 2. Fetch Summary modules one by one to prevent rate limits
+        const modulesToFetch = [
+          "assetProfile",
+          "summaryDetail",
+          "defaultKeyStatistics",
+          "financialData",
+          "majorHoldersBreakdown",
+          "recommendationTrend",
+          "upgradeDowngradeHistory",
+          "calendarEvents"
+        ];
+
+        summary = {};
+        for (const mod of modulesToFetch) {
+          try {
+            const modData = await YahooClient.quoteSummary(symbol, { modules: [mod] });
+            if (modData) {
+              summary = { ...summary, ...modData };
+            }
+          } catch (modErr) {
+            console.warn(`[AssetDetails] Failed to fetch module ${mod}:`, modErr);
+          }
+        }
       }
 
       quoteData = { quote, summary };
