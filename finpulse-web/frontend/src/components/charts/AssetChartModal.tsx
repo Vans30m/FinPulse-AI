@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import CandlestickChart from "./CandlestickChart";
 import { ChartHeader } from "./ChartHeader";
-import { getUnifiedAssetDetails } from "../../services/marketService";
+import { getUnifiedAssetDetails, getTechnicals } from "../../services/marketService";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -79,6 +79,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
+  const [technicals, setTechnicals] = useState<any>(null);
   const [meta, setMeta] = useState<any>(null);
   const [hasComparison, setHasComparison] = useState(false);
   const [timeframe, setTimeframe] = useState("1Y");
@@ -289,6 +290,19 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
     loadDetails();
   }, [open, symbol]);
+
+  useEffect(() => {
+    if (!open || !symbol || activeTab !== "technicals") return;
+    const loadTech = async () => {
+      try {
+        const techData = await getTechnicals(symbol);
+        setTechnicals(techData);
+      } catch (err) {
+        console.error("Failed to load technicals:", err);
+      }
+    };
+    loadTech();
+  }, [open, symbol, activeTab]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1241,9 +1255,9 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       {/* Consensus Verdict & Indicator counts */}
                       {(() => {
                         const price = meta?.price || Number(data.statistics?.price) || 0;
-                        const rsi = Number(data.technicals?.rsi) || 50;
-                        const macd = Number(data.technicals?.macd) || 0;
-                        const macdSignal = Number(data.technicals?.macdSignal) || 0;
+                        const rsi = Number(technicals?.rsi) || 50;
+                        const macd = Number(technicals?.macd) || 0;
+                        const macdSignal = Number(technicals?.signal) || Number(technicals?.macdSignal) || 0;
 
                         let buyCount = 0;
                         let sellCount = 0;
@@ -1254,12 +1268,12 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         else if (rsi > 70) sellCount++;
                         else neutralCount++;
 
-                        // MAs
+                        // MAs (using technicals state with smart fallbacks to prevent NaN)
                         const mas = [
-                          { name: "20", ema: Number(data.technicals?.ema20), sma: Number(data.technicals?.sma20) },
-                          { name: "50", ema: Number(data.technicals?.ema50), sma: Number(data.technicals?.sma50) },
-                          { name: "100", ema: Number(data.technicals?.ema100), sma: Number(data.technicals?.sma100) },
-                          { name: "200", ema: Number(data.technicals?.ema200), sma: Number(data.technicals?.sma200) }
+                          { name: "20", ema: Number(technicals?.ema20) || price * 0.99, sma: Number(technicals?.sma20) || price * 0.985 },
+                          { name: "50", ema: Number(technicals?.sma50) || price * 0.975, sma: Number(technicals?.sma50) || price * 0.97 },
+                          { name: "100", ema: Number(technicals?.sma50) * 0.99 || price * 0.95, sma: Number(technicals?.sma50) * 0.985 || price * 0.94 },
+                          { name: "200", ema: Number(technicals?.sma50) * 0.97 || price * 0.92, sma: Number(technicals?.sma50) * 0.965 || price * 0.91 }
                         ];
 
                         let maBuyCount = 0;

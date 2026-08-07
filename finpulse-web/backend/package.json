@@ -21,13 +21,19 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.2",
     "@types/pg": "^8.20.4",
+    "axios": "^1.19.0",
+    "cheerio": "^1.2.0",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "google-news-rss": "^0.4.1",
     "pg": "^8.22.0",
     "prisma": "^7.9.1",
+    "rss-parser": "^3.13.0",
     "tsx": "^4.23.11",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "yahoo-finance2": "^4.0.0"
   }
 }

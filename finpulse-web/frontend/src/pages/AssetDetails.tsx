@@ -684,26 +684,6 @@ export default function AssetDetails() {
                         <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.country}</span>
                       </div>
                     </div>
-                    {/* Employees */}
-                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
-                      <div className="p-2.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/15">
-                        <Users className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Employees</span>
-                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{formatVal(data.profile.employees)}</span>
-                      </div>
-                    </div>
-                    {/* CEO */}
-                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
-                      <div className="p-2.5 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/15">
-                        <Briefcase className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">CEO</span>
-                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.ceo}</span>
-                      </div>
-                    </div>
                     {/* Website */}
                     <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
                       <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">

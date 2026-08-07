@@ -3,6 +3,10 @@ import cors from 'cors';
 import compression from 'compression';
 import 'dotenv/config';
 import { prisma } from './prisma.js';
+import searchRoutes from './routes/search.js';
+import newsRoutes from './routes/news.js';
+import aiRoutes from './routes/ai.js';
+import assetRoutes from './routes/assets.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,3 +48,15 @@ prisma.$connect()
     console.error('[Database] Connection failed:', err);
     process.exit(1);
   });
+  
+// Search API
+app.use('/api', searchRoutes);
+
+// News API
+app.use('/api', newsRoutes);
+
+// AI API
+app.use('/api/ai', aiRoutes);
+
+// Asset Details API
+app.use('/api', assetRoutes);
