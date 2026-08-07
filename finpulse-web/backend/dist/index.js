@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import 'dotenv/config';
+import { prisma } from './prisma.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(compression());
@@ -27,7 +28,15 @@ app.get('/health', (req, res) => {
         frontendUrl: process.env.FRONTEND_URL || 'Not Set'
     });
 });
-// Bind to 0.0.0.0 for Render compatibility
-app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`[Server] running on port ${PORT}`);
+// Test database connection and start server
+prisma.$connect()
+    .then(() => {
+    console.log('[Database] Connected successfully');
+    app.listen(Number(PORT), '0.0.0.0', () => {
+        console.log(`[Server] running on port ${PORT}`);
+    });
+})
+    .catch((err) => {
+    console.error('[Database] Connection failed:', err);
+    process.exit(1);
 });
