@@ -10,10 +10,9 @@ export function useGlobalMarkets() {
 
   return useQuery({
     queryKey: ["globalMarkets"],
-
-    queryFn:
-      fetchGlobalMarkets,
-
-    refetchInterval: 2 * 60 * 1000, // 2 minutes – matches backend cache TTL and prevents Yahoo 429s
+    queryFn: fetchGlobalMarkets,
+    refetchInterval: false, // Disabled automatic polling
+    refetchOnWindowFocus: false, // Disabled background refetches on window focus
+    staleTime: Infinity, // Keep data fresh indefinitely once loaded
   });
 }

@@ -56,14 +56,16 @@ export async function getAllGlobalMarkets() {
     const usIndicesSymbols = GLOBAL_INDICES.filter(m => m.region === "US").map(m => m.symbol);
     const yahooOnlySymbols = GLOBAL_INDICES.filter(m => m.region !== "Crypto" && m.region !== "Forex" && m.region !== "US").map(m => m.symbol);
 
-    // 1. Fetch Twelve Data for Crypto & Forex
+    // 1. Twelve Data bypassed to prevent 429 rate limit errors
     let twelveDataQuotes: Record<string, any> = {};
+    /*
     try {
       const { fetchTwelveDataQuotes } = await import("./twelveDataService.js");
       twelveDataQuotes = await fetchTwelveDataQuotes(cryptoAndForexSymbols);
     } catch (err: any) {
       console.warn("[GlobalMarketService] Twelve Data fetch failed:", err.message);
     }
+    */
 
     // 2. Fetch Finnhub for US Indices
     const finnhubQuotes: Record<string, any> = {};

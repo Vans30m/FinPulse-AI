@@ -199,7 +199,7 @@ class CentralYahooClient {
       const chg = (Math.random() - 0.5) * base * 0.005;
       const open = base, close = base + chg;
       const high = Math.max(open, close) + Math.random() * base * 0.002;
-      const low  = Math.min(open, close) - Math.random() * base * 0.002;
+      const low = Math.min(open, close) - Math.random() * base * 0.002;
       base = close;
       return { date: new Date(time).toISOString(), open, high, low, close, adjclose: close, volume: Math.floor(Math.random() * 5e5) + 1e5 };
     });
