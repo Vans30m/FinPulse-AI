@@ -5,7 +5,7 @@ services:
     env: node
     region: ohio
     plan: free
-    rootDir: finpulse-web/backend
+    rootDir: finpulse-web/backend-v2
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
