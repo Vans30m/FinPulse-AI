@@ -228,7 +228,7 @@ router.get("/:symbol", async (req, res) => {
         const quotes = await YahooClient.quote([symbol]).catch(() => []);
         quote = quotes[0] || null;
 
-        // 2. Fetch Summary modules one by one to prevent rate limits
+        // 2. Fetch all summary modules in a SINGLE Yahoo API call (was 8 separate calls before)
         const modulesToFetch = [
           "assetProfile",
           "summaryDetail",
@@ -241,15 +241,11 @@ router.get("/:symbol", async (req, res) => {
         ];
 
         summary = {};
-        for (const mod of modulesToFetch) {
-          try {
-            const modData = await YahooClient.quoteSummary(symbol, { modules: [mod] });
-            if (modData) {
-              summary = { ...summary, ...modData };
-            }
-          } catch (modErr) {
-            console.warn(`[AssetDetails] Failed to fetch module ${mod}:`, modErr);
-          }
+        try {
+          const modData = await YahooClient.quoteSummary(symbol, { modules: modulesToFetch });
+          if (modData) summary = modData;
+        } catch (summaryErr) {
+          console.warn(`[AssetDetails] quoteSummary batch failed for ${symbol}:`, summaryErr);
         }
       }
 

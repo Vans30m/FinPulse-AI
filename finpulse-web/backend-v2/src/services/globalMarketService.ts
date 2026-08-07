@@ -56,16 +56,15 @@ export async function getAllGlobalMarkets() {
     const usIndicesSymbols = GLOBAL_INDICES.filter(m => m.region === "US").map(m => m.symbol);
     const yahooOnlySymbols = GLOBAL_INDICES.filter(m => m.region !== "Crypto" && m.region !== "Forex" && m.region !== "US").map(m => m.symbol);
 
-    // 1. Twelve Data bypassed to prevent 429 rate limit errors
+    // 1. Twelve Data for Crypto and Forex symbols (has built-in 429 detection & cooldown)
     let twelveDataQuotes: Record<string, any> = {};
-    /*
     try {
       const { fetchTwelveDataQuotes } = await import("./twelveDataService.js");
       twelveDataQuotes = await fetchTwelveDataQuotes(cryptoAndForexSymbols);
     } catch (err: any) {
       console.warn("[GlobalMarketService] Twelve Data fetch failed:", err.message);
     }
-    */
+
 
     // 2. Fetch Finnhub for US Indices
     const finnhubQuotes: Record<string, any> = {};
@@ -87,7 +86,6 @@ export async function getAllGlobalMarkets() {
     const symbolsForYahoo = [...yahooOnlySymbols, ...failedTwelveData, ...failedFinnhub];
 
     const BATCH_SIZE = 10;
-    const BATCH_DELAY_MS = 2000;
     const allYahooQuotes: any[] = [];
 
     for (let i = 0; i < symbolsForYahoo.length; i += BATCH_SIZE) {
@@ -98,9 +96,7 @@ export async function getAllGlobalMarkets() {
       } catch (batchErr: any) {
         console.warn(`[GlobalMarketService] Batch ${Math.floor(i / BATCH_SIZE) + 1} failed:`, batchErr.message);
       }
-      if (i + BATCH_SIZE < symbolsForYahoo.length) {
-        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
-      }
+      // No manual sleep here — YahooClient's internal queue enforces 5s between calls
     }
 
     const yahooQuoteMap = new Map(allYahooQuotes.filter(q => q?.symbol).map(q => [q.symbol, q]));
@@ -193,17 +189,42 @@ export async function getAllGlobalMarkets() {
     return results.filter(Boolean);
   } catch (err) {
     console.error("Failed to batch fetch all global markets:", err);
-    // Fallback to individual fetches
-    const results = await Promise.all(
-      GLOBAL_INDICES.map((market) =>
-        getGlobalMarketQuote(
-          market.symbol,
-          market.name,
-          market.region
-        )
-      )
-    );
-    return results.filter(Boolean);
+    // Safe batched fallback — never fire all symbols as parallel individual requests
+    const FALLBACK_BATCH = 10;
+    const fallbackQuotes: any[] = [];
+    const allSymbols = GLOBAL_INDICES.map(m => m.symbol);
+
+    for (let i = 0; i < allSymbols.length; i += FALLBACK_BATCH) {
+      const batch = allSymbols.slice(i, i + FALLBACK_BATCH);
+      try {
+        const batchQuotes = await YahooClient.quote(batch);
+        fallbackQuotes.push(...batchQuotes.filter(Boolean));
+      } catch (batchErr: any) {
+        console.warn(`[GlobalMarketService] Fallback batch ${Math.floor(i / FALLBACK_BATCH) + 1} failed:`, batchErr.message);
+      }
+    }
+
+    const fallbackMap = new Map(fallbackQuotes.filter(q => q?.symbol).map(q => [q.symbol, q]));
+    return GLOBAL_INDICES.map(market => {
+      const quote = fallbackMap.get(market.symbol);
+      if (!quote || !quote.regularMarketPrice) return null;
+      return {
+        symbol: market.symbol,
+        name: market.name,
+        region: market.region,
+        price: quote.regularMarketPrice,
+        change: quote.regularMarketChange,
+        changePercent: quote.regularMarketChangePercent,
+        volume: quote.regularMarketVolume,
+        currency: quote.currency,
+        dayHigh: quote.regularMarketDayHigh,
+        dayLow: quote.regularMarketDayLow,
+        yearHigh: quote.fiftyTwoWeekHigh,
+        yearLow: quote.fiftyTwoWeekLow,
+        previousClose: quote.regularMarketPreviousClose,
+        open: quote.regularMarketOpen,
+      };
+    }).filter(Boolean);
   }
 }
 

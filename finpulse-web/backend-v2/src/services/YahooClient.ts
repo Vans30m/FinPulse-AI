@@ -21,10 +21,13 @@ class YahooMetrics {
 export const metrics = new YahooMetrics();
 setInterval(() => metrics.logStats(), 60_000);
 
+// Module-level 429 backoff – shared across all queue tasks
+let rateLimitBackoffUntil = 0;
+
 class SequentialQueue {
   private queue: (() => Promise<any>)[] = [];
   private active = false;
-  private readonly minDelay = 3000;
+  private readonly minDelay = 5000;
   private lastCallTime = 0;
 
   get size() { return this.queue.length; }
@@ -41,6 +44,13 @@ class SequentialQueue {
   private async process() {
     if (this.active || this.queue.length === 0) return;
     this.active = true;
+
+    // Respect global 429 backoff before firing any task
+    const backoffWait = Math.max(0, rateLimitBackoffUntil - Date.now());
+    if (backoffWait > 0) {
+      console.warn(`[YahooQueue] In 429 backoff – pausing ${(backoffWait / 1000).toFixed(1)}s`);
+      await new Promise(r => setTimeout(r, backoffWait));
+    }
 
     const wait = Math.max(0, this.minDelay - (Date.now() - this.lastCallTime));
     if (wait > 0) await new Promise(r => setTimeout(r, wait));
@@ -116,8 +126,19 @@ class CentralYahooClient {
             this.cache.set(cacheKey, { data: fresh, freshUntil: Date.now() + ttlSeconds * 1000 });
           } catch (err: any) {
             metrics.totalResponseTime += Date.now() - start;
-            console.warn(`[YahooClient SWR] Background refresh failed – ${cacheKey}: ${err.message}`);
-            this.cache.del(cacheKey);
+            const is429 = err.response?.status === 429 || err.message?.includes('429');
+            if (is429) {
+              metrics.rateLimit429Count++;
+              rateLimitBackoffUntil = Date.now() + 60_000;
+              // Preserve stale cache – extend its TTL by 5 minutes instead of deleting
+              const stale = this.cache.get<CacheEntry<T>>(cacheKey);
+              if (stale) this.cache.set(cacheKey, stale, 300);
+              console.warn(`[YahooClient SWR 429] Rate limited – ${cacheKey}. Stale data preserved for 5m.`);
+            } else {
+              // Only delete on non-429 errors (bad data, network failure, etc.)
+              this.cache.del(cacheKey);
+              console.warn(`[YahooClient SWR] Background refresh failed – ${cacheKey}: ${err.message}`);
+            }
           }
         }).finally(() => this.inflight.delete(cacheKey));
         this.inflight.set(cacheKey, bg);
@@ -144,7 +165,8 @@ class CentralYahooClient {
         const is429 = err.response?.status === 429 || err.message?.includes('429');
         if (is429) {
           metrics.rateLimit429Count++;
-          console.warn(`[YahooClient 429] Rate limited – ${cacheKey}`);
+          rateLimitBackoffUntil = Date.now() + 60_000; // pause queue for 60s
+          console.warn(`[YahooClient 429] Rate limited – ${cacheKey}. Backoff 60s activated.`);
         } else {
           console.error(`[YahooClient Error] ${cacheKey}: ${err.message}`);
         }
