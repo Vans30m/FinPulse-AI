@@ -24,7 +24,7 @@ setInterval(() => metrics.logStats(), 60_000);
 class SequentialQueue {
   private queue: (() => Promise<any>)[] = [];
   private active = false;
-  private readonly minDelay = 1500;
+  private readonly minDelay = 3000;
   private lastCallTime = 0;
 
   get size() { return this.queue.length; }
