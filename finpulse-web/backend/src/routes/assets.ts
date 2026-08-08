@@ -565,4 +565,80 @@ router.get('/technical/:symbol', async (req: Request, res: Response) => {
   res.json(result);
 });
 
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+];
+
+async function fetchYahooChartDirect(symbol: string, range: string, interval: string): Promise<any> {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
+  
+  let lastError: any = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Origin': 'https://finance.yahoo.com',
+          'Referer': 'https://finance.yahoo.com/',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        timeout: 6000
+      });
+      if (response.data?.chart?.result) {
+        return response.data;
+      }
+    } catch (err: any) {
+      lastError = err;
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+  throw lastError || new Error("Failed to fetch chart after retries");
+}
+
+// GET /api/charts/:symbol
+router.get('/charts/:symbol', async (req: Request, res: Response) => {
+  const symbol = (req.params.symbol || 'AAPL').toUpperCase();
+  const range = (req.query.range || '1y').toString();
+  const interval = (req.query.interval || '1d').toString();
+
+  try {
+    const data = await fetchYahooChartDirect(symbol, range, interval);
+    const chartResult = data.chart?.result?.[0];
+    if (chartResult && chartResult.timestamp) {
+      const timestamps = chartResult.timestamp;
+      const quote = chartResult.indicators?.quote?.[0];
+      const adjclose = chartResult.indicators?.adjclose?.[0]?.adjclose; // optional
+      
+      const quotes = timestamps.map((ts: number, i: number) => {
+        return {
+          date: new Date(ts * 1000).toISOString(),
+          open: quote?.open?.[i] ?? null,
+          high: quote?.high?.[i] ?? null,
+          low: quote?.low?.[i] ?? null,
+          close: quote?.close?.[i] ?? null,
+          adjClose: adjclose?.[i] ?? quote?.close?.[i] ?? null,
+          volume: quote?.volume?.[i] ?? null
+        };
+      }).filter((q: any) => q.open !== null && q.close !== null);
+
+      res.json({
+        meta: chartResult.meta,
+        quotes: quotes
+      });
+    } else {
+      res.status(502).json({ error: "Invalid data structure returned from Yahoo Finance" });
+    }
+  } catch (err: any) {
+    console.error(`Direct Yahoo chart fetch failed for ${symbol}:`, err.message);
+    res.status(502).json({ error: `Failed to retrieve chart data: ${err.message}` });
+  }
+});
+
 export default router;
