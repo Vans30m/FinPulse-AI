@@ -536,3 +536,9 @@ export interface DailyMarketMetrics {
   currentVolume: number;
   avgVolume: number;
 }
+
+export async function getFundamentalsTimeseries(symbol: string, statement = 'income'): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/fundamentals-timeseries/${encodeURIComponent(symbol)}?statement=${statement}`);
+  if (!response.ok) throw new Error("Failed to fetch timeseries");
+  return response.json();
+}

@@ -7,6 +7,28 @@ const router = Router();
 const yahooFinance = new YahooFinance();
 const parser = new Parser();
 
+// In-memory cache Map
+const memoryCache = new Map<string, { data: any; expiresAt: number }>();
+const CACHE_TTL_SECONDS = 12 * 60 * 60; // 12 Hours cache TTL
+
+async function getCachedData(key: string): Promise<any | null> {
+  const memEntry = memoryCache.get(key);
+  if (memEntry && memEntry.expiresAt > Date.now()) {
+    return memEntry.data;
+  }
+  if (memEntry) {
+    memoryCache.delete(key);
+  }
+  return null;
+}
+
+async function setCachedData(key: string, data: any): Promise<void> {
+  memoryCache.set(key, {
+    data,
+    expiresAt: Date.now() + CACHE_TTL_SECONDS * 1000,
+  });
+}
+
 // Centralized LLM fetcher helper
 async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
   const groqKey = process.env.GROQ_API_KEY;
@@ -91,8 +113,8 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
         const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleaned);
       }
-    } catch (err) {
-      console.warn('Gemini query failed in assets, using static fallback...', err);
+    } catch (err: any) {
+      console.warn('Gemini query failed in assets, using static fallback:', err.message || err);
     }
   }
 
@@ -100,9 +122,9 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
   return fallbackData;
 }
 
-// GET /api/asset-details/:symbol
 router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
   const symbol = (typeof req.params.symbol === 'string' ? req.params.symbol : 'AAPL').toUpperCase();
+  const isIndian = symbol.endsWith('.NS') || symbol.endsWith('.BO');
 
   // Fetch real-time data from Yahoo Finance to inject as context
   let yahooContext: any = null;
@@ -150,7 +172,7 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
     console.warn('Failed to retrieve Yahoo Finance context, falling back to pure AI generation:', err);
   }
 
-  const isIndian = symbol.endsWith('.NS') || symbol.endsWith('.BO');
+
 
   const fallback = {
     profile: {
@@ -194,7 +216,9 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
       cash: yahooContext?.financials?.totalCash || 45000000000,
       debt: yahooContext?.financials?.totalDebt || 80000000000,
       revenue: yahooContext?.financials?.totalRevenue || 250000000000,
-      ebitda: yahooContext?.financials?.ebitda || 75000000000
+      ebitda: yahooContext?.financials?.ebitda || 75000000000,
+      operatingCashflow: yahooContext?.financials?.operatingCashflow || 50000000000,
+      freeCashflow: yahooContext?.financials?.freeCashflow || 40000000000
     },
     analysts: {
       recommendationMean: yahooContext?.financials?.recommendationMean || 2.0,
@@ -327,7 +351,12 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
   ${contextStr}
   IMPORTANT: For the company "profile" (name, sector, industry, country, description, CEO, employees, website) and "ownership" (institutionOwnership, insiderOwnership, institutionsFloatPercentHeld, institutionsCount), if they are missing, null, or empty in the provided Yahoo context, you MUST use your AI knowledge to generate realistic, accurate, and plausible data for "${symbol}" instead of leaving them null, empty, or default. Do NOT use placeholder values; output actual/plausible details for this specific symbol based on historical data.`;
 
-  const result = await queryLLM(prompt, fallback);
+  const cacheKey = `llm-details-${symbol}`;
+  let result = await getCachedData(cacheKey);
+  if (!result) {
+    result = await queryLLM(prompt, fallback);
+    await setCachedData(cacheKey, result);
+  }
 
   // Fetch real historical performance returns from Yahoo Finance
   let calculatedPerformance: any = null;
@@ -666,6 +695,96 @@ router.get('/screener/global', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Failed to fetch global screener:", error.message);
     res.status(502).json({ error: "Failed to fetch global screener data" });
+  }
+});
+
+// GET /api/fundamentals-timeseries/:symbol
+router.get('/fundamentals-timeseries/:symbol', async (req: Request, res: Response) => {
+  const symbol = String(req.params.symbol || 'AAPL').toUpperCase();
+  const now = Math.floor(Date.now() / 1000);
+  const period1 = req.query.period1 ? String(req.query.period1) : String(now - 3 * 365 * 24 * 60 * 60);
+  const period2 = req.query.period2 ? String(req.query.period2) : String(now + 30 * 24 * 60 * 60);
+  const statement = String(req.query.statement || 'income');
+
+  const cacheKey = `timeseries-${symbol}-${statement}`;
+
+  try {
+    const cached = await getCachedData(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    let typesList: string[] = [];
+    if (statement === 'balance') {
+      typesList = [
+        'quarterlyCashCashEquivalentsAndShortTermInvestments',
+        'quarterlyTotalCurrentAssets',
+        'quarterlyTotalAssets',
+        'quarterlyTotalCurrentLiabilities',
+        'quarterlyTotalLiabilitiesNetMinorityInterest',
+        'quarterlyTotalDebt',
+        'quarterlyStockholdersEquity',
+        'quarterlyCommonStockEquity',
+        'quarterlyRetainedEarnings'
+      ];
+    } else if (statement === 'cash') {
+      typesList = [
+        'quarterlyOperatingCashFlow',
+        'quarterlyInvestingCashFlow',
+        'quarterlyFinancingCashFlow',
+        'quarterlyCapitalExpenditure',
+        'quarterlyFreeCashFlow',
+        'quarterlyRepurchaseOfCapitalStock',
+        'quarterlyIssuanceOfCapitalStock',
+        'quarterlyIssuanceOfDebt',
+        'quarterlyRepaymentOfDebt',
+        'quarterlyNetBorrowings',
+        'quarterlyChangesInWorkingCapital',
+        'quarterlyNetChangeInCash'
+      ];
+    } else {
+      typesList = [
+        'quarterlyTotalRevenue',
+        'quarterlyOperatingRevenue',
+        'quarterlyCostOfRevenue',
+        'quarterlyGrossProfit',
+        'quarterlyOperatingExpense',
+        'quarterlyOperatingIncome',
+        'quarterlyEBITDA',
+        'quarterlyEBIT',
+        'quarterlyPretaxIncome',
+        'quarterlyTaxProvision',
+        'quarterlyNetIncome',
+        'quarterlyNetIncomeCommonStockholders',
+        'quarterlyNetIncomeContinuousOperations',
+        'quarterlyInterestExpense',
+        'quarterlyInterestIncome',
+        'quarterlyBasicEPS',
+        'quarterlyDilutedEPS'
+      ];
+    }
+
+    const types = typesList.join(',');
+
+    const data = await (yahooFinance as any)._fetch(
+      `https://query1.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/${symbol}`,
+      {
+        symbol: symbol,
+        type: types,
+        period1: period1,
+        period2: period2,
+        merge: 'false'
+      },
+      {},
+      'json',
+      true
+    );
+
+    await setCachedData(cacheKey, data);
+    res.json(data);
+  } catch (error: any) {
+    console.error(`Failed to fetch Yahoo timeseries for ${symbol}:`, error.message);
+    res.status(502).json({ error: `Failed to retrieve timeseries: ${error.message}` });
   }
 });
 
