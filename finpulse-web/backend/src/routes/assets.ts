@@ -641,4 +641,32 @@ router.get('/charts/:symbol', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/screener/global
+router.get('/screener/global', async (req: Request, res: Response) => {
+  try {
+    const type = req.query.type === 'losers' ? 'day_losers' : 'day_gainers';
+    const url = `https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?formatted=true&scrIds=${type}&count=10&start=0`;
+    
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    const quotes = response.data?.finance?.result?.[0]?.quotes || [];
+    const mapped = quotes.map((quote: any) => ({
+      symbol: quote.symbol,
+      name: quote.shortName || quote.longName || quote.symbol,
+      price: quote.regularMarketPrice?.raw ?? quote.regularMarketPrice ?? 0,
+      change: quote.regularMarketChange?.raw ?? quote.regularMarketChange ?? 0,
+      changePercent: quote.regularMarketChangePercent?.raw ?? quote.regularMarketChangePercent ?? 0
+    }));
+
+    res.json(mapped);
+  } catch (error: any) {
+    console.error("Failed to fetch global screener:", error.message);
+    res.status(502).json({ error: "Failed to fetch global screener data" });
+  }
+});
+
 export default router;
