@@ -597,7 +597,11 @@ export default function AssetDetails() {
               symbol={symbol}
               timeframe={timeframe}
               onCompareChange={(compareSym) => setHasComparison(!!compareSym)}
-              onMetaLoaded={setMeta}
+              onMetaLoaded={(incoming) => setMeta(prev => ({
+                ...prev,
+                ...incoming,
+                performance: incoming.performance || prev?.performance
+              }))}
             />
           </div>
         </div>

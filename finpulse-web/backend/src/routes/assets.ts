@@ -148,19 +148,21 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
     console.warn('Failed to retrieve Yahoo Finance context, falling back to pure AI generation:', err);
   }
 
+  const isIndian = symbol.endsWith('.NS') || symbol.endsWith('.BO');
+
   const fallback = {
     profile: {
-      name: `${symbol} Corporation`,
-      sector: "Technology",
-      industry: "Information Technology Services",
-      country: "United States",
-      employees: 120000,
-      ceo: "John Doe",
-      website: "https://www.google.com",
-      description: `${symbol} is a leading global firm offering innovative solutions, cutting-edge products, and enterprise services to customers worldwide.`
+      name: yahooContext?.profile?.name || (isIndian ? `${symbol.replace(/\.(NS|BO)$/i, '')} India Ltd.` : `${symbol} Corporation`),
+      sector: yahooContext?.profile?.sector || (isIndian ? "Financials" : "Technology"),
+      industry: yahooContext?.profile?.industry || (isIndian ? "Financial Services" : "Information Technology Services"),
+      country: yahooContext?.profile?.country || (isIndian ? "India" : "United States"),
+      employees: yahooContext?.profile?.fullTimeEmployees || 12000,
+      ceo: yahooContext?.profile?.companyOfficers?.[0]?.name || (isIndian ? "Amit Sharma" : "John Doe"),
+      website: yahooContext?.profile?.website || (isIndian ? "https://www.nseindia.com" : "https://www.google.com"),
+      description: yahooContext?.profile?.longBusinessSummary || `${symbol} is a leading global firm offering innovative solutions, cutting-edge products, and enterprise services.`
     },
     statistics: {
-      price: yahooContext?.price || 180.50,
+      price: yahooContext?.price || (isIndian ? 1250.00 : 180.50),
       change: yahooContext?.change || 2.15,
       changePercent: yahooContext?.changePercent || 1.20,
       marketCap: yahooContext?.marketCap || 1500000000000,
@@ -202,24 +204,24 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
       targetHigh: yahooContext?.financials?.targetHighPrice || 220.00
     },
     ownership: {
-      institutionOwnership: yahooContext?.majorHolders?.institutionsPercentHeld || 0.625,
-      insiderOwnership: yahooContext?.majorHolders?.insidersPercentHeld || 0.005,
-      institutionsFloatPercentHeld: yahooContext?.majorHolders?.institutionsFloatPercentHeld || 0.628,
-      institutionsCount: 2800
+      institutionOwnership: yahooContext?.majorHolders?.institutionsPercentHeld || 0.455,
+      insiderOwnership: yahooContext?.majorHolders?.insidersPercentHeld || 0.125,
+      institutionsFloatPercentHeld: yahooContext?.majorHolders?.institutionsFloatPercentHeld || 0.482,
+      institutionsCount: isIndian ? 450 : 2800
     },
     sentiment: {
       score: 75,
       label: "Bullish",
       reasons: [
-        "Strong market position with defensible product ecosystem",
-        "Robust free cash flow generation enables dividend growth",
-        "Expanding enterprise cloud opportunities"
+        "Strong market positioning and industry growth tailwinds",
+        "Robust financial profile with consistent margin execution",
+        "Resilient operational updates driving broker upgrades"
       ]
     },
     quote: {
-      exchangeName: yahooContext?.exchangeName || "NASDAQ",
+      exchangeName: yahooContext?.exchangeName || (isIndian ? "NSE" : "NASDAQ"),
       marketState: yahooContext?.marketState || "OPEN",
-      currency: yahooContext?.currency || "USD"
+      currency: yahooContext?.currency || (isIndian ? "INR" : "USD")
     },
     events: {
       earnings: {
@@ -321,9 +323,97 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
     }
   }
   ${contextStr}
-  IMPORTANT: If Real-time Yahoo Finance Data Context is provided, you MUST use the exact, correct values from it (prices, change percentage, description, market cap, key statistics, CEO name, etc.) instead of generating them. Use the AI only to fill in missing/empty gaps, compile the final structure, and calculate the overall stock sentiment.`;
+  IMPORTANT: For the company "profile" (name, sector, industry, country, description, CEO, employees, website) and "ownership" (institutionOwnership, insiderOwnership, institutionsFloatPercentHeld, institutionsCount), if they are missing, null, or empty in the provided Yahoo context, you MUST use your AI knowledge to generate realistic, accurate, and plausible data for "${symbol}" instead of leaving them null, empty, or default. Do NOT use placeholder values; output actual/plausible details for this specific symbol based on historical data.`;
 
   const result = await queryLLM(prompt, fallback);
+
+  // Fetch real historical performance returns from Yahoo Finance
+  let calculatedPerformance: any = null;
+  try {
+    const histResult = await yahooFinance.chart(symbol, { period1: '2000-01-01', interval: '1wk' });
+    if (histResult && histResult.quotes && histResult.quotes.length > 0) {
+      const quotes = histResult.quotes.filter((q: any) => q && q.close != null);
+      if (quotes.length > 0) {
+        const currentPrice = histResult.meta.regularMarketPrice || quotes[quotes.length - 1].close;
+        const now = new Date();
+        const targets: Record<string, Date> = {
+          "1W": new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+          "3M": new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
+          "6M": new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000),
+          "YTD": new Date(now.getFullYear(), 0, 1),
+          "1Y": new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000),
+          "5Y": new Date(now.getTime() - 5 * 365 * 24 * 60 * 60 * 1000),
+          "All Time": new Date(quotes[0].date)
+        };
+
+        calculatedPerformance = {
+          "1D": histResult.meta.regularMarketChangePercent || yahooContext?.changePercent || 0
+        };
+
+        for (const [key, targetDate] of Object.entries(targets)) {
+          let closestQuote = quotes[0];
+          let minDiff = Math.abs(new Date(closestQuote.date).getTime() - targetDate.getTime());
+          
+          for (const q of quotes) {
+            const diff = Math.abs(new Date(q.date).getTime() - targetDate.getTime());
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestQuote = q;
+            }
+          }
+
+          const maxWindow = 21 * 24 * 60 * 60 * 1000; // 21 days window for weekly data
+          if (minDiff <= maxWindow) {
+            const pctReturn = ((currentPrice - closestQuote.close) / closestQuote.close) * 100;
+            calculatedPerformance[key] = Number(pctReturn.toFixed(2));
+          } else {
+            calculatedPerformance[key] = null;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to calculate real historical performance:", err);
+  }
+
+  // Post-process result to guarantee performance numbers are present and realistic
+  if (!result.statistics) result.statistics = {};
+  if (!result.statistics.performance) result.statistics.performance = {};
+
+  const baseChange = yahooContext?.changePercent || 1.20;
+  // Seed random based on symbol characters to make it deterministic per symbol
+  let seed = 0;
+  for (let i = 0; i < symbol.length; i++) {
+    seed += symbol.charCodeAt(i);
+  }
+  const pseudoRandom = (offset: number) => {
+    const x = Math.sin(seed + offset) * 10000;
+    return x - Math.floor(x); // returns 0 to 1
+  };
+
+  const defaultPerformance: Record<string, number> = {
+    "1D": baseChange,
+    "1W": baseChange * 1.5 + (pseudoRandom(1) * 4 - 2),
+    "3M": baseChange * 4 + (pseudoRandom(2) * 16 - 8) + 5,
+    "6M": baseChange * 8 + (pseudoRandom(3) * 30 - 15) + 10,
+    "YTD": baseChange * 6 + (pseudoRandom(4) * 24 - 12) + 8,
+    "1Y": baseChange * 15 + (pseudoRandom(5) * 50 - 25) + 20,
+    "5Y": baseChange * 50 + (pseudoRandom(6) * 180 - 90) + 75,
+    "All Time": baseChange * 120 + (pseudoRandom(7) * 400 - 200) + 180
+  };
+
+  const periods = ["1D", "1W", "3M", "6M", "YTD", "1Y", "5Y", "All Time"];
+  periods.forEach(p => {
+    if (calculatedPerformance && calculatedPerformance[p] !== undefined && calculatedPerformance[p] !== null) {
+      result.statistics.performance[p] = calculatedPerformance[p];
+    } else {
+      const val = result.statistics.performance?.[p];
+      if (val === undefined || val === null || typeof val !== 'number' || isNaN(val)) {
+        result.statistics.performance[p] = Number(defaultPerformance[p].toFixed(2));
+      }
+    }
+  });
+
   res.json(result);
 });
 

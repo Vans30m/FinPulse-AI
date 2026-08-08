@@ -598,7 +598,11 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                     symbol={symbol}
                     timeframe={timeframe}
                     onCompareChange={(compareSym) => setHasComparison(!!compareSym)}
-                    onMetaLoaded={setMeta}
+                    onMetaLoaded={(incoming) => setMeta(prev => ({
+                      ...prev,
+                      ...incoming,
+                      performance: incoming.performance || prev?.performance
+                    }))}
                   />
                 </div>
               </div>
