@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import YahooFinance from 'yahoo-finance2';
+import Parser from 'rss-parser';
 
 const router = Router();
 const yahooFinance = new YahooFinance();
+const parser = new Parser();
 
 // Centralized LLM fetcher helper
 async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
@@ -363,7 +365,7 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
           }
 
           const maxWindow = 21 * 24 * 60 * 60 * 1000; // 21 days window for weekly data
-          if (minDiff <= maxWindow) {
+          if (minDiff <= maxWindow && currentPrice != null && closestQuote.close != null) {
             const pctReturn = ((currentPrice - closestQuote.close) / closestQuote.close) * 100;
             calculatedPerformance[key] = Number(pctReturn.toFixed(2));
           } else {
@@ -414,6 +416,44 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
     }
   });
 
+  // Fetch real-time company news from Google News RSS feed
+  let companyNews: any[] = [];
+  try {
+    const newsQuery = `${symbol} stock news`;
+    const newsFeedUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(newsQuery)}&hl=en-US&gl=US&ceid=US:en`;
+    const newsResponse = await axios.get(newsFeedUrl, {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (newsResponse && newsResponse.data) {
+      const feed = await parser.parseString(newsResponse.data);
+      companyNews = (feed.items || []).slice(0, 10).map((item: any, idx: number) => {
+        // Clean Google News title and extract source publisher
+        let headline = item.title || '';
+        let source = 'Google News';
+        const lastDashIndex = headline.lastIndexOf(' - ');
+        if (lastDashIndex !== -1) {
+          source = headline.substring(lastDashIndex + 3).trim();
+          headline = headline.substring(0, lastDashIndex).trim();
+        }
+
+        return {
+          uuid: item.guid || `news-${symbol}-${idx}`,
+          title: headline,
+          link: item.link,
+          publisher: source,
+          providerPublishTime: item.pubDate ? Date.parse(item.pubDate) : Date.now(),
+        };
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to fetch company news in asset details:", err);
+  }
+
+  result.news = companyNews;
   res.json(result);
 });
 

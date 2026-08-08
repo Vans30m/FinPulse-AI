@@ -28,7 +28,13 @@ router.get('/company-news/:symbol', async (req: Request, res: Response) => {
   try {
     const query = `${symbol} stock news`;
     const feedUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
-    const feed = await parser.parseURL(feedUrl);
+    const response = await axios.get(feedUrl, {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    const feed = await parser.parseString(response.data);
 
     const newsItems = (feed.items || []).slice(0, 10).map((item: any, idx: number) => {
       const { headline, source } = parseGoogleNewsTitle(item.title);
@@ -74,7 +80,13 @@ router.get('/news', async (req: Request, res: Response) => {
   // Fallback to Google News RSS
   try {
     const feedUrl = `https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en`;
-    const feed = await parser.parseURL(feedUrl);
+    const response = await axios.get(feedUrl, {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    const feed = await parser.parseString(response.data);
     const mapped = (feed.items || []).slice(0, 25).map((item: any, idx: number) => {
       const { headline, source } = parseGoogleNewsTitle(item.title);
       return {
@@ -97,7 +109,13 @@ router.get('/news', async (req: Request, res: Response) => {
 router.get('/news/google', async (req: Request, res: Response) => {
   try {
     const feedUrl = `https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en`;
-    const feed = await parser.parseURL(feedUrl);
+    const response = await axios.get(feedUrl, {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    const feed = await parser.parseString(response.data);
     const mapped = (feed.items || []).slice(0, 25).map((item: any, idx: number) => {
       const { headline, source } = parseGoogleNewsTitle(item.title);
       return {

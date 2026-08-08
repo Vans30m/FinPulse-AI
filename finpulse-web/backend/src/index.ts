@@ -45,17 +45,18 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Test database connection and start server
+// Start server immediately
+app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`[Server] running on port ${PORT}`);
+});
+
+// Test database connection in the background
 prisma.$connect()
   .then(() => {
     console.log('[Database] Connected successfully');
-    app.listen(Number(PORT), '0.0.0.0', () => {
-      console.log(`[Server] running on port ${PORT}`);
-    });
   })
   .catch((err: any) => {
     console.error('[Database] Connection failed:', err);
-    process.exit(1);
   });
   
 // Search API
