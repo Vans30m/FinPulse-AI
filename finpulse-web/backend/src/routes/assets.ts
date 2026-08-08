@@ -604,7 +604,7 @@ async function fetchYahooChartDirect(symbol: string, range: string, interval: st
 
 // GET /api/charts/:symbol
 router.get('/charts/:symbol', async (req: Request, res: Response) => {
-  const symbol = (req.params.symbol || 'AAPL').toUpperCase();
+  const symbol = String(req.params.symbol || 'AAPL').toUpperCase();
   const range = (req.query.range || '1y').toString();
   const interval = (req.query.interval || '1d').toString();
 
