@@ -26,6 +26,15 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Root endpoint
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).json({
+    message: 'FinPulse-AI Backend API is running.',
+    healthCheck: '/health',
+    version: '1.0.0'
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
