@@ -130,7 +130,7 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
   let yahooContext: any = null;
   try {
     const [quoteData, summaryData] = await Promise.all([
-      yahooFinance.quote(symbol).catch(() => null),
+      fetchYahooQuoteWithFallback(symbol).catch(() => null),
       yahooFinance.quoteSummary(symbol, {
         modules: [
           'summaryProfile',
@@ -499,7 +499,7 @@ router.get('/fundamentals/:symbol', async (req: Request, res: Response) => {
   const symbol = (typeof req.params.symbol === 'string' ? req.params.symbol : 'AAPL').toUpperCase();
 
   try {
-    const quoteData = await yahooFinance.quote(symbol);
+    const quoteData = await fetchYahooQuoteWithFallback(symbol);
     if (!quoteData) {
       throw new Error("No quote data returned from Yahoo Finance");
     }
@@ -535,7 +535,7 @@ router.get('/technical/:symbol', async (req: Request, res: Response) => {
   // Fetch current price for context
   let currentPrice = 180.50;
   try {
-    const quoteData = await yahooFinance.quote(symbol).catch(() => null);
+    const quoteData = await fetchYahooQuoteWithFallback(symbol).catch(() => null);
     if (quoteData?.regularMarketPrice) {
       currentPrice = quoteData.regularMarketPrice;
     }
@@ -612,6 +612,45 @@ async function fetchYahooChartDirect(symbol: string, range: string, interval: st
     }
   }
   throw lastError || new Error("Failed to fetch chart after retries");
+}
+
+async function fetchYahooQuoteDirect(symbol: string): Promise<any> {
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbol)}`;
+  let lastError: any = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Origin': 'https://finance.yahoo.com',
+          'Referer': 'https://finance.yahoo.com/',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        timeout: 6000
+      });
+      const quote = response.data?.quoteResponse?.result?.[0];
+      if (quote) {
+        return quote;
+      }
+    } catch (err: any) {
+      lastError = err;
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+  throw lastError || new Error("Failed to fetch quote after retries");
+}
+
+async function fetchYahooQuoteWithFallback(symbol: string): Promise<any> {
+  try {
+    return await yahooFinance.quote(symbol);
+  } catch (err: any) {
+    console.warn(`yahooFinance.quote failed for ${symbol}, trying direct fetch fallback:`, err.message);
+    return await fetchYahooQuoteDirect(symbol);
+  }
 }
 
 // GET /api/charts/:symbol

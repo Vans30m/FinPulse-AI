@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.set('trust proxy', 1);
 app.use(compression());
 const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000'];
 if (process.env.FRONTEND_URL) {
