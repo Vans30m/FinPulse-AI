@@ -222,7 +222,7 @@ router.get('/asset-details/:symbol', async (req, res) => {
             institutionOwnership: yahooContext?.majorHolders?.institutionsPercentHeld || 0.455,
             insiderOwnership: yahooContext?.majorHolders?.insidersPercentHeld || 0.125,
             institutionsFloatPercentHeld: yahooContext?.majorHolders?.institutionsFloatPercentHeld || 0.482,
-            institutionsCount: isIndian ? 450 : 2800
+            institutionsCount: yahooContext?.majorHolders?.institutionsCount ?? (isIndian ? 450 : 2800),
         },
         sentiment: {
             score: 75,
@@ -587,7 +587,7 @@ router.get('/charts/:symbol', async (req, res) => {
         if (chartResult && chartResult.timestamp) {
             const timestamps = chartResult.timestamp;
             const quote = chartResult.indicators?.quote?.[0];
-            const adjclose = chartResult.indicators?.adjclose?.[0]?.adjclose; // optional
+            const adjclose = chartResult.indicators?.adjclose?.[0]?.adjclose;
             const quotes = timestamps.map((ts, i) => {
                 return {
                     date: new Date(ts * 1000).toISOString(),
@@ -716,6 +716,116 @@ router.get('/fundamentals-timeseries/:symbol', async (req, res) => {
     catch (error) {
         console.error(`Failed to fetch Yahoo timeseries for ${symbol}:`, error.message);
         res.status(502).json({ error: `Failed to retrieve timeseries: ${error.message}` });
+    }
+});
+// GET /api/fundamentals-timeseries/cash/:symbol
+router.get('/fundamentals-timeseries/cash/:symbol', async (req, res) => {
+    const symbol = String(req.params.symbol || 'AAPL').toUpperCase();
+    const now = Math.floor(Date.now() / 1000);
+    const period1 = req.query.period1 ? String(req.query.period1) : String(now - 3 * 365 * 24 * 60 * 60);
+    const period2 = req.query.period2 ? String(req.query.period2) : String(now + 30 * 24 * 60 * 60);
+    const cacheKey = `timeseries-${symbol}-cash`;
+    try {
+        const cached = await getCachedData(cacheKey);
+        if (cached)
+            return res.json(cached);
+        const cashFields = [
+            'quarterlyOperatingCashFlow',
+            'quarterlyInvestingCashFlow',
+            'quarterlyFinancingCashFlow',
+            'quarterlyCapitalExpenditure',
+            'quarterlyFreeCashFlow',
+            'quarterlyRepurchaseOfCapitalStock',
+            'quarterlyIssuanceOfCapitalStock',
+            'quarterlyIssuanceOfDebt',
+            'quarterlyRepaymentOfDebt',
+            'quarterlyNetBorrowings',
+            'quarterlyChangesInWorkingCapital',
+            'quarterlyNetChangeInCash',
+        ];
+        const types = cashFields.join(',');
+        const data = await yahooFinance._fetch(`https://query1.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/${symbol}`, {
+            symbol: symbol,
+            type: types,
+            period1: period1,
+            period2: period2,
+            merge: 'false',
+        }, {}, 'json', true);
+        await setCachedData(cacheKey, data);
+        res.json(data);
+    }
+    catch (error) {
+        console.error(`Failed to fetch Yahoo cash-flow timeseries for ${symbol}:`, error.message);
+        res.status(502).json({ error: `Failed to retrieve cash-flow data: ${error.message}` });
+    }
+});
+// GET /api/market-data/:symbol
+router.get('/market-data/:symbol', async (req, res) => {
+    const symbol = String(req.params.symbol || 'AAPL').toUpperCase();
+    const cacheKey = `market-data-${symbol}`;
+    try {
+        const cached = await getCachedData(cacheKey);
+        if (cached)
+            return res.json(cached);
+        const data = await yahooFinance._fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`, { range: '1d', interval: '1d' }, {}, 'json', true);
+        const result = data?.chart?.result?.[0];
+        const meta = result?.meta || {};
+        const quote = result?.indicators?.quote?.[0] || {};
+        const market = {
+            price: meta?.regularMarketPrice,
+            open: meta?.regularMarketOpen ?? quote?.open?.[0],
+            high: meta?.regularMarketDayHigh ?? quote?.high?.[0],
+            low: meta?.regularMarketDayLow ?? quote?.low?.[0],
+            previousClose: meta?.regularMarketPreviousClose ?? meta?.previousClose,
+            fiftyTwoWeekHigh: meta?.fiftyTwoWeekHigh,
+            fiftyTwoWeekLow: meta?.fiftyTwoWeekLow,
+            priceChange: (meta?.regularMarketPrice ?? 0) - (meta?.regularMarketPreviousClose ?? meta?.previousClose ?? 0),
+            changePercent: ((meta?.regularMarketPrice ?? 0) - (meta?.regularMarketPreviousClose ?? meta?.previousClose ?? 0)) / ((meta?.regularMarketPreviousClose ?? meta?.previousClose) || 1) * 100,
+        };
+        await setCachedData(cacheKey, market);
+        res.json(market);
+    }
+    catch (error) {
+        console.error(`Failed to fetch market data for ${symbol}:`, error.message);
+        res.status(502).json({ error: `Failed to retrieve market data` });
+    }
+});
+// GET /api/fundamentals-timeseries/valuation/:symbol
+router.get('/fundamentals-timeseries/valuation/:symbol', async (req, res) => {
+    const symbol = String(req.params.symbol || 'AAPL').toUpperCase();
+    const cacheKey = `valuation-${symbol}`;
+    try {
+        const cached = await getCachedData(cacheKey);
+        if (cached)
+            return res.json(cached);
+        // Fetch valuation data from Yahoo Finance
+        const valuationFields = [
+            'quarterlyMarketCap',
+            'quarterlyEnterpriseValue',
+            'quarterlyPeRatio',
+            'quarterlyForwardPeRatio',
+            'quarterlyPegRatio',
+            'quarterlyPsRatio',
+            'quarterlyPbRatio',
+            'quarterlyEnterprisesValueRevenueRatio',
+            'quarterlyEnterprisesValueEBITDARatio'
+        ].join(',');
+        const period1 = Math.floor(Date.now() / 1000) - 365 * 24 * 60 * 60; // 4 quarters ago
+        const period2 = Math.floor(Date.now() / 1000); // now
+        const data = await yahooFinance._fetch(`https://query1.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/${symbol}?symbol=${symbol}&type=${valuationFields}&period1=${period1}&period2=${period2}&merge=false`, {}, {}, 'json', true);
+        const rows = valuationFields.split(',').map((field) => {
+            const series = data?.timeseries?.[field] ?? [];
+            const values = series.map((pt) => pt.asNumber);
+            const current = values[values.length - 1] ?? '-';
+            const label = field.replace('quarterly', '').replace(/([A-Z])/g, ' $1').trim();
+            return { label, current, values };
+        });
+        await setCachedData(cacheKey, rows);
+        res.json(rows);
+    }
+    catch (error) {
+        console.error(`Failed to fetch valuation data for ${symbol}:`, error.message);
+        res.status(502).json({ error: `Failed to retrieve valuation data` });
     }
 });
 export default router;

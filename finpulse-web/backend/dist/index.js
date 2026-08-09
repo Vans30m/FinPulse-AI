@@ -7,6 +7,8 @@ import searchRoutes from './routes/search.js';
 import newsRoutes from './routes/news.js';
 import aiRoutes from './routes/ai.js';
 import assetRoutes from './routes/assets.js';
+import authRoutes from './routes/auth.js';
+import profileRoutes from './routes/profile.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(compression());
@@ -60,3 +62,7 @@ app.use('/api', newsRoutes);
 app.use('/api/ai', aiRoutes);
 // Asset Details API
 app.use('/api', assetRoutes);
+// Auth API
+app.use('/api/auth', authRoutes);
+// Profile API
+app.use('/api/profile', profileRoutes);

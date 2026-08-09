@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import axios from 'axios';
+import { getAiCache } from '../utils/aiCache.js';
 const router = Router();
 // Centralized LLM fetcher helper
 async function queryLLM(prompt, fallbackData) {
@@ -85,6 +86,10 @@ async function queryLLM(prompt, fallbackData) {
 }
 // GET /api/ai/market-brief
 router.get('/market-brief', async (req, res) => {
+    const cacheKey = 'ai:market-brief';
+    const cached = getAiCache(cacheKey);
+    if (cached)
+        return res.json(cached);
     const fallback = {
         marketMood: "Neutral",
         confidence: 65,
@@ -129,6 +134,10 @@ router.get('/market-brief', async (req, res) => {
 });
 // GET /api/ai/market-drivers
 router.get('/market-drivers', async (req, res) => {
+    const cacheKey = 'ai:market-drivers';
+    const cached = getAiCache(cacheKey);
+    if (cached)
+        return res.json(cached);
     const fallback = {
         question: "What is driving the market today?",
         analysis: [
@@ -176,6 +185,10 @@ router.get('/market-drivers', async (req, res) => {
 });
 // GET /api/ai/global-market-pulse
 router.get('/global-market-pulse', async (req, res) => {
+    const cacheKey = 'ai:global-market-pulse';
+    const cached = getAiCache(cacheKey);
+    if (cached)
+        return res.json(cached);
     const fallback = {
         sentiment: "Neutral",
         summary: "Broad indices are experiencing tight consolidation. US jobs data has triggered a reallocation from equities to defensive bonds.",
@@ -199,6 +212,10 @@ router.get('/global-market-pulse', async (req, res) => {
 });
 // GET /api/ai/fear-greed
 router.get('/fear-greed', async (req, res) => {
+    const cacheKey = 'ai:global-market-pulse';
+    const cached = getAiCache(cacheKey);
+    if (cached)
+        return res.json(cached);
     const fallback = {
         score: 48,
         sentiment: "Neutral",
@@ -233,6 +250,10 @@ router.get('/fear-greed', async (req, res) => {
 });
 // GET /api/ai/pick-of-the-day
 router.get('/pick-of-the-day', async (req, res) => {
+    const cacheKey = 'ai:pick-of-the-day';
+    const cached = getAiCache(cacheKey);
+    if (cached)
+        return res.json(cached);
     const fallback = {
         symbol: "MSFT",
         company: "Microsoft Corporation",
@@ -279,6 +300,10 @@ router.get('/pick-of-the-day', async (req, res) => {
 });
 // GET /api/ai/sector-momentum
 router.get('/sector-momentum', async (req, res) => {
+    const cacheKey = 'ai:sector-momentum';
+    const cached = getAiCache(cacheKey);
+    if (cached)
+        return res.json(cached);
     const fallback = {
         topRally: [
             { sector: "Utilities", days: 5, momentumScore: 82, reason: "Defensive rotation into high dividend yield stocks" },

@@ -1,14 +1,212 @@
-generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
-}
-
 datasource db {
   provider = "postgresql"
 }
 
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum PortfolioVisibility {
+  PRIVATE
+  PUBLIC
+  SHARED
+}
+
+enum AlertType {
+  PRICE
+  VOLUME
+  PERCENT_CHANGE
+}
+
+enum AlertStatus {
+  ACTIVE
+  TRIGGERED
+  MUTED
+  ARCHIVED
+}
+
+enum AIModel {
+  GEMINI
+  GPT4
+  CLAUDE
+}
+
 model User {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  name                  String?
+  username              String?                @unique
+  avatar                String?
+  phone                 String?
+  country               String?
+  timezone              String?
+  currency              String?
+  bio                   String?
+  occupation            String?
+  preferences           String?
+  notificationSettings  String?
+  riskProfile           String?
+  investmentGoal        String?
+  investmentHorizon     String?
+  experienceLevel       String?
+  preferredExchange     String?
+  baseCurrency          String?
+  taxCountry            String?
+  connectedAccounts     String?
+  passwordHash          String?
+  devicePin             String?  
+  role                  UserRole               @default(USER)
+  status                UserStatus             @default(ACTIVE)
+  provider              AuthProvider           @default(LOCAL)
+  providerId            String?                @unique
+  isDeleted             Boolean                @default(false)
+  lastLogin             DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  profile                Profile?
+  sessions               Session[]
+  alerts                 Alert[]
+  portfolios             Portfolio[]
+  watchlists             Watchlist[]
+  aiSessions             AiSession[]
+
+  @@index([email])
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio       String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device       String
+  browser      String
+  ipAddress    String
+  refreshToken String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OtpVerification {
   id        String   @id @default(uuid())
   email     String   @unique
+  code      String   
+  expiresAt DateTime
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model Alert {
+  id           String         @id @default(uuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticker       String
+  targetPrice  Float
+  currentValue Float?
+  direction    String         
+  type         AlertType      @default(PRICE)
+  status       AlertStatus    @default(ACTIVE)
+  isTriggered  Boolean        @default(false)
+  triggeredAt  DateTime?
+  expiresAt    DateTime?
+  repeat       Boolean        @default(false)
+  enabled      Boolean        @default(true)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([ticker])
+}
+
+model Portfolio {
+  id           String                 @id @default(uuid())
+  userId       String
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  visibility   PortfolioVisibility    @default(PRIVATE)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@index([userId])
+}
+
+model Watchlist {
+  id         String          @id @default(uuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  isFavorite Boolean         @default(false)
+  tags       String?         
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  items      WatchlistItem[]
+
+  @@index([userId])
+}
+
+model WatchlistItem {
+  id          String          @id @default(uuid())
+  watchlistId String
+  watchlist   Watchlist       @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  symbol      String
+  notes       String?
+  position    Int             @default(0)
+  favorite    Boolean         @default(false)
+  pinned      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([watchlistId, symbol])
+  @@index([watchlistId])
+  @@index([symbol])
+}
+
+model AiSession {
+  id         String          @id @default(uuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt     String
+  response   String
+  model      AIModel         @default(GEMINI)
+  isFavorite Boolean         @default(false)
+  pinned     Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt @default(now())
+
+  @@index([userId])
 }
