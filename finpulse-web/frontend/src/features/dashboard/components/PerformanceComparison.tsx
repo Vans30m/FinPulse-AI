@@ -1,0 +1,709 @@
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  LineChart as LineChartIcon,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  PieChart as PieIcon,
+  Layers,
+  Search,
+  ArrowUpDown,
+  AlertCircle,
+  CheckCircle as CheckCircle2
+} from "lucide-react";
+import PerformanceHeatmap from "./performance/PerformanceHeatmap";
+import RollingCagrSection from "./performance/RollingCagrSection";
+import AiPerformanceCoachSection from "./performance/AiPerformanceCoachSection";
+import BenchmarkRadarSection from "./performance/BenchmarkRadarSection";
+import { getFundamentals } from "../../../services/marketService";
+import { getBenchmarkComparison } from "../../../services/portfolioService";
+import { processCumulativeData } from "../../../utils/chartUtils";
+import CumulativeReturnChart from "./performance/CumulativeReturnChart";
+import AIPortfolioAdvisorSection from "../../portfolio/components/AIPortfolioAdvisorSection";
+import API_BASE_URL from "../../../config/api";
+import { useAppData } from "../../../context/AppDataContext";
+import PageLoader from "../../../components/ui/PageLoader";
+
+import LightLogo from "../../../assets/Dark_Logo.png";
+import DarkLogo from "../../../assets/Light_Logo.png";
+
+export default function PerformanceComparison() {
+  const navigate = useNavigate();
+  const { user } = useAppData();
+  const [loading, setLoading] = useState(true);
+  const [holdings, setHoldings] = useState<any[]>([]);
+  const [usdToInrRate, setUsdToInrRate] = useState<number>(83.45);
+
+  // Benchmark Comparison states
+  const [benchmarkTicker, setBenchmarkTicker] = useState<string>("^GSPC");
+  const [benchmarkTimeframe, setBenchmarkTimeframe] = useState<string>("1M");
+  const [comparisonLoading, setComparisonLoading] = useState<boolean>(true);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
+  const [comparisonData, setComparisonData] = useState<{ series: any[], stats: any, constituents: any[] } | null>(null);
+
+  // AI Advisor integration state
+  const [advisorData, setAdvisorData] = useState<any>(null);
+  const [advisorLoading, setAdvisorLoading] = useState<boolean>(true);
+
+  const BENCHMARK_OPTIONS = [
+    { name: "NIFTY 50", symbol: "^NSEI" },
+    { name: "SENSEX", symbol: "^BSESN" },
+    { name: "NASDAQ Composite", symbol: "^IXIC" },
+    { name: "S&P 500", symbol: "^GSPC" },
+    { name: "Dow Jones", symbol: "^DJI" },
+    { name: "Russell 2000", symbol: "^RUT" },
+    { name: "EURO STOXX 50", symbol: "^STOXX50E" },
+    { name: "FTSE 100", symbol: "^FTSE" },
+    { name: "DAX", symbol: "^GDAXI" },
+    { name: "CAC 40", symbol: "^FCHI" },
+    { name: "Nikkei 225", symbol: "^N225" },
+    { name: "Hang Seng", symbol: "^HSI" },
+    { name: "Taiwan Weighted", symbol: "^TWII" },
+    { name: "KOSPI", symbol: "^KS11" },
+    { name: "Gold", symbol: "GC=F" },
+    { name: "Silver", symbol: "SI=F" },
+    { name: "Bitcoin", symbol: "BTC-USD" },
+    { name: "Ethereum", symbol: "ETH-USD" }
+  ];
+
+  const loadPerformanceData = async () => {
+    setLoading(true);
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userId = storedUser.id;
+      const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+      const headers: any = {};
+      if (userId) headers['X-User-Id'] = userId;
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const holdingsRes = await fetch(`${API_BASE_URL}/api/portfolio/holdings`, { headers });
+
+      if (holdingsRes.ok) {
+        const data = await holdingsRes.json();
+        const allHoldings = (data.sections || []).flatMap((s: any) =>
+          (s.holdings || []).map((h: any) => ({ ...h, marketId: s.id }))
+        );
+        setHoldings(allHoldings);
+      }
+
+      // Fetch AI Advisor data
+      const cachedAdvisor = sessionStorage.getItem("portfolioAdvisor");
+      if (cachedAdvisor) {
+        try {
+          setAdvisorData(JSON.parse(cachedAdvisor));
+          setAdvisorLoading(false);
+        } catch (e) { }
+      }
+
+      fetch(`${API_BASE_URL}/api/ai/portfolio-advisor`, { headers })
+        .then(async res => {
+          if (res.ok) {
+            const data = await res.json();
+            setAdvisorData(data);
+            sessionStorage.setItem("portfolioAdvisor", JSON.stringify(data));
+          }
+          setAdvisorLoading(false);
+        })
+        .catch(err => console.error("Advisor load failed:", err))
+        .finally(() => setAdvisorLoading(false));
+
+    } catch (err) {
+      console.error("Failed to load performance data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPerformanceData();
+  }, []);
+
+  const fetchBenchmarkComparison = async (signal?: AbortSignal) => {
+    setComparisonLoading(true);
+    setComparisonError(null);
+    try {
+      const data = await getBenchmarkComparison(benchmarkTicker, benchmarkTimeframe, signal);
+      setComparisonData(data);
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+      console.error(err);
+      setComparisonError(err.message || "Failed to load benchmark comparison");
+    } finally {
+      if (!signal?.aborted) {
+        setComparisonLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const timer = setTimeout(() => {
+      fetchBenchmarkComparison(controller.signal);
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [benchmarkTicker, benchmarkTimeframe]);
+
+  const handleRefresh = () => {
+    loadPerformanceData();
+    fetchBenchmarkComparison();
+  };
+
+  const processedSeries = useMemo(() => {
+    if (!comparisonData || !comparisonData.series) return [];
+    return processCumulativeData(comparisonData.series);
+  }, [comparisonData]);
+
+  const activeBenchmarkName = useMemo(() => {
+    return BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name || "Benchmark";
+  }, [benchmarkTicker]);
+
+  const portfolioStats = useMemo(() => {
+    let totalValuation = 0;
+    let totalCost = 0;
+    let totalGain = 0;
+
+    holdings.forEach(h => {
+      let value = h.marketValue || (h.shares * h.currentPrice) || 0;
+      let cost = h.shares * h.avgCost;
+      let gain = h.totalGain || (value - cost);
+
+      if (h.marketId === 'domestic') {
+        value = value / usdToInrRate;
+        cost = cost / usdToInrRate;
+        gain = gain / usdToInrRate;
+      }
+
+      totalValuation += value;
+      totalCost += cost;
+      totalGain += gain;
+    });
+
+    const yieldReturn = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
+
+    return {
+      totalValuation,
+      totalCost,
+      totalGain,
+      yieldReturn
+    };
+  }, [holdings, usdToInrRate]);
+
+  const sectorAllocations = useMemo(() => {
+    if (holdings.length === 0) return [];
+    const sectorsMap: Record<string, number> = {};
+    let totalValue = 0;
+
+    holdings.forEach(h => {
+      const val = h.marketValue || (h.shares * h.currentPrice) || 0;
+      sectorsMap[h.sector || "Other"] = (sectorsMap[h.sector || "Other"] || 0) + val;
+      totalValue += val;
+    });
+
+    const colors = ["#3b82f6", "#10b981", "#a855f7", "#f59e42", "#ec4899", "#64748b"];
+    return Object.entries(sectorsMap).map(([name, count], index) => ({
+      name,
+      count: parseFloat(count.toFixed(2)),
+      val: parseFloat((totalValue > 0 ? (count / totalValue) * 100 : 0).toFixed(1)),
+      color: colors[index % colors.length]
+    }));
+  }, [holdings]);
+
+  const contributors = useMemo(() => {
+    return holdings
+      .filter(h => h.totalGain > 0)
+      .sort((a, b) => b.totalGain - a.totalGain)
+      .map(h => ({
+        symbol: h.ticker,
+        name: h.name,
+        profit: h.totalGain,
+        return: `${h.gainPercent >= 0 ? "+" : ""}${h.gainPercent.toFixed(2)}%`
+      }));
+  }, [holdings]);
+
+  const losses = useMemo(() => {
+    return holdings
+      .filter(h => h.totalGain < 0)
+      .sort((a, b) => a.totalGain - b.totalGain)
+      .map(h => ({
+        symbol: h.ticker,
+        name: h.name,
+        loss: h.totalGain,
+        return: `${h.gainPercent.toFixed(2)}%`
+      }));
+  }, [holdings]);
+
+  const [activeTab, setActiveTab] = useState<"overview" | "metrics" | "ai">("overview");
+
+  if (loading) {
+    return <PageLoader title="Performance Center" message="Analyzing risk metrics, calculating CAGR trajectories, and compiling benchmark comparison stats..." />;
+  }
+
+  if (holdings.length === 0) {
+    return (
+      <div className="space-y-8 text-slate-100 font-sans selection:bg-blue-500/25 selection:text-white">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Performance Analytics Center</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Deep-dive metric matrices, alpha models, and solvency indicators.</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center justify-center text-center p-16 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl space-y-6">
+          <div className="h-16 w-16 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+            <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-white">Solvency & Performance Metrics Locked</h3>
+            <p className="text-sm text-slate-400 max-w-md animate-pulse">
+              No assets or transactions found. Please add holdings or transaction logs in the **Portfolio** tab to unlock real-time performance tracking.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/portfolio")}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-slate-900 dark:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-600/10"
+          >
+            Go to Portfolio Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const getCurrencySymbol = (currencyString?: string) => {
+    if (!currencyString) return '₹';
+    if (currencyString.includes('₹') || currencyString.toUpperCase().includes('INR')) return '₹';
+    if (currencyString.includes('$') || currencyString.toUpperCase().includes('USD')) return '$';
+    if (currencyString.includes('€') || currencyString.toUpperCase().includes('EUR')) return '€';
+    if (currencyString.includes('£') || currencyString.toUpperCase().includes('GBP')) return '£';
+    return '₹';
+  };
+  const cSymbol = getCurrencySymbol(user?.currency);
+
+  const displayGain = cSymbol === '₹' ? portfolioStats.totalGain * usdToInrRate : portfolioStats.totalGain;
+  const displayValuation = cSymbol === '₹' ? portfolioStats.totalValuation * usdToInrRate : portfolioStats.totalValuation;
+
+  return (
+    <div className="space-y-8 text-slate-100 font-sans selection:bg-blue-500/25 selection:text-white">
+      {/* HEADER SECTION WITH REFRESH TRIGGER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Performance Analytics Center</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Deep-dive metric matrices, alpha models, and solvency indicators.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 rounded-xl bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all"
+          >
+            <Activity className="h-4.5 w-4.5" />
+            Recalculate Metrics
+          </button>
+        </div>
+      </div>
+
+      {/* TABS CONTROLLER */}
+      <div className="grid grid-cols-2 md:flex md:flex-row border-b border-slate-900/60 gap-2">
+        {[
+          { id: "overview", label: "Overview & Returns" },
+          { id: "metrics", label: "Advanced Metrics" },
+          { id: "ai", label: "AI Advisor Coach" }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-3 sm:px-5 py-3 border-b-2 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all text-center whitespace-nowrap ${activeTab === tab.id
+                ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-500/5 rounded-t-xl"
+                : "border-transparent text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-800"
+              }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* HERO PERFORMANCE SUMMARY */}
+      {activeTab === "overview" && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {[
+            { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Aggregate return yield", grad: "from-cyan-600/10 to-blue-500/10" },
+            { label: "Total Profit / Loss", val: `${displayGain >= 0 ? "+" : ""}${cSymbol}${displayGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Unrealized ledger delta", grad: "from-emerald-600/10 to-teal-500/10" },
+            { label: "Capital Valuation Ledger", val: `${cSymbol}${displayValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Total asset valuation", grad: "from-blue-600/10 to-indigo-500/10" },
+            { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active ledger size", grad: "from-purple-600/10 to-pink-500/10" }
+          ].map((card, i) => (
+            <div
+              key={i}
+              className={`bg-white dark:bg-[#121a2a]/45 backdrop-blur-md border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg bg-gradient-to-br ${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
+            >
+              <span className="text-[9px] sm:text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">{card.label}</span>
+              <h3 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1 sm:mt-2">{card.val}</h3>
+              <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 block mt-1 sm:mt-1.5 font-medium">{card.desc}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TAB CONTENT RENDERING */}
+      {activeTab === "overview" && (
+        <div className="space-y-6 animate-fadeIn">
+          {comparisonLoading ? (
+            <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-md text-center flex flex-col items-center justify-center space-y-4 min-h-[300px]">
+              <Activity className="h-8 w-8 text-blue-500 animate-spin" />
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-widest">Loading Benchmark Performance...</p>
+            </div>
+          ) : comparisonError ? (
+            <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-md text-center flex flex-col items-center justify-center space-y-4 min-h-[300px]">
+              <AlertCircle className="h-8 w-8 text-rose-500" />
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-widest">Unable to load benchmark.</p>
+              <button
+                onClick={() => fetchBenchmarkComparison()}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-slate-900 dark:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Performance Summary Banner */}
+              {comparisonData?.stats && (
+                <div className={`p-4 rounded-2xl border flex items-start sm:items-center gap-3 transition-all ${comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
+                    ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "bg-rose-500/5 border-rose-500/10 text-rose-500 dark:text-rose-400"
+                  }`}>
+                  {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
+                    <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5 sm:mt-0" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 sm:mt-0" />
+                  )}
+                  <span className="text-xs sm:text-sm font-black uppercase tracking-wide">
+                    {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
+                      ? `Portfolio outperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by +${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
+                      : `Portfolio underperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by ${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
+                    }
+                  </span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Chart Block */}
+                <div className="lg:col-span-2 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-5 shadow-md flex flex-col justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <LineChartIcon size={16} className="text-blue-600 dark:text-blue-400" />
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-400">Cumulative Return Comparison</span>
+                    </div>
+
+
+                  </div>
+
+                  {/* Benchmarks Selector Row */}
+                  <div className="mb-4 flex flex-row overflow-x-auto scrollbar-none gap-1.5 pb-1.5 flex-nowrap w-full snap-x">
+                    {BENCHMARK_OPTIONS.map((bench) => (
+                      <button
+                        key={bench.symbol}
+                        onClick={() => setBenchmarkTicker(bench.symbol)}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border transition-all shrink-0 snap-start ${benchmarkTicker === bench.symbol
+                            ? "bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-inner"
+                            : "bg-slate-50 dark:bg-[#050711]/40 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-900/60 hover:text-slate-900 dark:hover:text-white"
+                          }`}
+                      >
+                        {bench.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Stats Grid Above the Chart */}
+                  {comparisonData?.stats && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6 border-b border-slate-200 dark:border-slate-900/60 pb-5">
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
+                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Portfolio Return</span>
+                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono block mt-1">
+                          {comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
+                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Benchmark Return</span>
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 font-mono block mt-1">
+                          {comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
+                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Outperformance</span>
+                        <span className={`text-xs font-black font-mono block mt-1 ${comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"
+                          }`}>
+                          {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn) >= 0 ? "+" : ""}
+                          {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
+                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Alpha</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
+                          {comparisonData.stats.alpha >= 0 ? "+" : ""}{comparisonData.stats.alpha}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
+                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Beta</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
+                          {comparisonData.stats.beta}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
+                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Sharpe Ratio</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
+                          {comparisonData.stats.sharpeRatio}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
+                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Volatility</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
+                          {comparisonData.stats.volatility}%
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
+                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Max Drawdown</span>
+                        <span className="text-xs font-black text-rose-500 dark:text-rose-400 font-mono block mt-1">
+                          {comparisonData.stats.maxDrawdown}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="w-full mt-2">
+                    {(!comparisonData || processedSeries.length === 0) ? (
+                      <div className="h-[300px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-900 rounded-3xl">
+                        Not enough historical data available.
+                      </div>
+                    ) : (
+                      <CumulativeReturnChart
+                        data={processedSeries}
+                        benchmarkName={activeBenchmarkName}
+                        height={320}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Statistics Panel */}
+                <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-400">Benchmark Comparison stats</span>
+                      <div className="flex items-center gap-1 bg-[#050711] px-2.5 py-1 rounded-xl border border-slate-900 text-xs">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase mr-1">Active:</span>
+                        <span className="text-slate-900 dark:text-white font-extrabold">{BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name}</span>
+                      </div>
+                    </div>
+
+                    {comparisonData?.stats && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-xl p-3">
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Portfolio Return</span>
+                            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono block mt-1">{comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%</span>
+                          </div>
+                          <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-xl p-3">
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Benchmark Return</span>
+                            <span className="text-sm font-black text-slate-700 dark:text-slate-200 font-mono block mt-1">{comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 border-t border-slate-200 dark:border-slate-900/60 pt-3">
+                          {[
+                            { label: "Alpha (Excess Return)", value: `${comparisonData.stats.alpha >= 0 ? "+" : ""}${comparisonData.stats.alpha}` },
+                            { label: "Beta (Systemic Risk)", value: comparisonData.stats.beta },
+                            { label: "Correlation", value: comparisonData.stats.correlation },
+                            { label: "Sharpe Ratio", value: comparisonData.stats.sharpeRatio },
+                            { label: "Information Ratio", value: comparisonData.stats.informationRatio },
+                            { label: "Tracking Error", value: `${comparisonData.stats.trackingError}%` },
+                            { label: "Max Drawdown", value: `${comparisonData.stats.maxDrawdown}%` },
+                            { label: "Portfolio Volatility", value: `${comparisonData.stats.volatility}%` }
+                          ].map((stat, idx) => (
+                            <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-900/60 text-xs">
+                              <span className="text-slate-500 dark:text-slate-400 font-medium">{stat.label}</span>
+                              <span className="font-mono font-black text-white">{stat.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Alpha & Beta Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md">
+                  <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
+                    <TrendingUp size={15} className="text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">Top Alpha Contributors</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {contributors.length === 0 ? (
+                      <div className="text-slate-500 text-xs py-4 font-bold text-center">No profitable assets currently.</div>
+                    ) : (
+                      contributors.map((c, i) => {
+                        const displayVal = cSymbol === '₹' ? c.profit * usdToInrRate : c.profit;
+                        return (
+                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl">
+                            <div>
+                              <span className="text-xs font-black text-white">{c.symbol}</span>
+                              <span className="text-[10px] text-slate-500 block">{c.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{c.return}</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md">
+                  <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
+                    <TrendingDown size={15} className="text-rose-500 dark:text-rose-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">Biggest Beta Underperformers</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {losses.length === 0 ? (
+                      <div className="text-slate-500 text-xs py-4 font-bold text-center">No negative assets currently.</div>
+                    ) : (
+                      losses.map((l, i) => {
+                        const displayVal = cSymbol === '₹' ? Math.abs(l.loss) * usdToInrRate : Math.abs(l.loss);
+                        return (
+                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl">
+                            <div>
+                              <span className="text-xs font-black text-white">{l.symbol}</span>
+                              <span className="text-[10px] text-slate-500 block">{l.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-black text-rose-500 dark:text-rose-400 font-mono">{l.return}</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+      {activeTab === "metrics" && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Card 1: Benchmark Radar */}
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
+              <Layers className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Portfolio Allocation Benchmark Radar</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Visual comparison of sector distributions and risks against selected benchmarks.</p>
+              </div>
+            </div>
+            <BenchmarkRadarSection />
+          </div>
+ 
+          {/* Card 2: Performance Heatmap */}
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
+              <Activity className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Performance Calendar Heatmap</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Historical ledger return heatmaps categorized by day, week, or month.</p>
+              </div>
+            </div>
+            <PerformanceHeatmap />
+          </div>
+ 
+          {/* Card 3: Rolling CAGR */}
+          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
+              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0" />
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Rolling CAGR Charts</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Compounded Annual Growth Rates measured over dynamic holding timeframes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "ai" && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* AI Portfolio Advisor */}
+          {advisorLoading ? (
+            <div className="glass-panel p-8 flex flex-col items-center justify-center min-h-[200px] border border-slate-900 bg-[#121a2a]/45 rounded-3xl">
+              <Activity className="w-8 h-8 animate-spin text-blue-600 dark:text-cyan-400" />
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-mono">Synchronizing advisor insights...</p>
+            </div>
+          ) : advisorData ? (
+            <AIPortfolioAdvisorSection advisor={advisorData} />
+          ) : (
+            <div className="p-8 text-center text-slate-400 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl text-xs font-black uppercase tracking-widest">
+              AI Advisor Coach has no insights for the current holdings.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* COMMON COMPLIANCE & GLOSSARY FOOTER */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5 mt-8">
+        {/* Metric Glossary */}
+        <div className="bg-gradient-to-br from-[#121a2a]/40 to-[#0a0f1d]/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-4 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-500">
+          <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-2 pl-2">
+            <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            Performance Metrics Glossary
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px] pl-2">
+            <div className="space-y-1">
+              <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Alpha (Excess Return)</span>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Measures the portfolio's active return against a benchmark. A positive alpha indicates outperforming the index.</p>
+            </div>
+            <div className="space-y-1">
+              <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Beta (Systemic Risk)</span>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Indicates sensitivity to market movements. A Beta of 1.0 matches the benchmark; &gt;1.0 implies higher volatility.</p>
+            </div>
+            <div className="space-y-1">
+              <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Sharpe Ratio</span>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Quantifies risk-adjusted return. Higher values (&gt;1.5) indicate efficient returns per unit of volatility risk.</p>
+            </div>
+            <div className="space-y-1">
+              <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Max Drawdown</span>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Represents the maximum observed peak-to-trough drop in value, signaling worst-case historical risk exposure.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Compliance Card */}
+        <div className="bg-gradient-to-br from-[#121a2a]/40 to-[#0a0f1d]/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-4 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500">
+          <div className="space-y-2 pl-2">
+            <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-400" />
+              Regulatory Compliance & Disclosures
+            </h4>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              All performance metrics, mock calculations, and simulated returns generated on this analytics dashboard are purely illustrative. FinPulse AI does not act as a SEBI or SEC registered investment advisor. Backtested results do not guarantee future asset performance.
+            </p>
+          </div>
+          <div className="flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wider pt-3 border-t border-white/5 pl-2 mt-4">
+            <span>Data Delay: Live / 15-Min</span>
+            <span>Version 1.0.0 (Beta)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

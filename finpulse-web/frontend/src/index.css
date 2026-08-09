@@ -1,0 +1,350 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+  }
+
+  /* Dual Theme Body */
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-night-900 dark:text-slate-200 antialiased transition-colors duration-300;
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100svh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+
+  /* Dual Theme Cards */
+  .glass-panel,
+  .glass-card {
+    @apply rounded-2xl border bg-white border-slate-200 shadow-sm dark:bg-night-800/60 dark:border-white/10 dark:backdrop-blur-xl dark:shadow-glass transition-all duration-300;
+  }
+}
+
+/* Global Custom Scrollbar Style */
+::-webkit-scrollbar {
+  width: 8px;
+  /* Vertical scrollbar width */
+  height: 8px;
+  /* Horizontal scrollbar height */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.25);
+  /* Slate-500 with opacity */
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  /* Creates padding around the thumb */
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 70, 229, 0.6);
+  /* Indigo-600 on hover */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Dark Mode Scrollbar Thumb adjustments */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  /* Slate-400 with opacity */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.6);
+  /* Cyan-500 on hover */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox compatibility */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
+}
+
+.dark html {
+  scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+}
+
+/* Hide scrollbar completely but retain scrolling */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+@layer utilities {
+
+  /* Subtle grid for light mode, completely transparent in dark mode */
+  .bg-grid {
+    background-image: none;
+    background-size: 32px 32px;
+  }
+
+  .dark .bg-grid {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  }
+}
+
+/* ========================================================
+   VIEW TRANSITIONS API (Zig-Zag Theme Toggle)
+   ======================================================== */
+
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  /* Stop the default browser cross-fade */
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Since our JS dynamically animates the mask on the NEW view, 
+  we just need to ensure the new view is stacked on top!
+*/
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+/* ========================================================
+   VIEW TRANSITIONS API (Zig-Zag Theme Toggle)
+   ======================================================== */
+
+/* 1. Stop default cross-fade on all transition elements */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none !important;
+  mix-blend-mode: normal !important;
+}
+
+/* 2. The old theme always stays pinned to the bottom */
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+/* 3. The new theme (whether light or dark) always animates ON TOP */
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 200s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+/* Hide all TradingView logo references and copyright attribution overlays */
+.tradingview-widget-copyright,
+.tradingview-widget-container__widget+a,
+[id^="tradingview-"] a,
+.tradingview-widget-container a,
+iframe[src*="tradingview.com"]+a {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ========================================================
+   Screener Page Professional Redesign CSS
+   ======================================================== */
+#screener-workbook table tbody tr,
+#screener-shareholding table tbody tr {
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Zebra striping for table rows (Uniform light tint on dark blue background) */
+#screener-workbook table tbody tr:nth-child(even),
+#screener-shareholding table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.015) !important;
+}
+
+/* Hover highlights for table rows */
+#screener-workbook table tbody tr:hover,
+#screener-shareholding table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Row padding (1.5x line-height equivalent spacing) and bright text colors */
+#screener-workbook table tbody tr td,
+#screener-shareholding table tbody tr td {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-weight: 600 !important;
+  color: #cbd5e1 !important;
+  /* light grey text for numeric values */
+}
+
+#screener-workbook table tbody tr td:first-child,
+#screener-shareholding table tbody tr td:first-child {
+  font-family: Inter, system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  /* bright slate white for labels */
+}
+
+/* Muted colors for table headers */
+#screener-workbook table thead tr th,
+#screener-shareholding table thead tr th {
+  color: #94a3b8 !important;
+  /* muted slate blue */
+  font-weight: 800 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Section titles */
+#screener-workbook h3,
+#screener-shareholding h3,
+#screener-workbook h4,
+#screener-shareholding h4 {
+  color: #ffffff !important;
+}
+
+/* Light mode overrides for text/border colors in workbook and shareholding tables */
+html:not(.dark) #screener-workbook table tbody tr td,
+html:not(.dark) #screener-shareholding table tbody tr td {
+  color: #475569 !important; /* slate-600 */
+}
+
+html:not(.dark) #screener-workbook table tbody tr td:first-child,
+html:not(.dark) #screener-shareholding table tbody tr td:first-child {
+  color: #0f172a !important; /* slate-900 */
+}
+
+html:not(.dark) #screener-workbook table thead tr th,
+html:not(.dark) #screener-shareholding table thead tr th {
+  color: #64748b !important; /* slate-500 */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+html:not(.dark) #screener-workbook h3,
+html:not(.dark) #screener-shareholding h3,
+html:not(.dark) #screener-workbook h4,
+html:not(.dark) #screener-shareholding h4 {
+  color: #0f172a !important; /* slate-900 */
+}
+
+/* Discreet PDF download icon hover states */
+#screener-workbook table tbody tr td button svg {
+  color: #94a3b8 !important;
+  transition: color 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+
+#screener-workbook table tbody tr td button:hover svg {
+  color: #ef4444 !important;
+  transform: scale(1.1);
+}
+
+/* Custom Scrollbar Utility */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Sticky first column for workbook and shareholding tables */
+#screener-workbook table thead tr th:first-child,
+#screener-workbook table tbody tr td:first-child,
+#screener-shareholding table thead tr th:first-child,
+#screener-shareholding table tbody tr td:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 10 !important;
+  background-color: #0b1020 !important; /* Matches dark theme background */
+}
+
+/* Light mode override for sticky column background */
+html:not(.dark) #screener-workbook table thead tr th:first-child,
+html:not(.dark) #screener-workbook table tbody tr td:first-child,
+html:not(.dark) #screener-shareholding table thead tr th:first-child,
+html:not(.dark) #screener-shareholding table tbody tr td:first-child {
+  background-color: #ffffff !important;
+}
+
+/* Zebra striping background for sticky column */
+#screener-workbook table tbody tr:nth-child(even) td:first-child,
+#screener-shareholding table tbody tr:nth-child(even) td:first-child {
+  background-color: #0d1222 !important;
+}
+
+html:not(.dark) #screener-workbook table tbody tr:nth-child(even) td:first-child,
+html:not(.dark) #screener-shareholding table tbody tr:nth-child(even) td:first-child {
+  background-color: #f8fafc !important;
+}
+
+/* Row hover highlight background for sticky column */
+#screener-workbook table tbody tr:hover td:first-child,
+#screener-shareholding table tbody tr:hover td:first-child {
+  background-color: #161f38 !important;
+}
+
+html:not(.dark) #screener-workbook table tbody tr:hover td:first-child,
+html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
+  background-color: #f1f5f9 !important;
+}

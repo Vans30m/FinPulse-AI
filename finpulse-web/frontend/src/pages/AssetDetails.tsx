@@ -1,0 +1,1689 @@
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useMemo, useRef } from "react";
+import {
+  ArrowLeft,
+  Newspaper,
+  Brain,
+  Activity,
+  TrendingUp,
+  Briefcase,
+  ExternalLink,
+  Compass,
+  Layers,
+  Calendar,
+  Users,
+  Scissors,
+  DollarSign,
+  Globe
+} from "lucide-react";
+import {
+  getUnifiedAssetDetails,
+  getFundamentals,
+  getTechnicals,
+  getAIScore
+} from "../services/marketService";
+import CandlestickChart from "../components/charts/CandlestickChart";
+import { ChartHeader } from "../components/charts/ChartHeader";
+import { isIndexSymbol } from "../utils/assetUtils";
+
+import AssetOverview from "../components/asset/AssetOverview";
+import AssetTabs from "../components/asset/AssetTabs";
+import TechnicalCard from "../components/asset/TechnicalCard";
+import AISummaryCard from "../components/asset/AISummaryCard";
+
+type TabType =
+  | "overview"
+  | "analysts"
+  | "sentiment"
+  | "events"
+  | "ownership"
+  | "technicals"
+  | "performance"
+  | "news";
+
+function resolveExchangeLocation(symbol: string, assetType: string, stateExchange?: string): string {
+  if (stateExchange) return stateExchange;
+  if (assetType === "Crypto") return "BINANCE";
+  if (assetType === "Forex") return "FOREX";
+  if (assetType === "Commodities") return "COMMODITIES";
+  if (assetType === "Index") {
+    const upper = symbol.toUpperCase();
+    if (upper.endsWith(".NS") || upper.endsWith(".BO") || upper.startsWith("^CNX") || upper.startsWith("^NSE") || upper.startsWith("^BSESN")) {
+      return "Domestic";
+    }
+    const usIndices = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^NDX", "^VIX"];
+    if (usIndices.includes(upper)) {
+      return "US";
+    }
+    return "GLOBAL";
+  }
+  return "GLOBAL";
+}
+
+function IndexDetails({ symbol }: { symbol: string }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [timeframe] = useState("1D");
+  const [assetName, setAssetName] = useState(
+    location.state?.name || symbol
+  );
+
+  const assetExchange = resolveExchangeLocation(symbol, "Index", location.state?.exchange);
+
+  const [quoteData, setQuoteData] = useState<{
+    price: number;
+    change: number;
+    changePercent: number;
+    open?: number;
+    previousClose?: number;
+    dayHigh?: number;
+    dayLow?: number;
+    fiftyTwoWeekHigh?: number;
+    fiftyTwoWeekLow?: number;
+    volume?: number;
+    averageVolume?: number;
+    marketCap?: number;
+    currency?: string;
+    marketState?: string;
+  }>({
+    price: location.state?.price || 0.00,
+    change: location.state?.change || 0.00,
+    changePercent: location.state?.changePercent || 0.00,
+  });
+
+  const [technicals, setTechnicals] = useState<any>(null);
+  const [aiScore, setAiScore] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  useEffect(() => {
+    const fetchBaseQuote = async () => {
+      if (document.hidden) return;
+      try {
+        const fundData = await getFundamentals(symbol);
+        if (fundData) {
+          if (fundData?.name) {
+            setAssetName(fundData.name);
+          }
+          setQuoteData(prev => ({
+            ...prev,
+            price: fundData.price || prev.price || 0.0,
+            change: fundData.change !== undefined ? fundData.change : prev.change,
+            changePercent: fundData.changePercent !== undefined ? fundData.changePercent : prev.changePercent,
+            open: fundData.open,
+            previousClose: fundData.previousClose,
+            dayHigh: fundData.dayHigh,
+            dayLow: fundData.dayLow,
+            fiftyTwoWeekHigh: fundData.fiftyTwoWeekHigh,
+            fiftyTwoWeekLow: fundData.fiftyTwoWeekLow,
+            volume: fundData.volume,
+            averageVolume: fundData.averageVolume,
+            marketCap: fundData.marketCap,
+            currency: fundData.currency || "USD",
+            marketState: fundData.marketState
+          }));
+        }
+      } catch (e) {
+        console.error("Failed to load initial quote data for index", e);
+      }
+    };
+
+    fetchBaseQuote();
+    const interval = setInterval(fetchBaseQuote, 10000);
+    return () => clearInterval(interval);
+  }, [symbol]);
+
+  useEffect(() => {
+    const fetchTabDetails = async () => {
+      setLoadingDetails(true);
+      try {
+        if (activeTab === "technicals") {
+          const techData = await getTechnicals(symbol);
+          setTechnicals(techData);
+        } else if (activeTab === "ai_analysis") {
+          const aiData = await getAIScore(symbol);
+          setAiScore(aiData);
+        }
+      } catch (err) {
+        console.error("Details fetch failed for index tab", activeTab, err);
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+
+    fetchTabDetails();
+  }, [symbol, activeTab]);
+
+  return (
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 text-slate-900 dark:text-slate-100 transition-colors">
+      {/* Navigation Row */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+        >
+          <ArrowLeft className="h-4 w-4 stroke-[3]" />
+          <span>Back</span>
+        </button>
+      </div>
+
+      {/* Main Tab Controller Space */}
+      <div className="w-full space-y-6">
+        <AssetTabs
+          tabs={["overview", "chart", "technicals", "ai_analysis"]}
+          activeTab={activeTab}
+          onChangeTab={setActiveTab}
+        />
+
+        <div className="transition-all duration-300">
+          {activeTab === "chart" && (
+            <CandlestickChart symbol={symbol} timeframe={timeframe} liveQuote={quoteData} />
+          )}
+
+          {activeTab === "overview" && (
+            <AssetOverview
+              name={assetName}
+              symbol={symbol}
+              price={quoteData.price}
+              open={quoteData.open}
+              previousClose={quoteData.previousClose}
+              dayHigh={quoteData.dayHigh}
+              dayLow={quoteData.dayLow}
+              fiftyTwoWeekHigh={quoteData.fiftyTwoWeekHigh}
+              fiftyTwoWeekLow={quoteData.fiftyTwoWeekLow}
+              volume={quoteData.volume}
+              averageVolume={quoteData.averageVolume}
+              marketCap={quoteData.marketCap}
+              currency={quoteData.currency}
+              exchange={assetExchange}
+              assetType="Index"
+            />
+          )}
+
+          {activeTab === "technicals" && (
+            <TechnicalCard
+              data={technicals}
+              loading={loadingDetails}
+              price={quoteData.price}
+              dayHigh={quoteData.dayHigh}
+              dayLow={quoteData.dayLow}
+              previousClose={quoteData.previousClose}
+              isIndex={true}
+            />
+          )}
+
+          {activeTab === "ai_analysis" && (
+            <AISummaryCard
+              symbol={symbol}
+              support={quoteData.dayLow || quoteData.price * 0.98}
+              resistance={quoteData.dayHigh || quoteData.price * 1.02}
+              recommendation={(aiScore?.recommendation || aiScore?.verdict || "HOLD") as any}
+              trend={aiScore?.trend || "Neutral"}
+              momentum={aiScore?.momentum || "Neutral Momentum"}
+              score={aiScore?.score || 65}
+              isIndex={true}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Helpers for Calendar Events and Forecast UI
+const parseDateParts = (dateVal: any) => {
+  if (!dateVal) return null;
+  const dateObj = new Date(dateVal);
+  if (isNaN(dateObj.getTime())) return null;
+  const day = dateObj.getDate().toString().padStart(2, '0');
+  const month = dateObj.toLocaleDateString(undefined, { month: 'short' }).toUpperCase();
+  const year = dateObj.getFullYear();
+  return { day, month, year };
+};
+
+export default function AssetDetails() {
+  const { symbol = "AAPL" } = useParams();
+  const navigate = useNavigate();
+
+  if (isIndexSymbol(symbol)) {
+    return <IndexDetails symbol={symbol} />;
+  }
+
+  const tabContentRef = useRef<HTMLDivElement>(null);
+
+  const assetType = useMemo(() => {
+    const upper = symbol.toUpperCase();
+    if (upper.endsWith("-USD")) return "Crypto";
+    if (upper.endsWith("=X")) return "Forex";
+    if (upper.endsWith("=F")) return "Commodities";
+    return "Stock";
+  }, [symbol]);
+
+  const isSpecialAsset = assetType === "Crypto" || assetType === "Forex" || assetType === "Commodities";
+
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const upper = symbol.toUpperCase();
+    const special = upper.endsWith("-USD") || upper.endsWith("=X") || upper.endsWith("=F");
+    return special ? "sentiment" : "overview";
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<any>(null);
+  const [meta, setMeta] = useState<any>(null);
+  const [hasComparison, setHasComparison] = useState(false);
+  const [timeframe, setTimeframe] = useState("1Y");
+
+  useEffect(() => {
+    if (isSpecialAsset) {
+      setActiveTab("sentiment");
+    } else {
+      setActiveTab("overview");
+    }
+  }, [symbol, isSpecialAsset]);
+
+  const availableTabs = useMemo(() => {
+    const allTabs = [
+      { id: "overview", label: "Overview", icon: Layers },
+      { id: "analysts", label: "Analyst Targets", icon: Compass },
+      { id: "sentiment", label: "Stock Sentiment", icon: Brain },
+      { id: "ownership", label: "Ownership", icon: Users },
+      { id: "events", label: "Calendar Events", icon: Calendar },
+      { id: "technicals", label: "Structural Levels", icon: Activity },
+      { id: "performance", label: "Performance", icon: TrendingUp },
+      { id: "news", label: "News Feed", icon: Newspaper }
+    ];
+    if (isSpecialAsset) {
+      return allTabs.filter(tab =>
+        tab.id !== "overview" &&
+        tab.id !== "analysts" &&
+        tab.id !== "ownership" &&
+        tab.id !== "events"
+      );
+    }
+    return allTabs;
+  }, [isSpecialAsset]);
+
+  useEffect(() => {
+    if (!symbol) return;
+
+    const loadDetails = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const unifiedData = await getUnifiedAssetDetails(symbol);
+        setData(unifiedData);
+
+        const newMeta = {
+          name: unifiedData.profile?.name || symbol,
+          exchange: unifiedData.quote?.exchangeName || "GLOBAL",
+          price: unifiedData.statistics?.price || 0,
+          change: unifiedData.statistics?.change || 0,
+          changePercent: unifiedData.statistics?.changePercent || 0,
+          marketState: unifiedData.quote?.marketState || "CLOSED",
+          currency: unifiedData.quote?.currency || "USD",
+          performance: unifiedData.statistics?.performance || null
+        };
+        setMeta(newMeta);
+      } catch (err: any) {
+        console.error("Failed to load unified asset details:", err);
+        setError("Failed to load asset details from Yahoo Finance.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDetails();
+  }, [symbol]);
+
+  // Format currency helpers
+  const formatVal = (val: any, isCurrency = false, isPercent = false) => {
+    if (val === undefined || val === null || val === "Not Available") return "N/A";
+    const num = Number(val);
+    if (isNaN(num)) return val;
+
+    const getCurrencySymbol = (code: string) => {
+      try {
+        return (0).toLocaleString("en-US", {
+          style: "currency",
+          currency: code,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).replace(/\d/g, "").trim();
+      } catch {
+        return "$";
+      }
+    };
+    const currencySymbol = getCurrencySymbol(meta?.currency || "USD");
+
+    if (isPercent) {
+      return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
+    }
+
+    if (isCurrency) {
+      if (Math.abs(num) >= 1e12) {
+        return `${currencySymbol}${(num / 1e12).toFixed(2)}T`;
+      }
+      if (Math.abs(num) >= 1e9) {
+        return `${currencySymbol}${(num / 1e9).toFixed(2)}B`;
+      }
+      if (Math.abs(num) >= 1e6) {
+        return `${currencySymbol}${(num / 1e6).toFixed(2)}M`;
+      }
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: meta?.currency || "USD"
+      }).format(num);
+    }
+
+    if (Math.abs(num) >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
+    if (Math.abs(num) >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
+    if (Math.abs(num) >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
+    return num.toLocaleString();
+  };
+
+  const renderCalendarCard = (dateVal: any, title: string, subtitle: string, color: 'blue' | 'purple') => {
+    const parts = parseDateParts(dateVal);
+    const colorClasses = color === 'blue'
+      ? {
+        bg: 'bg-blue-500/10 border-blue-500/20',
+        header: 'bg-blue-500 text-white',
+        text: 'text-blue-400',
+        glow: 'shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+      }
+      : {
+        bg: 'bg-purple-500/10 border-purple-500/20',
+        header: 'bg-purple-500 text-white',
+        text: 'text-purple-400',
+        glow: 'shadow-[0_0_15px_rgba(168,85,247,0.15)]'
+      };
+
+    return (
+      <div className="flex items-center gap-4 bg-[#0c1022] p-4 rounded-xl border border-slate-900 hover:border-slate-800 transition-all duration-300">
+        {parts ? (
+          <div className={`w-12 h-14 rounded-lg overflow-hidden flex flex-col items-center justify-between border border-slate-800 shrink-0 ${colorClasses.glow}`}>
+            <div className={`w-full py-0.5 text-[8px] font-black text-center uppercase tracking-wider ${colorClasses.header}`}>
+              {parts.month}
+            </div>
+            <div className="flex-1 flex items-center justify-center bg-[#070b19] w-full text-base font-black text-white font-mono leading-none">
+              {parts.day}
+            </div>
+            <div className="w-full text-[8px] text-slate-500 text-center pb-0.5 bg-[#070b19] font-bold">
+              {parts.year}
+            </div>
+          </div>
+        ) : (
+          <div className="w-12 h-14 rounded-lg bg-[#070b19] border border-slate-800 flex items-center justify-center text-slate-600 shrink-0">
+            <span className="text-xs font-bold font-mono">N/A</span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <span className="text-[9px] text-slate-400 uppercase font-black tracking-wider block">
+            {title}
+          </span>
+          <span className="text-sm font-black text-slate-100 mt-1 block truncate">
+            {parts
+              ? new Date(dateVal).toLocaleDateString(undefined, { dateStyle: 'long' })
+              : "Not Scheduled"}
+          </span>
+          <span className="text-[9px] text-slate-500 font-bold block mt-0.5">
+            {subtitle}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderRangeTrack = (title: string, value: any, low: any, high: any, isCurrency = true) => {
+    const avgNum = value !== undefined && value !== null && value !== "Not Available" ? Number(value) : null;
+    const lowNum = low !== undefined && low !== null && low !== "Not Available" ? Number(low) : null;
+    const highNum = high !== undefined && high !== null && high !== "Not Available" ? Number(high) : null;
+
+    const showBar = avgNum !== null && lowNum !== null && highNum !== null && (highNum - lowNum) > 0;
+
+    let percentage = 50;
+    if (showBar) {
+      percentage = ((avgNum - lowNum) / (highNum - lowNum)) * 100;
+      percentage = Math.max(0, Math.min(100, percentage));
+    }
+
+    return (
+      <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 hover:border-slate-800 transition-all duration-300 flex flex-col justify-between h-full">
+        <div>
+          <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider block">{title}</span>
+          <div className="flex items-baseline gap-2 mt-3">
+            <span className="text-3xl font-black text-white font-mono tracking-tight">
+              {formatVal(value, isCurrency)}
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              Average
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-2">
+          {showBar ? (
+            <>
+              {/* Range track bar */}
+              <div className="relative h-2 bg-slate-950 rounded-full border border-slate-900/60 overflow-visible">
+                <div
+                  className="absolute top-0 bottom-0 left-0 rounded-full bg-gradient-to-r from-blue-500/20 to-emerald-500/30 border-r border-emerald-500/50"
+                  style={{ width: `${percentage}%` }}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.6)] flex items-center justify-center transition-all duration-300 hover:scale-125 cursor-pointer"
+                  style={{ left: `${percentage}%` }}
+                  title={`Average: ${formatVal(value, isCurrency)}`}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                </div>
+              </div>
+              <div className="flex justify-between text-[9px] font-bold text-slate-500 pt-1">
+                <div className="flex flex-col items-start">
+                  <span className="uppercase text-[8px] text-slate-650 tracking-wider">Low Target</span>
+                  <span className="font-mono text-slate-350 mt-0.5">{formatVal(low, isCurrency)}</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="uppercase text-[8px] text-slate-650 tracking-wider">High Target</span>
+                  <span className="font-mono text-slate-350 mt-0.5">{formatVal(high, isCurrency)}</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="pt-2 text-center text-[10px] text-slate-600 font-bold">
+              Range forecasts not available
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Derive dynamic sentiment
+  const sentiment = useMemo(() => {
+    if (!data) return { score: 50, label: "Neutral", reasons: ["No coverage available"] };
+    if (data.sentiment) {
+      return {
+        score: Number(data.sentiment.score ?? 50),
+        label: String(data.sentiment.label ?? "Neutral"),
+        reasons: Array.isArray(data.sentiment.reasons) ? data.sentiment.reasons : ["No coverage available"]
+      };
+    }
+    let score = 50;
+    const reasons: string[] = [];
+
+    const recMean = Number(data.analysts?.recommendationMean);
+    if (recMean > 0) {
+      if (recMean <= 2) {
+        score += 15;
+        reasons.push("Strong analyst consensus buy rating");
+      } else if (recMean >= 4) {
+        score -= 15;
+        reasons.push("Analyst consensus sell rating");
+      }
+    }
+
+    const price = Number(data.statistics?.price);
+    const dma50 = Number(data.statistics?.fiftyDayAverage);
+    const dma200 = Number(data.statistics?.twoHundredDayAverage);
+
+    if (price > 0 && dma200 > 0) {
+      if (price > dma200) {
+        score += 10;
+        reasons.push("Trading above long-term 200 DMA");
+      } else {
+        score -= 10;
+        reasons.push("Trading below long-term 200 DMA");
+      }
+    }
+
+    if (price > 0 && dma50 > 0) {
+      if (price > dma50) {
+        score += 10;
+        reasons.push("Trading above short-term 50 DMA");
+      } else {
+        score -= 10;
+        reasons.push("Trading below short-term 50 DMA");
+      }
+    }
+
+    const margin = Number(data.financialHealth?.profitMargin);
+    if (margin > 0.15) {
+      score += 10;
+      reasons.push("Healthy profit margin above 15%");
+    }
+
+    const label = score >= 65 ? "Bullish" : score <= 35 ? "Bearish" : "Neutral";
+    return { score: Math.min(Math.max(score, 0), 100), label, reasons };
+  }, [data]);
+
+  return (
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 text-slate-900 dark:text-slate-100 transition-colors">
+      {/* Navigation Row */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+        >
+          <ArrowLeft className="h-4 w-4 stroke-[3]" />
+          <span>Back</span>
+        </button>
+      </div>
+
+      {/* Header Info */}
+      <div className="bg-gradient-to-r from-[#0d122e]/80 via-[#0a0d1d]/85 to-[#080b18]/90 border border-slate-800/80 p-6 rounded-2xl shadow-xl backdrop-blur-md">
+        {meta ? (
+          <ChartHeader
+            name={meta.name}
+            symbol={symbol}
+            exchange={meta.exchange}
+            price={meta.price}
+            change={meta.change}
+            changePercent={meta.changePercent}
+            marketState={meta.marketState}
+            currency={meta.currency}
+          />
+        ) : (
+          <div className="text-slate-400 font-medium animate-pulse">Loading stock details...</div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+        {/* Left Side: Chart Terminal Frame */}
+        <div className="bg-[#090d1a]/80 border border-slate-800/80 rounded-2xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-xl hover:border-slate-700/50 transition-all duration-300">
+          {/* Live Core Chart Port */}
+          <div className="flex-1 min-h-[400px] relative p-3 bg-gradient-to-b from-[#060812] to-[#0a0d24] rounded-t-2xl">
+            <CandlestickChart
+              symbol={symbol}
+              timeframe={timeframe}
+              onCompareChange={(compareSym) => setHasComparison(!!compareSym)}
+              onMetaLoaded={(incoming) => setMeta((prev: any) => ({
+                ...prev,
+                ...incoming,
+                performance: incoming.performance || prev?.performance
+              }))}
+            />
+          </div>
+        </div>
+
+        {/* Right Side Sidebar Analytics */}
+        <div className="space-y-4">
+          {/* Tab Navigation Menu */}
+          <div className="bg-gradient-to-br from-[#090d1a]/90 to-[#0c102b]/95 border border-slate-800/80 rounded-2xl p-4 shadow-2xl backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-slate-800/60 pb-2 mb-3">
+              <span className="text-xs font-bold text-slate-350 tracking-wide">Navigation Control</span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {availableTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id as TabType);
+                    setTimeout(() => {
+                      tabContentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 80);
+                  }}
+                  className={`w-full px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all duration-200 flex items-center gap-2.5 ${activeTab === tab.id
+                    ? "bg-gradient-to-r from-blue-600/15 to-indigo-600/10 text-blue-400 border border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.1)] border-l-4 border-l-blue-500"
+                    : "text-slate-400 hover:text-white hover:bg-slate-900/40 border border-transparent"
+                    }`}
+                >
+                  <tab.icon size={14} />
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ==================== SUB-TAB METRIC ARRAYS ==================== */}
+      <div ref={tabContentRef} className="pt-4 border-t border-slate-900">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-slate-900 border border-slate-800 rounded-2xl" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-10 text-rose-500">{error}</div>
+        ) : (
+          <div>
+            {/* OVERVIEW TAB */}
+            {activeTab === "overview" && data && (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl">
+                  <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-3 mb-5">
+                    Company Profile
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Sector */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
+                        <Compass className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Sector</span>
+                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.sector}</span>
+                      </div>
+                    </div>
+                    {/* Industry */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/15">
+                        <Layers className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Industry</span>
+                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.industry}</span>
+                      </div>
+                    </div>
+                    {/* Country */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+                        <Globe className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Country</span>
+                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.country}</span>
+                      </div>
+                    </div>
+                    {/* Website */}
+                    <div className="bg-[#0c1022]/40 border border-slate-850 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800 transition-all">
+                      <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">
+                        <ExternalLink className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Website</span>
+                        {data.profile.website !== "Not Available" && data.profile.website !== "N/A" ? (
+                          <a
+                            href={data.profile.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1 mt-0.5"
+                          >
+                            <span>Visit Website</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        ) : (
+                          <span className="text-sm font-bold text-slate-300 mt-0.5 block">N/A</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-400 leading-relaxed mt-6 pt-6 border-t border-slate-800/60 pl-4 border-l-2 border-l-slate-700/40">
+                    {data.profile.description}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Statistics Grid */}
+                  <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                    <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-2.5 mb-2">
+                      Key Ratios & Statistics
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><TrendingUp size={12} className="text-blue-450" /> Market Cap</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.marketCap, true)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Layers size={12} className="text-indigo-405" /> EV</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.enterpriseValue, true)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Users size={12} className="text-purple-400" /> Shares Out.</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.sharesOutstanding)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-450" /> PE Ratio</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.pe)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-sky-400" /> Forward PE</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.forwardPe)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-teal-400" /> PEG Ratio</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.peg)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-400" /> Beta</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.beta)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-yellow-500" /> Div. Yield</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.dividendYield * 100, false, true)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financial Health Grid */}
+                  <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                    <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-2.5 mb-2">
+                      Financial Condition
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-400" /> Total Cash</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.cash, true)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Briefcase size={12} className="text-rose-400" /> Total Debt</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.debt, true)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><TrendingUp size={12} className="text-blue-400" /> Revenue</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.revenue, true)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-indigo-400" /> EBITDA</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.ebitda, true)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-yellow-500" /> Oper. Margin</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.operatingMargin * 100, false, true)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-400" /> Prof. Margin</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.profitMargin * 100, false, true)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+
+            {/* ANALYST TARGETS */}
+            {activeTab === "analysts" && data && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Panel 1: Rating Metrics & Consensus Gauge */}
+                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
+                    <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-2 mb-6 tracking-wider">
+                      Analyst Recommendation Rating
+                    </h4>
+
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Consensus Rating</span>
+                        <span className="text-3xl font-black text-white mt-1 block capitalize font-sans">
+                          {data.analysts.recommendationKey}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Mean Score (1-5)</span>
+                        <span className="text-3xl font-black text-emerald-400 mt-1 block font-mono">
+                          {typeof data.analysts.recommendationMean === 'number'
+                            ? data.analysts.recommendationMean.toFixed(2)
+                            : data.analysts.recommendationMean}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Consensus Gauge Track */}
+                    {typeof data.analysts.recommendationMean === 'number' && (
+                      <div className="space-y-4 mb-6">
+                        <div className="relative h-2 bg-gradient-to-r from-emerald-500 via-yellow-500 to-rose-500 rounded-full w-full">
+                          {/* Glowing Pointer */}
+                          <div
+                            className="absolute -top-1.5 -ml-2.5 w-5 h-5 bg-white border-2 border-slate-950 rounded-full shadow-lg shadow-white/30 flex items-center justify-center transition-all duration-500"
+                            style={{ left: `${Math.max(0, Math.min(100, ((data.analysts.recommendationMean - 1) / 4) * 100))}%` }}
+                          >
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-[9px] text-slate-500 font-black uppercase tracking-wider">
+                          <span>Strong Buy (1.0)</span>
+                          <span>Hold (3.0)</span>
+                          <span>Strong Sell (5.0)</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900/60 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Coverage Pool</span>
+                        <span className="text-slate-300 text-xs mt-0.5 block font-sans">Based on professional analyst evaluations</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-black text-white font-mono">{data.analysts.numberOfAnalysts}</span>
+                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider block">Analysts</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Panel 2: Price Targets Spectrum */}
+                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />
+                    <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-2 mb-6 tracking-wider">
+                      Price Target Thresholds
+                    </h4>
+
+                    {/* Price Targets Grid */}
+                    <div className="grid grid-cols-4 gap-2 mb-8">
+                      <div className="bg-[#0c1022] p-3 rounded-xl border border-slate-800/40 text-center">
+                        <span className="text-[9px] text-slate-500 uppercase font-black block">Low</span>
+                        <span className="text-xs font-black font-mono text-white block mt-1">
+                          {formatVal(data.analysts.targetLow, true)}
+                        </span>
+                      </div>
+                      <div className="bg-[#0c1022] p-3 rounded-xl border border-slate-800/40 text-center">
+                        <span className="text-[9px] text-slate-500 uppercase font-black block">Median</span>
+                        <span className="text-xs font-black font-mono text-white block mt-1">
+                          {formatVal(data.analysts.targetMedian, true)}
+                        </span>
+                      </div>
+                      <div className="bg-[#0c1022] p-3 rounded-xl border border-slate-800/40 text-center">
+                        <span className="text-[9px] text-slate-500 uppercase font-black block">Mean</span>
+                        <span className="text-xs font-black font-mono text-white block mt-1">
+                          {formatVal(data.analysts.targetMeanPrice, true)}
+                        </span>
+                      </div>
+                      <div className="bg-[#0c1022] p-3 rounded-xl border border-slate-800/40 text-center">
+                        <span className="text-[9px] text-slate-500 uppercase font-black block">High</span>
+                        <span className="text-xs font-black font-mono text-white block mt-1">
+                          {formatVal(data.analysts.targetHigh, true)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Price Target spectrum visualization */}
+                    {(() => {
+                      const low = Number(data.analysts.targetLow);
+                      const high = Number(data.analysts.targetHigh);
+                      const current = Number(data.statistics.price);
+                      const median = Number(data.analysts.targetMedian);
+
+                      if (isNaN(low) || isNaN(high) || isNaN(current) || low === 0 || high === 0) return null;
+
+                      // Calculate percentage positions
+                      const minVal = Math.min(low, current) * 0.95;
+                      const maxVal = Math.max(high, current) * 1.05;
+                      const range = maxVal - minVal;
+
+                      const getPct = (val: number) => ((val - minVal) / range) * 100;
+
+                      const currentPct = getPct(current);
+                      const lowPct = getPct(low);
+                      const medianPct = getPct(median);
+                      const highPct = getPct(high);
+
+                      return (
+                        <div className="relative h-24 w-full mt-10">
+                          {/* Track bar */}
+                          <div className="absolute top-12 left-0 right-0 h-1.5 bg-slate-800 rounded-full" />
+
+                          {/* Target range highlight track */}
+                          <div
+                            className="absolute top-12 h-1.5 bg-gradient-to-r from-blue-500/40 via-purple-500/40 to-emerald-500/40 rounded-full"
+                            style={{ left: `${lowPct}%`, right: `${100 - highPct}%` }}
+                          />
+
+                          {/* Low Marker Anchor & Label */}
+                          <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${lowPct}%` }}>
+                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Low</span>
+                            <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(low, true)}</span>
+                            <div className="w-0.5 h-3.5 bg-blue-500/40 my-0.5" />
+                            <div className="w-3.5 h-3.5 bg-blue-500 border-2 border-slate-900 rounded-full shadow-md shadow-blue-500/30" />
+                          </div>
+
+                          {/* Median Marker Anchor & Label */}
+                          <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
+                            <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Median</span>
+                            <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median, true)}</span>
+                            <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
+                            <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
+                          </div>
+
+                          {/* High Marker Anchor & Label */}
+                          <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${highPct}%` }}>
+                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">High</span>
+                            <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(high, true)}</span>
+                            <div className="w-0.5 h-3.5 bg-emerald-500/40 my-0.5" />
+                            <div className="w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-md shadow-emerald-500/30" />
+                          </div>
+
+                          {/* Current Price Pointer */}
+                          <div className="absolute top-12 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${currentPct}%` }}>
+                            <div className="w-2.5 h-4 bg-white border border-slate-950 shadow-md shadow-white/50 rounded-full" />
+                            <div className="w-0.5 h-3.5 bg-white/70 my-0.5" />
+                            <span className="text-[9px] font-black text-slate-900 bg-white px-1.5 py-0.5 rounded uppercase shadow-md leading-none tracking-wider mt-0.5">Current</span>
+                            <span className="text-[10px] font-black text-white font-mono mt-0.5">{formatVal(current, true)}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MARKET SENTIMENT */}
+            {activeTab === "sentiment" && data && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md flex flex-col items-center justify-center">
+                    <span className="text-xs font-black uppercase text-slate-500">Sentiment Score</span>
+                    <span className="text-5xl font-black text-white mt-4 font-mono">{sentiment.score}%</span>
+                    <span className={`text-sm font-black uppercase mt-3 tracking-wide ${sentiment.label === "Bullish" ? "text-emerald-400" : sentiment.label === "Bearish" ? "text-rose-400" : "text-amber-500"
+                      }`}>
+                      {sentiment.label}
+                    </span>
+                  </div>
+
+                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md col-span-2 space-y-4">
+                    <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-2">
+                      Sentiment Analysis Parameters
+                    </h4>
+                    <ul className="space-y-3 text-xs text-slate-300">
+                      {sentiment.reasons.map((reason: string, i: number) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* OWNERSHIP TAB */}
+            {activeTab === "ownership" && data && (
+              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
+                <h3 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-3 tracking-wider">
+                  Share Ownership Breakdown
+                </h3>
+
+                {(() => {
+                  const inst = Number(data.ownership.institutionOwnership) * 100 || 0;
+                  const insider = Number(data.ownership.insiderOwnership) * 100 || 0;
+                  const retail = Math.max(0, 100 - (inst + insider));
+                  const instFloat = Number(data.ownership.institutionsFloatPercentHeld) * 100 || 0;
+                  const instCount = data.ownership.institutionsCount || "N/A";
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Visual Progress Bar Chart */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-[10px] text-slate-450 uppercase font-black tracking-wider">
+                          <span>Holding Distribution</span>
+                          <span>Total: 100%</span>
+                        </div>
+                        <div className="w-full bg-slate-950 rounded-full h-3 flex overflow-hidden border border-slate-900">
+                          {inst > 0 && (
+                            <div style={{ width: `${inst}%` }} className="bg-cyan-500 h-full transition-all duration-500" title={`Institutions: ${inst.toFixed(2)}%`} />
+                          )}
+                          {insider > 0 && (
+                            <div style={{ width: `${insider}%` }} className="bg-purple-500 h-full transition-all duration-500" title={`Insiders: ${insider.toFixed(2)}%`} />
+                          )}
+                          {retail > 0 && (
+                            <div style={{ width: `${retail}%` }} className="bg-emerald-500 h-full transition-all duration-500" title={`Retail/Public: ${retail.toFixed(2)}%`} />
+                          )}
+                        </div>
+
+                        {/* Legend */}
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[10px] font-bold text-slate-400">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 bg-cyan-500 inline-block rounded-full" />
+                            Institutions ({inst.toFixed(2)}%)
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 bg-purple-500 inline-block rounded-full" />
+                            Corporate Insiders ({insider.toFixed(2)}%)
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 bg-emerald-500 inline-block rounded-full" />
+                            Retail & Public ({retail.toFixed(2)}%)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Detailed Statistics Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
+                          <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutional Holdings</span>
+                          <span className="text-2xl font-black text-white font-mono mt-3">{inst > 0 ? `${inst.toFixed(2)}%` : "N/A"}</span>
+                        </div>
+
+                        <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
+                          <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Insider Holdings</span>
+                          <span className="text-2xl font-black text-white font-mono mt-3">{insider > 0 ? `${insider.toFixed(2)}%` : "N/A"}</span>
+                        </div>
+
+                        <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
+                          <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Retail & Public</span>
+                          <span className="text-2xl font-black text-white font-mono mt-3">{retail > 0 ? `${retail.toFixed(2)}%` : "N/A"}</span>
+                        </div>
+
+                        <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
+                          <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutional Float / Count</span>
+                          <span className="text-xs font-black text-slate-300 font-mono mt-3 block leading-tight">
+                            Float: {instFloat > 0 ? `${instFloat.toFixed(2)}%` : "N/A"}<br />
+                            Holders: {instCount}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+            {/* CALENDAR EVENTS TAB */}
+            {activeTab === "events" && data && (
+              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
+                <div className="border-b border-slate-900 pb-3 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider">
+                    Calendar Events & Estimates Forecasts
+                  </h3>
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                    Powered by Yahoo Finance
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Col 1: Date Timeline / Cards */}
+                  <div className="lg:col-span-1 space-y-4">
+                    <h4 className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Upcoming Schedule</h4>
+
+                    <div className="space-y-4">
+                      {renderCalendarCard(
+                        data.events.earnings?.earningsDate?.[0],
+                        "Upcoming Earnings Date",
+                        "Projected release of financial results",
+                        "blue"
+                      )}
+                      {renderCalendarCard(
+                        data.events.exDividendDate,
+                        "Ex-Dividend Date",
+                        "Cut-off date for next dividend eligibility",
+                        "purple"
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Col 2: EPS Estimates */}
+                  <div className="lg:col-span-1">
+                    {renderRangeTrack(
+                      "Earnings Per Share (EPS) Estimate",
+                      data.events.earnings?.earningsAverage,
+                      data.events.earnings?.earningsLow,
+                      data.events.earnings?.earningsHigh,
+                      true
+                    )}
+                  </div>
+
+                  {/* Col 3: Revenue Estimates */}
+                  <div className="lg:col-span-1">
+                    {renderRangeTrack(
+                      "Revenue Estimate Forecast",
+                      data.events.earnings?.revenueAverage,
+                      data.events.earnings?.revenueLow,
+                      data.events.earnings?.revenueHigh,
+                      true
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TECHNICALS TAB */}
+            {activeTab === "technicals" && data && (
+              <div className="space-y-6">
+                {/* Consensus Gauge Card */}
+                {(() => {
+                  const price = meta?.price || Number(data.statistics?.price) || 0;
+                  const rsi = Number(data.technicals?.rsi) || 50;
+                  const macd = Number(data.technicals?.macd) || 0;
+                  const macdSignal = Number(data.technicals?.macdSignal) || 0;
+
+                  let buyCount = 0;
+                  let sellCount = 0;
+                  let neutralCount = 0;
+
+                  // RSI
+                  if (rsi < 30) buyCount++;
+                  else if (rsi > 70) sellCount++;
+                  else neutralCount++;
+
+                  // MAs
+                  const mas = [
+                    { name: "20", ema: Number(data.technicals?.ema20), sma: Number(data.technicals?.sma20) },
+                    { name: "50", ema: Number(data.technicals?.ema50), sma: Number(data.technicals?.sma50) },
+                    { name: "100", ema: Number(data.technicals?.ema100), sma: Number(data.technicals?.sma100) },
+                    { name: "200", ema: Number(data.technicals?.ema200), sma: Number(data.technicals?.sma200) }
+                  ];
+
+                  let maBuyCount = 0;
+                  let maSellCount = 0;
+                  mas.forEach(ma => {
+                    if (ma.sma && price) {
+                      if (price > ma.sma) {
+                        buyCount++;
+                        maBuyCount++;
+                      } else {
+                        sellCount++;
+                        maSellCount++;
+                      }
+                    }
+                    if (ma.ema && price) {
+                      if (price > ma.ema) {
+                        buyCount++;
+                        maBuyCount++;
+                      } else {
+                        sellCount++;
+                        maSellCount++;
+                      }
+                    }
+                  });
+                  const maVerdict = maBuyCount > maSellCount ? "Bullish" : maBuyCount < maSellCount ? "Bearish" : "Neutral";
+                  const maVerdictBadge = maVerdict === "Bullish" ? "text-emerald-450 border-emerald-500/20 bg-emerald-500/5" : maVerdict === "Bearish" ? "text-rose-455 border-rose-500/20 bg-rose-500/5" : "text-slate-400 border-slate-800 bg-slate-800/10";
+
+                  // MACD
+                  if (macd !== 0 || macdSignal !== 0) {
+                    if (macd > macdSignal) buyCount++;
+                    else sellCount++;
+                  }
+
+                  const high = Number(data.statistics?.dayHigh) || Number(data.statistics?.fiftyTwoWeekHigh) || price;
+                  const low = Number(data.statistics?.dayLow) || Number(data.statistics?.fiftyTwoWeekLow) || price;
+                  const close = Number(data.statistics?.previousClose) || price;
+
+                  const hasKeyLevels = price > 0 && high > 0 && low > 0;
+                  let PP = 0, R1 = 0, S1 = 0, R2 = 0, S2 = 0;
+                  let keyVerdict = "Neutral";
+                  let verdictBadgeColor = "text-slate-400 bg-slate-500/10 border-slate-500/20";
+
+                  if (hasKeyLevels) {
+                    PP = (high + low + close) / 3;
+                    R1 = (2 * PP) - low;
+                    S1 = (2 * PP) - high;
+                    R2 = PP + (high - low);
+                    S2 = PP - (high - low);
+
+                    if (price > R1) {
+                      keyVerdict = "Bullish";
+                      verdictBadgeColor = "text-emerald-450 bg-emerald-500/10 border-emerald-500/20";
+                    } else if (price < S1) {
+                      keyVerdict = "Bearish";
+                      verdictBadgeColor = "text-rose-455 bg-rose-500/10 border-rose-500/20";
+                    } else {
+                      keyVerdict = "Neutral";
+                      verdictBadgeColor = "text-amber-450 bg-amber-500/10 border-amber-500/20";
+                    }
+                  }
+
+                  let summaryVerdict = "NEUTRAL";
+                  let verdictColor = "bg-gradient-to-r from-slate-950 to-slate-900 border-slate-850 text-slate-300";
+
+                  if (buyCount > sellCount + 2) {
+                    summaryVerdict = "STRONG BUY";
+                    verdictColor = "bg-gradient-to-r from-emerald-500/15 via-teal-500/5 to-transparent border-emerald-500/30 text-emerald-400";
+                  } else if (buyCount > sellCount) {
+                    summaryVerdict = "BUY";
+                    verdictColor = "bg-gradient-to-r from-cyan-500/15 via-blue-500/5 to-transparent border-cyan-500/30 text-cyan-400";
+                  } else if (sellCount > buyCount + 2) {
+                    summaryVerdict = "STRONG SELL";
+                    verdictColor = "bg-gradient-to-r from-rose-500/15 via-red-500/5 to-transparent border-rose-500/30 text-rose-400";
+                  } else if (sellCount > buyCount) {
+                    summaryVerdict = "SELL";
+                    verdictColor = "bg-gradient-to-r from-orange-500/15 via-red-500/5 to-transparent border-orange-500/30 text-orange-400";
+                  }
+
+                  const totalSignals = buyCount + sellCount + neutralCount;
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Summary Banner */}
+                      <div className={`border rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md ${verdictColor}`}>
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Consensus Verdict</span>
+                          <h4 className="text-2xl font-black mt-2 tracking-tight">{summaryVerdict}</h4>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-center">
+                            <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Buy</span>
+                            <span className="text-lg font-black text-emerald-400 font-mono block mt-0.5">{buyCount}</span>
+                          </div>
+                          <div className="text-center border-l border-slate-900/60 pl-6">
+                            <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Neutral</span>
+                            <span className="text-lg font-black text-slate-400 font-mono block mt-0.5">{neutralCount}</span>
+                          </div>
+                          <div className="text-center border-l border-slate-900/60 pl-6">
+                            <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Sell</span>
+                            <span className="text-lg font-black text-rose-400 font-mono block mt-0.5">{sellCount}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Oscillators */}
+                        <div className="col-span-1">
+                          <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
+                            <h4 className="text-xs font-black uppercase text-slate-355 border-b border-slate-900 pb-3 tracking-wider">
+                              Oscillators
+                            </h4>
+
+                            {/* RSI (14) */}
+                            <div className="space-y-2.5">
+                              <div className="flex justify-between text-xs font-mono">
+                                <span className="text-slate-400 font-sans font-bold">RSI (14)</span>
+                                <span className={`font-black ${rsi < 30 ? "text-emerald-400" : rsi > 70 ? "text-rose-400" : "text-slate-200"}`}>
+                                  {rsi.toFixed(2)} ({rsi < 30 ? "Oversold" : rsi > 70 ? "Overbought" : "Neutral"})
+                                </span>
+                              </div>
+                              <div className="relative w-full bg-slate-950 rounded-full h-3 border border-slate-900 overflow-hidden">
+                                <div className="absolute left-0 w-[30%] h-full bg-emerald-500/20" />
+                                <div className="absolute left-[30%] w-[40%] h-full bg-slate-800/30" />
+                                <div className="absolute left-[70%] w-[30%] h-full bg-rose-500/20" />
+                                <div
+                                  style={{ left: `${Math.min(97, Math.max(3, rsi))}%` }}
+                                  className="absolute -translate-x-1/2 top-1/2 -translate-y-1/2 w-4 h-4 bg-cyan-400 rounded-full shadow-lg shadow-cyan-400/80 border-2 border-[#090d1a] ring-2 ring-cyan-400/30"
+                                />
+                              </div>
+                              <div className="flex justify-between text-[8px] text-slate-500 font-bold uppercase tracking-wider">
+                                <span>Oversold (30)</span>
+                                <span>Neutral</span>
+                                <span>Overbought (70)</span>
+                              </div>
+                            </div>
+
+                            {/* MACD */}
+                            <div className="space-y-4 pt-2">
+                              <div className="flex justify-between text-xs font-mono">
+                                <span className="text-slate-500 font-sans font-bold">MACD Crossover</span>
+                                <span className={`font-black ${macd > macdSignal ? "text-emerald-450" : "text-rose-455"}`}>
+                                  {macd > macdSignal ? "Bullish Crossover" : "Bearish Crossover"}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 text-center font-mono">
+                                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-900">
+                                  <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">Value</span>
+                                  <span className="text-sm font-black text-slate-200 block mt-1">{macd.toFixed(3)}</span>
+                                </div>
+                                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-900">
+                                  <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">Signal</span>
+                                  <span className="text-sm font-black text-slate-200 block mt-1">{macdSignal.toFixed(3)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Moving Averages */}
+                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md col-span-1 space-y-4">
+                          <div className="flex justify-between items-center border-b border-slate-900 pb-3">
+                            <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider">
+                              Moving Averages (MAs)
+                            </h4>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${maVerdictBadge}`}>
+                              {maVerdict}
+                            </span>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs font-mono text-left">
+                              <thead>
+                                <tr className="border-b border-slate-900 text-[10px] text-slate-500 uppercase font-black tracking-wider">
+                                  <th className="pb-3 font-sans">Period</th>
+                                  <th className="pb-3 text-center">Simple (SMA)</th>
+                                  <th className="pb-3 text-right">Exponential (EMA)</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-900/40">
+                                {mas.map((ma, i) => {
+                                  const smaDiff = ma.sma ? ((price - ma.sma) / ma.sma) * 100 : 0;
+                                  const emaDiff = ma.ema ? ((price - ma.ema) / ma.ema) * 100 : 0;
+
+                                  return (
+                                    <tr key={i} className="hover:bg-white/[0.01] transition-colors duration-150">
+                                      <td className="py-3 font-sans font-bold text-slate-400">
+                                        MA {ma.name}
+                                      </td>
+                                      <td className="py-3 text-center">
+                                        <div className="inline-flex flex-col items-center">
+                                          <span className="text-slate-200 font-bold">{formatVal(ma.sma, true)}</span>
+                                          {ma.sma > 0 && (
+                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 ${price >= ma.sma ? "bg-emerald-500/10 text-emerald-455" : "bg-rose-500/10 text-rose-455"}`}>
+                                              {price >= ma.sma ? "▲ Above" : "▼ Below"} ({Math.abs(smaDiff).toFixed(1)}%)
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="py-3 text-right">
+                                        <div className="inline-flex flex-col items-end">
+                                          <span className="text-slate-200 font-bold">{formatVal(ma.ema, true)}</span>
+                                          {ma.ema > 0 && (
+                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 ${price >= ma.ema ? "bg-emerald-500/10 text-emerald-455" : "bg-rose-500/10 text-rose-455"}`}>
+                                              {price >= ma.ema ? "▲ Above" : "▼ Below"} ({Math.abs(emaDiff).toFixed(1)}%)
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Major Key Levels (Structural Levels) - Rendered full-width below oscillators and MAs */}
+                      {hasKeyLevels ? (
+                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4 w-full">
+                          <div className="flex justify-between items-center border-b border-slate-900/60 pb-3">
+                            <h4 className="text-xs font-black uppercase text-slate-355 tracking-wider">
+                              Major Key Levels (Structural Levels)
+                            </h4>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${verdictBadgeColor}`}>
+                              {keyVerdict}
+                            </span>
+                          </div>
+
+                          {(() => {
+                            const minLevel = S2;
+                            const maxLevel = R2;
+                            const range = maxLevel - minLevel;
+                            const getPct = (val: number) => {
+                              if (!range || range <= 0) return 50;
+                              return Math.max(0, Math.min(100, ((val - minLevel) / range) * 100));
+                            };
+                            const pricePct = getPct(price);
+
+                            return (
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center pt-2">
+                                {/* Price Ladder Visual Gauge */}
+                                <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-[#0c1022]/40 rounded-xl border border-slate-900/60 h-full min-h-[220px]">
+                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider mb-5">Price Alignment</span>
+                                  <div className="relative w-full px-6 h-36 flex items-center justify-center">
+                                    {/* Vertical track */}
+                                    <div className="absolute top-0 bottom-0 w-1.5 rounded-full bg-gradient-to-t from-emerald-500/20 via-blue-500/10 to-rose-500/20 border border-slate-900" />
+                                    
+                                    {/* Ticks/Labels */}
+                                    {[
+                                      { label: "R2", value: R2, color: "text-rose-455" },
+                                      { label: "R1", value: R1, color: "text-rose-400" },
+                                      { label: "PP", value: PP, color: "text-blue-400" },
+                                      { label: "S1", value: S1, color: "text-emerald-455" },
+                                      { label: "S2", value: S2, color: "text-emerald-400" },
+                                    ].map((lvl, idx) => {
+                                      const pct = getPct(lvl.value);
+                                      return (
+                                        <div 
+                                          key={idx} 
+                                          className="absolute left-0 right-0 flex items-center justify-between pointer-events-none"
+                                          style={{ bottom: `${pct}%` }}
+                                        >
+                                          <span className={`w-8 text-right font-mono text-[9px] font-bold ${lvl.color}`}>{lvl.label}</span>
+                                          <div className="w-4 h-px bg-slate-800" />
+                                          <span className="w-14 text-left font-mono text-[9px] text-slate-500">{formatVal(lvl.value, true)}</span>
+                                        </div>
+                                      );
+                                    })}
+
+                                    {/* Current Price Pointer */}
+                                    <div 
+                                      className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 ease-out z-10 w-12"
+                                      style={{ bottom: `${pricePct}%` }}
+                                    >
+                                      <div className="w-full h-[2px] bg-cyan-400 shadow-[0_0_8px_#22d3ee] relative flex items-center justify-center">
+                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
+                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950" />
+                                        
+                                        {/* Price Label Overlay (Centered above pointer) */}
+                                        <div className="absolute bottom-full mb-1.5 bg-cyan-950/90 text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded text-[8px] font-black font-mono shadow-[0_0_10px_rgba(34,211,238,0.2)] whitespace-nowrap">
+                                          {formatVal(price, true)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Detailed Levels List */}
+                                <div className="col-span-2 space-y-2">
+                                  {[
+                                    { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-455", bgClass: "hover:bg-rose-500/5" },
+                                    { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-400", bgClass: "hover:bg-rose-500/5" },
+                                    { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-400", bgClass: "bg-blue-500/5 border border-blue-500/10" },
+                                    { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-455", bgClass: "hover:bg-emerald-500/5" },
+                                    { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-400", bgClass: "hover:bg-emerald-500/5" },
+                                  ].map((lvl, idx) => {
+                                    const isAbove = price >= lvl.value;
+                                    return (
+                                      <div 
+                                        key={idx} 
+                                        className={`flex justify-between items-center px-3 py-1.5 rounded-xl transition-all duration-200 ${lvl.bgClass}`}
+                                      >
+                                        <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
+                                        <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-200">
+                                          <span>{formatVal(lvl.value, true)}</span>
+                                          <span className={`text-[10px] font-sans px-2 py-0.5 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
+                                            {isAbove ? "Above" : "Below"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md text-center text-xs text-slate-500 py-8 w-full">
+                          No price data available to compute pivot levels.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* PERFORMANCE COMPARISON TAB */}
+            {activeTab === "performance" && meta && (
+              <div className="space-y-6">
+                {/* Performance Summary Banner */}
+                {(() => {
+                  const p1y = meta.performance?.["1Y"];
+                  const p5y = meta.performance?.["5Y"];
+                  const pAll = meta.performance?.["All Time"];
+                  
+                  const primaryGrowth = p5y ?? p1y ?? pAll ?? 0;
+                  
+                  return (
+                    <div className={`border rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md transition-all duration-300 ${
+                      primaryGrowth >= 0 
+                        ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20" 
+                        : "bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent border-rose-500/20"
+                    }`}>
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Return Analysis</span>
+                        <h4 className="text-xl font-black text-slate-200">
+                          {primaryGrowth >= 20 
+                            ? "Exceptional Long-Term Growth" 
+                            : primaryGrowth >= 0 
+                              ? "Steady Wealth Growth" 
+                              : "Undergoing Asset Consolidation"}
+                        </h4>
+                        <p className="text-xs text-slate-400 max-w-xl leading-relaxed mt-1">
+                          This asset has delivered a cumulative return of <span className={`font-bold ${primaryGrowth >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{primaryGrowth >= 0 ? "+" : ""}{primaryGrowth.toFixed(1)}%</span> over the multi-year cycle.
+                        </p>
+                      </div>
+                      
+                      <div className="flex gap-4 shrink-0 font-mono">
+                        <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
+                          <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">1-Year Return</span>
+                          <span className={`text-base font-black block mt-1 ${p1y >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            {p1y != null ? `${p1y >= 0 ? "+" : ""}${p1y.toFixed(2)}%` : "N/A"}
+                          </span>
+                        </div>
+                        <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
+                          <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">5-Year Return</span>
+                          <span className={`text-base font-black block mt-1 ${p5y >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            {p5y != null ? `${p5y >= 0 ? "+" : ""}${p5y.toFixed(2)}%` : "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Return Horizon Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+                  {[
+                    { label: "1D", key: "1D" },
+                    { label: "1W", key: "1W" },
+                    { label: "3M", key: "3M" },
+                    { label: "6M", key: "6M" },
+                    { label: "YTD", key: "YTD" },
+                    { label: "1Y", key: "1Y" },
+                    { label: "5Y", key: "5Y" },
+                    { label: "All Time", key: "All Time" }
+                  ].map((item, idx) => {
+                    const val = meta.performance?.[item.key];
+                    const hasVal = val !== undefined && val !== null;
+                    const isPositive = val >= 0;
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${
+                          hasVal 
+                            ? isPositive 
+                              ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]" 
+                              : "bg-rose-500/[0.02] border-rose-950/60 hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
+                            : "bg-slate-950/30 border-slate-900 text-slate-655"
+                        }`}
+                      >
+                        {/* Period label */}
+                        <div className="flex justify-between items-center z-10">
+                          <span className="text-[10px] text-slate-505 uppercase font-black tracking-wider">{item.label}</span>
+                          {hasVal && (
+                            <span className={`text-[10px] font-bold ${isPositive ? "text-emerald-455" : "text-rose-455"}`}>
+                              {isPositive ? "▲" : "▼"}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Visual bar/track of performance magnitude */}
+                        {hasVal && (
+                          <div className="w-full bg-slate-950/80 rounded-full h-1 my-1 overflow-hidden border border-slate-900">
+                            <div 
+                              className={`h-full rounded-full ${isPositive ? "bg-emerald-500" : "bg-rose-500"}`}
+                              style={{ width: `${Math.min(100, Math.abs(val) * (item.key === "1D" || item.key === "1W" ? 10 : 1))}%` }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Value */}
+                        <div className="z-10 mt-auto">
+                          <span className={`text-sm font-mono font-black block tracking-tight ${
+                            hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
+                          }`}>
+                            {hasVal ? `${isPositive ? "+" : ""}${val.toFixed(2)}%` : "N/A"}
+                          </span>
+                        </div>
+
+                        {/* Ambient Card Glow */}
+                        {hasVal && (
+                          <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${
+                            isPositive ? "bg-emerald-400" : "bg-rose-400"
+                          }`} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* NEWS TAB */}
+            {activeTab === "news" && data && (
+              (() => {
+                const newsItems = (data.news || []).slice(0, 10);
+                const leftColNews = newsItems.slice(0, 5);
+                const rightColNews = newsItems.slice(5, 10);
+                
+                const renderNewsTable = (items: any[]) => (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-900 bg-[#0c1022]">
+                          <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-20">Image</th>
+                          <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
+                          <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-16 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-900/60">
+                        {items.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
+                            <td className="px-4 py-3 align-middle w-20">
+                              <img
+                                src={item.thumbnail?.resolutions?.[0]?.url || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=200&q=80"}
+                                alt="News thumbnail"
+                                className="w-16 h-11 rounded-lg object-cover border border-slate-900 shadow-sm shrink-0 bg-slate-950"
+                              />
+                            </td>
+                            <td className="px-4 py-3.5 align-middle space-y-1">
+                              <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block">
+                                {item.publisher || "General News"}
+                              </span>
+                              <h4 className="text-xs font-bold text-slate-200 line-clamp-1 leading-snug">
+                                {item.title}
+                              </h4>
+                              <p className="text-[10px] text-slate-400 line-clamp-1 font-normal leading-relaxed">
+                                {item.summary || item.title}
+                              </p>
+                            </td>
+                            <td className="px-4 py-3.5 align-middle text-center">
+                              <a
+                                href={item.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-all"
+                                title="Read Article"
+                              >
+                                <ExternalLink size={12} className="stroke-[2.5]" />
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                        {items.length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-8 text-center text-xs text-slate-500">
+                              No articles found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Latest Coverage</h4>
+                      {renderNewsTable(leftColNews)}
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Market Sentiment</h4>
+                      {renderNewsTable(rightColNews)}
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
