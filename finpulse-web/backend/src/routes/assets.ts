@@ -22,10 +22,10 @@ async function getCachedData(key: string): Promise<any | null> {
   return null;
 }
 
-async function setCachedData(key: string, data: any): Promise<void> {
+async function setCachedData(key: string, data: any, ttlSeconds: number = CACHE_TTL_SECONDS): Promise<void> {
   memoryCache.set(key, {
     data,
-    expiresAt: Date.now() + CACHE_TTL_SECONDS * 1000,
+    expiresAt: Date.now() + ttlSeconds * 1000,
   });
 }
 
@@ -367,52 +367,58 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
   }
 
   // Fetch real historical performance returns from Yahoo Finance
-  let calculatedPerformance: any = null;
-  try {
-    const histResult = await yahooFinance.chart(symbol, { period1: '2000-01-01', interval: '1wk' });
-    if (histResult && histResult.quotes && histResult.quotes.length > 0) {
-      const quotes = histResult.quotes.filter((q: any) => q && q.close != null);
-      if (quotes.length > 0) {
-        const currentPrice = histResult.meta.regularMarketPrice || quotes[quotes.length - 1].close;
-        const now = new Date();
-        const targets: Record<string, Date> = {
-          "1W": new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-          "3M": new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
-          "6M": new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000),
-          "YTD": new Date(now.getFullYear(), 0, 1),
-          "1Y": new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000),
-          "5Y": new Date(now.getTime() - 5 * 365 * 24 * 60 * 60 * 1000),
-          "All Time": new Date(quotes[0].date)
-        };
+  const perfCacheKey = `performance-${symbol}`;
+  let calculatedPerformance: any = await getCachedData(perfCacheKey);
+  if (!calculatedPerformance) {
+    try {
+      const histResult = await yahooFinance.chart(symbol, { period1: '2000-01-01', interval: '1wk' });
+      if (histResult && histResult.quotes && histResult.quotes.length > 0) {
+        const quotes = histResult.quotes.filter((q: any) => q && q.close != null);
+        if (quotes.length > 0) {
+          const currentPrice = histResult.meta.regularMarketPrice || quotes[quotes.length - 1].close;
+          const now = new Date();
+          const targets: Record<string, Date> = {
+            "1W": new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+            "3M": new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
+            "6M": new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000),
+            "YTD": new Date(now.getFullYear(), 0, 1),
+            "1Y": new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000),
+            "5Y": new Date(now.getTime() - 5 * 365 * 24 * 60 * 60 * 1000),
+            "All Time": new Date(quotes[0].date)
+          };
 
-        calculatedPerformance = {
-          "1D": histResult.meta.regularMarketChangePercent || yahooContext?.changePercent || 0
-        };
+          calculatedPerformance = {
+            "1D": histResult.meta.regularMarketChangePercent || yahooContext?.changePercent || 0
+          };
 
-        for (const [key, targetDate] of Object.entries(targets)) {
-          let closestQuote = quotes[0];
-          let minDiff = Math.abs(new Date(closestQuote.date).getTime() - targetDate.getTime());
+          for (const [key, targetDate] of Object.entries(targets)) {
+            let closestQuote = quotes[0];
+            let minDiff = Math.abs(new Date(closestQuote.date).getTime() - targetDate.getTime());
 
-          for (const q of quotes) {
-            const diff = Math.abs(new Date(q.date).getTime() - targetDate.getTime());
-            if (diff < minDiff) {
-              minDiff = diff;
-              closestQuote = q;
+            for (const q of quotes) {
+              const diff = Math.abs(new Date(q.date).getTime() - targetDate.getTime());
+              if (diff < minDiff) {
+                minDiff = diff;
+                closestQuote = q;
+              }
             }
-          }
 
-          const maxWindow = 21 * 24 * 60 * 60 * 1000; // 21 days window for weekly data
-          if (minDiff <= maxWindow && currentPrice != null && closestQuote.close != null) {
-            const pctReturn = ((currentPrice - closestQuote.close) / closestQuote.close) * 100;
-            calculatedPerformance[key] = Number(pctReturn.toFixed(2));
-          } else {
-            calculatedPerformance[key] = null;
+            const maxWindow = 21 * 24 * 60 * 60 * 1000; // 21 days window for weekly data
+            if (minDiff <= maxWindow && currentPrice != null && closestQuote.close != null) {
+              const pctReturn = ((currentPrice - closestQuote.close) / closestQuote.close) * 100;
+              calculatedPerformance[key] = Number(pctReturn.toFixed(2));
+            } else {
+              calculatedPerformance[key] = null;
+            }
           }
         }
       }
+      if (calculatedPerformance) {
+        await setCachedData(perfCacheKey, calculatedPerformance, 300); // Cache for 5 minutes
+      }
+    } catch (err) {
+      console.warn("Failed to calculate real historical performance:", err);
     }
-  } catch (err) {
-    console.warn("Failed to calculate real historical performance:", err);
   }
 
   // Post-process result to guarantee performance numbers are present and realistic
@@ -497,14 +503,20 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
 // GET /api/fundamentals/:symbol
 router.get('/fundamentals/:symbol', async (req: Request, res: Response) => {
   const symbol = (typeof req.params.symbol === 'string' ? req.params.symbol : 'AAPL').toUpperCase();
+  const cacheKey = `fundamentals-${symbol}`;
 
   try {
+    let cachedData = await getCachedData(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const quoteData = await fetchYahooQuoteWithFallback(symbol);
     if (!quoteData) {
       throw new Error("No quote data returned from Yahoo Finance");
     }
 
-    res.json({
+    const result = {
       symbol,
       name: quoteData.shortName || quoteData.longName || `${symbol} Corporation`,
       price: quoteData.regularMarketPrice,
@@ -521,7 +533,10 @@ router.get('/fundamentals/:symbol', async (req: Request, res: Response) => {
       marketCap: quoteData.marketCap,
       currency: quoteData.currency,
       marketState: quoteData.marketState
-    });
+    };
+
+    await setCachedData(cacheKey, result, 120); // Cache for 2 minutes
+    res.json(result);
   } catch (err: any) {
     console.error('Failed to retrieve Yahoo Finance fundamentals:', err.message);
     res.status(502).json({ error: `Failed to fetch fundamentals: ${err.message}` });
@@ -658,36 +673,94 @@ router.get('/charts/:symbol', async (req: Request, res: Response) => {
   const symbol = String(req.params.symbol || 'AAPL').toUpperCase();
   const range = (req.query.range || '1y').toString();
   const interval = (req.query.interval || '1d').toString();
+  const cacheKey = `charts-${symbol}-${range}-${interval}`;
 
   try {
-    const data = await fetchYahooChartDirect(symbol, range, interval);
-    const chartResult = data.chart?.result?.[0];
-    if (chartResult && chartResult.timestamp) {
-      const timestamps = chartResult.timestamp;
-      const quote = chartResult.indicators?.quote?.[0];
-      const adjclose = chartResult.indicators?.adjclose?.[0]?.adjclose;
+    let cachedData = await getCachedData(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
-      const quotes = timestamps.map((ts: number, i: number) => {
-        return {
-          date: new Date(ts * 1000).toISOString(),
-          open: quote?.open?.[i] ?? null,
-          high: quote?.high?.[i] ?? null,
-          low: quote?.low?.[i] ?? null,
-          close: quote?.close?.[i] ?? null,
-          adjClose: adjclose?.[i] ?? quote?.close?.[i] ?? null,
-          volume: quote?.volume?.[i] ?? null
+    let chartResult: any = null;
+    let quotes: any[] = [];
+
+    try {
+      const data = await fetchYahooChartDirect(symbol, range, interval);
+      const directResult = data.chart?.result?.[0];
+      if (directResult && directResult.timestamp) {
+        const timestamps = directResult.timestamp;
+        const quote = directResult.indicators?.quote?.[0];
+        const adjclose = directResult.indicators?.adjclose?.[0]?.adjclose;
+
+        quotes = timestamps.map((ts: number, i: number) => {
+          return {
+            date: new Date(ts * 1000).toISOString(),
+            open: quote?.open?.[i] ?? null,
+            high: quote?.high?.[i] ?? null,
+            low: quote?.low?.[i] ?? null,
+            close: quote?.close?.[i] ?? null,
+            adjClose: adjclose?.[i] ?? quote?.close?.[i] ?? null,
+            volume: quote?.volume?.[i] ?? null
+          };
+        }).filter((q: any) => q.open !== null && q.close !== null);
+
+        chartResult = {
+          meta: directResult.meta,
+          quotes: quotes
         };
-      }).filter((q: any) => q.open !== null && q.close !== null);
+      }
+    } catch (directErr: any) {
+      console.warn(`Direct Yahoo chart fetch failed for ${symbol}, trying yahooFinance.chart fallback:`, directErr.message);
+      
+      const getPeriod1ForRange = (r: string): Date => {
+        const now = new Date();
+        const lower = r.toLowerCase();
+        
+        const match = lower.match(/^(\d+)(d|wk|mo|y)$/);
+        if (match) {
+          const value = parseInt(match[1]);
+          const unit = match[2];
+          if (unit === 'd') return new Date(now.getTime() - value * 24 * 60 * 60 * 1000);
+          if (unit === 'wk') return new Date(now.getTime() - value * 7 * 24 * 60 * 60 * 1000);
+          if (unit === 'mo') return new Date(now.setMonth(now.getMonth() - value));
+          if (unit === 'y') return new Date(now.setFullYear(now.getFullYear() - value));
+        }
 
-      res.json({
-        meta: chartResult.meta,
-        quotes: quotes
+        if (lower === 'max') return new Date('2000-01-01');
+        return new Date(now.setFullYear(now.getFullYear() - 1)); // Default 1y
+      };
+
+      const libraryResult = await yahooFinance.chart(symbol, {
+        period1: getPeriod1ForRange(range),
+        interval: interval as any
       });
+
+      if (libraryResult && libraryResult.quotes) {
+        quotes = libraryResult.quotes.map((q: any) => ({
+          date: q.date instanceof Date ? q.date.toISOString() : new Date(q.date).toISOString(),
+          open: q.open ?? null,
+          high: q.high ?? null,
+          low: q.low ?? null,
+          close: q.close ?? null,
+          adjClose: q.adjClose ?? q.close ?? null,
+          volume: q.volume ?? null
+        })).filter((q: any) => q.open !== null && q.close !== null);
+
+        chartResult = {
+          meta: libraryResult.meta,
+          quotes: quotes
+        };
+      }
+    }
+
+    if (chartResult && chartResult.quotes && chartResult.quotes.length > 0) {
+      await setCachedData(cacheKey, chartResult, 300); // Cache for 5 minutes
+      res.json(chartResult);
     } else {
-      res.status(502).json({ error: "Invalid data structure returned from Yahoo Finance" });
+      res.status(502).json({ error: "Invalid data structure or no quotes returned from Yahoo Finance" });
     }
   } catch (err: any) {
-    console.error(`Direct Yahoo chart fetch failed for ${symbol}:`, err.message);
+    console.error(`Both direct fetch and library fallback failed for chart ${symbol}:`, err.message);
     res.status(502).json({ error: `Failed to retrieve chart data: ${err.message}` });
   }
 });

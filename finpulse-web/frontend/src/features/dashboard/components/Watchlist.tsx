@@ -498,16 +498,6 @@ export default function Watchlist() {
                         </div>
                       </div>
                     </div>
-                    {/* Price & Change details */}
-                    <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] text-slate-400 uppercase font-bold tracking-wider">Live Price:</span>
-                        <span className="text-base md:text-xl font-black text-slate-800 dark:text-white">{item.price || "$0.00"}</span>
-                      </div>
-                      <span className={`text-xs font-bold flex items-center ${isPositive ? "text-emerald-500" : "text-rose-500"}`}>
-                        {isPositive && !String(item.changePercent || "").startsWith('+') ? "+" : ""}{item.changePercent || "0.00%"}
-                      </span>
-                    </div>
                   </motion.div>
                 );
               })}
