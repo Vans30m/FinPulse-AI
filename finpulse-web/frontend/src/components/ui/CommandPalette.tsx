@@ -3,6 +3,7 @@ import { Search, X, Coins, PieChart, TrendingUp, Loader2, History } from 'lucide
 import { useChart } from "../../context/ChartContext";
 import { StockLogo } from '../../utils/logo';
 import API_BASE_URL from "../../config/api";
+import { useNavigate } from 'react-router-dom';
 
 interface SearchResult {
   symbol: string;
@@ -14,6 +15,7 @@ interface SearchResult {
 
 export default function CommandPalette() {
   const { openAsset } = useChart();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -58,16 +60,9 @@ export default function CommandPalette() {
       return [item, ...filtered].slice(0, 5); // Keep top 5
     });
 
-    openAsset({
-      symbol: item.symbol,
-      yahooSymbol: item.yahooSymbol,
-      name: item.name,
-      exchange: item.exchange,
-      type: item.type,
-    });
-
     setIsOpen(false);
     setQuery('');
+    navigate(`/asset/${item.symbol}`);
   };
 
   const tabs = ['All', 'Stocks', 'Crypto', 'Currencies', 'Commodities'];
