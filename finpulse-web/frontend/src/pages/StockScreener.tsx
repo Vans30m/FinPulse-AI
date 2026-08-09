@@ -213,23 +213,24 @@ export default function StockScreener() {
   const [isValuationOpen, setIsValuationOpen] = useState(false);
   const [isFundamentalsOpen, setIsFundamentalsOpen] = useState(false);
   const [isShareholdingOpen, setIsShareholdingOpen] = useState(false);
+  const [isMarketDataLoading, setIsMarketDataLoading] = useState(false);
   const [timeseriesData, setTimeseriesData] = useState<Record<string, any>>({});
   const [isTimeseriesLoading, setIsTimeseriesLoading] = useState<Record<string, boolean>>({});
 
   const loadAssetDetailsOnDemand = async (symbol: string) => {
     if (assetDetails) return;
-
+    setIsMarketDataLoading(true);
     const cachedDetailsStr = localStorage.getItem(`screener-asset-details-v2-${symbol}`);
     if (cachedDetailsStr) {
       try {
         const parsed = JSON.parse(cachedDetailsStr);
         if (Date.now() - parsed.timestamp < 4 * 60 * 60 * 1000) {
           setAssetDetails(parsed.data);
+          setIsMarketDataLoading(false);
           return;
         }
       } catch (e) {}
     }
-
     try {
       const data = await getUnifiedAssetDetails(symbol);
       setAssetDetails(data);
@@ -239,6 +240,8 @@ export default function StockScreener() {
       }));
     } catch (err) {
       console.warn("Failed to fetch asset details:", err);
+    } finally {
+      setIsMarketDataLoading(false);
     }
   };
 
@@ -831,8 +834,6 @@ export default function StockScreener() {
       { label: 'Market Cap', current: fmtCurrency(curMarketCap), values: generateHistorical(curMarketCap).map(v => fmtCurrency(v)) },
       { label: 'Enterprise Value', current: fmtCurrency(curEV), values: generateHistorical(curEV).map(v => fmtCurrency(v)) },
       { label: 'Trailing P/E', current: fmtRatio(curPE), values: generateHistorical(curPE).map(v => fmtRatio(v)) },
-      { label: 'Forward P/E', current: fmtRatio(curForwardPE), values: generateHistorical(curForwardPE).map(v => fmtRatio(v)) },
-      { label: 'PEG Ratio (5yr expected)', current: fmtRatio(curPEG, ''), values: generateHistorical(curPEG).map(v => fmtRatio(v, '')) },
       { label: 'Price/Sales', current: fmtRatio(curPS), values: generateHistorical(curPS).map(v => fmtRatio(v)) },
       { label: 'Price/Book', current: fmtRatio(curPB), values: generateHistorical(curPB).map(v => fmtRatio(v)) },
       { label: 'Enterprise Value/Revenue', current: fmtRatio(curEVRevenue), values: generateHistorical(curEVRevenue).map(v => fmtRatio(v)) },
@@ -1689,27 +1690,33 @@ export default function StockScreener() {
                 </button>
 
                 {isMarketDataOpen && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 animate-fadeIn">
-                    {[
-                      { label: 'Current Price', value: assetDetails?.statistics?.price ? `${currencySymbol}${assetDetails.statistics.price.toFixed(2)}` : `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price' },
-                      { label: 'Price Change', value: assetDetails?.statistics?.change ? `${currencySymbol}${assetDetails.statistics.change.toFixed(2)}` : '-', desc: 'Absolute price movement' },
-                      { label: 'Change %', value: assetDetails?.statistics?.changePercent ? `${assetDetails.statistics.changePercent.toFixed(2)}%` : '-', desc: 'Percentage price movement' },
-                      { label: 'Open', value: assetDetails?.statistics?.open ? `${currencySymbol}${assetDetails.statistics.open.toFixed(2)}` : '-', desc: 'Today\'s opening price' },
-                      { label: 'High', value: assetDetails?.statistics?.dayHigh ? `${currencySymbol}${assetDetails.statistics.dayHigh.toFixed(2)}` : '-', desc: 'Today\'s highest price' },
-                      { label: 'Low', value: assetDetails?.statistics?.dayLow ? `${currencySymbol}${assetDetails.statistics.dayLow.toFixed(2)}` : '-', desc: 'Today\'s lowest price' },
-                      { label: 'Previous Close', value: assetDetails?.statistics?.previousClose ? `${currencySymbol}${assetDetails.statistics.previousClose.toFixed(2)}` : '-', desc: 'Yesterday\'s closing price' },
-                      { label: '52-Week High', value: `${currencySymbol}${selectedStock.high52w.toFixed(2)}`, desc: '52-week peak' },
-                      { label: '52-Week Low', value: `${currencySymbol}${selectedStock.low52w.toFixed(2)}`, desc: '52-week bottom' },
-                    ].map((item) => (
-                      <div key={item.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{item.label}</span>
-                          <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{item.value}</span>
-                          <span className="text-[8px] text-slate-400 mt-1 font-semibold leading-tight">{item.desc}</span>
+                  isMarketDataLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Loading market data...</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 animate-fadeIn">
+                      {[
+                        { label: 'Current Price', value: assetDetails?.statistics?.price ? `${currencySymbol}${assetDetails.statistics.price.toFixed(2)}` : `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price' },
+                        { label: 'Price Change', value: assetDetails?.statistics?.change ? `${currencySymbol}${assetDetails.statistics.change.toFixed(2)}` : '-', desc: 'Absolute price movement' },
+                        { label: 'Change %', value: assetDetails?.statistics?.changePercent ? `${assetDetails.statistics.changePercent.toFixed(2)}%` : '-', desc: 'Percentage price movement' },
+                        { label: 'Open', value: assetDetails?.statistics?.open ? `${currencySymbol}${assetDetails.statistics.open.toFixed(2)}` : '-', desc: "Today's opening price" },
+                        { label: 'High', value: assetDetails?.statistics?.dayHigh ? `${currencySymbol}${assetDetails.statistics.dayHigh.toFixed(2)}` : '-', desc: "Today's highest price" },
+                        { label: 'Low', value: assetDetails?.statistics?.dayLow ? `${currencySymbol}${assetDetails.statistics.dayLow.toFixed(2)}` : '-', desc: "Today's lowest price" },
+                        { label: 'Previous Close', value: assetDetails?.statistics?.previousClose ? `${currencySymbol}${assetDetails.statistics.previousClose.toFixed(2)}` : '-', desc: "Yesterday's closing price" },
+                        { label: '52-Week High', value: `${currencySymbol}${selectedStock.high52w.toFixed(2)}`, desc: '52-week peak' },
+                        { label: '52-Week Low', value: `${currencySymbol}${selectedStock.low52w.toFixed(2)}`, desc: '52-week bottom' },
+                      ].map((item) => (
+                        <div key={item.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{item.label}</span>
+                            <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{item.value}</span>
+                            <span className="text-[8px] text-slate-400 mt-1 font-semibold leading-tight">{item.desc}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
 
@@ -1735,7 +1742,6 @@ export default function StockScreener() {
                         <thead>
                           <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
                             <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-455 dark:text-slate-500">Valuation Metric</th>
-                            <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-455 dark:text-slate-500 text-right">Current</th>
                             {(fundamentalsData?.quarters || ['Jun 26', 'Mar 26', 'Dec 25', 'Sep 25']).map(q => (
                               <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-455 dark:text-slate-500 text-right">{q}</th>
                             ))}
@@ -1745,7 +1751,6 @@ export default function StockScreener() {
                           {valuationTableData.map((row) => (
                             <tr key={row.label} className="hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
                               <td className="p-3 text-xs font-semibold text-slate-700 dark:text-slate-350">{row.label}</td>
-                              <td className="p-3 text-xs font-mono font-black text-slate-900 dark:text-white text-right">{row.current}</td>
                               {row.values.map((v, i) => (
                                 <td key={i} className="p-3 text-xs font-mono font-bold text-slate-900 dark:text-white text-right">{v}</td>
                               ))}
