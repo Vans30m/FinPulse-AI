@@ -4,7 +4,7 @@ import {
   Presentation, FileCheck, Leaf, Award, Search, BookOpen
 } from 'lucide-react';
 import StockSearch from '../components/ui/StockSearch';
-import { getFundamentals, getAIScore, getCompanyNews, getUnifiedAssetDetails, getFundamentalsTimeseries } from '../services/marketService';
+import { getUnifiedAssetDetails, getFundamentalsTimeseries } from '../services/marketService';
 import toast from 'react-hot-toast';
 import { useWatchlists, useAddWatchlistItem, useRemoveWatchlistItem, useCreateWatchlist } from '../hooks/useDashboard';
 
@@ -180,6 +180,7 @@ const getInsightsYears = () => {
 
 export default function StockScreener() {
   const isScrollingRef = useRef(false);
+  const loadTimerRef = useRef<number | null>(null);
   const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'market-data' | 'valuation' | 'fundamentals' | 'shareholding' | 'analysis'>('market-data');
@@ -234,6 +235,13 @@ export default function StockScreener() {
     try {
       const data = await getUnifiedAssetDetails(symbol);
       setAssetDetails(data);
+      setSelectedStock(prev => prev && prev.symbol.toUpperCase() === symbol.toUpperCase()
+        ? {
+            ...prev,
+            price: data?.statistics?.price ?? prev.price,
+            changePercent: data?.statistics?.changePercent ?? prev.changePercent,
+          }
+        : prev);
       localStorage.setItem(`screener-asset-details-v2-${symbol}`, JSON.stringify({
         timestamp: Date.now(),
         data
@@ -1294,89 +1302,43 @@ export default function StockScreener() {
 
 
 
-  // Handle stock selection and fetch data
+  // Handle stock selection and fetch data lazily
   const handleSelectStock = async (symbol: string) => {
-    setIsLoading(true);
-    try {
-      // 1. Fetch fundamentals first to open the page instantly!
-      const fundamentals = await getFundamentals(symbol);
-      const isIndian = symbol.toUpperCase().endsWith('.NS');
-
-      const details: StockDetails = {
-        symbol: symbol.toUpperCase(),
-        name: fundamentals.name || symbol,
-        price: fundamentals.price || 150,
-        changePercent: fundamentals.changePercent || 0,
-        marketCap: fundamentals.marketCap ? (isIndian ? fundamentals.marketCap / 10000000 : fundamentals.marketCap / 1000000) : 5000, 
-        peRatio: fundamentals.peRatio || 15,
-        dividendYield: fundamentals.dividendYield ? (fundamentals.dividendYield < 0.1 ? fundamentals.dividendYield * 100 : fundamentals.dividendYield) : (isIndian ? 1.25 : 0.65),
-        roe: fundamentals.roe ? fundamentals.roe * 100 : 14.5,
-        roce: fundamentals.roce ? fundamentals.roce * 100 : 16.2,
-        bookValue: fundamentals.bookValue || (fundamentals.price || 150) / 4.2,
-        high52w: fundamentals.fiftyTwoWeekHigh || (fundamentals.price || 150) * 1.25,
-        low52w: fundamentals.fiftyTwoWeekLow || (fundamentals.price || 150) * 0.75,
-        faceValue: isIndian ? 10.00 : 1.00,
-        about: fundamentals.about || `${fundamentals.name || symbol} is a leading enterprise in its sector, engaged in operations, manufacturing, research, development, and marketing of high-technology products and services globally.`,
-        history: [] // Start with an empty list so we don't draw a dummy chart
-      };
-
-      // Look up cached asset details in browser localStorage
-      // Set stock details immediately to open the page!
-      setSelectedStock(details);
-      setIsLoading(false); // Stop full-page blur loader!
-
-      // 2. Fetch slower data (AI score & news) asynchronously in the background
-      Promise.all([
-        getAIScore(symbol).catch(() => ({ score: 70 })),
-        getCompanyNews(symbol).catch(() => [])
-      ]).then(([_aiScore, newsData]) => {
-        setCompanyNews(newsData);
-      });
-
-    } catch (error) {
-      console.error("Error loading stock details:", error);
-      toast.error("Failed to load details for " + symbol);
-      setIsLoading(false);
+    if (loadTimerRef.current) {
+      window.clearTimeout(loadTimerRef.current);
+      loadTimerRef.current = null;
     }
-  };
 
-  // Real-time background updates (polls every 8 seconds)
-  useEffect(() => {
-    if (!selectedStock) return;
-    if (!isMarketDataOpen && !isValuationOpen && !isShareholdingOpen) return;
+    setCompanyNews([]);
+    setAssetDetails(null);
+    setIsLoading(true);
 
-    const fetchRealtimeData = () => {
-      getUnifiedAssetDetails(selectedStock.symbol)
-        .then((data) => {
-          if (data && data.statistics) {
-            setAssetDetails((prev: any) => {
-              if (!prev) return data;
-              return {
-                ...prev,
-                statistics: {
-                  ...prev.statistics,
-                  price: data.statistics.price ?? prev.statistics.price,
-                  change: data.statistics.change ?? prev.statistics.change,
-                  changePercent: data.statistics.changePercent ?? prev.statistics.changePercent,
-                }
-              };
-            });
-            setSelectedStock(prev => {
-              if (!prev || prev.symbol !== selectedStock.symbol) return prev;
-              return {
-                ...prev,
-                price: data.statistics.price ?? prev.price,
-                changePercent: data.statistics.changePercent ?? prev.changePercent,
-              };
-            });
-          }
-        })
-        .catch((err) => console.error("Error polling real-time asset details:", err));
+    const normalizedSymbol = symbol.toUpperCase();
+    const details: StockDetails = {
+      symbol: normalizedSymbol,
+      name: symbol,
+      price: 0,
+      changePercent: 0,
+      marketCap: 0,
+      peRatio: 0,
+      dividendYield: 0,
+      roe: 0,
+      roce: 0,
+      bookValue: 0,
+      high52w: 0,
+      low52w: 0,
+      faceValue: 1,
+      about: '',
+      history: []
     };
 
-    const interval = setInterval(fetchRealtimeData, 8000);
-    return () => clearInterval(interval);
-  }, [selectedStock?.symbol, isMarketDataOpen, isValuationOpen, isShareholdingOpen]);
+    setSelectedStock(details);
+
+    loadTimerRef.current = window.setTimeout(() => {
+      setIsLoading(false);
+      loadTimerRef.current = null;
+    }, 2000);
+  };
 
   // Scroll Spy state and listener
   useEffect(() => {
@@ -1476,7 +1438,14 @@ export default function StockScreener() {
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/5 pb-4">
             <div className="flex flex-wrap items-center gap-3">
               <button
-                onClick={() => setSelectedStock(null)}
+                onClick={() => {
+                  if (loadTimerRef.current) {
+                    window.clearTimeout(loadTimerRef.current);
+                    loadTimerRef.current = null;
+                  }
+                  setIsLoading(false);
+                  setSelectedStock(null);
+                }}
                 className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white font-bold text-xs transition-colors shrink-0"
               >
                 <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Search</span>
@@ -1495,14 +1464,20 @@ export default function StockScreener() {
 
               <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 shrink-0" />
 
-              <div className="flex items-baseline gap-2 shrink-0">
-                <span className="font-mono text-sm font-black text-slate-900 dark:text-white leading-none">
-                  {currencySymbol}{selectedStock.price.toFixed(2)}
-                </span>
-                <span className={`font-mono text-[10px] font-black leading-none ${selectedStock.changePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {selectedStock.changePercent >= 0 ? '+' : ''}{selectedStock.changePercent.toFixed(2)}%
-                </span>
-              </div>
+              {(assetDetails?.statistics?.price != null && assetDetails.statistics.price > 0) || selectedStock.price > 0 ? (
+                <div className="flex items-baseline gap-2 shrink-0">
+                  <span className="font-mono text-sm font-black text-slate-900 dark:text-white leading-none">
+                    {currencySymbol}{(assetDetails?.statistics?.price ?? selectedStock.price).toFixed(2)}
+                  </span>
+                  <span className={`font-mono text-[10px] font-black leading-none ${(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? '+' : ''}{(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent).toFixed(2)}%
+                  </span>
+                </div>
+              ) : (
+                <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                  Details will load when a section is opened
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
