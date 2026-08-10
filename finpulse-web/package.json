@@ -23,7 +23,7 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "electron/fp-logo.ico"
+      "icon": "electron/fp-icon.ico"
     }
   }
 }
