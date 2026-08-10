@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  createChart,
-  ColorType,
-} from "lightweight-charts";
+import { createChart, ColorType } from "lightweight-charts";
 
 type Candle = {
   time: number;
@@ -18,20 +15,23 @@ export default function YahooExtensionTest() {
   const seriesRef = useRef<any>(null);
 
   const [candles, setCandles] = useState<Candle[]>([]);
-  const [rawJson, setRawJson] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [price, setPrice] = useState<number | null>(null);
+  const [previousPrice, setPreviousPrice] = useState<number | null>(null);
+
+  const [lastYahooUpdate, setLastYahooUpdate] = useState("");
+  const [requestCount, setRequestCount] = useState(0);
   const [error, setError] = useState("");
 
-  // --------------------------------------------------
+  // =========================================================
   // CREATE SIMPLE CANDLESTICK CHART
-  // --------------------------------------------------
+  // =========================================================
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
-      height: 450,
+      height: 500,
 
       layout: {
         background: {
@@ -61,10 +61,6 @@ export default function YahooExtensionTest() {
       },
     });
 
-    // IMPORTANT:
-    // Your installed lightweight-charts version uses
-    // addCandlestickSeries(), not addSeries(CandlestickSeries,...)
-
     const series = chart.addCandlestickSeries({
       upColor: "#22c55e",
       downColor: "#ef4444",
@@ -77,7 +73,7 @@ export default function YahooExtensionTest() {
     chartRef.current = chart;
     seriesRef.current = series;
 
-    const handleResize = () => {
+    const resize = () => {
       if (!chartContainerRef.current) return;
 
       chart.applyOptions({
@@ -85,240 +81,401 @@ export default function YahooExtensionTest() {
       });
     };
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", resize);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", resize);
       chart.remove();
     };
   }, []);
 
-  // --------------------------------------------------
+  // =========================================================
   // UPDATE CHART
-  // --------------------------------------------------
+  // =========================================================
 
   useEffect(() => {
-    if (!seriesRef.current || candles.length === 0) {
-      return;
-    }
+    if (!seriesRef.current || candles.length === 0) return;
 
     seriesRef.current.setData(candles);
 
-    chartRef.current?.timeScale().fitContent();
+    chartRef.current?.timeScale().scrollToRealTime();
   }, [candles]);
 
-  // --------------------------------------------------
-  // FETCH YAHOO THROUGH CHROME EXTENSION
-  // --------------------------------------------------
+  // =========================================================
+  // FETCH YAHOO
+  // =========================================================
 
-  const testYahooCandles = () => {
-    setLoading(true);
-    setError("");
-    setCandles([]);
-    setRawJson(null);
+  const fetchYahoo = async () => {
+    return new Promise<void>((resolve, reject) => {
+      const requestId = crypto.randomUUID();
 
-    const requestId = crypto.randomUUID();
+      const yahooUrl =
+        "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?range=1d&interval=1m";
 
-    const yahooUrl =
-      "https://query1.finance.yahoo.com/v8/finance/chart/RELIANCE.NS?range=1mo&interval=1d";
+      const timeout = setTimeout(() => {
+        window.removeEventListener("message", handleResponse);
 
-    const timeout = setTimeout(() => {
-      window.removeEventListener("message", handleResponse);
+        reject(new Error("Yahoo request timed out."));
+      }, 15000);
 
-      setLoading(false);
+      function handleResponse(event: MessageEvent) {
+        if (event.source !== window) return;
 
-      setError(
-        "Extension did not respond. Make sure the FinPulse Chrome extension is installed and enabled."
-      );
-    }, 15000);
+        const message = event.data;
 
-    function handleResponse(event: MessageEvent) {
-      if (event.source !== window) return;
-
-      const message = event.data;
-
-      if (
-        message?.source !== "FINPULSE_YAHOO_BRIDGE" ||
-        message?.requestId !== requestId
-      ) {
-        return;
-      }
-
-      clearTimeout(timeout);
-      window.removeEventListener("message", handleResponse);
-
-      setLoading(false);
-
-      // --------------------------------------------------
-      // HANDLE ERROR
-      // --------------------------------------------------
-
-      if (!message.response?.ok) {
-        setError(
-          message.response?.error ||
-            `Yahoo returned HTTP ${message.response?.status}`
-        );
-
-        return;
-      }
-
-      // --------------------------------------------------
-      // PARSE COMPLETE JSON
-      // --------------------------------------------------
-
-      try {
-        const json = JSON.parse(message.response.body);
-
-        // Keep the COMPLETE Yahoo response.
-        setRawJson(json);
-
-        console.log("COMPLETE YAHOO RESPONSE:");
-        console.log(json);
-
-        // --------------------------------------------------
-        // EXTRACT CANDLE DATA ONLY FOR THE CHART
-        // --------------------------------------------------
-
-        const result = json?.chart?.result?.[0];
-
-        if (!result) {
-          setError("Yahoo returned no chart result.");
+        if (
+          message?.source !== "FINPULSE_YAHOO_BRIDGE" ||
+          message?.requestId !== requestId
+        ) {
           return;
         }
 
-        const timestamps = result.timestamp || [];
-        const quote = result.indicators?.quote?.[0];
+        clearTimeout(timeout);
+        window.removeEventListener("message", handleResponse);
 
-        if (!quote) {
-          setError("Yahoo returned no OHLC data.");
-          return;
-        }
-
-        const parsedCandles: Candle[] = timestamps
-          .map((timestamp: number, index: number) => ({
-            time: timestamp,
-            open: quote.open?.[index],
-            high: quote.high?.[index],
-            low: quote.low?.[index],
-            close: quote.close?.[index],
-          }))
-          .filter(
-            (candle: Candle) =>
-              candle.open != null &&
-              candle.high != null &&
-              candle.low != null &&
-              candle.close != null
+        if (!message.response?.ok) {
+          reject(
+            new Error(
+              message.response?.error ||
+                `Yahoo returned HTTP ${message.response?.status}`
+            )
           );
 
-        console.log("CANDLES:");
-        console.log(parsedCandles);
+          return;
+        }
 
-        setCandles(parsedCandles);
+        try {
+          const json = JSON.parse(message.response.body);
+
+          console.log("Yahoo response:", json);
+
+          const result = json?.chart?.result?.[0];
+
+          if (!result) {
+            reject(new Error("Yahoo returned no chart result."));
+            return;
+          }
+
+          const timestamps = result.timestamp || [];
+          const quote = result.indicators?.quote?.[0];
+
+          if (!quote) {
+            reject(new Error("Yahoo returned no OHLC data."));
+            return;
+          }
+
+          const parsed: Candle[] = timestamps
+            .map((timestamp: number, index: number) => ({
+              time: timestamp,
+              open: quote.open?.[index],
+              high: quote.high?.[index],
+              low: quote.low?.[index],
+              close: quote.close?.[index],
+            }))
+            .filter(
+              (candle: Candle) =>
+                candle.open != null &&
+                candle.high != null &&
+                candle.low != null &&
+                candle.close != null
+            );
+
+          if (parsed.length === 0) {
+            reject(new Error("No candles received."));
+            return;
+          }
+
+          // -------------------------------------------------
+          // GET LATEST PRICE
+          // -------------------------------------------------
+
+          const latest = parsed[parsed.length - 1];
+
+          setPreviousPrice((oldPrice) => {
+            setPrice(latest.close);
+            return oldPrice;
+          });
+
+          // -------------------------------------------------
+          // UPDATE CHART
+          // -------------------------------------------------
+
+          setCandles(parsed);
+
+          // -------------------------------------------------
+          // UPDATE STATUS
+          // -------------------------------------------------
+
+          setLastYahooUpdate(
+            new Date().toLocaleTimeString("en-IN")
+          );
+
+          setRequestCount((count) => count + 1);
+
+          resolve();
+
+        } catch (err) {
+          reject(
+            err instanceof Error
+              ? err
+              : new Error("Could not parse Yahoo response.")
+          );
+        }
+      }
+
+      window.addEventListener("message", handleResponse);
+
+      // =====================================================
+      // SEND REQUEST TO YOUR CHROME EXTENSION
+      // =====================================================
+
+      window.postMessage(
+        {
+          source: "FINPULSE",
+          type: "YAHOO_REQUEST",
+          requestId,
+          url: yahooUrl,
+          method: "GET",
+        },
+        "*"
+      );
+    });
+  };
+
+  // =========================================================
+  // AUTOMATIC POLLING
+  // =========================================================
+
+  useEffect(() => {
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const update = async () => {
+      if (stopped) return;
+
+      try {
+        setError("");
+
+        await fetchYahoo();
 
       } catch (err) {
-        console.error(err);
-
-        setError("Could not parse Yahoo response.");
+        if (!stopped) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Yahoo request failed."
+          );
+        }
       }
-    }
 
-    window.addEventListener("message", handleResponse);
+      if (!stopped) {
+        // Poll Yahoo automatically every 5 seconds
+        timer = setTimeout(update, 5000);
+      }
+    };
 
-    // --------------------------------------------------
-    // SEND REQUEST TO CHROME EXTENSION
-    // --------------------------------------------------
+    // Automatically start
+    update();
 
-    window.postMessage(
-      {
-        source: "FINPULSE",
-        type: "YAHOO_REQUEST",
-        requestId,
-        url: yahooUrl,
-        method: "GET",
-      },
-      "*"
-    );
-  };
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // =========================================================
+  // PRICE DIRECTION
+  // =========================================================
+
+  const priceChanged =
+    previousPrice !== null &&
+    price !== null &&
+    price !== previousPrice;
+
+  const priceDirection =
+    price !== null && previousPrice !== null
+      ? price > previousPrice
+        ? "UP"
+        : price < previousPrice
+          ? "DOWN"
+          : "UNCHANGED"
+      : "WAITING";
+
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
+
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
 
         <h1 className="text-3xl font-bold">
-          FinPulse Yahoo Chart Test
+          FinPulse Live Gold Test
         </h1>
 
         <p className="text-slate-400 mt-2">
-          RELIANCE.NS · 1 Month · Daily Candles
+          GC=F · Gold Futures · 1 Day · 1 Minute Candles
         </p>
 
-        {/* TEST BUTTON */}
+        {/* LIVE STATUS */}
 
-        <button
-          onClick={testYahooCandles}
-          disabled={loading}
-          className="mt-6 px-5 py-3 rounded-lg bg-cyan-500 text-black font-semibold hover:bg-cyan-400 disabled:opacity-50"
-        >
-          {loading
-            ? "Fetching Yahoo Data..."
-            : "Fetch Yahoo Data"}
-        </button>
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+
+          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+
+            <div className="text-sm text-slate-500">
+              Current price
+            </div>
+
+            <div className="text-3xl font-bold mt-1">
+              {price !== null
+                ? `$${price.toFixed(2)}`
+                : "Loading..."}
+            </div>
+
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+
+            <div className="text-sm text-slate-500">
+              Price status
+            </div>
+
+            <div
+              className={`text-xl font-bold mt-2 ${
+                priceDirection === "UP"
+                  ? "text-green-400"
+                  : priceDirection === "DOWN"
+                    ? "text-red-400"
+                    : "text-slate-400"
+              }`}
+            >
+              {priceChanged
+                ? `● ${priceDirection}`
+                : "● Waiting for change"}
+            </div>
+
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+
+            <div className="text-sm text-slate-500">
+              Yahoo requests
+            </div>
+
+            <div className="text-2xl font-bold mt-1">
+              {requestCount}
+            </div>
+
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+
+            <div className="text-sm text-slate-500">
+              Last Yahoo response
+            </div>
+
+            <div className="text-lg font-semibold mt-1">
+              {lastYahooUpdate || "Waiting..."}
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* LIVE INDICATOR */}
+
+        <div className="mt-6 flex items-center gap-3">
+
+          <span className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+          <span className="text-green-400 font-semibold">
+            AUTOMATIC LIVE POLLING
+          </span>
+
+          <span className="text-slate-500">
+            Yahoo checked every 5 seconds
+          </span>
+
+        </div>
 
         {/* ERROR */}
 
         {error && (
-          <div className="mt-6 p-4 rounded-lg border border-red-500 bg-red-950 text-red-300">
+          <div className="mt-5 p-4 rounded-xl border border-red-500 bg-red-950 text-red-300">
             {error}
           </div>
         )}
 
-        {/* SUCCESS */}
+        {/* CHART */}
 
-        {rawJson && (
-          <div className="mt-6">
-            <p className="text-green-400 font-semibold">
-              ✓ Yahoo data received through Chrome extension
-            </p>
+        <div className="mt-8">
 
-            <p className="text-slate-400 text-sm mt-1">
-              Complete Yahoo response received.{" "}
-              {candles.length} candles extracted for the chart.
-            </p>
-          </div>
-        )}
+          <h2 className="text-xl font-semibold mb-4">
+            Gold — 1 Minute Candlestick Chart
+          </h2>
 
-        {/* SIMPLE CANDLESTICK CHART */}
+          <div
+            ref={chartContainerRef}
+            className="w-full rounded-xl overflow-hidden border border-slate-800"
+          />
+
+        </div>
+
+        {/* LATEST CANDLE */}
 
         {candles.length > 0 && (
-          <div className="mt-8">
+          <div className="mt-6 p-5 rounded-xl bg-slate-900 border border-slate-800">
 
-            <h2 className="text-xl font-semibold mb-4">
-              RELIANCE.NS Candlestick Chart
+            <h2 className="font-semibold mb-4">
+              Current 1-Minute Candle
             </h2>
 
-            <div
-              ref={chartContainerRef}
-              className="w-full rounded-xl overflow-hidden border border-slate-800"
-            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
 
-          </div>
-        )}
+              <div>
+                <div className="text-xs text-slate-500">
+                  Open
+                </div>
 
-        {/* COMPLETE JSON */}
+                <div className="text-lg">
+                  ${candles.at(-1)?.open?.toFixed(2)}
+                </div>
+              </div>
 
-        {rawJson && (
-          <div className="mt-8">
+              <div>
+                <div className="text-xs text-slate-500">
+                  High
+                </div>
 
-            <h2 className="text-xl font-semibold mb-4">
-              Complete Yahoo Finance JSON
-            </h2>
+                <div className="text-lg">
+                  ${candles.at(-1)?.high?.toFixed(2)}
+                </div>
+              </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-auto">
-              <pre className="p-5 text-sm text-slate-300 whitespace-pre-wrap">
-                {JSON.stringify(rawJson, null, 2)}
-              </pre>
+              <div>
+                <div className="text-xs text-slate-500">
+                  Low
+                </div>
+
+                <div className="text-lg">
+                  ${candles.at(-1)?.low?.toFixed(2)}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs text-slate-500">
+                  Close
+                </div>
+
+                <div className="text-xl font-bold">
+                  ${candles.at(-1)?.close?.toFixed(2)}
+                </div>
+              </div>
+
             </div>
 
           </div>
