@@ -250,7 +250,16 @@ export const dashboardService = {
     return res.json();
   },
 
-  async getWatchlistAIRankings(id: string): Promise<{ symbol: string; score: number; reason: string }[]> {
+  // FIX: backend now returns { source: 'live' | 'fallback', rankings: [...] }
+  // instead of a bare array (see watchlist.ts ai-rankings route). This type
+  // was the actual root cause of the "Property does not exist on rankings/
+  // source" errors in watchlist.tsx and useDashboard.ts — the old signature
+  // here still promised a bare array, which conflicted with the new shape
+  // no matter how the hook or component tried to type/cast around it.
+  async getWatchlistAIRankings(id: string): Promise<{
+    source: 'live' | 'fallback';
+    rankings: { symbol: string; score: number; reason: string }[];
+  }> {
     const res = await fetch(`${API_BASE}/watchlists/${id}/ai-rankings`, {
       headers: getHeaders()
     });

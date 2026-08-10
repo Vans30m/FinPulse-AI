@@ -11,6 +11,9 @@ interface Props {
   isLoading?: boolean;
   isError?: boolean;
   stockCount?: number;
+  // FIX: new prop — lets the card distinguish real LLM output from the
+  // backend's random mock fallback (sent when all providers fail).
+  source?: 'live' | 'fallback';
 }
 
 function ScoreBadge({ score }: { score: number }) {
@@ -36,6 +39,19 @@ function VerdictBadge({ verdict }: { verdict: string }) {
   return <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Hold</span>;
 }
 
+// FIX: small badge shown when the backend had to serve mock fallback
+// data (all LLM providers failed) instead of a real ranking.
+function EstimatedBadge() {
+  return (
+    <span
+      title="AI providers were unreachable — these scores are placeholder mock data, not real analysis."
+      className="text-[9px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full dark:text-amber-400"
+    >
+      Estimated
+    </span>
+  );
+}
+
 function SkeletonRow() {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-white/5 p-4 animate-pulse">
@@ -49,7 +65,7 @@ function SkeletonRow() {
   );
 }
 
-export default function AIRankingCard({ assets, isLoading = false, isError = false, stockCount = 0 }: Props) {
+export default function AIRankingCard({ assets, isLoading = false, isError = false, stockCount = 0, source }: Props) {
   const queryClient = useQueryClient();
 
   const handleRetry = () => {
@@ -57,6 +73,7 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
   };
 
   const hasNoStocks = stockCount === 0;
+  const isFallback = source === 'fallback';
 
   return (
     <div className="bg-white/70 dark:bg-night-900/70 backdrop-blur-xl rounded-3xl border border-slate-200 dark:border-white/10 p-6 shadow-lg">
@@ -66,6 +83,11 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
           <h2 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
             <span className="text-lg">✦</span>
             FinPulse AI Rankings
+            {/* FIX: surfaced next to the title so it's visible even before
+                reading the subtext line below. */}
+            {!isLoading && !isError && !hasNoStocks && assets.length > 0 && isFallback && (
+              <EstimatedBadge />
+            )}
           </h2>
           <p className="text-[10px] text-slate-400 mt-0.5">
             {isLoading
@@ -76,7 +98,9 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
                   ? "Add stocks to your watchlist to see AI rankings"
                   : assets.length === 0
                     ? "Fetching scores for your watchlist…"
-                    : "Top picks ranked by AI score — updated on demand"}
+                    : isFallback
+                      ? "AI providers were unreachable — showing placeholder scores, not real analysis"
+                      : "Top picks ranked by AI score — updated on demand"}
           </p>
         </div>
 
@@ -87,7 +111,7 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
               Analyzing
             </div>
           )}
-          {(isError || (!isLoading && !hasNoStocks && assets.length === 0)) && (
+          {(isError || (!isLoading && !hasNoStocks && assets.length === 0) || isFallback) && (
             <button
               onClick={handleRetry}
               className="text-[10px] font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"

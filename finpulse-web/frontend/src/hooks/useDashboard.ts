@@ -58,7 +58,7 @@ export function useDeleteWatchlist() {
 export function useAddWatchlistItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ listId, item }: { listId: string; item: any }) => 
+    mutationFn: ({ listId, item }: { listId: string; item: any }) =>
       dashboardService.addWatchlistItem(listId, item),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['watchlists'] });
@@ -110,10 +110,26 @@ export function useWatchlistAnalytics(id: string) {
   });
 }
 
+// FIX: explicit response shape for the AI rankings endpoint, matching
+// what the backend now returns: { source: 'live' | 'fallback', rankings: [...] }.
+// This lets consumers (e.g. watchlist.tsx) read `.rankings` / `.source`
+// off `data` directly without a local cast or a "Property does not
+// exist" type error.
+export interface WatchlistAIRanking {
+  symbol: string;
+  score: number;
+  reason: string;
+}
+
+export interface WatchlistAIRankingsResponse {
+  source: 'live' | 'fallback';
+  rankings: WatchlistAIRanking[];
+}
+
 export function useWatchlistAIRankings(id: string) {
   return useQuery({
     queryKey: ['watchlist-ai-rankings', id],
-    queryFn: () => dashboardService.getWatchlistAIRankings(id),
+    queryFn: () => dashboardService.getWatchlistAIRankings(id) as Promise<WatchlistAIRankingsResponse>,
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes — AI scores don't change that fast
     retry: 1,
@@ -264,7 +280,7 @@ export function useRecentViewed() {
 export function useAddRecentViewed() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ symbol, name }: { symbol: string; name: string }) => 
+    mutationFn: ({ symbol, name }: { symbol: string; name: string }) =>
       dashboardService.addRecentViewed(symbol, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recent-viewed'] });

@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Plus, Trash2,
-  Download, Star, Pin, Info, Search, Sparkles, X, Activity
+  Download, Star, Pin, Info, Search, Sparkles, X, Activity, Loader2, Check
 } from "lucide-react";
 import {
   useWatchlists, useCreateWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
@@ -18,7 +18,7 @@ import PageLoader from "../../../components/ui/PageLoader";
 export default function Watchlist() {
   const { openAsset } = useChart();
   const { data: watchlistsData, isLoading } = useWatchlists();
-  
+
   // Cache check for instant load
   const cachedData = pageCache.get('watchlists');
   const [showLoader, setShowLoader] = useState(!cachedData && isLoading);
@@ -55,12 +55,18 @@ export default function Watchlist() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedAssetInfo, setSelectedAssetInfo] = useState<any>(null);
 
-  // Search and filter states (fully functional now!)
-  const [searchQuery] = useState("");
-  const [showOnlyFavorites] = useState(false);
-  const [showOnlyPinned] = useState(false);
-  const [sortField] = useState<string>("position");
-  const [sortDirection] = useState<"asc" | "desc">("asc");
+  // Tracks which item is mid-request so only that row's button shows a
+  // spinner, instead of disabling/animating the whole list on any change.
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<"favorite" | "pin" | "remove" | null>(null);
+
+  // FIX: these now actually have setters wired to real UI controls below,
+  // instead of being permanently stuck at their default values.
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [showOnlyPinned, setShowOnlyPinned] = useState(false);
+  const [sortField, setSortField] = useState<string>("position");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     if (watchlists.length > 0) {
@@ -70,24 +76,35 @@ export default function Watchlist() {
     }
   }, [watchlists, activeListId]);
 
+  // FIX: encode the query and abort stale in-flight requests so a slow
+  // earlier response can't overwrite a newer one when typing fast.
   useEffect(() => {
     const term = newAssetSymbol.trim();
     if (!term) {
       setSuggestions([]);
       return;
     }
+    const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/search?q=${term}`);
+        const res = await fetch(
+          `${API_BASE_URL}/api/search?q=${encodeURIComponent(term)}`,
+          { signal: controller.signal }
+        );
         if (res.ok) {
           const data = await res.json();
           setSuggestions(data);
         }
-      } catch (err) {
-        console.error("Search failed:", err);
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          console.error("Search failed:", err);
+        }
       }
     }, 300);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [newAssetSymbol]);
 
   useEffect(() => {
@@ -130,7 +147,7 @@ export default function Watchlist() {
       onSuccess: () => {
         setNewAssetSymbol("");
         setSelectedAssetInfo(null);
-        toast.success(`Added ${symbol} to watchlist!`);
+        toast.success(`Saved ${symbol} to watchlist`);
       },
       onError: (err: any) => {
         toast.error(`Failed to add stock: ${err.message || err}`);
@@ -158,14 +175,37 @@ export default function Watchlist() {
     });
   };
 
-  const handleRemoveAsset = (itemId: string) => removeItemMutation.mutate(itemId);
+  const handleRemoveAsset = (itemId: string) => {
+    setPendingItemId(itemId);
+    setPendingAction("remove");
+    removeItemMutation.mutate(itemId, {
+      onSettled: () => {
+        setPendingItemId(null);
+        setPendingAction(null);
+      }
+    });
+  };
 
   const handleToggleFavorite = (itemId: string, currentFav: boolean) => {
-    updateItemMutation.mutate({ itemId, data: { favorite: !currentFav } });
+    setPendingItemId(itemId);
+    setPendingAction("favorite");
+    updateItemMutation.mutate({ itemId, data: { favorite: !currentFav } }, {
+      onSettled: () => {
+        setPendingItemId(null);
+        setPendingAction(null);
+      }
+    });
   };
 
   const handleTogglePin = (itemId: string, currentPin: boolean) => {
-    updateItemMutation.mutate({ itemId, data: { pinned: !currentPin } });
+    setPendingItemId(itemId);
+    setPendingAction("pin");
+    updateItemMutation.mutate({ itemId, data: { pinned: !currentPin } }, {
+      onSettled: () => {
+        setPendingItemId(null);
+        setPendingAction(null);
+      }
+    });
   };
 
   const handleDeleteWatchlist = (e: React.MouseEvent, id: string, name: string) => {
@@ -190,13 +230,19 @@ export default function Watchlist() {
     }
   };
 
+  // FIX: escape embedded quotes so notes containing `"` don't break the CSV.
+  const csvEscape = (value: string) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
   const handleExportCSV = () => {
     const items = activeWatchlist.items || [];
     const headers = "Symbol,Notes,Pinned,Favorite\n";
-    const rows = items.map((i: any) => `${i.symbol},"${i.notes || ''}",${i.pinned},${i.favorite}`).join("\n");
+    const rows = items
+      .map((i: any) => [csvEscape(i.symbol), csvEscape(i.notes || ''), i.pinned, i.favorite].join(","))
+      .join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `${activeWatchlist.name || 'watchlist'}.csv`; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const processedItems = useMemo(() => {
@@ -234,12 +280,18 @@ export default function Watchlist() {
   // Lazy AI rankings — fetched from a dedicated endpoint after the main watchlist loads
   const { data: aiRankingsData, isLoading: aiRankingsLoading, isError: aiRankingsError } = useWatchlistAIRankings(activeListId);
 
+  // FIX: backend now returns { source: 'live' | 'fallback', rankings: [...] }
+  // instead of a bare array, so the UI can tell real AI rankings apart
+  // from the random mock fallback data.
   const rankedAssets = useMemo(() => {
-    if (!Array.isArray(aiRankingsData)) return [];
-    return aiRankingsData
+    const rankings = aiRankingsData?.rankings;
+    if (!Array.isArray(rankings)) return [];
+    return rankings
       .slice(0, 5)
-      .map((item) => ({ symbol: item.symbol, score: item.score, verdict: item.reason }));
+      .map((item: any) => ({ symbol: item.symbol, score: item.score, verdict: item.reason }));
   }, [aiRankingsData]);
+
+  const aiRankingsSource: 'live' | 'fallback' | undefined = aiRankingsData?.source;
 
   const stats = useMemo(() => {
     const items = activeWatchlist?.items || [];
@@ -268,6 +320,11 @@ export default function Watchlist() {
           <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full dark:bg-blue-900/40 dark:text-blue-300">
             Realtime Trackers
           </span>
+          {(addItemMutation.isPending || removeItemMutation.isPending || updateItemMutation.isPending) && (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full">
+              <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+            </span>
+          )}
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl hidden md:block">
           Create custom watchlists to organize your investments, toggle favorites, pin important assets, view live price changes, add research notes, and see automated AI rankings.
@@ -320,7 +377,10 @@ export default function Watchlist() {
                     onChange={(e) => setNewListName(e.target.value)}
                     className="bg-slate-100 dark:bg-night-800 border dark:border-white/10 px-3 py-1.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 w-28 text-slate-900 dark:text-white"
                   />
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all">Save</button>
+                  <button type="submit" disabled={createListMutation.isPending} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1">
+                    {createListMutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Save
+                  </button>
                   <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-[10px] px-1">Cancel</button>
                 </form>
               ) : (
@@ -382,14 +442,19 @@ export default function Watchlist() {
               <input
                 type="text"
                 value={newAssetSymbol}
+                disabled={addItemMutation.isPending}
                 onChange={(e) => {
                   setNewAssetSymbol(e.target.value);
                   setShowSuggestions(true);
                 }}
-                className="w-full bg-slate-100 dark:bg-night-800/50 border border-slate-200 dark:border-white/10 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pl-9 text-slate-800 dark:text-white"
+                className="w-full bg-slate-100 dark:bg-night-800/50 border border-slate-200 dark:border-white/10 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pl-9 text-slate-800 dark:text-white disabled:opacity-60"
                 placeholder="e.g. AAPL, Reliance, BTC..."
               />
-              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              {addItemMutation.isPending ? (
+                <Loader2 className="absolute left-3 top-2.5 h-3.5 w-3.5 text-blue-500 animate-spin" />
+              ) : (
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              )}
             </div>
           </form>
 
@@ -416,6 +481,58 @@ export default function Watchlist() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* FIX: filter/sort/search bar — this UI didn't exist before, so
+            searchQuery/showOnlyFavorites/showOnlyPinned/sortField/sortDirection
+            were dead state that processedItems computed but nothing could change. */}
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-white/5 w-full">
+          <div className="relative flex-1 min-w-[140px]">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Filter this watchlist..."
+              className="w-full bg-slate-100 dark:bg-night-800/50 border border-slate-200 dark:border-white/10 px-3 py-1.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pl-8 text-slate-800 dark:text-white"
+            />
+            <Search className="absolute left-2.5 top-2 h-3 w-3 text-slate-400" />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowOnlyFavorites((v) => !v)}
+            className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 transition-all ${showOnlyFavorites ? "bg-amber-500 text-white" : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"}`}
+          >
+            <Star className="h-3 w-3" /> Favorites
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowOnlyPinned((v) => !v)}
+            className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 transition-all ${showOnlyPinned ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"}`}
+          >
+            <Pin className="h-3 w-3" /> Pinned
+          </button>
+
+          <select
+            value={sortField}
+            onChange={(e) => setSortField(e.target.value)}
+            className="bg-slate-100 dark:bg-night-800/50 border border-slate-200 dark:border-white/10 px-2 py-1.5 text-[10px] font-bold rounded-xl text-slate-700 dark:text-slate-300"
+          >
+            <option value="position">Default order</option>
+            <option value="symbol">Symbol</option>
+            <option value="price">Price</option>
+            <option value="changePercent">Change %</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setSortDirection((d) => (d === "asc" ? "desc" : "asc"))}
+            className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"
+            title="Toggle sort direction"
+          >
+            {sortDirection === "asc" ? "↑ Asc" : "↓ Desc"}
+          </button>
         </div>
       </div>
 
@@ -477,23 +594,48 @@ export default function Watchlist() {
 
                         {/* Control buttons - minimum 44x44px touch targets */}
                         <div className="flex items-center gap-0.5">
+                          {/* Favorite Toggle */}
+                          <button
+                            onClick={() => handleToggleFavorite(item.id, item.favorite)}
+                            disabled={pendingItemId === item.id}
+                            className={`w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50 ${item.favorite ? "text-amber-500" : "text-slate-400"
+                              }`}
+                            title={item.favorite ? "Remove from favorites" : "Mark as favorite"}
+                          >
+                            {pendingItemId === item.id && pendingAction === "favorite" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Star className={`h-4 w-4 ${item.favorite ? "fill-amber-500" : ""}`} />
+                            )}
+                          </button>
+
                           {/* Pin Toggle */}
                           <button
                             onClick={() => handleTogglePin(item.id, item.pinned)}
-                            className={`w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${item.pinned ? "text-blue-500" : "text-slate-400"
+                            disabled={pendingItemId === item.id}
+                            className={`w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50 ${item.pinned ? "text-blue-500" : "text-slate-400"
                               }`}
                             title={item.pinned ? "Unpin stock from top" : "Pin stock to top"}
                           >
-                            <Pin className={`h-4 w-4 ${item.pinned ? "fill-blue-500" : ""}`} />
+                            {pendingItemId === item.id && pendingAction === "pin" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Pin className={`h-4 w-4 ${item.pinned ? "fill-blue-500" : ""}`} />
+                            )}
                           </button>
 
                           {/* Delete Item */}
                           <button
                             onClick={() => handleRemoveAsset(item.id)}
-                            className="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                            disabled={pendingItemId === item.id}
+                            className="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
                             title="Remove stock from watchlist"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {pendingItemId === item.id && pendingAction === "remove" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -512,6 +654,7 @@ export default function Watchlist() {
         isLoading={aiRankingsLoading}
         isError={aiRankingsError}
         stockCount={(activeWatchlist.items || []).length}
+        source={aiRankingsSource}
       />
     </div>
   );
