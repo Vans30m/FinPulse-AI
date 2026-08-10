@@ -49,6 +49,7 @@ import Disclosures from "./pages/Disclosures";
 import Security from "./pages/Security";
 import { useTheme } from './context/ThemeContext';
 import { profileService } from './profile/services/profileService';
+import YahooExtensionTest from "./YahooExtensionTest";
 
 export default function App() {
   const location = useLocation();
@@ -113,6 +114,7 @@ export default function App() {
       setIsLoginModalOpen(true);
     }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-night-900 text-slate-900 dark:text-slate-200 transition-colors duration-300 overflow-x-clip">
@@ -191,6 +193,12 @@ export default function App() {
 
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
+
+            <Route
+              path="/yahoo-test"
+              element={<YahooExtensionTest />}
+            />
+
             <Route
               path="/"
               element={<Navigate to="/pulse" />}
