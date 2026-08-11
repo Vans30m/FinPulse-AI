@@ -1,4 +1,5 @@
 import API_BASE_URL from "../config/api";
+import { yahooRequest } from "./yahooExtensionClient";
 
 export interface FundamentalData {
   symbol?: string;
@@ -469,11 +470,58 @@ export async function getMarketHistory(symbol: string, range: string = "1mo") {
   return response.json();
 }
 
-export async function getMarketScreener(market: string, type: string) {
-  const endpoint = `/api/screener/global?type=${type}`;
-  const response = await fetch(`${API_BASE_URL}${endpoint}`);
-  if (!response.ok) throw new Error("Failed to fetch screener");
-  return response.json();
+// export async function getMarketScreener(market: string, type: string) {
+//   const endpoint = `/api/screener/global?type=${type}`;
+//   const response = await fetch(`${API_BASE_URL}${endpoint}`);
+//   if (!response.ok) throw new Error("Failed to fetch screener");
+//   return response.json();
+// }
+
+
+export async function getMarketScreener(
+  market: string,
+  type: string
+) {
+  const scrId =
+    type === "losers"
+      ? "day_losers"
+      : "day_gainers";
+
+  const url =
+    `https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved` +
+    `?formatted=true` +
+    `&scrIds=${scrId}` +
+    `&count=10` +
+    `&start=0`;
+
+  const data = await yahooRequest<any>(url);
+
+  const quotes =
+    data?.finance?.result?.[0]?.quotes || [];
+
+  return quotes.map((quote: any) => ({
+    symbol: quote.symbol,
+
+    name:
+      quote.shortName ||
+      quote.longName ||
+      quote.symbol,
+
+    price:
+      quote.regularMarketPrice?.raw ??
+      quote.regularMarketPrice ??
+      0,
+
+    change:
+      quote.regularMarketChange?.raw ??
+      quote.regularMarketChange ??
+      0,
+
+    changePercent:
+      quote.regularMarketChangePercent?.raw ??
+      quote.regularMarketChangePercent ??
+      0,
+  }));
 }
 
 export async function getDomesticScreener(type: string) {
