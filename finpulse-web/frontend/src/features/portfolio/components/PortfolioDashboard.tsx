@@ -13,6 +13,7 @@ import { getFundamentals } from '../../../services/marketService';
 import PaperTradingOrderModal from './PaperTradingOrderModal';
 import PaperTradingLedger from './PaperTradingLedger';
 import API_BASE_URL from "../../../config/api";
+import { getVirtualState, syncVirtualState } from '../../../services/portfolioService';
 import PageLoader from "../../../components/ui/PageLoader";
 
 interface Holding {
@@ -86,7 +87,7 @@ const INITIAL_SECTIONS: MarketSection[] = [
 const getHoldingColorClass = (marketId: string, ticker: string) => {
   const mid = (marketId || '').toLowerCase();
   const tick = (ticker || '').toUpperCase();
-  
+
   if (mid === 'domestic' || tick.endsWith('.NS') || tick.endsWith('.BO')) {
     return { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/50 dark:border-blue-900/50' };
   }
@@ -151,6 +152,8 @@ export default function PortfolioDashboard() {
     return cached ? JSON.parse(cached) : {};
   });
 
+  const [isAddingAsset, setIsAddingAsset] = useState(false);
+
   // Paper Trading Sandbox States
   const [isSandboxMode, setIsSandboxMode] = useState<boolean>(false);
   const [isSandboxOpen, setIsSandboxOpen] = useState<boolean>(false);
@@ -167,15 +170,49 @@ export default function PortfolioDashboard() {
     return val ? JSON.parse(val) : [];
   });
 
+  const updateVirtualState = async (balance: number, holdings: any[], transactions: any[]) => {
+    setVirtualBalance(balance);
+    setVirtualHoldings(holdings);
+    setVirtualTransactions(transactions);
+    try {
+      await syncVirtualState({ balance, holdings, transactions });
+    } catch (err) {
+      console.error("Failed to sync virtual state to database:", err);
+    }
+  };
+
+  const updateVirtualHoldingsOnly = async (holdings: any[]) => {
+    setVirtualHoldings(holdings);
+    try {
+      await syncVirtualState({ balance: virtualBalance, holdings, transactions: virtualTransactions });
+    } catch (err) {
+      console.error("Failed to sync virtual holdings to database:", err);
+    }
+  };
+
+  // Load virtual state from database on mount
+  useEffect(() => {
+    const fetchVirtual = async () => {
+      try {
+        const vState = await getVirtualState();
+        setVirtualBalance(vState.balance);
+        setVirtualHoldings(vState.holdings);
+        setVirtualTransactions(vState.transactions);
+      } catch (err) {
+        console.error("Failed to fetch virtual state from database:", err);
+      }
+    };
+    fetchVirtual();
+  }, []);
+
   // Automatically correct virtual cash balance if there is a mismatch due to old short sale proceeds
   useEffect(() => {
     const totalInvested = virtualHoldings.reduce((sum: number, h: any) => sum + (Math.abs(h.shares) * h.avgCost), 0);
     const totalBooked = virtualHoldings.reduce((sum: number, h: any) => sum + (h.bookedPL || 0), 0);
     const expectedBalance = 100000 - totalInvested + totalBooked;
-    
+
     if (Math.abs(virtualBalance - expectedBalance) > 1.0) {
-      setVirtualBalance(expectedBalance);
-      localStorage.setItem('finpulse_virtual_balance', expectedBalance.toString());
+      updateVirtualState(expectedBalance, virtualHoldings, virtualTransactions);
     }
   }, [virtualHoldings, virtualBalance]);
 
@@ -241,7 +278,7 @@ export default function PortfolioDashboard() {
       if (triggeredType) {
         balanceChanged = true;
         const sharesToClose = Math.abs(h.shares);
-        
+
         // P&L Calculation
         const pnl = isShort
           ? (h.avgCost - triggerPrice) * sharesToClose
@@ -249,13 +286,13 @@ export default function PortfolioDashboard() {
 
         // Cash impact (refund collateral and cover/sell cost)
         const isDomestic = h.ticker.endsWith('.NS') || h.ticker.endsWith('.BO');
-        const cashImpactUSD = isDomestic 
-          ? (sharesToClose * triggerPrice) / usdToInrRate 
+        const cashImpactUSD = isDomestic
+          ? (sharesToClose * triggerPrice) / usdToInrRate
           : (sharesToClose * triggerPrice);
-        
+
         if (isShort) {
-          const collateralUSD = isDomestic 
-            ? (sharesToClose * h.avgCost) / usdToInrRate 
+          const collateralUSD = isDomestic
+            ? (sharesToClose * h.avgCost) / usdToInrRate
             : (sharesToClose * h.avgCost);
           nextBalance = nextBalance + collateralUSD - cashImpactUSD;
         } else {
@@ -290,19 +327,12 @@ export default function PortfolioDashboard() {
     }).filter(h => Math.abs(h.shares) > 0.0001 || (h.bookedPL || 0) !== 0);
 
     if (balanceChanged) {
-      setVirtualBalance(nextBalance);
-      setVirtualHoldings(nextHoldings);
-      
       const transactions = JSON.parse(localStorage.getItem('finpulse_virtual_transactions') || '[]');
       const nextTxs = [...transactions, ...newTxs];
-      setVirtualTransactions(nextTxs);
-
-      localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
-      localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
-      localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
+      updateVirtualState(nextBalance, nextHoldings, nextTxs);
 
       triggeredMessages.forEach(msg => toast.success(msg, { duration: 6000 }));
-      
+
       // Dispatch storage event to update modal/chart in real-time
       window.dispatchEvent(new Event('storage'));
     }
@@ -394,10 +424,11 @@ export default function PortfolioDashboard() {
 
     // --- Holdings (independent) ---
     try {
-      const virtualTickers = virtualHoldings.map(h => h.ticker).join(',');
-      const holdingsUrl = virtualTickers
-        ? `${API_BASE_URL}/api/portfolio/holdings?virtualTickers=${encodeURIComponent(virtualTickers)}`
-        : `${API_BASE_URL}/api/portfolio/holdings`;
+      let holdingsUrl = `${API_BASE_URL}/api/portfolio/holdings`;
+      if (isSandboxMode) {
+        const virtualTickers = virtualHoldings.map(h => h.ticker).join(',');
+        holdingsUrl += `?onlyVirtual=true&virtualTickers=${encodeURIComponent(virtualTickers)}`;
+      }
       const holdingsRes = await fetch(holdingsUrl, { headers });
       if (holdingsRes.ok) {
         const data = await holdingsRes.json();
@@ -468,40 +499,55 @@ export default function PortfolioDashboard() {
     }
   };
 
-  useEffect(() => {
-    const fetchRates = async () => {
+  const fetchSingleRate = async (code: 'USD' | 'INR' | 'EUR' | 'GBP') => {
+    if (code === 'USD') return;
+    if (code === 'INR') {
+      try {
+        const inrData = await getFundamentals('USDINR=X');
+        if (inrData && inrData.price) {
+          setUsdToInrRate(inrData.price);
+          sessionStorage.setItem("usdToInrRate", inrData.price.toString());
+        }
+      } catch (e) { }
+    } else if (code === 'EUR') {
       try {
         const eurData = await getFundamentals('USDEUR=X');
         if (eurData && eurData.price) {
           setUsdToEurRate(eurData.price);
           sessionStorage.setItem("usdToEurRate", eurData.price.toString());
         }
-      } catch (e) {}
+      } catch (e) { }
+    } else if (code === 'GBP') {
       try {
         const gbpData = await getFundamentals('USDGBP=X');
         if (gbpData && gbpData.price) {
           setUsdToGbpRate(gbpData.price);
           sessionStorage.setItem("usdToGbpRate", gbpData.price.toString());
         }
-      } catch (e) {}
-    };
+      } catch (e) { }
+    }
+  };
 
+  const handleCurrencyChange = (newCurrency: 'USD' | 'INR' | 'EUR' | 'GBP') => {
+    setPortfolioCurrency(newCurrency);
+    if (newCurrency !== getCurrencyCode(user?.currency)) {
+      fetchSingleRate(newCurrency);
+    }
+  };
+
+  useEffect(() => {
     let timerId: any = null;
 
     const initialize = async () => {
       const cached = sessionStorage.getItem("portfolioSections");
       if (cached) {
         loadPortfolioData(true);
-        fetchRates();
         timerId = setTimeout(() => {
           setLoading(false);
         }, 2000);
       } else {
         setLoading(true);
-        await Promise.all([
-          fetchRates(),
-          loadPortfolioData(false)
-        ]);
+        await loadPortfolioData(false);
         setLoading(false);
       }
     };
@@ -516,7 +562,7 @@ export default function PortfolioDashboard() {
       clearInterval(interval);
       if (timerId) clearTimeout(timerId);
     };
-  }, [virtualHoldings]);
+  }, [virtualHoldings, isSandboxMode]);
 
   const handleAddAsset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -524,6 +570,7 @@ export default function PortfolioDashboard() {
 
     const numShares = parseFloat(shares);
     const numCost = parseFloat(cost);
+    setIsAddingAsset(true);
 
     try {
       const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
@@ -562,6 +609,8 @@ export default function PortfolioDashboard() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to persist transaction");
+    } finally {
+      setIsAddingAsset(false);
     }
   };
 
@@ -583,7 +632,7 @@ export default function PortfolioDashboard() {
 
     if (isSandboxMode) {
       const isShort = closeTradeAsset.shares < 0;
-      const pnl = isShort 
+      const pnl = isShort
         ? (closeTradeAsset.avgCost - closePriceNum) * sharesToCloseNum
         : (closePriceNum - closeTradeAsset.avgCost) * sharesToCloseNum;
 
@@ -617,13 +666,7 @@ export default function PortfolioDashboard() {
 
       const nextTxs = [...virtualTransactions, newTx];
 
-      setVirtualHoldings(nextHoldings);
-      setVirtualBalance(nextBalance);
-      setVirtualTransactions(nextTxs);
-
-      localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
-      localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
-      localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
+      updateVirtualState(nextBalance, nextHoldings, nextTxs);
 
       toast.success(`Trade closed successfully! Realized P&L: ${closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}${pnl.toFixed(2)}`);
       setIsCloseModalOpen(false);
@@ -699,7 +742,7 @@ export default function PortfolioDashboard() {
 
           const pnl = (existing.avgCost - trade.price) * sharesToCover;
           existing.bookedPL = (existing.bookedPL || 0) + pnl;
-          
+
           existing.shares += trade.shares;
           if (existing.shares > 0.0001) {
             // Flipped to long position (extra shares cost cash normally)
@@ -739,7 +782,7 @@ export default function PortfolioDashboard() {
 
           const pnl = (trade.price - existing.avgCost) * sharesToClose;
           existing.bookedPL = (existing.bookedPL || 0) + pnl;
-          
+
           existing.shares -= trade.shares;
           if (existing.shares < -0.0001) {
             // Flipped to short position (extra shares lock up collateral)
@@ -784,14 +827,8 @@ export default function PortfolioDashboard() {
     };
 
     const nextTxs = [...virtualTransactions, newTx];
-    setVirtualBalance(nextBalance);
-    setVirtualHoldings(cleanedHoldings);
-    setVirtualTransactions(nextTxs);
+    updateVirtualState(nextBalance, cleanedHoldings, nextTxs);
 
-    localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
-    localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(cleanedHoldings));
-    localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
-    
     setIsSandboxOpen(false);
   };
 
@@ -800,7 +837,7 @@ export default function PortfolioDashboard() {
     const targetAsset = bookedAssets.find(a => a.id === id);
     const isResetOnly = targetAsset && targetAsset.shares > 0;
 
-    const confirmMsg = isResetOnly 
+    const confirmMsg = isResetOnly
       ? `Are you sure you want to clear the booked P&L history for ${name}? (Your active position of ${targetAsset.shares} shares will not be deleted)`
       : `Are you sure you want to remove ${name} history entry from your portfolio?`;
 
@@ -815,13 +852,11 @@ export default function PortfolioDashboard() {
           }
           return h;
         });
-        setVirtualHoldings(nextHoldings);
-        localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+        updateVirtualHoldingsOnly(nextHoldings);
         toast.success(`Cleared booked P&L history for ${name}`);
       } else {
         const nextHoldings = virtualHoldings.filter(h => (h.id || h.ticker) !== id);
-        setVirtualHoldings(nextHoldings);
-        localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
+        updateVirtualHoldingsOnly(nextHoldings);
         toast.success(`Removed virtual asset ${name}`);
       }
       return;
@@ -836,10 +871,10 @@ export default function PortfolioDashboard() {
       if (userId) headers['X-User-Id'] = userId;
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const url = isResetOnly 
+      const url = isResetOnly
         ? `${API_BASE_URL}/api/portfolio/holdings/${id}/reset-booked-pl`
         : `${API_BASE_URL}/api/portfolio/holdings/${id}`;
-      
+
       const method = isResetOnly ? 'PATCH' : 'DELETE';
 
       const res = await fetch(url, {
@@ -888,10 +923,10 @@ export default function PortfolioDashboard() {
     return priceUSD * currencyMultiplier;
   };
 
-  const displayCurrency = 
-    portfolioCurrency === 'INR' ? '₹' : 
-    portfolioCurrency === 'EUR' ? '€' : 
-    portfolioCurrency === 'GBP' ? '£' : '$';
+  const displayCurrency =
+    portfolioCurrency === 'INR' ? '₹' :
+      portfolioCurrency === 'EUR' ? '€' :
+        portfolioCurrency === 'GBP' ? '£' : '$';
 
   // Group values by native currency / segment
   const portfolioSplits = useMemo(() => {
@@ -946,7 +981,7 @@ export default function PortfolioDashboard() {
           const totalGain = h.shares < 0 ? costBasis - marketValue : marketValue - costBasis;
           const gainPercent = costBasis !== 0 ? (totalGain / costBasis) * 100 : 0;
           const dailyGain = h.shares * changeVal;
-          
+
           const colorClass = getHoldingColorClass(h.marketId, h.ticker);
 
           let displayName = h.name;
@@ -988,9 +1023,9 @@ export default function PortfolioDashboard() {
 
   const cashBalanceInCurrency = activeMarket === 'domestic'
     ? virtualBalance * usdToInrRate
-    : (activeMarket === 'all' 
-        ? virtualBalance * currencyMultiplier 
-        : (activeMarket === 'us' ? virtualBalance : 0));
+    : (activeMarket === 'all'
+      ? virtualBalance * currencyMultiplier
+      : (activeMarket === 'us' ? virtualBalance : 0));
 
   const totalNetValue = isSandboxMode
     ? cashBalanceInCurrency + totalHoldingsValue
@@ -1021,7 +1056,7 @@ export default function PortfolioDashboard() {
   }, [currentSections, activeMarket, usdToInrRate, currencyMultiplier]);
 
   const bookedAssets = useMemo(() => {
-    return currentSections.flatMap(section => 
+    return currentSections.flatMap(section =>
       section.holdings
         .filter(h => (h.bookedPL || 0) !== 0)
         .map(h => ({
@@ -1107,7 +1142,7 @@ export default function PortfolioDashboard() {
         const valUSD = h.marketId === 'domestic' ? val / usdToInrRate : val;
         return sum + valUSD;
       }, 0);
-      
+
       const totalValue = virtualHoldings.reduce((sum, h) => {
         let livePrice = h.avgCost;
         const uppercaseTicker = h.ticker.toUpperCase();
@@ -1127,7 +1162,7 @@ export default function PortfolioDashboard() {
         const year = parts[0]?.slice(2) || '';
         const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
         const monthStr = `${monthName} '${year}`;
-        
+
         const progress = (12 - i) / 12;
         const stepInvested = totalInvested * (0.5 + 0.5 * progress);
         const stepValue = totalValue * (0.45 + 0.55 * progress);
@@ -1381,11 +1416,10 @@ export default function PortfolioDashboard() {
               </h1>
               <button
                 onClick={() => setIsSandboxMode(!isSandboxMode)}
-                className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[8px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-sm whitespace-nowrap ${
-                  isSandboxMode
-                    ? 'bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-slate-950 border-transparent'
-                    : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-400 text-white border-transparent'
-                }`}
+                className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[8px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-sm whitespace-nowrap ${isSandboxMode
+                  ? 'bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-slate-950 border-transparent'
+                  : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-400 text-white border-transparent'
+                  }`}
               >
                 <span className="hidden sm:inline">{isSandboxMode ? 'Switch to Portfolio Tracker' : 'Switch to Paper Trading'}</span>
                 <span className="inline sm:hidden">{isSandboxMode ? 'Portfolio' : 'Paper Trade'}</span>
@@ -1426,12 +1460,11 @@ export default function PortfolioDashboard() {
             ].map((cur) => (
               <button
                 key={cur.code}
-                onClick={() => setPortfolioCurrency(cur.code as any)}
-                className={`px-2.5 py-1 rounded-xl text-[9px] font-bold border transition-all whitespace-nowrap min-h-[30px] flex items-center justify-center ${
-                  portfolioCurrency === cur.code
-                    ? 'bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 border-transparent font-black shadow-sm'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-655 dark:text-slate-400 border-slate-200 dark:border-white/5'
-                }`}
+                onClick={() => handleCurrencyChange(cur.code as any)}
+                className={`px-2.5 py-1 rounded-xl text-[9px] font-bold border transition-all whitespace-nowrap min-h-[30px] flex items-center justify-center ${portfolioCurrency === cur.code
+                  ? 'bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 border-transparent font-black shadow-sm'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-655 dark:text-slate-400 border-slate-200 dark:border-white/5'
+                  }`}
               >
                 {cur.code} ({cur.symbol})
               </button>
@@ -1559,14 +1592,14 @@ export default function PortfolioDashboard() {
               )}
             </p>
             <h3 className="text-sm sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
-              {isSandboxMode 
+              {isSandboxMode
                 ? `${displayCurrency}${cashBalanceInCurrency.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                 : `${activeHubsCount} Hub${activeHubsCount !== 1 ? 's' : ''}`}
             </h3>
           </div>
         </div>
 
-        <div 
+        <div
           onClick={() => setIsBookedHistoryOpen(true)}
           className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-0"
         >
@@ -1606,8 +1639,8 @@ export default function PortfolioDashboard() {
               key={tab}
               onClick={() => setActiveMarket(tab)}
               className={`px-4 py-2 rounded-xl capitalize transition-all duration-300 whitespace-nowrap ${activeMarket === tab
-                  ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5 font-extrabold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5 font-extrabold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
             >
               {tab === 'all' ? 'All Assets (Consolidated USD)' : tab === 'domestic' ? '🇮🇳 Domestic (INR)' : tab === 'us' ? '🇺🇸 US Market' : tab}
@@ -1778,8 +1811,8 @@ export default function PortfolioDashboard() {
               const displayTotalGain = asset.totalGain;
 
               return (
-                <div 
-                  key={asset.id || `${asset.ticker}-${index}`} 
+                <div
+                  key={asset.id || `${asset.ticker}-${index}`}
                   className="p-2.5 flex items-center justify-between gap-2 hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors"
                 >
                   <button
@@ -1877,6 +1910,7 @@ export default function PortfolioDashboard() {
 
           <PortfolioAllocationChart
             data={allocationData}
+            currencySymbol={displayCurrency}
           />
 
           <div className="relative mt-4 sm:mt-6 grid grid-cols-3 gap-2 sm:gap-3.5">
@@ -1923,11 +1957,10 @@ export default function PortfolioDashboard() {
                       key={opt.value}
                       type="button"
                       onClick={() => setMarketId(opt.value)}
-                      className={`py-2.5 px-3 text-xs font-extrabold rounded-xl border transition-all ${
-                        marketId === opt.value
-                          ? "bg-blue-600 dark:bg-cyan-500 border-blue-600 dark:border-cyan-500 text-white dark:text-night-900 shadow-md shadow-blue-500/10"
-                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-                      }`}
+                      className={`py-2.5 px-3 text-xs font-extrabold rounded-xl border transition-all ${marketId === opt.value
+                        ? "bg-blue-600 dark:bg-cyan-500 border-blue-600 dark:border-cyan-500 text-white dark:text-night-900 shadow-md shadow-blue-500/10"
+                        : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                        }`}
                     >
                       {opt.label}
                     </button>
@@ -1948,7 +1981,7 @@ export default function PortfolioDashboard() {
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white pr-10 focus:border-blue-500 dark:focus:border-cyan-400 transition-colors"
-                    placeholder="e.g. Apple or AAPL"
+                    placeholder="Search by symbol or name"
                     required
                   />
                   {isSearching && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 animate-spin" />}
@@ -1993,7 +2026,7 @@ export default function PortfolioDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Average Price ($)</label>
+                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Average Price</label>
                   <input
                     type="number"
                     step="any"
@@ -2008,9 +2041,11 @@ export default function PortfolioDashboard() {
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 py-3 text-sm font-bold text-white dark:text-night-900 mt-2 shadow-md transition-all active:scale-95"
+                disabled={isAddingAsset}
+                className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 py-3 text-sm font-bold text-white dark:text-night-900 mt-2 shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Log Position
+                {isAddingAsset && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isAddingAsset ? "Adding Position..." : "Log Position"}
               </button>
             </form>
           </div>
@@ -2055,8 +2090,8 @@ export default function PortfolioDashboard() {
                 <div className="flex justify-between">
                   <span>Current Shares:</span>
                   <span className="font-mono text-slate-800 dark:text-slate-200">
-                    {closeTradeAsset.shares < 0 
-                      ? `${Math.abs(closeTradeAsset.shares).toLocaleString()} (Short)` 
+                    {closeTradeAsset.shares < 0
+                      ? `${Math.abs(closeTradeAsset.shares).toLocaleString()} (Short)`
                       : closeTradeAsset.shares.toLocaleString()}
                   </span>
                 </div>
@@ -2108,7 +2143,7 @@ export default function PortfolioDashboard() {
                 const priceNum = parseFloat(closeTradePrice);
                 if (isNaN(sharesNum) || isNaN(priceNum) || sharesNum <= 0) return null;
                 const isShort = closeTradeAsset.shares < 0;
-                const pl = isShort 
+                const pl = isShort
                   ? (closeTradeAsset.avgCost - priceNum) * sharesNum
                   : (priceNum - closeTradeAsset.avgCost) * sharesNum;
                 const isGain = pl >= 0;

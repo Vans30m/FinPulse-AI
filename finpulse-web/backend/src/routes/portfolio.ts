@@ -43,50 +43,49 @@ async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { 
     return results;
   }
 
-  // Fetch missing symbols
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolsToFetch.join(','))}`;
-
+  // Try fetching using official yahooFinance library first (which handles cookies/headers properly)
   try {
-    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': userAgent,
-        'Accept': 'application/json, text/plain, */*',
-        'Origin': 'https://finance.yahoo.com',
-        'Referer': 'https://finance.yahoo.com/',
-      },
-      timeout: 6000
-    });
-    const quotes = response.data?.quoteResponse?.result || [];
-    for (const q of quotes) {
+    const quotes = await yahooFinance.quote(symbolsToFetch);
+    const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
+    for (const q of quotesArray) {
       if (q.symbol) {
         const sym = q.symbol.toUpperCase();
         const price = q.regularMarketPrice ?? 100;
         const change = q.regularMarketChangePercent ?? 0;
-        
+
         results[sym] = { price, change };
         quoteCache.set(sym, { price, change, timestamp: now });
       }
     }
   } catch (err: any) {
-    console.warn(`Direct Yahoo multi-quote fetch failed:`, err.message);
-    
-    // Fallback: try batch fetch using yahooFinance library
+    console.warn(`Library batch quote failed, trying direct axios fetch:`, err.message);
+
+    // Fallback: direct HTTP fetch
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolsToFetch.join(','))}`;
     try {
-      const quotes = await yahooFinance.quote(symbolsToFetch);
-      const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
-      for (const q of quotesArray) {
+      const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'application/json, text/plain, */*',
+          'Origin': 'https://finance.yahoo.com',
+          'Referer': 'https://finance.yahoo.com/',
+        },
+        timeout: 6000
+      });
+      const quotes = response.data?.quoteResponse?.result || [];
+      for (const q of quotes) {
         if (q.symbol) {
           const sym = q.symbol.toUpperCase();
           const price = q.regularMarketPrice ?? 100;
           const change = q.regularMarketChangePercent ?? 0;
-
+          
           results[sym] = { price, change };
           quoteCache.set(sym, { price, change, timestamp: now });
         }
       }
     } catch (subErr: any) {
-      console.warn(`Library batch quote failed:`, subErr.message);
+      console.warn(`Direct Yahoo multi-quote fetch failed:`, subErr.message);
       // Final fallback: Use previously cached values if available (even if expired), or default to mock price
       for (const sym of symbolsToFetch) {
         const expiredCache = quoteCache.get(sym);
@@ -123,7 +122,8 @@ router.get('/portfolio/holdings', protect, async (req: AuthenticatedRequest, res
     const userId = req.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const dbHoldings = await prisma.holding.findMany({
+    const onlyVirtual = req.query.onlyVirtual === 'true';
+    const dbHoldings = onlyVirtual ? [] : await prisma.holding.findMany({
       where: { userId }
     });
 
@@ -639,6 +639,122 @@ router.get('/portfolio/heatmap', protect, async (req: AuthenticatedRequest, res:
   }
 
   res.json(points);
+});
+
+// GET /api/portfolio/virtual
+router.get('/portfolio/virtual', protect, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    let balanceRecord = await prisma.virtualBalance.findUnique({
+      where: { userId }
+    });
+    if (!balanceRecord) {
+      balanceRecord = await prisma.virtualBalance.create({
+        data: { userId, balance: 100000.0 }
+      });
+    }
+
+    const holdings = await prisma.virtualHolding.findMany({
+      where: { userId }
+    });
+
+    const transactions = await prisma.virtualTransaction.findMany({
+      where: { userId },
+      orderBy: { timestamp: 'asc' }
+    });
+
+    res.json({
+      balance: balanceRecord.balance,
+      holdings: holdings.map(h => ({
+        id: h.id,
+        ticker: h.ticker,
+        name: h.name,
+        shares: h.shares,
+        avgCost: h.avgCost,
+        marketId: h.marketId,
+        bookedPL: h.bookedPL,
+        sl: h.sl,
+        tp: h.tp
+      })),
+      transactions: transactions.map(t => ({
+        id: t.id,
+        timestamp: t.timestamp.toISOString(),
+        type: t.type,
+        symbol: t.symbol,
+        name: t.name,
+        shares: t.shares,
+        price: t.price,
+        totalValue: t.totalValue
+      }))
+    });
+  } catch (error: any) {
+    console.error('Fetch virtual state failed:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch virtual state' });
+  }
+});
+
+// POST /api/portfolio/virtual/sync
+router.post('/portfolio/virtual/sync', protect, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { balance, holdings, transactions } = req.body;
+
+    // Update balance
+    await prisma.virtualBalance.upsert({
+      where: { userId },
+      update: { balance: parseFloat(balance ?? 100000) },
+      create: { userId, balance: parseFloat(balance ?? 100000) }
+    });
+
+    // Sync holdings
+    await prisma.virtualHolding.deleteMany({
+      where: { userId }
+    });
+    if (Array.isArray(holdings) && holdings.length > 0) {
+      await prisma.virtualHolding.createMany({
+        data: holdings.map((h: any) => ({
+          userId,
+          ticker: h.ticker.toUpperCase(),
+          name: h.name || '',
+          shares: parseFloat(h.shares),
+          avgCost: parseFloat(h.avgCost),
+          marketId: h.marketId || 'other',
+          bookedPL: parseFloat(h.bookedPL ?? 0),
+          sl: h.sl ? parseFloat(h.sl) : null,
+          tp: h.tp ? parseFloat(h.tp) : null
+        }))
+      });
+    }
+
+    // Sync transactions
+    await prisma.virtualTransaction.deleteMany({
+      where: { userId }
+    });
+    if (Array.isArray(transactions) && transactions.length > 0) {
+      await prisma.virtualTransaction.createMany({
+        data: transactions.map((t: any) => ({
+          userId,
+          type: t.type,
+          symbol: t.symbol,
+          name: t.name || '',
+          shares: parseFloat(t.shares),
+          price: parseFloat(t.price),
+          totalValue: parseFloat(t.totalValue),
+          timestamp: t.timestamp ? new Date(t.timestamp) : new Date()
+        }))
+      });
+    }
+
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Sync virtual state failed:', error);
+    res.status(500).json({ error: error.message || 'Failed to sync virtual state' });
+  }
 });
 
 export default router;

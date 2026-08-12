@@ -260,7 +260,6 @@ export default function AIMarketSentiment() {
       {/* MIDDLE SECTION: Detailed AI Insights Feed */}
       <div className="relative z-10 mt-5 sm:mt-8">
         <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-blue-500 dark:text-cyan-400" />
           Detailed Market Insights
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
@@ -322,7 +321,6 @@ export default function AIMarketSentiment() {
                     {/* Custom Tooltip on Hover */}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-2xl bg-slate-900/95 dark:bg-[#080d19]/95 text-white text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-40 border border-slate-200/10 dark:border-slate-800 backdrop-blur-md">
                       <div className="font-bold mb-1 text-cyan-400 flex items-center gap-1">
-                        <Sparkles className="h-3 w-3 animate-spin" />
                         {sector.sector} Analysis
                       </div>
                       <p className="text-slate-300 font-medium">{sector.reason}</p>
@@ -377,7 +375,6 @@ export default function AIMarketSentiment() {
                     {/* Custom Tooltip on Hover */}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-2xl bg-slate-900/95 dark:bg-[#080d19]/95 text-white text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-40 border border-slate-200/10 dark:border-slate-800 backdrop-blur-md">
                       <div className="font-bold mb-1 text-cyan-400 flex items-center gap-1">
-                        <Sparkles className="h-3 w-3 animate-spin" />
                         {sector.sector} Analysis
                       </div>
                       <p className="text-slate-300 font-medium">{sector.reason}</p>
@@ -432,7 +429,6 @@ export default function AIMarketSentiment() {
                     {/* Custom Tooltip on Hover */}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-2xl bg-slate-900/95 dark:bg-[#080d19]/95 text-white text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-40 border border-slate-200/10 dark:border-slate-800 backdrop-blur-md">
                       <div className="font-bold mb-1 text-cyan-400 flex items-center gap-1">
-                        <Sparkles className="h-3 w-3 animate-spin" />
                         {sector.sector} Analysis
                       </div>
                       <p className="text-slate-300 font-medium">{sector.reason}</p>

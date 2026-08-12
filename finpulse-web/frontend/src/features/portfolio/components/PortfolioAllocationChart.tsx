@@ -12,6 +12,7 @@ interface Props {
     name: string;
     value: number;
   }[];
+  currencySymbol?: string;
 }
 
 const COLORS = [
@@ -24,6 +25,7 @@ const COLORS = [
 
 export default function PortfolioAllocationChart({
   data,
+  currencySymbol = "$",
 }: Props) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const dominant = data.length > 0
@@ -72,7 +74,7 @@ export default function PortfolioAllocationChart({
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="rounded-full border border-slate-200/60 dark:border-white/5 bg-white/85 dark:bg-[#0c1120]/85 px-4 py-2 text-center shadow-md backdrop-blur-sm">
             <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Total Capital</p>
-            <p className="mt-0.5 text-base font-black text-slate-900 dark:text-white">${total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="mt-0.5 text-base font-black text-slate-900 dark:text-white">{currencySymbol}{total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
           </div>
         </div>
       </div>
@@ -93,7 +95,7 @@ export default function PortfolioAllocationChart({
                     {item.name}
                   </p>
                   <div className="flex items-center justify-between gap-2 mt-2 text-[10px] font-semibold text-slate-400">
-                    <span>${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                    <span>{currencySymbol}{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     <span className="inline-flex items-center gap-1 text-blue-600 dark:text-cyan-400">
                       <TrendingUp className="h-3 w-3" />
                       {pct}%

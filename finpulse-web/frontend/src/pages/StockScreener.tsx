@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, FileText, Check, ChevronDown, MessageSquare, X,
-  Presentation, FileCheck, Leaf, Award, Search, BookOpen
+  Presentation, FileCheck, Leaf, Award, Search, BookOpen, HeartPulse, Calendar, Newspaper, ExternalLink, Activity
 } from 'lucide-react';
 import StockSearch from '../components/ui/StockSearch';
 import { getUnifiedAssetDetails, getFundamentalsTimeseries } from '../services/marketService';
@@ -183,11 +183,29 @@ export default function StockScreener() {
   const loadTimerRef = useRef<number | null>(null);
   const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'market-data' | 'valuation' | 'fundamentals' | 'shareholding' | 'analysis'>('market-data');
+  const [activeTab, setActiveTab] = useState<'overview' | 'market-data' | 'valuation' | 'fundamentals' | 'shareholding' | 'analysis'>('overview');
 
   const handleTabClick = (tabId: string, tabVal: any) => {
     isScrollingRef.current = true;
     setActiveTab(tabVal);
+
+    // Expand the corresponding accordion if collapsed
+    if (tabVal === 'overview') {
+      setIsOverviewOpen(true);
+      if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+    } else if (tabVal === 'market-data') {
+      setIsMarketDataOpen(true);
+      if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+    } else if (tabVal === 'valuation') {
+      setIsValuationOpen(true);
+      if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+    } else if (tabVal === 'fundamentals') {
+      setIsFundamentalsOpen(true);
+    } else if (tabVal === 'shareholding') {
+      setIsShareholdingOpen(true);
+      if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+    }
+
     const el = document.getElementById(tabId);
     if (el) {
       const headerOffset = 90; // Adjust for sticky header height
@@ -810,15 +828,15 @@ export default function StockScreener() {
     const currency = isIndian ? '₹' : '$';
     const divisor = isIndian ? 10000000 : 1000000;
 
-    const curMarketCap = selectedStock.marketCap;
-    const curEV = (assetDetails?.statistics?.enterpriseValue ? assetDetails.statistics.enterpriseValue / divisor : curMarketCap * 1.05);
-    const curPE = (assetDetails?.statistics?.pe ?? selectedStock.peRatio);
-    const curForwardPE = (assetDetails?.statistics?.forwardPe ?? (curPE * 0.9));
-    const curPEG = (assetDetails?.statistics?.peg ?? 1.8);
-    const curPS = (assetDetails?.statistics?.priceToSales ?? 4.25);
-    const curPB = (assetDetails?.statistics?.priceToBook ?? (selectedStock.price / selectedStock.bookValue));
-    const curEVRevenue = (assetDetails?.statistics?.enterpriseToRevenue ?? 3.5);
-    const curEVEbitda = (assetDetails?.statistics?.enterpriseToEbitda ?? 12.4);
+    const curMarketCap = (assetDetails?.statistics?.marketCap || selectedStock.marketCap || 0) / divisor;
+    const curEV = assetDetails?.statistics?.enterpriseValue ? assetDetails.statistics.enterpriseValue / divisor : curMarketCap * 1.05;
+    const curPE = assetDetails?.statistics?.pe ?? selectedStock.peRatio ?? 22.5;
+    const curForwardPE = assetDetails?.statistics?.forwardPe ?? (curPE * 0.9);
+    const curPEG = assetDetails?.statistics?.peg ?? 1.8;
+    const curPS = assetDetails?.statistics?.priceToSales ?? 4.25;
+    const curPB = assetDetails?.statistics?.priceToBook || (selectedStock.bookValue && selectedStock.bookValue > 0 ? selectedStock.price / selectedStock.bookValue : 2.5);
+    const curEVRevenue = assetDetails?.statistics?.enterpriseToRevenue ?? 3.5;
+    const curEVEbitda = assetDetails?.statistics?.enterpriseToEbitda ?? 12.4;
 
     const quarters = fundamentalsData?.quarters || ['Jun 26', 'Mar 26', 'Dec 25', 'Sep 25'];
 
@@ -1350,6 +1368,7 @@ export default function StockScreener() {
       const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50;
 
       const sections = [
+        { id: 'screener-overview', tab: 'overview' },
         { id: 'screener-market-data', tab: 'market-data' },
         { id: 'screener-valuation', tab: 'valuation' },
         { id: 'screener-fundamentals', tab: 'fundamentals' },
@@ -1406,6 +1425,8 @@ export default function StockScreener() {
             <StockSearch
               placeholder="Search for a company"
               onSelect={(asset) => handleSelectStock(asset.symbol)}
+              simple={true}
+              onlyTypes={['Stocks']}
             />
           </div>
 
@@ -1578,70 +1599,187 @@ export default function StockScreener() {
                 </button>
 
                 {isOverviewOpen && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 animate-fadeIn">
-                    {/* Left: Description & Website */}
-                    <div className="md:col-span-2 space-y-4">
-                      <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal">
-                        {assetDetails?.profile?.description || 'Loading company description...'}
-                      </p>
-                      {assetDetails?.profile?.website && (
-                        <div>
-                          <a
-                            href={assetDetails.profile.website.startsWith('http') ? assetDetails.profile.website : `https://${assetDetails.profile.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs sm:text-[13px] text-blue-600 dark:text-cyan-400 hover:underline font-bold"
-                          >
-                            {assetDetails.profile.website.replace(/^https?:\/\/(www\.)?/, '')}
-                          </a>
+                  <div className="space-y-6 mt-4 animate-fadeIn">
+                    {/* Top: Description & Profile Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Left: Description & Website */}
+                      <div className="md:col-span-2 space-y-4">
+                        <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal">
+                          {assetDetails?.profile?.description || 'Loading company description...'}
+                        </p>
+                        {assetDetails?.profile?.website && (
+                          <div>
+                            <a
+                              href={assetDetails.profile.website.startsWith('http') ? assetDetails.profile.website : `https://${assetDetails.profile.website}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs sm:text-[13px] text-blue-600 dark:text-cyan-400 hover:underline font-bold inline-flex items-center gap-1"
+                            >
+                              <span>{assetDetails.profile.website.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Key Stats */}
+                      <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-4 rounded-2xl">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-xs font-mono font-black text-slate-900 dark:text-white">
+                              {assetDetails?.profile?.employees ? assetDetails.profile.employees.toLocaleString() : '-'}
+                            </div>
+                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                              Full Time Employees
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-xs font-mono font-black text-slate-900 dark:text-white">
+                              {assetDetails?.profile?.fiscalYearEnd ? (
+                                (() => {
+                                  const timestamp = assetDetails.profile.fiscalYearEnd;
+                                  const date = new Date(timestamp * 1000);
+                                  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                                  return `${months[date.getMonth()]} ${date.getDate()}`;
+                                })()
+                              ) : 'March 31'}
+                            </div>
+                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                              Fiscal Year Ends
+                            </div>
+                          </div>
+
+                          <div className="col-span-2 border-t border-slate-150/50 dark:border-white/5 pt-3 mt-1">
+                            <div className="text-xs font-black text-slate-900 dark:text-white truncate">
+                              {assetDetails?.profile?.sector || '-'}
+                            </div>
+                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                              Sector
+                            </div>
+                          </div>
+
+                          <div className="col-span-2 border-t border-slate-150/50 dark:border-white/5 pt-3 mt-1">
+                            <div className="text-xs font-black text-slate-900 dark:text-white truncate" title={assetDetails?.profile?.industry || ''}>
+                              {assetDetails?.profile?.industry || '-'}
+                            </div>
+                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                              Industry
+                            </div>
+                          </div>
                         </div>
-                      )}
+                      </div>
+                    </div>
+                    {/* Middle: Analysts Recommendations & Key Events */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200/60 dark:border-white/10">
+                      {/* Analyst Recommendations */}
+                      <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-5 rounded-2xl">
+                        <h4 className="text-xs font-black uppercase text-slate-905 dark:text-white tracking-wider flex items-center gap-2 mb-4">
+                          <Activity className="h-4 w-4 text-emerald-500" />
+                          <span>Analyst Recommendation</span>
+                        </h4>
+
+                        <div className="divide-y divide-slate-150/50 dark:divide-white/5 text-[11px] font-mono text-slate-655 dark:text-slate-300">
+                          <div className="flex justify-between py-2 items-center">
+                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Recommendation</span>
+                            <span className="font-black text-blue-600 dark:text-cyan-400 capitalize">
+                              {assetDetails?.analysts?.recommendationKey || 'N/A'} ({assetDetails?.analysts?.recommendationMean?.toFixed(2) || 'N/A'})
+                            </span>
+                          </div>
+                          <div className="flex justify-between py-2 items-center">
+                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Total Analyst Ratings</span>
+                            <span className="font-bold text-slate-900 dark:text-slate-100">{assetDetails?.analysts?.numberOfAnalysts || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between py-2 items-center">
+                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">High Target Price</span>
+                            <span className="font-bold text-emerald-600 dark:text-emerald-450">
+                              {assetDetails?.analysts?.targetHigh ? `${currencySymbol}${assetDetails.analysts.targetHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between py-2 items-center">
+                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Median Target Price</span>
+                            <span className="font-bold text-slate-900 dark:text-slate-100">
+                              {assetDetails?.analysts?.targetMedian ? `${currencySymbol}${assetDetails.analysts.targetMedian.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between py-2 items-center">
+                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Mean Target Price</span>
+                            <span className="font-bold text-slate-900 dark:text-slate-100">
+                              {assetDetails?.analysts?.targetMeanPrice ? `${currencySymbol}${assetDetails.analysts.targetMeanPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between py-2 items-center">
+                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Low Target Price</span>
+                            <span className="font-bold text-rose-500">
+                              {assetDetails?.analysts?.targetLow ? `${currencySymbol}${assetDetails.analysts.targetLow.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Events Column */}
+                      <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-5 rounded-2xl h-full">
+                        <h4 className="text-xs font-black uppercase text-slate-905 dark:text-white tracking-wider flex items-center gap-2 mb-4">
+                          <Calendar className="h-4 w-4 text-purple-500" />
+                          <span>Key Events</span>
+                        </h4>
+
+                        <div className="space-y-4 text-xs">
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Ex-Dividend Date</span>
+                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 mt-1 block">
+                              {assetDetails?.events?.exDividendDate 
+                                ? new Date(assetDetails.events.exDividendDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) 
+                                : 'N/A'}
+                            </span>
+                          </div>
+
+                          <div className="border-t border-slate-150/45 dark:border-white/5 pt-3">
+                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Earnings Calendar Date</span>
+                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 mt-1 block">
+                              {assetDetails?.events?.earnings?.earningsDate?.[0]
+                                ? new Date(assetDetails.events.earnings.earningsDate[0]).toLocaleDateString(undefined, { dateStyle: 'medium' })
+                                : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Right: Key Stats */}
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-4 rounded-2xl">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-xs font-mono font-black text-slate-900 dark:text-white">
-                            {assetDetails?.profile?.employees ? assetDetails.profile.employees.toLocaleString() : '-'}
-                          </div>
-                          <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
-                            Full Time Employees
-                          </div>
-                        </div>
+                    {/* Bottom: News */}
+                    <div className="pt-4 border-t border-slate-200/60 dark:border-white/10">
+                      <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-5 rounded-2xl">
+                        <h4 className="text-xs font-black uppercase text-slate-905 dark:text-white tracking-wider flex items-center gap-2 mb-4">
+                          <Newspaper className="h-4 w-4 text-blue-500" />
+                          <span>Latest Articles</span>
+                        </h4>
 
-                        <div>
-                          <div className="text-xs font-mono font-black text-slate-900 dark:text-white">
-                            {assetDetails?.profile?.fiscalYearEnd ? (
-                              (() => {
-                                const timestamp = assetDetails.profile.fiscalYearEnd;
-                                const date = new Date(timestamp * 1000);
-                                const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                                return `${months[date.getMonth()]} ${date.getDate()}`;
-                              })()
-                            ) : 'March 31'}
-                          </div>
-                          <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
-                            Fiscal Year Ends
-                          </div>
-                        </div>
-
-                        <div className="col-span-2 border-t border-slate-150/50 dark:border-white/5 pt-3 mt-1">
-                          <div className="text-xs font-black text-slate-900 dark:text-white truncate">
-                            {assetDetails?.profile?.sector || '-'}
-                          </div>
-                          <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
-                            Sector
-                          </div>
-                        </div>
-
-                        <div className="col-span-2 border-t border-slate-150/50 dark:border-white/5 pt-3 mt-1">
-                          <div className="text-xs font-black text-slate-900 dark:text-white truncate" title={assetDetails?.profile?.industry || ''}>
-                            {assetDetails?.profile?.industry || '-'}
-                          </div>
-                          <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
-                            Industry
-                          </div>
+                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-205 dark:scrollbar-thumb-slate-805">
+                          {assetDetails?.news && assetDetails.news.length > 0 ? (
+                            assetDetails.news.map((item: any, idx: number) => (
+                              <a
+                                key={idx}
+                                href={item.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block p-3 rounded-xl border border-slate-150/30 dark:border-white/5 hover:border-blue-200 dark:hover:border-cyan-500/30 bg-white/50 dark:bg-white/[0.005] hover:bg-white dark:hover:bg-white/[0.02] transition-all group"
+                              >
+                                <div className="flex justify-between items-start gap-3">
+                                  <h5 className="text-[11px] sm:text-xs font-bold text-slate-850 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors leading-snug">
+                                    {item.title}
+                                  </h5>
+                                  <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-blue-600 dark:text-cyan-400 mt-0.5" />
+                                </div>
+                                <div className="flex items-center gap-2 mt-2 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                  <span>{item.publisher || 'Unknown Publisher'}</span>
+                                  <span>•</span>
+                                  <span>{new Date(item.providerPublishTime * 1000).toLocaleDateString(undefined, { dateStyle: 'short' })}</span>
+                                </div>
+                              </a>
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-450 text-center py-6">No recent articles found for this ticker.</p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1679,8 +1817,11 @@ export default function StockScreener() {
                         { label: 'High', value: assetDetails?.statistics?.dayHigh ? `${currencySymbol}${assetDetails.statistics.dayHigh.toFixed(2)}` : '-', desc: "Today's highest price" },
                         { label: 'Low', value: assetDetails?.statistics?.dayLow ? `${currencySymbol}${assetDetails.statistics.dayLow.toFixed(2)}` : '-', desc: "Today's lowest price" },
                         { label: 'Previous Close', value: assetDetails?.statistics?.previousClose ? `${currencySymbol}${assetDetails.statistics.previousClose.toFixed(2)}` : '-', desc: "Yesterday's closing price" },
-                        { label: '52-Week High', value: `${currencySymbol}${selectedStock.high52w.toFixed(2)}`, desc: '52-week peak' },
-                        { label: '52-Week Low', value: `${currencySymbol}${selectedStock.low52w.toFixed(2)}`, desc: '52-week bottom' },
+                        { label: '52-Week High', value: assetDetails?.statistics?.fiftyTwoWeekHigh ? `${currencySymbol}${assetDetails.statistics.fiftyTwoWeekHigh.toFixed(2)}` : (selectedStock.high52w ? `${currencySymbol}${selectedStock.high52w.toFixed(2)}` : '-'), desc: '52-week peak' },
+                        { label: '52-Week Low', value: assetDetails?.statistics?.fiftyTwoWeekLow ? `${currencySymbol}${assetDetails.statistics.fiftyTwoWeekLow.toFixed(2)}` : (selectedStock.low52w ? `${currencySymbol}${selectedStock.low52w.toFixed(2)}` : '-'), desc: '52-week bottom' },
+                        { label: 'Shares Outstanding', value: assetDetails?.statistics?.sharesOutstanding ? (isIndian ? `${(assetDetails.statistics.sharesOutstanding / 10000000).toFixed(2)} Cr.` : `${(assetDetails.statistics.sharesOutstanding / 1000000).toFixed(2)}M`) : '-', desc: 'Total shares issued' },
+                        { label: 'Beta (Volatility)', value: assetDetails?.statistics?.beta != null ? assetDetails.statistics.beta.toFixed(2) : '-', desc: 'Volatility relative to market' },
+                        { label: 'Dividend Yield', value: assetDetails?.statistics?.dividendYield != null ? `${(assetDetails.statistics.dividendYield * 100).toFixed(2)}%` : '-', desc: 'Annual dividend return rate' },
                       ].map((item) => (
                         <div key={item.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
                           <div className="flex flex-col min-w-0">
