@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { fetchGlobalMarkets } from "../services/marketService";
 
 import AIMarketSentiment from "../features/dashboard/components/AIMarketSentiment";
-import MarketExplanation from "../features/dashboard/components/MarketExplanation";
 import AIBulletSummary from "../features/dashboard/components/AIBulletSummary";
 import TrendingSectorStreaks from "../features/dashboard/components/TrendingSectorStreaks";
 import { GlobalMarketClock } from "../features/dashboard/components/GlobalMarketClock";
@@ -35,7 +34,6 @@ export default function Pulse() {
     >
       <div className="space-y-8">
         <AIMarketSentiment />
-        <MarketExplanation />
 
         <AIBulletSummary />
 

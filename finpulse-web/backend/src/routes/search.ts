@@ -72,7 +72,7 @@ function mapQuoteType(quoteType: string | undefined): string {
     case 'FUTURE':
       return 'Commodities';
     case 'ETF':
-      return 'Stocks';
+      return 'ETF';
     default:
       return 'Stocks';
   }

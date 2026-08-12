@@ -113,7 +113,7 @@ export default function AlertsTimeline({
       duration-300
       flex
       flex-col
-      ${fullPage ? "h-full" : "max-h-[1300px]"}`}
+      ${fullPage ? "h-[580px]" : "max-h-[1300px]"}`}
     >
       {/* HEADER */}
       <div className="border-b border-slate-150 dark:border-white/5 p-5 shrink-0 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/20 to-transparent dark:from-white/[0.01]">
