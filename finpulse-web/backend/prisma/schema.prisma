@@ -87,6 +87,7 @@ model User {
   portfolios             Portfolio[]
   watchlists             Watchlist[]
   aiSessions             AiSession[]
+  holdings               Holding[]
 
   @@index([email])
 }
@@ -210,3 +211,21 @@ model AiSession {
 
   @@index([userId])
 }
+
+model Holding {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticker       String
+  name         String
+  shares       Float
+  avgCost      Float
+  marketId     String    // e.g. "domestic", "us", "crypto", "metals", "other"
+  bookedPL     Float     @default(0.0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([ticker])
+}
+

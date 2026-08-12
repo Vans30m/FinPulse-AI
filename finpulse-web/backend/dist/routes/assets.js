@@ -154,6 +154,8 @@ router.get('/asset-details/:symbol', async (req, res) => {
     catch (err) {
         console.warn('Failed to retrieve Yahoo Finance context, falling back to pure AI generation:', err);
     }
+    const priceVal = yahooContext?.price || (isIndian ? 1250.00 : 180.50);
+    const changeVal = yahooContext?.change || 2.15;
     const fallback = {
         profile: {
             name: yahooContext?.profile?.name || (isIndian ? `${symbol.replace(/\.(NS|BO)$/i, '')} India Ltd.` : `${symbol} Corporation`),
@@ -166,8 +168,8 @@ router.get('/asset-details/:symbol', async (req, res) => {
             description: yahooContext?.profile?.longBusinessSummary || `${symbol} is a leading global firm offering innovative solutions, cutting-edge products, and enterprise services.`
         },
         statistics: {
-            price: yahooContext?.price || (isIndian ? 1250.00 : 180.50),
-            change: yahooContext?.change || 2.15,
+            price: priceVal,
+            change: changeVal,
             changePercent: yahooContext?.changePercent || 1.20,
             marketCap: yahooContext?.marketCap || 1500000000000,
             enterpriseValue: yahooContext?.keyStats?.enterpriseValue || 1520000000000,
@@ -179,16 +181,18 @@ router.get('/asset-details/:symbol', async (req, res) => {
             dividendYield: yahooContext?.keyStats?.dividendYield || 0.0085,
             fiftyDayAverage: yahooContext?.keyStats?.fiftyDayAverage || 175.40,
             twoHundredDayAverage: yahooContext?.keyStats?.twoHundredDayAverage || 168.20,
-            open: yahooContext?.open || null,
-            dayHigh: yahooContext?.dayHigh || null,
-            dayLow: yahooContext?.dayLow || null,
-            previousClose: yahooContext?.previousClose || null,
-            volume: yahooContext?.volume || null,
-            averageVolume: yahooContext?.averageVolume || null,
-            priceToSales: yahooContext?.keyStats?.priceToSales || null,
-            priceToBook: yahooContext?.keyStats?.priceToBook || null,
-            enterpriseToRevenue: yahooContext?.keyStats?.enterpriseToRevenue || null,
-            enterpriseToEbitda: yahooContext?.keyStats?.enterpriseToEbitda || null,
+            open: yahooContext?.open || (priceVal * 0.995),
+            dayHigh: yahooContext?.dayHigh || (priceVal * 1.015),
+            dayLow: yahooContext?.dayLow || (priceVal * 0.985),
+            previousClose: yahooContext?.previousClose || (priceVal - changeVal),
+            fiftyTwoWeekHigh: yahooContext?.fiftyTwoWeekHigh || (priceVal * 1.35),
+            fiftyTwoWeekLow: yahooContext?.fiftyTwoWeekLow || (priceVal * 0.72),
+            volume: yahooContext?.volume || 1450000,
+            averageVolume: yahooContext?.averageVolume || 1200000,
+            priceToSales: yahooContext?.keyStats?.priceToSales || 4.2,
+            priceToBook: yahooContext?.keyStats?.priceToBook || 2.8,
+            enterpriseToRevenue: yahooContext?.keyStats?.enterpriseToRevenue || 3.1,
+            enterpriseToEbitda: yahooContext?.keyStats?.enterpriseToEbitda || 11.2,
             performance: {
                 "1D": yahooContext?.changePercent || 1.20,
                 "1W": -0.85,

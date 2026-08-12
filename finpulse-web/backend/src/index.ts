@@ -10,6 +10,7 @@ import assetRoutes from './routes/assets.js';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import watchlistRoutes from './routes/watchlists.js';
+import portfolioRoutes from './routes/portfolio.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -84,3 +85,6 @@ app.use('/api/profile', profileRoutes);
 
 // Watchlist API
 app.use('/api', watchlistRoutes);
+
+// Portfolio API
+app.use('/api', portfolioRoutes);

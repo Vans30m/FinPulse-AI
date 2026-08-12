@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import PortfolioAllocationChart from "./PortfolioAllocationChart";
 import PortfolioSummarySection, { type PortfolioSummaryMetric } from "./PortfolioSummarySection";
 
-import UpcomingEventsSection from "./UpcomingEventsSection";
 import PortfolioPerformanceChart from "./PortfolioPerformanceChart";
 import { useChart } from "../../../context/ChartContext";
 import { useAppData } from "../../../context/AppDataContext";
@@ -404,7 +403,12 @@ export default function PortfolioDashboard() {
         const data = await holdingsRes.json();
         const mapped = INITIAL_SECTIONS.map(initial => {
           const found = data.sections?.find((s: any) => s.id === initial.id);
-          return { ...initial, holdings: found ? found.holdings : [] };
+          const holdingsRaw = found ? found.holdings : [];
+          const holdingsWithColors = holdingsRaw.map((h: any) => ({
+            ...h,
+            colorClass: getHoldingColorClass(h.marketId || initial.id, h.ticker)
+          }));
+          return { ...initial, holdings: holdingsWithColors };
         });
         setSections(mapped);
         sessionStorage.setItem("portfolioSections", JSON.stringify(mapped));
@@ -1097,13 +1101,55 @@ export default function PortfolioDashboard() {
     },
   ];
   const convertedPerformanceData = useMemo(() => {
+    if (isSandboxMode) {
+      const totalInvested = virtualHoldings.reduce((sum, h) => {
+        const val = Math.abs(h.shares) * h.avgCost;
+        const valUSD = h.marketId === 'domestic' ? val / usdToInrRate : val;
+        return sum + valUSD;
+      }, 0);
+      
+      const totalValue = virtualHoldings.reduce((sum, h) => {
+        let livePrice = h.avgCost;
+        const uppercaseTicker = h.ticker.toUpperCase();
+        if (liveQuotes && liveQuotes[uppercaseTicker]) {
+          livePrice = liveQuotes[uppercaseTicker].price;
+        }
+        const val = Math.abs(h.shares) * livePrice;
+        const valUSD = h.marketId === 'domestic' ? val / usdToInrRate : val;
+        return sum + valUSD;
+      }, 0);
+
+      const simulatedValues = [];
+      const now = new Date();
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const parts = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`.split('-');
+        const year = parts[0]?.slice(2) || '';
+        const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
+        const monthStr = `${monthName} '${year}`;
+        
+        const progress = (12 - i) / 12;
+        const stepInvested = totalInvested * (0.5 + 0.5 * progress);
+        const stepValue = totalValue * (0.45 + 0.55 * progress);
+        const stepProfit = stepValue - stepInvested;
+
+        simulatedValues.push({
+          month: monthStr,
+          value: stepValue * currencyMultiplier,
+          invested: stepInvested * currencyMultiplier,
+          profit: stepProfit * currencyMultiplier
+        });
+      }
+      return simulatedValues;
+    }
+
     return performanceData.map(d => ({
       ...d,
       value: d.value * currencyMultiplier,
       invested: d.invested * currencyMultiplier,
       profit: d.profit * currencyMultiplier
     }));
-  }, [performanceData, currencyMultiplier]);
+  }, [performanceData, currencyMultiplier, isSandboxMode, virtualHoldings, liveQuotes, usdToInrRate]);
 
   if (loading) {
     return <PageLoader title="Security Portfolios" message="Syncing asset allocations and latest transaction valuations..." />;
@@ -1646,7 +1692,7 @@ export default function PortfolioDashboard() {
                         className="flex flex-col gap-1 text-left group/asset cursor-pointer focus:outline-none"
                       >
                         <div className="flex items-center gap-2.5">
-                          <span className={`px-2 py-0.5 text-[9px] font-black rounded border leading-tight ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>
+                          <span className={`px-2 py-0.5 text-[9px] font-black rounded border leading-tight ${asset.colorClass?.bg || 'bg-slate-50'} ${asset.colorClass?.text || 'text-slate-600'} ${asset.colorClass?.border || 'border-slate-200'}`}>
                             {asset.ticker}
                           </span>
                           <span className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover/asset:text-blue-600 dark:group-hover/asset:text-cyan-400 transition-colors">
@@ -1750,7 +1796,7 @@ export default function PortfolioDashboard() {
                     className="flex-1 min-w-0 text-left flex flex-col gap-0.5 focus:outline-none"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span className={`px-1 py-0.2 text-[7px] font-black rounded border leading-tight shrink-0 ${asset.colorClass.bg} ${asset.colorClass.text} ${asset.colorClass.border}`}>
+                      <span className={`px-1 py-0.2 text-[7px] font-black rounded border leading-tight shrink-0 ${asset.colorClass?.bg || 'bg-slate-50'} ${asset.colorClass?.text || 'text-slate-600'} ${asset.colorClass?.border || 'border-slate-200'}`}>
                         {asset.ticker}
                       </span>
                       <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate">
@@ -1803,11 +1849,6 @@ export default function PortfolioDashboard() {
           </div>
         </div>
       </div>
-
-
-        {!isSandboxMode && <UpcomingEventsSection />}
-
-
 
       {!isSandboxMode && (
         <div className="glass-panel p-6 overflow-hidden shadow-lg transition-all duration-300 relative group">
