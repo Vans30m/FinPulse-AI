@@ -88,6 +88,10 @@ model User {
   watchlists             Watchlist[]
   aiSessions             AiSession[]
   holdings               Holding[]
+  virtualBalance        VirtualBalance?
+  virtualHoldings       VirtualHolding[]
+  virtualTransactions   VirtualTransaction[]
+  watchlistItems        WatchlistItem[]
 
   @@index([email])
 }
@@ -184,16 +188,17 @@ model WatchlistItem {
   id          String          @id @default(uuid())
   watchlistId String
   watchlist   Watchlist       @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   symbol      String
   notes       String?
   position    Int             @default(0)
-  favorite    Boolean         @default(false)
-  pinned      Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
   @@unique([watchlistId, symbol])
   @@index([watchlistId])
+  @@index([userId])
   @@index([symbol])
 }
 
@@ -228,4 +233,49 @@ model Holding {
   @@index([userId])
   @@index([ticker])
 }
+
+model VirtualBalance {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Float    @default(100000.0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VirtualHolding {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticker    String
+  name      String
+  shares    Float
+  avgCost   Float
+  marketId  String
+  bookedPL  Float    @default(0.0)
+  sl        Float?
+  tp        Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, ticker])
+  @@index([userId])
+  @@index([ticker])
+}
+
+model VirtualTransaction {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String   // "BUY", "SELL"
+  symbol     String
+  name       String
+  shares     Float
+  price      Float
+  totalValue Float
+  timestamp  DateTime @default(now())
+
+  @@index([userId])
+}
+
 

@@ -223,10 +223,11 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
               <AnimatePresence>
                 {showProfileMenu && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                    initial={{ opacity: 0, scale: 0.85, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    exit={{ opacity: 0, scale: 0.85, y: -10 }}
+                    style={{ transformOrigin: "top right" }}
+                    transition={{ duration: 0.18, ease: "easeInOut" }}
                     className="absolute right-0 mt-2 w-52 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-xl overflow-hidden z-50 p-1.5"
                   >
                     <Link
@@ -237,10 +238,11 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                       <UserCircle className="h-4 w-4" />
                       <span>Profile</span>
                     </Link>
-
+ 
                     <button
                       onClick={() => {
                         setTheme(theme === 'dark' ? 'light' : 'dark');
+                        setShowProfileMenu(false);
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
                     >

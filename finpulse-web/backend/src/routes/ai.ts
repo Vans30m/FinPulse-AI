@@ -148,58 +148,7 @@ router.get('/market-brief', async (req: Request, res: Response) => {
   res.json(result);
 });
 
-// GET /api/ai/market-drivers
-router.get('/market-drivers', async (req: Request, res: Response) => {
-  const cacheKey = 'ai:market-drivers';
-  const cached = getAiCache(cacheKey);
-  if (cached) return res.json(cached);
-  const fallback = {
-    question: "What is driving the market today?",
-    analysis: [
-      "Jobs data miss fuels expectations of a rate cut.",
-      "Yield curve remains flat, suggesting cautious bond market sentiments."
-    ],
-    macroEvent: {
-      title: "July Payrolls Report",
-      impact: "High",
-      description: "Payroll growth slowed more than expected, raising rate cut possibilities."
-    },
-    bullishFactors: [
-      "Expected rate cuts lower cost of borrowing",
-      "Robust retail consumer spending holds steady"
-    ],
-    bearishFactors: [
-      "Geopolitical friction in Middle East channels",
-      "Weakening manufacturing PMI prints"
-    ],
-    watchNext: [
-      "Upcoming FOMC meeting minutes release",
-      "Crude oil inventory announcements"
-    ],
-    summary: "Today's main driver is the soft payrolls report which signals economic cooling but increases rate cut odds.",
-    generatedAt: new Date().toISOString()
-  };
 
-  const prompt = `Generate a JSON object describing the top market drivers of the day matching this schema:
-  {
-    "question": string,
-    "analysis": string[],
-    "macroEvent": {
-      "title": string,
-      "impact": "High" | "Medium" | "Low",
-      "description": string
-    },
-    "bullishFactors": string[],
-    "bearishFactors": string[],
-    "watchNext": string[],
-    "summary": string,
-    "generatedAt": string (ISO timestamp)
-  }`;
-
-  const result = await queryLLM(prompt, fallback);
-  result.generatedAt = new Date().toISOString();
-  res.json(result);
-});
 
 // GET /api/ai/global-market-pulse
 router.get('/global-market-pulse', async (req: Request, res: Response) => {

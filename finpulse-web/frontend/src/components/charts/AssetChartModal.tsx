@@ -25,6 +25,7 @@ import {
 import CandlestickChart from "./CandlestickChart";
 import { ChartHeader } from "./ChartHeader";
 import { getUnifiedAssetDetails, getTechnicals } from "../../services/marketService";
+import { syncVirtualState } from "../../services/portfolioService";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -88,6 +89,20 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const [activePosition, setActivePosition] = useState<any | null>(null);
   const [slInput, setSlInput] = useState("");
   const [tpInput, setTpInput] = useState("");
+
+  const syncStateToDb = async (nextHoldings: any[], nextBalance?: number, nextTxs?: any[]) => {
+    try {
+      const balance = nextBalance ?? parseFloat(localStorage.getItem('finpulse_virtual_balance') || '100000');
+      const transactions = nextTxs ?? JSON.parse(localStorage.getItem('finpulse_virtual_transactions') || '[]');
+      await syncVirtualState({
+        balance,
+        holdings: nextHoldings,
+        transactions
+      });
+    } catch (err) {
+      console.error("Failed to sync virtual state to database:", err);
+    }
+  };
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [closeType, setCloseType] = useState<"full" | "partial">("full");
   const [closeQtyInput, setCloseQtyInput] = useState("");
@@ -151,6 +166,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
           return h;
         });
         localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(updated));
+        syncStateToDb(updated);
         toast.success("Stop Loss / Take Profit updated successfully!");
         loadActivePosition();
         window.dispatchEvent(new Event('storage'));
@@ -218,6 +234,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
       localStorage.setItem('finpulse_virtual_holdings', JSON.stringify(nextHoldings));
       localStorage.setItem('finpulse_virtual_balance', nextBalance.toString());
       localStorage.setItem('finpulse_virtual_transactions', JSON.stringify(nextTxs));
+      syncStateToDb(nextHoldings, nextBalance, nextTxs);
 
       toast.success(`Position closed successfully! Realized P&L: ${isDomestic ? '₹' : '$'}${pnl.toFixed(2)}`);
       setShowCloseConfirm(false);

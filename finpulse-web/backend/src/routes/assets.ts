@@ -1037,4 +1037,3 @@ router.get('/fundamentals-timeseries/valuation/:symbol', async (req: Request, re
 });
 
 export default router;
-

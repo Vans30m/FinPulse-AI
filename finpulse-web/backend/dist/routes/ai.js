@@ -132,57 +132,6 @@ router.get('/market-brief', async (req, res) => {
     result.generatedAt = new Date().toISOString();
     res.json(result);
 });
-// GET /api/ai/market-drivers
-router.get('/market-drivers', async (req, res) => {
-    const cacheKey = 'ai:market-drivers';
-    const cached = getAiCache(cacheKey);
-    if (cached)
-        return res.json(cached);
-    const fallback = {
-        question: "What is driving the market today?",
-        analysis: [
-            "Jobs data miss fuels expectations of a rate cut.",
-            "Yield curve remains flat, suggesting cautious bond market sentiments."
-        ],
-        macroEvent: {
-            title: "July Payrolls Report",
-            impact: "High",
-            description: "Payroll growth slowed more than expected, raising rate cut possibilities."
-        },
-        bullishFactors: [
-            "Expected rate cuts lower cost of borrowing",
-            "Robust retail consumer spending holds steady"
-        ],
-        bearishFactors: [
-            "Geopolitical friction in Middle East channels",
-            "Weakening manufacturing PMI prints"
-        ],
-        watchNext: [
-            "Upcoming FOMC meeting minutes release",
-            "Crude oil inventory announcements"
-        ],
-        summary: "Today's main driver is the soft payrolls report which signals economic cooling but increases rate cut odds.",
-        generatedAt: new Date().toISOString()
-    };
-    const prompt = `Generate a JSON object describing the top market drivers of the day matching this schema:
-  {
-    "question": string,
-    "analysis": string[],
-    "macroEvent": {
-      "title": string,
-      "impact": "High" | "Medium" | "Low",
-      "description": string
-    },
-    "bullishFactors": string[],
-    "bearishFactors": string[],
-    "watchNext": string[],
-    "summary": string,
-    "generatedAt": string (ISO timestamp)
-  }`;
-    const result = await queryLLM(prompt, fallback);
-    result.generatedAt = new Date().toISOString();
-    res.json(result);
-});
 // GET /api/ai/global-market-pulse
 router.get('/global-market-pulse', async (req, res) => {
     const cacheKey = 'ai:global-market-pulse';
@@ -329,6 +278,96 @@ router.get('/sector-momentum', async (req, res) => {
     "generatedAt": string (ISO timestamp)
   }
   IMPORTANT: You MUST include analysis for all 11 major global stock market sectors divided appropriately between 'topRally' (positive score) and 'topDecline' (negative score): Technology, Healthcare, Financials, Consumer Discretionary, Energy, Industrials, Materials, Consumer Defensive, Utilities, Real Estate, Communication Services.`;
+    const result = await queryLLM(prompt, fallback);
+    result.generatedAt = new Date().toISOString();
+    res.json(result);
+});
+// GET /api/ai/portfolio-advisor
+router.get('/portfolio-advisor', async (req, res) => {
+    const cacheKey = 'ai:portfolio-advisor';
+    const cached = getAiCache(cacheKey);
+    if (cached)
+        return res.json(cached);
+    const fallback = {
+        healthScore: 78,
+        healthGrade: "Healthy",
+        diversification: {
+            status: "Moderate",
+            score: 72,
+            sectorExposure: "Technology, Financials, Energy",
+            suggestedAllocation: "Consumer Staples, Utilities",
+            confidence: 85,
+            reason: "Asset mix is balanced but has minor tech concentration."
+        },
+        riskAnalysis: {
+            risk: "Moderate",
+            score: 52,
+            suggestedAction: "Monitor beta weights; maintain cash reserves.",
+            reason: "Standard deviation remains in acceptable historical bounds.",
+            confidence: 80
+        },
+        bestOpportunity: {
+            symbol: "MSFT",
+            company: "Microsoft Corp.",
+            recommendation: "BUY",
+            targetPrice: 460,
+            currentPrice: 415,
+            expectedUpside: 10.8,
+            confidence: 85
+        },
+        portfolioHealth: {
+            outlook: "Bullish",
+            strengths: ["Strong balance sheet exposure", "Good dividend coverage"],
+            weaknesses: ["Slightly high forward P/E multipliers"],
+            risks: ["Macroeconomic interest rate fluctuations"],
+            recommendations: ["Gradually hedge using precious metals or index shorts"]
+        },
+        rebalanceSuggestions: [
+            { action: "Reduce", asset: "Tech Allocation", reason: "Lock in profits after recent run-up" },
+            { action: "Add", asset: "Precious Metals", reason: "Increase portfolio hedges against inflation" }
+        ],
+        generatedAt: new Date().toISOString()
+    };
+    const prompt = `Generate a comprehensive AI portfolio advisor analysis in JSON format matching this schema:
+  {
+    "healthScore": number (0-100),
+    "healthGrade": "Excellent" | "Healthy" | "Caution" | "Danger",
+    "diversification": {
+      "status": "Strong" | "Moderate" | "Weak",
+      "score": number (0-100),
+      "sectorExposure": string (comma-separated list of sectors),
+      "suggestedAllocation": string (comma-separated list of asset groups),
+      "confidence": number (0-100),
+      "reason": string
+    },
+    "riskAnalysis": {
+      "risk": "Low" | "Moderate" | "High",
+      "score": number (0-100),
+      "suggestedAction": string,
+      "reason": string,
+      "confidence": number (0-100)
+    },
+    "bestOpportunity": {
+      "symbol": string,
+      "company": string,
+      "recommendation": "BUY" | "SELL" | "HOLD",
+      "targetPrice": number,
+      "currentPrice": number,
+      "expectedUpside": number,
+      "confidence": number (0-100)
+    },
+    "portfolioHealth": {
+      "outlook": "Bullish" | "Neutral" | "Bearish",
+      "strengths": string[],
+      "weaknesses": string[],
+      "risks": string[],
+      "recommendations": string[]
+    },
+    "rebalanceSuggestions": [
+      { "action": "Reduce" | "Add", "asset": string, "reason": string }
+    ],
+    "generatedAt": string (ISO timestamp)
+  }`;
     const result = await queryLLM(prompt, fallback);
     result.generatedAt = new Date().toISOString();
     res.json(result);
