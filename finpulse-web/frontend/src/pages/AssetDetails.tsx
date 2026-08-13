@@ -241,6 +241,244 @@ const parseDateParts = (dateVal: any) => {
   return { day, month, year };
 };
 
+function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: any }) {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [timeframe, setTimeframe] = useState("1Y");
+
+  const resolvedType = useMemo(() => {
+    if (data?.quote?.quoteType === "MUTUALFUND") return "Mutual Fund";
+    const nameUpper = (data?.profile?.name || "").toUpperCase();
+    const symbolUpper = symbol.toUpperCase();
+    if (symbolUpper.includes("MUTUAL") || nameUpper.includes("MUTUAL")) return "Mutual Fund";
+    return "ETF";
+  }, [data, symbol]);
+
+  return (
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 text-slate-900 dark:text-slate-100 transition-colors">
+      {/* Navigation Row */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+        >
+          <ArrowLeft className="h-4 w-4 stroke-[3]" />
+          <span>Back</span>
+        </button>
+      </div>
+
+      {/* Header Info */}
+      <div className="bg-gradient-to-r from-[#0d122e]/80 via-[#0a0d1d]/85 to-[#080b18]/90 border border-slate-800/80 p-6 rounded-2xl shadow-xl backdrop-blur-md">
+        {meta ? (
+          <ChartHeader
+            name={meta.name}
+            symbol={symbol}
+            exchange={meta.exchange}
+            price={meta.price}
+            change={meta.change}
+            changePercent={meta.changePercent}
+            marketState={meta.marketState}
+            currency={meta.currency}
+          />
+        ) : (
+          <div className="text-slate-400 font-medium animate-pulse">Loading {resolvedType} details...</div>
+        )}
+      </div>
+
+      {/* Main Tab Controller Space */}
+      <div className="w-full space-y-6">
+        <AssetTabs
+          tabs={["overview", "chart", "performance", "news"]}
+          activeTab={activeTab}
+          onChangeTab={setActiveTab}
+        />
+
+        <div className="transition-all duration-300">
+          {activeTab === "chart" && (
+            <CandlestickChart symbol={symbol} timeframe={timeframe} liveQuote={meta} />
+          )}
+
+          {activeTab === "overview" && data && (
+            <div className="space-y-6">
+              <AssetOverview
+                name={meta?.name || symbol}
+                symbol={symbol}
+                price={meta?.price || 0}
+                open={data.statistics?.open}
+                previousClose={data.statistics?.previousClose}
+                dayHigh={data.statistics?.dayHigh}
+                dayLow={data.statistics?.dayLow}
+                fiftyTwoWeekHigh={data.statistics?.fiftyTwoWeekHigh}
+                fiftyTwoWeekLow={data.statistics?.fiftyTwoWeekLow}
+                volume={data.statistics?.volume}
+                averageVolume={data.statistics?.averageVolume}
+                marketCap={data.statistics?.marketCap}
+                currency={meta?.currency || "USD"}
+                exchange={meta?.exchange || "GLOBAL"}
+                assetType={resolvedType}
+              />
+              {data.profile?.description && (
+                <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl">
+                  <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-3 mb-5">
+                    {resolvedType} Description
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed pl-4 border-l-2 border-l-slate-700/40">
+                    {data.profile.description}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "performance" && meta && (
+            <div className="space-y-6">
+              {/* Return Horizon Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+                {[
+                  { label: "1D", key: "1D" },
+                  { label: "1W", key: "1W" },
+                  { label: "3M", key: "3M" },
+                  { label: "6M", key: "6M" },
+                  { label: "YTD", key: "YTD" },
+                  { label: "1Y", key: "1Y" },
+                  { label: "5Y", key: "5Y" },
+                  { label: "All Time", key: "All Time" }
+                ].map((item, idx) => {
+                  const val = meta.performance?.[item.key] ?? data.statistics?.performance?.[item.key];
+                  const hasVal = val !== undefined && val !== null;
+                  const isPositive = val >= 0;
+                  
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${
+                        hasVal 
+                          ? isPositive 
+                            ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]" 
+                            : "bg-rose-500/[0.02] border-rose-950/60 hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
+                          : "bg-slate-950/30 border-slate-900 text-slate-655"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center z-10">
+                        <span className="text-[10px] text-slate-550 uppercase font-black tracking-wider">{item.label}</span>
+                        {hasVal && (
+                          <span className={`text-[10px] font-bold ${isPositive ? "text-emerald-455" : "text-rose-455"}`}>
+                            {isPositive ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </div>
+
+                      {hasVal && (
+                        <div className="w-full bg-slate-950/80 rounded-full h-1 my-1 overflow-hidden border border-slate-900">
+                          <div 
+                            className={`h-full rounded-full ${isPositive ? "bg-emerald-500" : "bg-rose-500"}`}
+                            style={{ width: `${Math.min(100, Math.abs(val) * (item.key === "1D" || item.key === "1W" ? 10 : 1))}%` }}
+                          />
+                        </div>
+                      )}
+
+                      <div className="z-10 mt-auto">
+                        <span className={`text-sm font-mono font-black block tracking-tight ${
+                          hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
+                        }`}>
+                          {hasVal ? `${isPositive ? "+" : ""}${val.toFixed(2)}%` : "N/A"}
+                        </span>
+                      </div>
+
+                      {hasVal && (
+                        <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${
+                          isPositive ? "bg-emerald-400" : "bg-rose-400"
+                        }`} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "news" && data && (
+            (() => {
+              const newsItems = (data.news || []).slice(0, 10);
+              const leftColNews = newsItems.slice(0, 5);
+              const rightColNews = newsItems.slice(5, 10);
+              
+              const renderNewsTable = (items: any[]) => (
+                <div className="overflow-x-auto rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-900 bg-[#0c1022]">
+                        <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-20">Image</th>
+                        <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
+                        <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-16 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-900/60">
+                      {items.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
+                          <td className="px-4 py-3 align-middle w-20">
+                            <img
+                              src={item.thumbnail?.resolutions?.[0]?.url || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=200&q=80"}
+                              alt="News thumbnail"
+                              className="w-16 h-11 rounded-lg object-cover border border-slate-900 shadow-sm shrink-0 bg-slate-950"
+                            />
+                          </td>
+                          <td className="px-4 py-3.5 align-middle space-y-1">
+                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block">
+                              {item.publisher || "General News"}
+                            </span>
+                            <h4 className="text-xs font-bold text-slate-200 line-clamp-1 leading-snug">
+                              {item.title}
+                            </h4>
+                            <p className="text-[10px] text-slate-400 line-clamp-1 font-normal leading-relaxed">
+                              {item.summary || item.title}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3.5 align-middle text-center">
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-all"
+                              title="Read Article"
+                            >
+                              <ExternalLink size={12} className="stroke-[2.5]" />
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                      {items.length === 0 && (
+                        <tr>
+                          <td colSpan={3} className="px-4 py-8 text-center text-xs text-slate-500">
+                            No articles found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              );
+
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Latest Coverage</h4>
+                    {renderNewsTable(leftColNews)}
+                  </div>
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Market Sentiment</h4>
+                    {renderNewsTable(rightColNews)}
+                  </div>
+                </div>
+              );
+            })()
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AssetDetails() {
   const { symbol = "AAPL" } = useParams();
   const navigate = useNavigate();
@@ -556,6 +794,24 @@ export default function AssetDetails() {
     const label = score >= 65 ? "Bullish" : score <= 35 ? "Bearish" : "Neutral";
     return { score: Math.min(Math.max(score, 0), 100), label, reasons };
   }, [data]);
+
+  const isEtfOrMutual = useMemo(() => {
+    if (data?.quote?.quoteType === "ETF" || data?.quote?.quoteType === "MUTUALFUND") return true;
+    const nameUpper = (data?.profile?.name || "").toUpperCase();
+    const symbolUpper = symbol.toUpperCase();
+    return (
+      symbolUpper.includes("ETF") ||
+      nameUpper.includes("ETF") ||
+      nameUpper.includes("EXCHANGE TRADED FUND") ||
+      symbolUpper.includes("MUTUAL") ||
+      nameUpper.includes("MUTUAL") ||
+      nameUpper.includes("MUTUAL FUND")
+    );
+  }, [data, symbol]);
+
+  if (data && isEtfOrMutual) {
+    return <EtfDetails symbol={symbol} data={data} meta={meta} />;
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 text-slate-900 dark:text-slate-100 transition-colors">

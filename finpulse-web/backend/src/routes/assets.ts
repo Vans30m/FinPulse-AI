@@ -161,6 +161,7 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
         exchangeName: quoteData?.fullExchangeName || quoteData?.exchange,
         currency: quoteData?.currency,
         marketState: quoteData?.marketState,
+        quoteType: quoteData?.quoteType,
         profile: summaryData?.summaryProfile,
         keyStats: summaryData?.defaultKeyStatistics,
         financials: summaryData?.financialData,
@@ -173,107 +174,205 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
     console.warn('Failed to retrieve Yahoo Finance context, falling back to pure AI generation:', err);
   }
 
-  const priceVal = yahooContext?.price || (isIndian ? 1250.00 : 180.50);
-  const changeVal = yahooContext?.change || 2.15;
+  if (!yahooContext) {
+    const emptyFallback = {
+      profile: {
+        name: null,
+        sector: null,
+        industry: null,
+        country: null,
+        employees: null,
+        ceo: null,
+        website: null,
+        description: null
+      },
+      statistics: {
+        price: null,
+        change: null,
+        changePercent: null,
+        marketCap: null,
+        enterpriseValue: null,
+        sharesOutstanding: null,
+        pe: null,
+        forwardPe: null,
+        peg: null,
+        beta: null,
+        dividendYield: null,
+        fiftyDayAverage: null,
+        twoHundredDayAverage: null,
+        open: null,
+        dayHigh: null,
+        dayLow: null,
+        previousClose: null,
+        fiftyTwoWeekHigh: null,
+        fiftyTwoWeekLow: null,
+        volume: null,
+        averageVolume: null,
+        priceToSales: null,
+        priceToBook: null,
+        enterpriseToRevenue: null,
+        enterpriseToEbitda: null,
+        performance: {
+          "1D": null,
+          "1W": null,
+          "3M": null,
+          "6M": null,
+          "YTD": null,
+          "1Y": null,
+          "5Y": null,
+          "All Time": null
+        }
+      },
+      financialHealth: {
+        profitMargin: null,
+        operatingMargin: null,
+        cash: null,
+        debt: null,
+        revenue: null,
+        ebitda: null,
+        operatingCashflow: null,
+        freeCashflow: null
+      },
+      analysts: {
+        recommendationMean: null,
+        recommendationKey: null,
+        numberOfAnalysts: null,
+        targetLow: null,
+        targetMedian: null,
+        targetMeanPrice: null,
+        targetHigh: null
+      },
+      ownership: {
+        institutionOwnership: null,
+        insiderOwnership: null,
+        institutionsFloatPercentHeld: null,
+        institutionsCount: null
+      },
+      sentiment: {
+        score: null,
+        label: null,
+        reasons: []
+      },
+      quote: {
+        exchangeName: null,
+        marketState: null,
+        currency: null,
+        quoteType: null
+      },
+      events: {
+        earnings: {
+          earningsDate: [],
+          earningsAverage: null,
+          earningsLow: null,
+          earningsHigh: null,
+          revenueAverage: null,
+          revenueLow: null,
+          revenueHigh: null
+        },
+        exDividendDate: null
+      }
+    };
+    return res.json(emptyFallback);
+  }
+
+  const priceVal = yahooContext?.price || null;
+  const changeVal = yahooContext?.change || null;
 
   const fallback = {
     profile: {
-      name: yahooContext?.profile?.name || (isIndian ? `${symbol.replace(/\.(NS|BO)$/i, '')} India Ltd.` : `${symbol} Corporation`),
-      sector: yahooContext?.profile?.sector || (isIndian ? "Financials" : "Technology"),
-      industry: yahooContext?.profile?.industry || (isIndian ? "Financial Services" : "Information Technology Services"),
-      country: yahooContext?.profile?.country || (isIndian ? "India" : "United States"),
-      employees: yahooContext?.profile?.fullTimeEmployees || 12000,
-      ceo: yahooContext?.profile?.companyOfficers?.[0]?.name || (isIndian ? "Amit Sharma" : "John Doe"),
-      website: yahooContext?.profile?.website || (isIndian ? "https://www.nseindia.com" : "https://www.google.com"),
-      description: yahooContext?.profile?.longBusinessSummary || `${symbol} is a leading global firm offering innovative solutions, cutting-edge products, and enterprise services.`
+      name: yahooContext?.profile?.name || null,
+      sector: yahooContext?.profile?.sector || null,
+      industry: yahooContext?.profile?.industry || null,
+      country: yahooContext?.profile?.country || null,
+      employees: yahooContext?.profile?.fullTimeEmployees || null,
+      ceo: yahooContext?.profile?.companyOfficers?.[0]?.name || null,
+      website: yahooContext?.profile?.website || null,
+      description: yahooContext?.profile?.longBusinessSummary || null
     },
     statistics: {
       price: priceVal,
       change: changeVal,
-      changePercent: yahooContext?.changePercent || 1.20,
-      marketCap: yahooContext?.marketCap || 1500000000000,
-      enterpriseValue: yahooContext?.keyStats?.enterpriseValue || 1520000000000,
-      sharesOutstanding: yahooContext?.keyStats?.sharesOutstanding || 8500000000,
-      pe: yahooContext?.keyStats?.trailingPE || 28.5,
-      forwardPe: yahooContext?.keyStats?.forwardPE || 24.2,
-      peg: yahooContext?.keyStats?.pegRatio || 1.8,
-      beta: yahooContext?.keyStats?.beta || 1.15,
-      dividendYield: yahooContext?.keyStats?.dividendYield || 0.0085,
-      fiftyDayAverage: yahooContext?.keyStats?.fiftyDayAverage || 175.40,
-      twoHundredDayAverage: yahooContext?.keyStats?.twoHundredDayAverage || 168.20,
-      open: yahooContext?.open || (priceVal * 0.995),
-      dayHigh: yahooContext?.dayHigh || (priceVal * 1.015),
-      dayLow: yahooContext?.dayLow || (priceVal * 0.985),
-      previousClose: yahooContext?.previousClose || (priceVal - changeVal),
-      fiftyTwoWeekHigh: yahooContext?.fiftyTwoWeekHigh || (priceVal * 1.35),
-      fiftyTwoWeekLow: yahooContext?.fiftyTwoWeekLow || (priceVal * 0.72),
-      volume: yahooContext?.volume || 1450000,
-      averageVolume: yahooContext?.averageVolume || 1200000,
-      priceToSales: yahooContext?.keyStats?.priceToSales || 4.2,
-      priceToBook: yahooContext?.keyStats?.priceToBook || 2.8,
-      enterpriseToRevenue: yahooContext?.keyStats?.enterpriseToRevenue || 3.1,
-      enterpriseToEbitda: yahooContext?.keyStats?.enterpriseToEbitda || 11.2,
+      changePercent: yahooContext?.changePercent || null,
+      marketCap: yahooContext?.marketCap || null,
+      enterpriseValue: yahooContext?.keyStats?.enterpriseValue || null,
+      sharesOutstanding: yahooContext?.keyStats?.sharesOutstanding || null,
+      pe: yahooContext?.keyStats?.trailingPE || null,
+      forwardPe: yahooContext?.keyStats?.forwardPE || null,
+      peg: yahooContext?.keyStats?.pegRatio || null,
+      beta: yahooContext?.keyStats?.beta || null,
+      dividendYield: yahooContext?.keyStats?.dividendYield || null,
+      fiftyDayAverage: yahooContext?.keyStats?.fiftyDayAverage || null,
+      twoHundredDayAverage: yahooContext?.keyStats?.twoHundredDayAverage || null,
+      open: yahooContext?.open || null,
+      dayHigh: yahooContext?.dayHigh || null,
+      dayLow: yahooContext?.dayLow || null,
+      previousClose: yahooContext?.previousClose || null,
+      fiftyTwoWeekHigh: yahooContext?.fiftyTwoWeekHigh || null,
+      fiftyTwoWeekLow: yahooContext?.fiftyTwoWeekLow || null,
+      volume: yahooContext?.volume || null,
+      averageVolume: yahooContext?.averageVolume || null,
+      priceToSales: yahooContext?.keyStats?.priceToSales || null,
+      priceToBook: yahooContext?.keyStats?.priceToBook || null,
+      enterpriseToRevenue: yahooContext?.keyStats?.enterpriseToRevenue || null,
+      enterpriseToEbitda: yahooContext?.keyStats?.enterpriseToEbitda || null,
       performance: {
-        "1D": yahooContext?.changePercent || 1.20,
-        "1W": -0.85,
-        "3M": 10.50,
-        "6M": 16.80,
-        "YTD": 12.30,
-        "1Y": 25.40,
-        "5Y": 145.20,
-        "All Time": 380.50
+        "1D": yahooContext?.changePercent || null,
+        "1W": null,
+        "3M": null,
+        "6M": null,
+        "YTD": null,
+        "1Y": null,
+        "5Y": null,
+        "All Time": null
       }
     },
     financialHealth: {
-      profitMargin: yahooContext?.financials?.profitMargins || 0.224,
-      operatingMargin: yahooContext?.financials?.operatingMargins || 0.268,
-      cash: yahooContext?.financials?.totalCash || 45000000000,
-      debt: yahooContext?.financials?.totalDebt || 80000000000,
-      revenue: yahooContext?.financials?.totalRevenue || 250000000000,
-      ebitda: yahooContext?.financials?.ebitda || 75000000000,
-      operatingCashflow: yahooContext?.financials?.operatingCashflow || 50000000000,
-      freeCashflow: yahooContext?.financials?.freeCashflow || 40000000000
+      profitMargin: yahooContext?.financials?.profitMargins || null,
+      operatingMargin: yahooContext?.financials?.operatingMargins || null,
+      cash: yahooContext?.financials?.totalCash || null,
+      debt: yahooContext?.financials?.totalDebt || null,
+      revenue: yahooContext?.financials?.totalRevenue || null,
+      ebitda: yahooContext?.financials?.ebitda || null,
+      operatingCashflow: yahooContext?.financials?.operatingCashflow || null,
+      freeCashflow: yahooContext?.financials?.freeCashflow || null
     },
     analysts: {
-      recommendationMean: yahooContext?.financials?.recommendationMean || 2.0,
-      recommendationKey: yahooContext?.financials?.recommendationKey || "Buy",
-      numberOfAnalysts: yahooContext?.financials?.numberOfAnalysts || 35,
-      targetLow: yahooContext?.financials?.targetLowPrice || 160.00,
-      targetMedian: yahooContext?.financials?.targetMedianPrice || 195.00,
-      targetMeanPrice: yahooContext?.financials?.targetMeanPrice || 193.50,
-      targetHigh: yahooContext?.financials?.targetHighPrice || 220.00
+      recommendationMean: yahooContext?.financials?.recommendationMean || null,
+      recommendationKey: yahooContext?.financials?.recommendationKey || null,
+      numberOfAnalysts: yahooContext?.financials?.numberOfAnalysts || null,
+      targetLow: yahooContext?.financials?.targetLowPrice || null,
+      targetMedian: yahooContext?.financials?.targetMedianPrice || null,
+      targetMeanPrice: yahooContext?.financials?.targetMeanPrice || null,
+      targetHigh: yahooContext?.financials?.targetHighPrice || null
     },
     ownership: {
-      institutionOwnership: yahooContext?.majorHolders?.institutionsPercentHeld || 0.455,
-      insiderOwnership: yahooContext?.majorHolders?.insidersPercentHeld || 0.125,
-      institutionsFloatPercentHeld: yahooContext?.majorHolders?.institutionsFloatPercentHeld || 0.482,
-      institutionsCount: yahooContext?.majorHolders?.institutionsCount ?? (isIndian ? 450 : 2800),
+      institutionOwnership: yahooContext?.majorHolders?.institutionsPercentHeld || null,
+      insiderOwnership: yahooContext?.majorHolders?.insidersPercentHeld || null,
+      institutionsFloatPercentHeld: yahooContext?.majorHolders?.institutionsFloatPercentHeld || null,
+      institutionsCount: yahooContext?.majorHolders?.institutionsCount ?? null,
     },
     sentiment: {
-      score: 75,
-      label: "Bullish",
-      reasons: [
-        "Strong market positioning and industry growth tailwinds",
-        "Robust financial profile with consistent margin execution",
-        "Resilient operational updates driving broker upgrades"
-      ]
+      score: null,
+      label: null,
+      reasons: []
     },
     quote: {
-      exchangeName: yahooContext?.exchangeName || (isIndian ? "NSE" : "NASDAQ"),
-      marketState: yahooContext?.marketState || "OPEN",
-      currency: yahooContext?.currency || (isIndian ? "INR" : "USD")
+      exchangeName: yahooContext?.exchangeName || null,
+      marketState: yahooContext?.marketState || null,
+      currency: yahooContext?.currency || null,
+      quoteType: yahooContext?.quoteType || null
     },
     events: {
       earnings: {
-        earningsDate: yahooContext?.calendarEvents?.earnings?.earningsDate || [new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()],
-        earningsAverage: yahooContext?.calendarEvents?.earnings?.earningsAverage || 1.25,
-        earningsLow: yahooContext?.calendarEvents?.earnings?.earningsLow || 1.15,
-        earningsHigh: yahooContext?.calendarEvents?.earnings?.earningsHigh || 1.35,
-        revenueAverage: yahooContext?.calendarEvents?.earnings?.revenueAverage || 65000000000,
-        revenueLow: yahooContext?.calendarEvents?.earnings?.revenueLow || 63000000000,
-        revenueHigh: yahooContext?.calendarEvents?.earnings?.revenueHigh || 67000000000
+        earningsDate: yahooContext?.calendarEvents?.earnings?.earningsDate || [],
+        earningsAverage: yahooContext?.calendarEvents?.earnings?.earningsAverage || null,
+        earningsLow: yahooContext?.calendarEvents?.earnings?.earningsLow || null,
+        earningsHigh: yahooContext?.calendarEvents?.earnings?.earningsHigh || null,
+        revenueAverage: yahooContext?.calendarEvents?.earnings?.revenueAverage || null,
+        revenueLow: yahooContext?.calendarEvents?.earnings?.revenueLow || null,
+        revenueHigh: yahooContext?.calendarEvents?.earnings?.revenueHigh || null
       },
-      exDividendDate: yahooContext?.calendarEvents?.exDividendDate || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
+      exDividendDate: yahooContext?.calendarEvents?.exDividendDate || null
     }
   };
 
@@ -501,6 +600,9 @@ router.get('/asset-details/:symbol', async (req: Request, res: Response) => {
   } catch (err) {
     console.warn("Failed to fetch company news in asset details:", err);
   }
+
+  if (!result.quote) result.quote = {};
+  result.quote.quoteType = yahooContext?.quoteType || null;
 
   result.news = companyNews;
   res.json(result);
@@ -759,24 +861,15 @@ router.get('/charts/:symbol', async (req: Request, res: Response) => {
       }
     }
 
-    if (!chartResult || !chartResult.quotes || chartResult.quotes.length < 10) {
-      const fallbackPrice = 100;
-      chartResult = buildFallbackChartData(symbol, range, interval, fallbackPrice);
-      console.warn(`Using built-in chart fallback for ${symbol} because Yahoo Finance returned insufficient data.`, {
-        range,
-        interval,
-        quoteCount: chartResult?.quotes?.length ?? 0,
-      });
+    if (!chartResult || !chartResult.quotes || chartResult.quotes.length === 0) {
+      return res.json({ meta: {}, quotes: [] });
     }
 
     await setCachedData(cacheKey, chartResult, 300); // Cache for 5 minutes
     res.json(chartResult);
   } catch (err: any) {
-    const fallbackChart = buildFallbackChartData(symbol, range, interval, 100);
     console.error(`Both direct fetch and library fallback failed for chart ${symbol}:`, err.message);
-    console.warn(`Returning synthetic chart fallback for ${symbol} instead of a 502 response.`);
-    await setCachedData(cacheKey, fallbackChart, 300);
-    res.json(fallbackChart);
+    res.json({ meta: {}, quotes: [] });
   }
 });
 

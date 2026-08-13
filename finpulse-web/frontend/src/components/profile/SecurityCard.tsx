@@ -14,8 +14,6 @@ interface SecurityCardProps {
   onToggle2FA?: () => void;
   onDeleteAccount?: () => void;
   onRevokeSession?: (id: string) => void;
-  onToggleSubscription?: () => void;
-  newsletterSubscribed?: boolean;
   twoFactorEnabled?: boolean;
   sessions?: SessionData[];
   currentSessionId?: string;
@@ -27,8 +25,6 @@ export default function SecurityCard({
   onToggle2FA,
   onDeleteAccount,
   onRevokeSession,
-  onToggleSubscription,
-  newsletterSubscribed = false,
   twoFactorEnabled = false,
   sessions = [],
   currentSessionId = "",
@@ -62,27 +58,6 @@ export default function SecurityCard({
               <span>Change Account Password</span>
             </div>
             <span className="text-[9px] lowercase text-slate-400 dark:text-slate-500 font-bold">manage</span>
-          </button>
-
-          <button
-            onClick={onToggleSubscription}
-            className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 text-left text-xs font-black uppercase ${
-              newsletterSubscribed
-                ? "border-amber-500/20 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                : "border-emerald-500/20 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Mail className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
-              <span>{newsletterSubscribed ? "Unsubscribe Newsletters" : "Subscribe Newsletters"}</span>
-            </div>
-            <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase border ${
-              newsletterSubscribed 
-                ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400" 
-                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-            }`}>
-              {newsletterSubscribed ? "active" : "inactive"}
-            </span>
           </button>
 
           <button
