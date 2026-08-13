@@ -15,7 +15,6 @@ export interface UserPreferences {
   currency: string;
   region: string;
   defaultDashboard: string;
-  newsletterSubscribed?: boolean;
   marketingEmails?: boolean;
 }
 
@@ -73,7 +72,6 @@ export interface WatchlistSummaryData {
   crypto: number;
   forex: number;
   commodities: number;
-  averageGainLoss: number;
 }
 
 export const profileService = {

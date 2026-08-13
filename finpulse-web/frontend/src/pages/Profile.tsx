@@ -24,7 +24,8 @@ import {
   Unlock,
   LogOut,
   FileText,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ArrowRight
 } from "lucide-react";
 import { useAppData } from "../context/AppDataContext";
 import { useTheme, type ThemeMode } from "../context/ThemeContext";
@@ -453,6 +454,7 @@ export default function Profile() {
       window.URL.revokeObjectURL(url);
       toast.success(`Data exported to ${format.toUpperCase()} successfully!`);
     } catch (err) {
+      console.error("Export failed:", err);
       toast.error("Failed to export data");
     }
   };
@@ -556,7 +558,7 @@ export default function Profile() {
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Real-time asset breakdowns currently saved to your watchlists.</p>
             </div>
 
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
               <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Total Lists</span>
                 <p className="text-sm sm:text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{watchlistSummary?.totalWatchlists || 0}</p>
@@ -569,12 +571,6 @@ export default function Profile() {
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Stocks / ETFs</span>
                 <p className="text-sm sm:text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{(watchlistSummary?.stocks || 0) + (watchlistSummary?.etfs || 0)}</p>
               </div>
-              <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Avg Change</span>
-                <p className={`text-sm sm:text-lg font-black mt-1 ${watchlistSummary && watchlistSummary.averageGainLoss >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                  {watchlistSummary && watchlistSummary.averageGainLoss >= 0 ? '+' : ''}{watchlistSummary?.averageGainLoss.toFixed(2)}%
-                </p>
-              </div>
             </div>
           </div>
 
@@ -586,13 +582,6 @@ export default function Profile() {
             onRevokeSession={handleRevokeSession}
             sessions={sessions}
             currentSessionId={currentSessionId}
-            newsletterSubscribed={marketingEmails}
-            onToggleSubscription={() => {
-              const nextVal = !marketingEmails;
-              setMarketingEmails(nextVal);
-              handleUpdatePreferences({ marketingEmails: nextVal });
-              toast.success(nextVal ? "Subscribed to newsletters successfully!" : "Unsubscribed from newsletters successfully!");
-            }}
           />
         </div>
 
@@ -648,7 +637,7 @@ export default function Profile() {
 
 
           {/* Data Export Options Section */}
-          <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-lg space-y-4">
+          <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-lg space-y-5">
             <div>
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <FileDown className="h-5 w-5 text-indigo-500" /> Personal Data Export Hub
@@ -656,27 +645,63 @@ export default function Profile() {
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Download a full breakdown archive of alerts, portfolios, and transaction records.</p>
             </div>
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* JSON Card */}
               <button
                 onClick={() => handleExportData('json')}
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-350 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5 text-left text-xs font-black uppercase text-slate-800 dark:text-slate-200 transition-all duration-300"
+                className="group flex flex-col justify-between p-5 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-indigo-500/30 dark:hover:border-indigo-500/20 bg-slate-50/50 dark:bg-white/[0.01] hover:bg-gradient-to-br hover:from-indigo-500/[0.03] hover:to-transparent text-left transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/[0.02] cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <FileText className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
-                  <span>JSON Archive</span>
+                <div className="space-y-3.5 w-full">
+                  <div className="flex justify-between items-start">
+                    <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-500 dark:text-indigo-400">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 bg-indigo-500/10 px-2.5 py-0.5 rounded-full">
+                      JSON
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide">
+                      JSON Data Archive
+                    </h4>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
+                      Complete database backup including active watchlists, portfolio balances, active price alerts, and configuration preferences.
+                    </p>
+                  </div>
                 </div>
-                <span className="text-[9px] lowercase text-blue-600 dark:text-cyan-400 font-bold">Download Data</span>
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-500 dark:text-indigo-400 mt-4 pt-3 border-t border-slate-250/20 dark:border-white/5 w-full group-hover:text-indigo-600 dark:group-hover:text-cyan-400 transition-colors">
+                  <span>Download Data</span>
+                  <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                </div>
               </button>
-              
+
+              {/* CSV Card */}
               <button
                 onClick={() => handleExportData('csv')}
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-350 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5 text-left text-xs font-black uppercase text-slate-800 dark:text-slate-200 transition-all duration-300"
+                className="group flex flex-col justify-between p-5 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-emerald-500/30 dark:hover:border-emerald-500/20 bg-slate-50/50 dark:bg-white/[0.01] hover:bg-gradient-to-br hover:from-emerald-500/[0.03] hover:to-transparent text-left transition-all duration-300 hover:shadow-md hover:shadow-emerald-500/[0.02] cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <FileSpreadsheet className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
-                  <span>CSV Spreadsheet</span>
+                <div className="space-y-3.5 w-full">
+                  <div className="flex justify-between items-start">
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400">
+                      <FileSpreadsheet className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
+                      CSV
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide">
+                      CSV Spreadsheet
+                    </h4>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
+                      Formatted table summary optimized for direct importing into Microsoft Excel, Google Sheets, or custom charting apps.
+                    </p>
+                  </div>
                 </div>
-                <span className="text-[9px] lowercase text-blue-600 dark:text-cyan-400 font-bold">Download Sheets</span>
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 dark:text-emerald-400 mt-4 pt-3 border-t border-slate-250/20 dark:border-white/5 w-full group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  <span>Download Sheets</span>
+                  <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                </div>
               </button>
             </div>
           </div>

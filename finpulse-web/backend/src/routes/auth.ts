@@ -920,4 +920,91 @@ router.post('/update-profile', async (req: any, res: any) => {
   }
 });
 
+// GET /profile-stats/:userId
+router.get('/profile-stats/:userId', async (req: any, res: any) => {
+  try {
+    const userId = req.params.userId;
+
+    const holdings = await prisma.holding.findMany({
+      where: { userId }
+    });
+
+    const alertsCount = await prisma.alert.count({
+      where: { userId, enabled: true }
+    });
+
+    const holdingsCount = holdings.length;
+
+    if (holdings.length === 0) {
+      return res.json({
+        portfolioValue: 0.00,
+        todayProfitLoss: 0.00,
+        todayProfitLossPercent: 0.00,
+        totalReturn: 0.00,
+        totalReturnPercent: 0.00,
+        alertsCount,
+        holdingsCount: 0
+      });
+    }
+
+    const symbols = holdings.map(h => h.ticker.toUpperCase());
+    const quotes: Record<string, { price: number; changePercent: number }> = {};
+    
+    try {
+      const yahooFinance = new (await import('yahoo-finance2')).default();
+      const results = await yahooFinance.quote(symbols);
+      const quotesArray = Array.isArray(results) ? results : [results];
+      for (const q of quotesArray) {
+        if (q.symbol) {
+          quotes[q.symbol.toUpperCase()] = {
+            price: q.regularMarketPrice ?? 0,
+            changePercent: q.regularMarketChangePercent ?? 0
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("Error fetching quotes in profile stats:", err);
+    }
+
+    let portfolioValue = 0;
+    let totalCost = 0;
+    let totalReturn = 0;
+    let todayProfitLoss = 0;
+
+    for (const h of holdings) {
+      const symbolUpper = h.ticker.toUpperCase();
+      const quote = quotes[symbolUpper];
+      const currentPrice = quote && quote.price > 0 ? quote.price : h.avgCost;
+      const changePercent = quote ? quote.changePercent : 0;
+
+      const marketValue = h.shares * currentPrice;
+      const cost = h.shares * h.avgCost;
+      const profitLoss = marketValue - cost;
+      const dailyGain = marketValue * (changePercent / 100);
+
+      portfolioValue += marketValue;
+      totalCost += cost;
+      totalReturn += profitLoss;
+      todayProfitLoss += dailyGain;
+    }
+
+    const totalReturnPercent = totalCost > 0 ? (totalReturn / totalCost) * 100 : 0;
+    const previousDayValue = portfolioValue - todayProfitLoss;
+    const todayProfitLossPercent = previousDayValue > 0 ? (todayProfitLoss / previousDayValue) * 100 : 0;
+
+    res.json({
+      portfolioValue: Math.round(portfolioValue * 100) / 100,
+      todayProfitLoss: Math.round(todayProfitLoss * 100) / 100,
+      todayProfitLossPercent: Math.round(todayProfitLossPercent * 100) / 100,
+      totalReturn: Math.round(totalReturn * 100) / 100,
+      totalReturnPercent: Math.round(totalReturnPercent * 100) / 100,
+      alertsCount,
+      holdingsCount
+    });
+  } catch (error: any) {
+    console.error('Error fetching profile stats:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 export default router;
