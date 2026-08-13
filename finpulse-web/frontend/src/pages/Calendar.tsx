@@ -56,9 +56,6 @@ export default function CalendarPage() {
         "
       >
         <div className="flex items-center gap-4">
-          <div className="p-4 rounded-2xl bg-white/10">
-            <Calendar className="h-10 w-10" />
-          </div>
           <div>
             <h1 className="text-4xl font-bold">
               Economic Calendar
