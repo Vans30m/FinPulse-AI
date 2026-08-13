@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, Sparkles, FileText, Check, ChevronDown, MessageSquare, X,
+  Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, FileText, Check, ChevronDown, MessageSquare, X,
   Presentation, FileCheck, Leaf, Award, Search, BookOpen, HeartPulse, Calendar, Newspaper, ExternalLink, Activity
 } from 'lucide-react';
 import StockSearch from '../components/ui/StockSearch';
@@ -1358,41 +1358,9 @@ export default function StockScreener() {
     }, 2000);
   };
 
-  // Scroll Spy state and listener
+  // Scroll Spy state and listener removed (activeTab updates only on clicking tabs)
   useEffect(() => {
-    if (!selectedStock) return;
-
-    const handleScroll = () => {
-      if (isScrollingRef.current) return;
-      // Check if we are at the bottom of the page
-      const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50;
-
-      const sections = [
-        { id: 'screener-overview', tab: 'overview' },
-        { id: 'screener-market-data', tab: 'market-data' },
-        { id: 'screener-valuation', tab: 'valuation' },
-        { id: 'screener-fundamentals', tab: 'fundamentals' },
-        { id: 'screener-shareholding', tab: 'shareholding' },
-        { id: 'screener-analysis', tab: 'analysis' }
-      ];
-
-      // Otherwise, find the section closest to the top of the viewport
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const el = document.getElementById(sections[i].id);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 150) {
-            setActiveTab(sections[i].tab as any);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    // Initial check
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Scroll spy disabled as requested
   }, [selectedStock]);
 
   return (
@@ -1539,7 +1507,6 @@ export default function StockScreener() {
                 { id: 'screener-valuation', label: 'Valuation', tab: 'valuation' },
                 { id: 'screener-fundamentals', label: 'Fundamentals', tab: 'fundamentals' },
                 { id: 'screener-shareholding', label: 'Shareholding Pattern', tab: 'shareholding' },
-                { id: 'screener-analysis', label: 'AI Advisor', tab: 'analysis' },
               ].map((tab) => (
                 <button
                   key={tab.tab}
@@ -1566,7 +1533,6 @@ export default function StockScreener() {
                     { id: 'screener-valuation', label: 'Valuation', tab: 'valuation' },
                     { id: 'screener-fundamentals', label: 'Fundamentals', tab: 'fundamentals' },
                     { id: 'screener-shareholding', label: 'Shareholding Pattern', tab: 'shareholding' },
-                    { id: 'screener-analysis', label: 'AI Advisor', tab: 'analysis' },
                   ].map((tab) => (
                     <button
                       key={tab.tab}
@@ -1769,11 +1735,6 @@ export default function StockScreener() {
                                     {item.title}
                                   </h5>
                                   <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-blue-600 dark:text-cyan-400 mt-0.5" />
-                                </div>
-                                <div className="flex items-center gap-2 mt-2 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                                  <span>{item.publisher || 'Unknown Publisher'}</span>
-                                  <span>•</span>
-                                  <span>{new Date(item.providerPublishTime * 1000).toLocaleDateString(undefined, { dateStyle: 'short' })}</span>
                                 </div>
                               </a>
                             ))
@@ -2074,73 +2035,7 @@ export default function StockScreener() {
                 )}
               </div>        </div>
 
-              {/* 5. AI Advisor Section */}
-              <div id="screener-analysis" className="scroll-mt-28 border-b border-slate-200/60 dark:border-white/10 pb-8 space-y-6 relative overflow-hidden text-slate-800 dark:text-white">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
 
-                <div className="flex items-center gap-4 border-b border-slate-150 dark:border-white/10 pb-4">
-                  <div className="relative h-16 w-16 shrink-0 flex items-center justify-center">
-                    <svg className="absolute transform -rotate-90 w-16 h-16">
-                      <circle cx="32" cy="32" r="28" className="stroke-slate-100 dark:stroke-white/[0.06]" strokeWidth="4" fill="transparent" />
-                      <circle cx="32" cy="32" r="28" stroke="url(#healthGrad)" strokeWidth="4" fill="transparent" strokeDasharray={176} strokeDashoffset={176 - (176 * healthScore) / 100} strokeLinecap="round" />
-                      <defs>
-                        <linearGradient id="healthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#22c55e" />
-                          <stop offset="100%" stopColor="#06b6d4" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <span className="font-mono text-base font-black text-slate-900 dark:text-white">{healthScore}</span>
-                  </div>
-
-                  <div>
-                    <span className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-widest flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 animate-pulse" /> AI Health Index
-                    </span>
-                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">
-                      {healthScore >= 75 ? 'Excellent Health' : healthScore >= 60 ? 'Strong Performance' : 'Stable Outlook'}
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Key Strengths
-                    </h4>
-                    <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-350 font-medium">
-                      <li className="flex items-start gap-2">
-                        <span className="text-emerald-500 dark:text-emerald-400 font-black">✓</span>
-                        <span>Healthy dividend payout ratio maintained.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-emerald-500 dark:text-emerald-400 font-black">✓</span>
-                        <span>High capital efficiency (ROCE of {selectedStock.roce.toFixed(2)}%).</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-emerald-500 dark:text-emerald-400 font-black">✓</span>
-                        <span>Consistent historical growth trajectory.</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> Risk Factors
-                    </h4>
-                    <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-305 font-medium">
-                      <li className="flex items-start gap-2">
-                        <span className="text-rose-500 dark:text-rose-400 font-black">✗</span>
-                        <span>Trading high relative to book value ({(selectedStock.price / selectedStock.bookValue).toFixed(1)}x).</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-rose-500 dark:text-rose-400 font-black">✗</span>
-                        <span>P/E ratio of {selectedStock.peRatio.toFixed(1)}x is premium.</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
 
             </div> {/* Closes Right main content container */}
           </div> {/* Closes Main content wrapper with sticky left sidebar */}

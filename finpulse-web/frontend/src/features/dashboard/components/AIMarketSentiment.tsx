@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Brain, RotateCcw, AlertCircle, Sparkles, Terminal, TrendingDown, Bell } from "lucide-react";
+import { Brain, RotateCcw, AlertCircle, Terminal, TrendingDown, Bell } from "lucide-react";
 import { getAIMarketBrief, type AIMarketBriefData } from "../../../services/marketService";
 import API_BASE_URL from "../../../config/api";
 
@@ -177,13 +177,9 @@ export default function AIMarketSentiment() {
       {/* Header */}
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 border-b border-slate-100 dark:border-white/5 pb-4 sm:pb-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 dark:from-blue-500/20 dark:to-cyan-400/20 text-white dark:text-cyan-400 shadow-lg shadow-blue-500/20 dark:shadow-none">
-            <Brain className="h-5.5 w-5.5 sm:h-6 sm:w-6 animate-pulse" />
-          </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
               AI Market Brief
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
             </h2>
             <p className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400">
               Real-time AI-powered global market intelligence
@@ -222,7 +218,7 @@ export default function AIMarketSentiment() {
                 ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-450 dark:border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
                 : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-450 dark:border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
             }`}>
-              {brief.marketMood === "Bullish" ? "📈 BUY" : brief.marketMood === "Bearish" ? "📉 SELL" : "⚖️ HOLD"}
+              {brief.marketMood === "Bullish" ? "BUY" : brief.marketMood === "Bearish" ? "SELL" : "HOLD"}
             </div>
           </div>
 
@@ -248,7 +244,6 @@ export default function AIMarketSentiment() {
         {/* High-Level AI Summary Panel (7 cols on lg) */}
         <div className="lg:col-span-7 rounded-3xl border border-blue-500/20 dark:border-white/10 bg-gradient-to-tr from-blue-500/[0.03] to-cyan-500/[0.03] dark:from-white/[0.01] dark:to-white/[0.02] p-3.5 sm:p-6 shadow-md flex flex-col justify-center">
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-blue-600 dark:text-cyan-400">
-            <Terminal className="h-4 w-4 shrink-0" />
             <span>Executive Analyst Summary</span>
           </div>
           <p className="mt-2.5 sm:mt-4 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed font-semibold">
@@ -282,11 +277,9 @@ export default function AIMarketSentiment() {
         {/* Column 1: Strong momentum sectors */}
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
-              <Terminal className="h-3.5 w-3.5 text-emerald-500" />
+            <h3 className="text-xs font-black uppercase tracking-wider text-green-400 dark:text-green-500 flex items-center gap-2">
               Sectors: High Momentum
             </h3>
-            <span className="text-[10px] font-black tracking-widest text-emerald-500 uppercase">📈 BULLISH</span>
           </div>
 
           <div className="space-y-2">
@@ -336,11 +329,9 @@ export default function AIMarketSentiment() {
         {/* Column 2: Moderate momentum sectors */}
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
-              <Terminal className="h-3.5 w-3.5 text-amber-500" />
-              Sectors: Mod Momentum
+            <h3 className="text-xs font-black uppercase tracking-wider text-yellow-500 dark:text-yellow-500 flex items-center gap-2">
+              Sectors: Moderate Momentum
             </h3>
-            <span className="text-[10px] font-black tracking-widest text-amber-500 uppercase">⚖️ NEUTRAL</span>
           </div>
 
           <div className="space-y-2">
@@ -390,11 +381,9 @@ export default function AIMarketSentiment() {
         {/* Column 3: Bearish sector momentum */}
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
-              <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
+            <h3 className="text-xs font-black uppercase tracking-wider text-red-400 dark:text-red-500 flex items-center gap-2">
               Sectors: Bearish Momentum
             </h3>
-            <span className="text-[10px] font-black tracking-widest text-rose-500 uppercase">📉 BEARISH</span>
           </div>
 
           <div className="space-y-2">
@@ -445,7 +434,6 @@ export default function AIMarketSentiment() {
       {/* Active Market Threats Section (Full width at bottom) */}
       <div className="relative z-10 mt-6 sm:mt-8 pt-4 border-t border-slate-100 dark:border-white/5">
         <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
-          <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
           Active Market Threats
         </h3>
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.03] p-3.5 sm:p-5 shadow-sm">
@@ -457,12 +445,6 @@ export default function AIMarketSentiment() {
             {brief.todayRisk}
           </p>
         </div>
-      </div>
-
-      {/* Footer Meta / Generated Time */}
-      <div className="relative z-10 mt-6 pt-4 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-        <span>Generated: {new Date(brief.generatedAt).toLocaleString()}</span>
-        <span>FinPulse AI Engine v1.2</span>
       </div>
     </div>
   );

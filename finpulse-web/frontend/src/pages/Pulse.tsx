@@ -38,18 +38,17 @@ export default function Pulse() {
         <AIBulletSummary />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-          {/* Left Column (2 cols wide on desktop) */}
-          <div className="lg:col-span-2 flex flex-col justify-between h-full space-y-6">
+          <div className="lg:col-span-2">
             <MarketCompass />
-            <TrendingSectorStreaks />
+          </div>
+          <div className="lg:col-span-1">
             <AIPickOfTheDay />
           </div>
-
-          {/* Right Column (1 col wide on desktop) */}
-          <div className="flex flex-col h-full justify-between">
-            <FearGreedIndex className="h-full animate-pulse-slow" />
-          </div>
         </div>
+
+        <FearGreedIndex />
+
+        <TrendingSectorStreaks />
 
         {/* Full-width Global Market Clock */}
         <div className="mt-8">

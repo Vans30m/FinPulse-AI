@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Plus, Trash2,
-  Download, Star, Pin, Info, Search, Sparkles, X, Activity, Loader2, Check
+  Download, Star, Pin, Info, Search, X, Activity, Loader2, Check
 } from "lucide-react";
 import {
   useWatchlists, useCreateWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
@@ -279,7 +279,7 @@ export default function Watchlist() {
   }, [activeWatchlist]);
 
   if (showLoader) {
-    return <PageLoader title="Security Watchlists" message="Analyzing watchlists and active tickers..." />;
+    return <PageLoader title="Loading Watchlists" message="Analyzing watchlists and active tickers..." />;
   }
 
   return (
@@ -436,7 +436,6 @@ export default function Watchlist() {
       {/* STOCK CARDS LIST */}
       <div>
         <div className="flex items-center gap-1.5 mb-3 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-          <Sparkles className="h-3.5 w-3.5" />
           <span>Active Watchlist Stocks ({processedItems.length})</span>
         </div>
 

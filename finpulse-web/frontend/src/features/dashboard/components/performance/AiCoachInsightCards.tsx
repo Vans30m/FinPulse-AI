@@ -1,4 +1,4 @@
-import { ShieldAlert, Sparkles, Target, Telescope } from "lucide-react";
+import { ShieldAlert, TrendingUp, Target, Telescope } from "lucide-react";
 import type { CoachInsightBucket } from "./aiPerformanceCoachTypes";
 
 interface Props {
@@ -6,7 +6,7 @@ interface Props {
 }
 
 const iconMap = {
-  "Performance Strengths": Sparkles,
+  "Performance Strengths": TrendingUp,
   "Risk Analysis": ShieldAlert,
   "Improvement Suggestions": Target,
   "Future Outlook": Telescope,

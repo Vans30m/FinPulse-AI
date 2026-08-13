@@ -1187,7 +1187,7 @@ export default function PortfolioDashboard() {
   }, [performanceData, currencyMultiplier, isSandboxMode, virtualHoldings, liveQuotes, usdToInrRate]);
 
   if (loading) {
-    return <PageLoader title="Security Portfolios" message="Syncing asset allocations and latest transaction valuations..." />;
+    return <PageLoader title="Loading Portfolio" message="Syncing asset allocations and latest transaction valuations..." />;
   }
 
   const allocationData = currentSections
@@ -1549,22 +1549,25 @@ export default function PortfolioDashboard() {
         )}
       </div>
 
-      {/* Aggregate Cards Grid (2 columns on mobile, 4 columns on desktop, with rich icons and responsive spacing) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+      {/* Portfolio Stats Summary Header row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         <div className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
-          <div className="flex p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400 shrink-0">
-            <PieChart className="h-5 w-5" />
+          <div className="flex p-2 rounded-xl bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 shrink-0">
+            <TrendingUp className="h-5 w-5" />
           </div>
           <div className="min-w-0 w-full text-left">
-            <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">Net Value</p>
+            <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+              <span className="hidden sm:inline">Portfolio Net Value</span>
+              <span className="inline sm:hidden">Net Value</span>
+            </p>
             <h3 className="text-sm sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
-              {displayCurrency}{totalNetValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {displayCurrency}{totalHoldingsValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>
         </div>
 
         <div className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
-          <div className="flex p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 shrink-0">
+          <div className="flex p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 shrink-0">
             <TrendingUp className="h-5 w-5" />
           </div>
           <div className="min-w-0 w-full text-left">
@@ -1574,27 +1577,6 @@ export default function PortfolioDashboard() {
             </p>
             <h3 className={`text-sm sm:text-2xl font-black mt-0.5 truncate ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
               {totalGain >= 0 ? '+' : ''}{displayCurrency}{totalGain.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </h3>
-          </div>
-        </div>
-
-        <div className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
-          <div className="flex p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
-            <Globe className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 w-full text-left">
-            <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
-              {isSandboxMode ? "Cash" : (
-                <>
-                  <span className="hidden sm:inline">Asset Classes</span>
-                  <span className="inline sm:hidden">Assets</span>
-                </>
-              )}
-            </p>
-            <h3 className="text-sm sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 truncate">
-              {isSandboxMode
-                ? `${displayCurrency}${cashBalanceInCurrency.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                : `${activeHubsCount} Hub${activeHubsCount !== 1 ? 's' : ''}`}
             </h3>
           </div>
         </div>

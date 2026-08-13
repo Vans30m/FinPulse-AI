@@ -133,12 +133,9 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Globe className="h-4.5 w-4.5 text-indigo-500" />
             Global Market Clock
           </h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Real-time exchange status</p>
         </div>
-        <Clock className="h-4 w-4 text-slate-400 animate-pulse" />
       </div>
 
       <div className="space-y-2.5">
@@ -231,11 +228,6 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
             </div>
           );
         })}
-      </div>
-
-      <div className="pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-center gap-1.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
-        <CheckCircle className="h-3 w-3 text-emerald-500" />
-        Synced with local device time
       </div>
     </div>
   );

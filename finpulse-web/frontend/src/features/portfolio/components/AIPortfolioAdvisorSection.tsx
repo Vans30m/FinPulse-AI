@@ -7,7 +7,6 @@ import {
   PieChart,
   RotateCcw,
   ShieldAlert,
-  Sparkles,
   TrendingUp,
   ChevronDown,
   ChevronUp,
@@ -273,7 +272,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25"
                 : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25"
             }`}>
-              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+              <BrainCircuit className="h-3.5 w-3.5 animate-pulse" />
               {advisor.healthGrade}
             </div>
             
@@ -489,7 +488,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
           { id: "risks", title: "Risk Breakdown & Market Headwinds", icon: ShieldAlert, color: "text-amber-500", data: advisor.portfolioHealth.risks },
           { id: "diversification", title: "Diversification Suggestions", icon: PieChart, color: "text-blue-500", data: [advisor.diversification.reason, `Suggested structure: ${advisor.diversification.suggestedAllocation}`] },
           { id: "rebalancing", title: "Rebalancing Recommendations", icon: RotateCcw, color: "text-cyan-500", data: advisor.rebalanceSuggestions.map(s => `${s.action} ${s.asset} - ${s.reason}`) },
-          { id: "outlook", title: "Long-term Outlook & AI Summary", icon: Sparkles, color: "text-purple-500", data: [advisor.portfolioHealth.outlook + " Outlook.", ...advisor.portfolioHealth.recommendations] }
+          { id: "outlook", title: "Long-term Outlook & AI Summary", icon: BrainCircuit, color: "text-purple-500", data: [advisor.portfolioHealth.outlook + " Outlook.", ...advisor.portfolioHealth.recommendations] }
         ].map((sec) => {
           const isExpanded = expandedSection === sec.id;
           const SecIcon = sec.icon;
@@ -574,7 +573,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
             {/* Forecast & AI Signals */}
             <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
               <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                <Sparkles className="h-4 w-4 text-purple-500 animate-pulse" />
+                <BrainCircuit className="h-4 w-4 text-purple-500 animate-pulse" />
                 <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">Forecast & AI Signals</span>
               </div>
 
@@ -1030,7 +1029,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                 {/* Long-term Strategy */}
                 <div className="space-y-2.5 pt-2">
                   <h4 className="text-sm font-extrabold pb-2 mb-3 text-slate-950 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 uppercase tracking-wider">
-                    <Sparkles className="h-4.5 w-4.5 text-purple-500" />
+                    <BrainCircuit className="h-4.5 w-4.5 text-purple-500" />
                     VI. Strategic Long-term Outlook
                   </h4>
                   <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.015] border border-slate-200/50 dark:border-white/5 space-y-3">

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, Terminal, RotateCcw, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, Terminal, RotateCcw } from "lucide-react";
 import { getAIMarketDrivers, type AIMarketDriversData } from "../../../services/marketService";
 
 export default function MarketExplanation() {
@@ -204,7 +204,6 @@ export default function MarketExplanation() {
 
             <div className="absolute bottom-full left-4 mb-2 w-72 p-3.5 rounded-xl bg-slate-900/95 dark:bg-[#080d19]/95 text-white text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-40 border border-slate-250/10 dark:border-slate-800 backdrop-blur-md">
               <div className="font-bold mb-1 text-amber-400 flex items-center gap-1">
-                <Sparkles className="h-3 w-3" />
                 Macro Catalyst Details
               </div>
               <p className="text-slate-300 font-medium">{brief.macroEvent.description}</p>

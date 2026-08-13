@@ -8,7 +8,6 @@ import {
   FileText,
   Info,
   RefreshCcw,
-  Sparkles,
   Trophy,
 } from "lucide-react";
 import type { CagrTimeframe, RollingCagrPoint } from "./rollingCagrTypes";
@@ -217,12 +216,12 @@ export default function RollingCagrSection() {
 
           <div className="mt-4 bg-slate-50 dark:bg-[#050711]/70 border border-slate-205 dark:border-slate-900 rounded-2xl p-4">
             <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-3 mb-3">
-              <Sparkles className="h-4 w-4 text-purple-400" />
+              <Trophy className="h-4 w-4 text-purple-400" />
               <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">AI CAGR Insights</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {insights.map((insight) => (
-                <div key={insight} className="rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-slate-50/50 dark:bg-[#050711]/85 p-3 text-xs text-slate-700 dark:text-slate-300">
+                <div key={insight} className="rounded-xl border border-slate-150/40 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-3 text-xs text-slate-650 dark:text-slate-300 font-medium leading-relaxed shadow-sm">
                   {insight}
                 </div>
               ))}
