@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { fetchGlobalMarkets } from "../services/marketService";
 
 import AIMarketSentiment from "../features/dashboard/components/AIMarketSentiment";
-import MarketExplanation from "../features/dashboard/components/MarketExplanation";
 import AIBulletSummary from "../features/dashboard/components/AIBulletSummary";
 import TrendingSectorStreaks from "../features/dashboard/components/TrendingSectorStreaks";
 import { GlobalMarketClock } from "../features/dashboard/components/GlobalMarketClock";
@@ -35,23 +34,21 @@ export default function Pulse() {
     >
       <div className="space-y-8">
         <AIMarketSentiment />
-        <MarketExplanation />
 
         <AIBulletSummary />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-          {/* Left Column (2 cols wide on desktop) */}
-          <div className="lg:col-span-2 flex flex-col justify-between h-full space-y-6">
+          <div className="lg:col-span-2">
             <MarketCompass />
-            <TrendingSectorStreaks />
+          </div>
+          <div className="lg:col-span-1">
             <AIPickOfTheDay />
           </div>
-
-          {/* Right Column (1 col wide on desktop) */}
-          <div className="flex flex-col h-full justify-between">
-            <FearGreedIndex className="h-full animate-pulse-slow" />
-          </div>
         </div>
+
+        <FearGreedIndex />
+
+        <TrendingSectorStreaks />
 
         {/* Full-width Global Market Clock */}
         <div className="mt-8">

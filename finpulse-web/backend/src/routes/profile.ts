@@ -18,6 +18,23 @@ async function getOrCreateUser(req: AuthenticatedRequest) {
   throw new Error('Unauthorized: Session is invalid or expired. Please sign in again.');
 }
 
+async function enforceSessionLimit(userId: string) {
+  const sessions = await prisma.session.findMany({
+    where: { userId },
+    orderBy: { updatedAt: 'desc' }
+  });
+
+  if (sessions.length > 5) {
+    const sessionsToDelete = sessions.slice(5);
+    const idsToDelete = sessionsToDelete.map(s => s.id);
+    await prisma.session.deleteMany({
+      where: {
+        id: { in: idsToDelete }
+      }
+    });
+  }
+}
+
 async function logSession(userId: string, req: AuthenticatedRequest) {
   const userAgent = req.headers['user-agent'] || 'Unknown Browser / Windows';
   let device = 'Windows PC';
@@ -49,21 +66,22 @@ async function logSession(userId: string, req: AuthenticatedRequest) {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) 
       }
     });
-    return;
+  } else {
+    const refreshToken = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
+
+    await prisma.session.create({
+      data: {
+        userId,
+        device,
+        browser,
+        ipAddress,
+        refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      }
+    });
   }
 
-  const refreshToken = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
-
-  await prisma.session.create({
-    data: {
-      userId,
-      device,
-      browser,
-      ipAddress,
-      refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    }
-  });
+  await enforceSessionLimit(userId);
 }
 
 // GET /profile
@@ -390,8 +408,7 @@ profileRoutes.get('/watchlist-summary', protect, async (req, res) => {
       etfs,
       crypto,
       forex,
-      commodities,
-      averageGainLoss: 0
+      commodities
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -457,12 +474,12 @@ profileRoutes.get('/export', protect, async (req, res) => {
       });
 
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename=finpulse_export_${user.username || 'user'}.csv`);
+      res.setHeader('Content-Disposition', `attachment; filename="finpulse_export_${user.username || 'user'}.csv"`);
       return res.send(csvContent);
     }
 
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename=finpulse_export_${user.username || 'user'}.json`);
+    res.setHeader('Content-Disposition', `attachment; filename="finpulse_export_${user.username || 'user'}.json"`);
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

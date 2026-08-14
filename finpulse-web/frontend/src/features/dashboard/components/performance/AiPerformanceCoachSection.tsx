@@ -7,7 +7,6 @@ import {
   FileSpreadsheet,
   FileText,
   RefreshCcw,
-  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -190,7 +189,7 @@ export default function AiPerformanceCoachSection() {
 
             <div className="rounded-2xl border border-slate-900 bg-[#050711]/70 p-4">
               <div className="flex items-center gap-2 mb-3 border-b border-slate-200 dark:border-slate-900 pb-3">
-                <Sparkles className="h-4 w-4 text-purple-400" />
+                <Brain className="h-4 w-4 text-purple-400" />
                 <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Forecast & AI Signals</span>
               </div>
 

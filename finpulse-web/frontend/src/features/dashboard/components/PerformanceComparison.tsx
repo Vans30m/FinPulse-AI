@@ -637,6 +637,7 @@ export default function PerformanceComparison() {
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Compounded Annual Growth Rates measured over dynamic holding timeframes.</p>
               </div>
             </div>
+            <RollingCagrSection />
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { Sparkles, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 interface Props {
   insights: string[];
@@ -8,7 +8,7 @@ export default function HeatmapInsights({ insights }: Props) {
   return (
     <div className="mt-6 bg-[#050711]/55 border border-slate-900 rounded-2xl p-4">
       <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-        <Sparkles size={14} className="text-purple-400" />
+        <TrendingUp size={14} className="text-blue-400" />
         <span className="text-xs font-black uppercase tracking-wider text-slate-400">Performance Heatmap Insights</span>
       </div>
 

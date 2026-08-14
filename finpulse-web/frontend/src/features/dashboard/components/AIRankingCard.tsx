@@ -148,7 +148,9 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
           // Data loading but still empty — likely first load
           [1, 2, 3].map((i) => <SkeletonRow key={i} />)
         ) : (
-          assets.map((asset, index) => (
+          [...assets]
+            .sort((a, b) => b.score - a.score)
+            .map((asset, index) => (
             <div
               key={asset.symbol}
               className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 p-4 hover:bg-slate-100/70 dark:hover:bg-white/10 hover:border-slate-200 dark:hover:border-white/10 transition-all duration-300"

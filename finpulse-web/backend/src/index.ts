@@ -10,9 +10,24 @@ import assetRoutes from './routes/assets.js';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import watchlistRoutes from './routes/watchlists.js';
+import portfolioRoutes from './routes/portfolio.js';
+
+// Global error handlers to prevent silent crashes
+process.on('uncaughtException', (err) => {
+  console.error('CRITICAL: Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Log incoming HTTP requests
+app.use((req, res, next) => {
+  console.log(`[HTTP] ${req.method} ${req.url}`);
+  next();
+});
 
 app.set('trust proxy', 1);
 
@@ -84,3 +99,6 @@ app.use('/api/profile', profileRoutes);
 
 // Watchlist API
 app.use('/api', watchlistRoutes);
+
+// Portfolio API
+app.use('/api', portfolioRoutes);

@@ -233,11 +233,12 @@ export default function PerformanceHeatmap() {
     fetch(`${API_BASE_URL}/api/portfolio/heatmap?year=${year}`, { headers })
       .then(res => res.json())
       .then(data => {
-        setYearlyData(data || []);
+        setYearlyData(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(err => {
         console.error(err);
+        setYearlyData([]);
         setLoading(false);
       });
   }, [year]);

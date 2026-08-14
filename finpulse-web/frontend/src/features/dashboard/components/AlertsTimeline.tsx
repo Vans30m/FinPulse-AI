@@ -113,14 +113,11 @@ export default function AlertsTimeline({
       duration-300
       flex
       flex-col
-      ${fullPage ? "h-full" : "max-h-[1300px]"}`}
+      ${fullPage ? "h-[580px]" : "max-h-[1300px]"}`}
     >
       {/* HEADER */}
       <div className="border-b border-slate-150 dark:border-white/5 p-5 shrink-0 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/20 to-transparent dark:from-white/[0.01]">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-100/50 dark:border-cyan-400/10">
-            <Newspaper className="h-5 w-5" />
-          </div>
           <div>
             <h2 className="text-base md:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
               {fullPage
@@ -129,15 +126,6 @@ export default function AlertsTimeline({
             </h2>
             <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 font-medium">Aggregated from Finnhub & Google News</p>
           </div>
-        </div>
-        
-        {/* Pulsing Live Indicator */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          Live Feed
         </div>
       </div>
 

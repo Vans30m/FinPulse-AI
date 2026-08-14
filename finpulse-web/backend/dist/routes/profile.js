@@ -14,6 +14,21 @@ async function getOrCreateUser(req) {
     }
     throw new Error('Unauthorized: Session is invalid or expired. Please sign in again.');
 }
+async function enforceSessionLimit(userId) {
+    const sessions = await prisma.session.findMany({
+        where: { userId },
+        orderBy: { updatedAt: 'desc' }
+    });
+    if (sessions.length > 5) {
+        const sessionsToDelete = sessions.slice(5);
+        const idsToDelete = sessionsToDelete.map(s => s.id);
+        await prisma.session.deleteMany({
+            where: {
+                id: { in: idsToDelete }
+            }
+        });
+    }
+}
 async function logSession(userId, req) {
     const userAgent = req.headers['user-agent'] || 'Unknown Browser / Windows';
     let device = 'Windows PC';
@@ -46,19 +61,21 @@ async function logSession(userId, req) {
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
             }
         });
-        return;
     }
-    const refreshToken = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
-    await prisma.session.create({
-        data: {
-            userId,
-            device,
-            browser,
-            ipAddress,
-            refreshToken,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        }
-    });
+    else {
+        const refreshToken = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
+        await prisma.session.create({
+            data: {
+                userId,
+                device,
+                browser,
+                ipAddress,
+                refreshToken,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            }
+        });
+    }
+    await enforceSessionLimit(userId);
 }
 // GET /profile
 profileRoutes.get('/', protect, async (req, res) => {
@@ -355,8 +372,7 @@ profileRoutes.get('/watchlist-summary', protect, async (req, res) => {
             etfs,
             crypto,
             forex,
-            commodities,
-            averageGainLoss: 0
+            commodities
         });
     }
     catch (error) {
@@ -415,11 +431,11 @@ profileRoutes.get('/export', protect, async (req, res) => {
                 csvContent += `"${key}","${String(val || '').replace(/"/g, '""')}"\n`;
             });
             res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', `attachment; filename=finpulse_export_${user.username || 'user'}.csv`);
+            res.setHeader('Content-Disposition', `attachment; filename="finpulse_export_${user.username || 'user'}.csv"`);
             return res.send(csvContent);
         }
         res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', `attachment; filename=finpulse_export_${user.username || 'user'}.json`);
+        res.setHeader('Content-Disposition', `attachment; filename="finpulse_export_${user.username || 'user'}.json"`);
         res.json(data);
     }
     catch (error) {

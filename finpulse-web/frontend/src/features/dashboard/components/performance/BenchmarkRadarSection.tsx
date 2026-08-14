@@ -13,7 +13,6 @@ import {
 import API_BASE_URL from "../../../../config/api";
 import {
   Award,
-  Sparkles,
   Info,
   CheckCircle,
   AlertTriangle,
@@ -641,7 +640,7 @@ export default function BenchmarkRadarSection() {
             <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 blur-xl pointer-events-none rounded-full" />
             <div>
               <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 mb-2.5 border-b border-slate-150 dark:border-slate-800/60 pb-2">
-                <Sparkles size={14} />
+                <Award size={14} />
                 <span className="text-[10px] font-black uppercase tracking-wider">Outperform Directives</span>
               </div>
               <ul className="space-y-2">

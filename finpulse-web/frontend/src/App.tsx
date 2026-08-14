@@ -49,7 +49,6 @@ import Disclosures from "./pages/Disclosures";
 import Security from "./pages/Security";
 import { useTheme } from './context/ThemeContext';
 import { profileService } from './profile/services/profileService';
-import YahooExtensionTest from "./YahooExtensionTest";
 
 export default function App() {
   const location = useLocation();
@@ -193,11 +192,6 @@ export default function App() {
 
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-
-            <Route
-              path="/yahoo-test"
-              element={<YahooExtensionTest />}
-            />
 
             <Route
               path="/"

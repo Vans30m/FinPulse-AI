@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Plus, Trash2,
-  Download, Star, Pin, Info, Search, Sparkles, X, Activity, Loader2, Check
+  Download, Star, Pin, Info, Search, X, Activity, Loader2, Check
 } from "lucide-react";
 import {
   useWatchlists, useCreateWatchlist, useAddWatchlistItem, useRemoveWatchlistItem,
@@ -14,6 +14,7 @@ import API_BASE_URL from "../../../config/api";
 import { useChart } from "../../../context/ChartContext";
 import { pageCache } from "../../../utils/cache";
 import PageLoader from "../../../components/ui/PageLoader";
+import { StockLogo } from '../../../utils/logo';
 
 export default function Watchlist() {
   const { openAsset } = useChart();
@@ -58,13 +59,9 @@ export default function Watchlist() {
   // Tracks which item is mid-request so only that row's button shows a
   // spinner, instead of disabling/animating the whole list on any change.
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<"favorite" | "pin" | "remove" | null>(null);
+  const [pendingAction, setPendingAction] = useState<"remove" | null>(null);
 
-  // FIX: these now actually have setters wired to real UI controls below,
-  // instead of being permanently stuck at their default values.
   const [searchQuery, setSearchQuery] = useState("");
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [showOnlyPinned, setShowOnlyPinned] = useState(false);
   const [sortField, setSortField] = useState<string>("position");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -186,28 +183,6 @@ export default function Watchlist() {
     });
   };
 
-  const handleToggleFavorite = (itemId: string, currentFav: boolean) => {
-    setPendingItemId(itemId);
-    setPendingAction("favorite");
-    updateItemMutation.mutate({ itemId, data: { favorite: !currentFav } }, {
-      onSettled: () => {
-        setPendingItemId(null);
-        setPendingAction(null);
-      }
-    });
-  };
-
-  const handleTogglePin = (itemId: string, currentPin: boolean) => {
-    setPendingItemId(itemId);
-    setPendingAction("pin");
-    updateItemMutation.mutate({ itemId, data: { pinned: !currentPin } }, {
-      onSettled: () => {
-        setPendingItemId(null);
-        setPendingAction(null);
-      }
-    });
-  };
-
   const handleDeleteWatchlist = (e: React.MouseEvent, id: string, name: string) => {
     e.stopPropagation();
     if (confirm(`Are you sure you want to delete the watchlist "${name}"?`)) {
@@ -235,9 +210,9 @@ export default function Watchlist() {
 
   const handleExportCSV = () => {
     const items = activeWatchlist.items || [];
-    const headers = "Symbol,Notes,Pinned,Favorite\n";
+    const headers = "Symbol,Notes\n";
     const rows = items
-      .map((i: any) => [csvEscape(i.symbol), csvEscape(i.notes || ''), i.pinned, i.favorite].join(","))
+      .map((i: any) => [csvEscape(i.symbol), csvEscape(i.notes || '')].join(","))
       .join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -251,14 +226,10 @@ export default function Watchlist() {
       const q = searchQuery.toLowerCase();
       const symbolMatch = item.symbol.toLowerCase().includes(q);
       const nameMatch = (item.name || "").toLowerCase().includes(q);
-      const favMatch = !showOnlyFavorites || item.favorite;
-      const pinMatch = !showOnlyPinned || item.pinned;
-      return (symbolMatch || nameMatch) && favMatch && pinMatch;
+      return symbolMatch || nameMatch;
     });
 
     filtered.sort((a: any, b: any) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
       let valA = a[sortField];
       let valB = b[sortField];
       if (sortField === "price" || sortField === "changePercent") {
@@ -270,7 +241,7 @@ export default function Watchlist() {
       return sortDirection === "asc" ? (valA < valB ? -1 : 1) : (valA > valB ? -1 : 1);
     });
     return filtered;
-  }, [activeWatchlist.items, searchQuery, showOnlyFavorites, showOnlyPinned, sortField, sortDirection]);
+  }, [activeWatchlist.items, searchQuery, sortField, sortDirection]);
 
   const getAvatarColor = (sym: string) => {
     const colors = ["from-blue-500 to-indigo-600", "from-cyan-500 to-blue-600", "from-emerald-500 to-teal-600", "from-violet-500 to-purple-600", "from-rose-500 to-pink-600"];
@@ -308,7 +279,7 @@ export default function Watchlist() {
   }, [activeWatchlist]);
 
   if (showLoader) {
-    return <PageLoader title="Security Watchlists" message="Analyzing watchlists and active tickers..." />;
+    return <PageLoader title="Loading Watchlists" message="Analyzing watchlists and active tickers..." />;
   }
 
   return (
@@ -331,78 +302,50 @@ export default function Watchlist() {
         </p>
       </div>
 
-      {/* STATS OVERVIEW SECTION */}
-      <div>
-        <div className="flex items-center gap-1.5 mb-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-          <Info className="h-3.5 w-3.5" />
-          <span>Watchlist Analytics Overview</span>
-        </div>
-        <div className="grid grid-cols-4 gap-1.5 md:gap-4">
-          <div className="rounded-xl md:rounded-3xl p-2 md:p-5 bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-xl">
-            <p className="text-[7.5px] min-[360px]:text-[9px] min-[400px]:text-[10px] md:text-xs opacity-75 uppercase font-bold tracking-tight whitespace-nowrap">Total Assets</p>
-            <h2 className="text-xs min-[360px]:text-sm min-[400px]:text-xl md:text-3xl font-black mt-1 md:mt-2">{stats.total}</h2>
-          </div>
-          <div className="rounded-xl md:rounded-3xl p-2 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-[7.5px] min-[360px]:text-[9px] min-[400px]:text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase flex items-center gap-0.5 tracking-tight whitespace-nowrap">
-              Gainers <TrendingUp className="h-2.5 w-2.5 min-[360px]:h-3 min-[360px]:w-3 text-emerald-500 shrink-0" />
-            </p>
-            <h2 className="text-xs min-[360px]:text-sm min-[400px]:text-xl md:text-3xl font-black mt-1 md:mt-2 text-emerald-500">{stats.gainers}</h2>
-          </div>
-          <div className="rounded-xl md:rounded-3xl p-2 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-[7.5px] min-[360px]:text-[9px] min-[400px]:text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase flex items-center gap-0.5 tracking-tight whitespace-nowrap">
-              Losers <TrendingDown className="h-2.5 w-2.5 min-[360px]:h-3 min-[360px]:w-3 text-rose-500 shrink-0" />
-            </p>
-            <h2 className="text-xs min-[360px]:text-sm min-[400px]:text-xl md:text-3xl font-black mt-1 md:mt-2 text-rose-500">{stats.losers}</h2>
-          </div>
-          <div className="rounded-xl md:rounded-3xl p-2 md:p-5 bg-white/70 dark:bg-night-900/70 border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <p className="text-[7.5px] min-[360px]:text-[9px] min-[400px]:text-[10px] md:text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tight whitespace-nowrap">Avg Return</p>
-            <h2 className="text-xs min-[360px]:text-sm min-[400px]:text-xl md:text-3xl font-black mt-1 md:mt-2 text-slate-800 dark:text-white truncate">{stats.avgChange}</h2>
-          </div>
-        </div>
-      </div>
+
 
       {/* WATCHLIST SWITCHER & CONTROLS */}
-      <div className="relative z-30 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-4 md:p-5 rounded-3xl shadow-xl flex flex-col gap-4">
-        <div className="flex flex-row justify-between items-center gap-3 w-full">
-          {/* List selection */}
-          <div className="flex-1 overflow-x-auto scrollbar-none">
+      <div className="relative z-30 bg-slate-50/50 dark:bg-[#0c1220]/45 backdrop-blur-xl border border-slate-200 dark:border-white/5 p-5 rounded-3xl shadow-xl flex flex-col gap-5">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+          {/* List selection segment selector */}
+          <div className="flex-1 overflow-x-auto scrollbar-none w-full">
             <div className="flex items-center gap-2">
               {isCreatingList ? (
-                <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2">
+                <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2 bg-slate-100/50 dark:bg-white/[0.02] p-1.5 rounded-2xl border border-slate-200/50 dark:border-white/[0.03]">
                   <input
                     autoFocus
                     type="text"
                     placeholder="Name..."
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
-                    className="bg-slate-100 dark:bg-night-800 border dark:border-white/10 px-3 py-1.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 w-28 text-slate-900 dark:text-white"
+                    className="bg-white dark:bg-night-900 border dark:border-white/10 px-3 py-1.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 text-slate-900 dark:text-white font-semibold"
                   />
-                  <button type="submit" disabled={createListMutation.isPending} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1">
+                  <button type="submit" disabled={createListMutation.isPending} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shadow-md">
                     {createListMutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
                     Save
                   </button>
-                  <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-[10px] px-1">Cancel</button>
+                  <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-[10px] font-black uppercase px-2">Cancel</button>
                 </form>
               ) : (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 bg-slate-100/60 dark:bg-white/[0.015] p-1.5 rounded-2xl border border-slate-200/60 dark:border-white/[0.02] shadow-inner">
                   {watchlists.map((list) => (
                     <div
                       key={list.id}
                       onClick={() => setActiveListId(list.id)}
-                      className={`group relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all duration-200 cursor-pointer border whitespace-nowrap ${activeListId === list.id
-                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white shadow-sm"
-                          : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300"
+                      className={`group relative flex items-center gap-2 px-3.5 py-1.8 rounded-xl text-[11px] font-extrabold transition-all duration-200 cursor-pointer border whitespace-nowrap ${activeListId === list.id
+                        ? "bg-blue-600 text-white border-transparent shadow-md scale-[1.02]"
+                        : "bg-transparent border-transparent hover:bg-slate-200/50 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                         }`}
                     >
                       <span>{list.name}</span>
-                      <span className={`text-[8px] px-1.5 py-0.2 rounded-full font-black ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400"
+                      <span className={`text-[8.5px] px-1.5 py-0.2 rounded-full font-black ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200/60 dark:bg-white/10 text-slate-400 dark:text-slate-500"
                         }`}>
                         {list.items?.length || 0}
                       </span>
                       {watchlists.length > 1 && (
                         <button
                           onClick={(e) => handleDeleteWatchlist(e, list.id, list.name)}
-                          className={`p-0.5 rounded transition-colors ${activeListId === list.id ? "text-white/60 hover:text-white" : "text-slate-400 hover:text-rose-500 hover:bg-rose-500/10"
+                          className={`p-0.5 rounded-lg transition-colors ${activeListId === list.id ? "text-white/60 hover:text-white" : "text-slate-400 hover:text-rose-500 hover:bg-rose-500/10"
                             }`}
                           title={`Delete watchlist "${list.name}"`}
                         >
@@ -413,10 +356,10 @@ export default function Watchlist() {
                   ))}
                   <button
                     onClick={() => setIsCreatingList(true)}
-                    className="p-2 rounded-xl bg-blue-55 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all border border-transparent shrink-0"
+                    className="p-1.8 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-cyan-400 transition-all border border-blue-500/10 hover:border-blue-500/30 shadow-sm shrink-0"
                     title="Create custom watchlist"
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )}
@@ -424,19 +367,20 @@ export default function Watchlist() {
           </div>
 
           {/* Export & Actions */}
-          <div className="shrink-0">
+          <div className="shrink-0 w-full sm:w-auto">
             <button
               onClick={handleExportCSV}
-              className="p-2.5 md:px-4 md:py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+              className="w-full justify-center px-4 py-2 border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-slate-700 dark:text-slate-350 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-sm"
               title="Download watchlist items as CSV file"
             >
-              <Download className="h-3.5 w-3.5" /> <span className="hidden md:inline">Export CSV</span>
+              <Download className="h-4 w-4 text-blue-500 dark:text-cyan-400" />
+              <span>Export CSV</span>
             </button>
           </div>
         </div>
 
         {/* ADD ASSET SEARCH BAR */}
-        <div className="relative pt-3 border-t border-slate-100 dark:border-white/5 w-full">
+        <div className="relative pt-4 border-t border-slate-200/60 dark:border-white/5 w-full">
           <form onSubmit={handleAddAsset} className="w-full">
             <div className="relative w-full">
               <input
@@ -447,20 +391,20 @@ export default function Watchlist() {
                   setNewAssetSymbol(e.target.value);
                   setShowSuggestions(true);
                 }}
-                className="w-full bg-slate-100 dark:bg-night-800/50 border border-slate-200 dark:border-white/10 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pl-9 text-slate-800 dark:text-white disabled:opacity-60"
-                placeholder="e.g. AAPL, Reliance, BTC..."
+                className="w-full bg-white dark:bg-[#070b14]/50 border border-slate-200 dark:border-white/5 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pl-10 text-slate-800 dark:text-white disabled:opacity-60 transition-all shadow-inner font-semibold placeholder:text-slate-400/80 dark:placeholder:text-slate-500"
+                placeholder="Search"
               />
               {addItemMutation.isPending ? (
-                <Loader2 className="absolute left-3 top-2.5 h-3.5 w-3.5 text-blue-500 animate-spin" />
+                <Loader2 className="absolute left-3.5 top-3 h-4 w-4 text-blue-500 animate-spin" />
               ) : (
-                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
               )}
             </div>
           </form>
 
           {/* Auto Suggestions Dropdown */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl z-[100] max-w-md max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+            <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl z-[100] max-w-md max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
               {suggestions.map((s) => (
                 <div
                   key={s.symbol}
@@ -471,10 +415,10 @@ export default function Watchlist() {
                   className="p-3 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer flex justify-between items-center transition-all"
                 >
                   <div>
-                    <span className="font-bold text-slate-800 dark:text-white text-xs">{s.symbol}</span>
-                    <span className="text-[10px] text-slate-400 ml-2">{s.name}</span>
+                    <span className="font-extrabold text-slate-800 dark:text-white text-xs">{s.symbol}</span>
+                    <span className="text-[10px] text-slate-400 ml-2 font-medium">{s.name}</span>
                   </div>
-                  <span className="text-[9px] font-semibold bg-slate-100 dark:bg-white/10 text-slate-500 px-2 py-0.5 rounded">
+                  <span className="text-[9px] font-black bg-slate-150/60 dark:bg-white/10 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded uppercase tracking-wider">
                     {s.exchange}
                   </span>
                 </div>
@@ -486,60 +430,12 @@ export default function Watchlist() {
         {/* FIX: filter/sort/search bar — this UI didn't exist before, so
             searchQuery/showOnlyFavorites/showOnlyPinned/sortField/sortDirection
             were dead state that processedItems computed but nothing could change. */}
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-white/5 w-full">
-          <div className="relative flex-1 min-w-[140px]">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter this watchlist..."
-              className="w-full bg-slate-100 dark:bg-night-800/50 border border-slate-200 dark:border-white/10 px-3 py-1.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pl-8 text-slate-800 dark:text-white"
-            />
-            <Search className="absolute left-2.5 top-2 h-3 w-3 text-slate-400" />
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setShowOnlyFavorites((v) => !v)}
-            className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 transition-all ${showOnlyFavorites ? "bg-amber-500 text-white" : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"}`}
-          >
-            <Star className="h-3 w-3" /> Favorites
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowOnlyPinned((v) => !v)}
-            className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 transition-all ${showOnlyPinned ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"}`}
-          >
-            <Pin className="h-3 w-3" /> Pinned
-          </button>
-
-          <select
-            value={sortField}
-            onChange={(e) => setSortField(e.target.value)}
-            className="bg-slate-100 dark:bg-night-800/50 border border-slate-200 dark:border-white/10 px-2 py-1.5 text-[10px] font-bold rounded-xl text-slate-700 dark:text-slate-300"
-          >
-            <option value="position">Default order</option>
-            <option value="symbol">Symbol</option>
-            <option value="price">Price</option>
-            <option value="changePercent">Change %</option>
-          </select>
-
-          <button
-            type="button"
-            onClick={() => setSortDirection((d) => (d === "asc" ? "desc" : "asc"))}
-            className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"
-            title="Toggle sort direction"
-          >
-            {sortDirection === "asc" ? "↑ Asc" : "↓ Desc"}
-          </button>
-        </div>
       </div>
 
       {/* STOCK CARDS LIST */}
       <div>
         <div className="flex items-center gap-1.5 mb-3 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-          <Sparkles className="h-3.5 w-3.5" />
           <span>Active Watchlist Stocks ({processedItems.length})</span>
         </div>
 
@@ -556,6 +452,10 @@ export default function Watchlist() {
             <AnimatePresence>
               {processedItems.map((item: any) => {
                 const isPositive = parseFloat(String(item.changePercent || "0").replace(/[^0-9.-]+/g, "")) >= 0;
+                const currencySymbol = item.symbol.endsWith('.NS') || item.symbol.endsWith('.BO') || item.symbol === '^NSEI' || item.symbol === '^BSESN' ? '₹' : '$';
+                const formattedPrice = typeof item.price === 'number' ? `${currencySymbol}${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null;
+                const formattedPercent = typeof item.changePercent === 'number' ? `${item.changePercent >= 0 ? '+' : ''}${item.changePercent.toFixed(2)}%` : item.changePercent;
+
                 return (
                   <motion.div
                     key={item.id}
@@ -564,7 +464,7 @@ export default function Watchlist() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="group rounded-3xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-3.5 md:p-5 shadow-lg hover:shadow-xl hover:border-slate-300 dark:hover:border-white/20 transition-all flex flex-col justify-between"
+                    className="group rounded-3xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-4 md:p-5 shadow-lg hover:shadow-xl hover:border-slate-350 dark:hover:border-white/20 transition-all flex flex-col justify-between"
                   >
                     <div>
                       {/* Top bar with symbol, title, delete and pin buttons */}
@@ -575,66 +475,60 @@ export default function Watchlist() {
                             symbol: item.symbol,
                             yahooSymbol: item.symbol,
                             name: item.name || "Stock Asset",
-                            exchange: "NSE",
+                            exchange: item.exchange || "GLOBAL",
                             type: "Stock",
                           })}
                           title="Click to view detailed asset profile page"
                         >
-                          <div className={`w-9 h-9 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br ${getAvatarColor(item.symbol)} flex items-center justify-center text-white text-xs md:text-sm font-black uppercase shadow-inner`}>
-                            {item.symbol.slice(0, 2)}
-                          </div>
-                          <div>
-                            <h3 className="font-extrabold text-sm md:text-base text-slate-800 dark:text-white flex items-center gap-1.5">
+                          <StockLogo symbol={item.symbol} name={item.name || 'Stock Asset'} className="w-10 h-10 md:w-11 md:h-11 shadow-md rounded-2xl" imgSizeClass="w-6 h-6 md:w-7 md:h-7" />
+                          <div className="min-w-0">
+                            <h3 className="font-extrabold text-sm md:text-base text-slate-800 dark:text-white leading-tight">
                               {item.symbol}
-                              {item.pinned && <span title="Pinned item"><Pin className="h-3 w-3 text-blue-500 fill-blue-500" /></span>}
                             </h3>
-                            <p className="text-[10px] md:text-xs text-slate-400 truncate max-w-[100px] md:max-w-[140px]">{item.name || "Stock Asset"}</p>
+                            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 truncate max-w-[100px] md:max-w-[140px] font-medium mt-0.5">{item.name || "Stock Asset"}</p>
                           </div>
                         </div>
 
-                        {/* Control buttons - minimum 44x44px touch targets */}
-                        <div className="flex items-center gap-0.5">
-                          {/* Favorite Toggle */}
-                          <button
-                            onClick={() => handleToggleFavorite(item.id, item.favorite)}
-                            disabled={pendingItemId === item.id}
-                            className={`w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50 ${item.favorite ? "text-amber-500" : "text-slate-400"
-                              }`}
-                            title={item.favorite ? "Remove from favorites" : "Mark as favorite"}
-                          >
-                            {pendingItemId === item.id && pendingAction === "favorite" ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Star className={`h-4 w-4 ${item.favorite ? "fill-amber-500" : ""}`} />
-                            )}
-                          </button>
+                        {/* Live Quote Details */}
+                        {formattedPrice && (
+                          <div className="text-right">
+                            <div className="font-black text-sm md:text-base text-slate-900 dark:text-white leading-tight">
+                              {formattedPrice}
+                            </div>
+                            <div className={`text-[10px] md:text-xs font-black mt-0.5 flex items-center justify-end gap-1 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                              {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                              <span>{formattedPercent}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
-                          {/* Pin Toggle */}
-                          <button
-                            onClick={() => handleTogglePin(item.id, item.pinned)}
-                            disabled={pendingItemId === item.id}
-                            className={`w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50 ${item.pinned ? "text-blue-500" : "text-slate-400"
-                              }`}
-                            title={item.pinned ? "Unpin stock from top" : "Pin stock to top"}
-                          >
-                            {pendingItemId === item.id && pendingAction === "pin" ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Pin className={`h-4 w-4 ${item.pinned ? "fill-blue-500" : ""}`} />
-                            )}
-                          </button>
+                      {/* Middle Notes Indicator */}
+                      {item.notes && item.notes !== "Added to watchlist" && (
+                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center gap-1.5 text-[10px] md:text-xs text-slate-400 dark:text-slate-500 italic font-medium">
+                          <Info className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
+                          <span className="truncate">{item.notes}</span>
+                        </div>
+                      )}
 
+                      {/* Bottom action drawer bar */}
+                      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex justify-between items-center">
+                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          {item.exchange || "GLOBAL"}
+                        </span>
+
+                        <div className="flex items-center gap-1">
                           {/* Delete Item */}
                           <button
                             onClick={() => handleRemoveAsset(item.id)}
                             disabled={pendingItemId === item.id}
-                            className="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
-                            title="Remove stock from watchlist"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                            title="Remove from watchlist"
                           >
                             {pendingItemId === item.id && pendingAction === "remove" ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             )}
                           </button>
                         </div>

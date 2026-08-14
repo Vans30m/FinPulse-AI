@@ -67,29 +67,18 @@ export function ChartProvider({
     setChartOpen(true);
   };
 
-  /**
-   * Smart asset opener:
-   * - Indices → navigate to /asset/:symbol (AssetDetails page)
-   * - Everything else → open the premium AssetChartModal
-   */
   const openAsset = (asset: ChartAsset) => {
     const symbol = asset.yahooSymbol || asset.symbol;
-    if (isIndexSymbol(symbol)) {
-      // Navigate to the full AssetDetails page for indices
-      navigate(`/asset/${encodeURIComponent(symbol)}`, {
-        state: {
-          name: asset.name,
-          price: asset.price,
-          change: asset.change,
-          changePercent: asset.changePercent,
-          exchange: asset.exchange,
-        },
-      });
-    } else {
-      // Open the premium modal for stocks, crypto, forex, commodities
-      setSelectedAsset(asset);
-      setChartOpen(true);
-    }
+    // Always navigate to the full AssetDetails page for all assets
+    navigate(`/asset/${encodeURIComponent(symbol)}`, {
+      state: {
+        name: asset.name,
+        price: asset.price,
+        change: asset.change,
+        changePercent: asset.changePercent,
+        exchange: asset.exchange,
+      },
+    });
   };
 
   const closeChart = () => {

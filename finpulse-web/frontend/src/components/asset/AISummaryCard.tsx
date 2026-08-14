@@ -1,4 +1,4 @@
-import { Sparkles, TrendingUp, ShieldAlert, Compass } from "lucide-react";
+import { TrendingUp, ShieldAlert, Compass } from "lucide-react";
 
 interface AISummaryProps {
   symbol: string;
@@ -44,7 +44,7 @@ export default function AISummaryCard({
       
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 relative z-10">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-indigo-500" /> AI Insights Analyst
+          AI Insights Analyst
         </h3>
         <span className={`px-2.5 py-1 rounded-xl text-xs font-black uppercase border ${getRecColor(recommendation)}`}>
           {recommendation}

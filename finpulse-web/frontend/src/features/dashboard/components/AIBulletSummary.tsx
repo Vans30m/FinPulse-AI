@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Sparkles, AlertCircle, RotateCcw } from "lucide-react";
+import { AlertCircle, RotateCcw } from "lucide-react";
 import { getAIGlobalMarketPulse, type AIGlobalMarketPulseData } from "../../../services/marketService";
 
 export default function AIBulletSummary() {
@@ -106,14 +106,10 @@ export default function AIBulletSummary() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
       {/* Top Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-          </span>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Global Market Pulse</h3>
         </div>
 
@@ -154,10 +150,6 @@ export default function AIBulletSummary() {
       {/* Last Updated Timestamp */}
       <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
         <span>Updated: {new Date(pulse.generatedAt).toLocaleTimeString()}</span>
-        <span className="flex items-center gap-1">
-          <Sparkles className="h-2.5 w-2.5 text-indigo-500" />
-          Live Pulse
-        </span>
       </div>
     </div>
   );

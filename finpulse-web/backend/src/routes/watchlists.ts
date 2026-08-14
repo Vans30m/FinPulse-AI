@@ -3,12 +3,15 @@ import { prisma } from '../prisma.js';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 import axios from 'axios';
 import { getAiCache, setAiCache } from '../utils/aiCache.js';
+import YahooFinance from 'yahoo-finance2';
+
+const yahooFinance = new YahooFinance();
 
 const router = Router();
 
 // Basic ticker format guard — also closes the prompt-injection surface
 // since anything that isn't a clean ticker never reaches the LLM prompt.
-const SYMBOL_REGEX = /^[A-Z0-9.\-]{1,10}$/i;
+const SYMBOL_REGEX = /^[A-Z0-9.\-=]{1,20}$/i;
 
 // GET /api/watchlists
 router.get('/watchlists', protect, async (req: AuthenticatedRequest, res: Response) => {
@@ -36,7 +39,40 @@ router.get('/watchlists', protect, async (req: AuthenticatedRequest, res: Respon
       watchlists = [defaultWatchlist];
     }
 
-    res.json(watchlists);
+    // Fetch quotes for all symbols across all watchlists to enrich the items
+    const allSymbols = Array.from(new Set(watchlists.flatMap(w => w.items.map(i => i.symbol))));
+    let quotesMap: Record<string, any> = {};
+    if (allSymbols.length > 0) {
+      try {
+        const quotes = await (yahooFinance as any).quote(allSymbols);
+        const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
+        quotesArray.forEach((q: any) => {
+          if (q && q.symbol) {
+            quotesMap[q.symbol.toUpperCase()] = q;
+          }
+        });
+      } catch (err: any) {
+        console.error('Failed to fetch quotes for watchlist items:', err.message);
+      }
+    }
+
+    // Map watchlists with enriched items
+    const enrichedWatchlists = watchlists.map(w => ({
+      ...w,
+      items: w.items.map(i => {
+        const quote = quotesMap[i.symbol.toUpperCase()];
+        return {
+          ...i,
+          name: quote?.shortName || quote?.longName || 'Stock Asset',
+          price: quote?.regularMarketPrice ?? null,
+          change: quote?.regularMarketChange ?? null,
+          changePercent: quote?.regularMarketChangePercent ?? null,
+          exchange: quote?.exchange ?? 'GLOBAL'
+        };
+      })
+    }));
+
+    res.json(enrichedWatchlists);
   } catch (error: any) {
     console.error('Failed to fetch watchlists:', error.message);
     res.status(500).json({ error: error.message });
@@ -128,7 +164,7 @@ router.post('/watchlists/:listId/items', protect, async (req: AuthenticatedReque
     // FIX: reject non-string / malformed symbols instead of only falsy ones.
     // This also prevents junk strings from ever reaching the LLM prompt.
     if (!symbol || typeof symbol !== 'string' || !SYMBOL_REGEX.test(symbol)) {
-      return res.status(400).json({ error: 'Symbol must be a valid ticker (letters/numbers, up to 10 chars)' });
+      return res.status(400).json({ error: 'Symbol must be a valid ticker (letters/numbers/dots/dashes, up to 20 chars)' });
     }
 
     if (notes !== undefined && notes !== null && (typeof notes !== 'string' || notes.length > 500)) {
@@ -153,16 +189,33 @@ router.post('/watchlists/:listId/items', protect, async (req: AuthenticatedReque
         }
       },
       update: {
-        notes: notes !== undefined ? notes : undefined
+        notes: notes || undefined,
       },
       create: {
         watchlistId: listId,
         symbol: symbol.toUpperCase(),
         notes: notes || null,
+        userId: userId,
       }
     });
 
-    res.status(201).json(item);
+    let quote: any = null;
+    try {
+      quote = await (yahooFinance as any).quote(item.symbol);
+    } catch (err: any) {
+      console.error('Failed to fetch quote for new watchlist item:', err.message);
+    }
+
+    const enrichedItem = {
+      ...item,
+      name: quote?.shortName || quote?.longName || 'Stock Asset',
+      price: quote?.regularMarketPrice ?? null,
+      change: quote?.regularMarketChange ?? null,
+      changePercent: quote?.regularMarketChangePercent ?? null,
+      exchange: quote?.exchange ?? 'GLOBAL'
+    };
+
+    res.status(201).json(enrichedItem);
   } catch (error: any) {
     console.error('Failed to add watchlist item:', error.message);
     res.status(500).json({ error: error.message });

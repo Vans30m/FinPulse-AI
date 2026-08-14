@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { 
-  Sparkles, AlertCircle, RotateCcw, Flame, TrendingDown,
+  AlertCircle, RotateCcw, Flame, TrendingDown,
   Cpu, Activity, Zap, ShoppingBag, Briefcase, Settings, Layers, Home, Globe, HelpCircle, ShieldAlert
 } from "lucide-react";
 import { getAISectorMomentum, type AISectorMomentumData } from "../../../services/marketService";
@@ -133,7 +133,6 @@ export default function TrendingSectorStreaks() {
         {/* Top Rally Section */}
         <div className="space-y-3.5">
           <h4 className="text-xs font-black text-emerald-600 dark:text-emerald-455 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-105/10 pb-1.5">
-            <Flame className="h-4 w-4 text-orange-500 fill-orange-500 animate-pulse" />
             Top Rallying Sectors
           </h4>
           <div className="space-y-2.5">
@@ -178,7 +177,6 @@ export default function TrendingSectorStreaks() {
         {/* Top Decline Section */}
         <div className="space-y-3.5">
           <h4 className="text-xs font-black text-rose-600 dark:text-rose-455 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-105/10 pb-1.5">
-            <TrendingDown className="h-4 w-4 text-rose-500" />
             Top Declining Sectors
           </h4>
           <div className="space-y-2.5">
@@ -219,15 +217,6 @@ export default function TrendingSectorStreaks() {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Footer Timestamp */}
-      <div className="mt-5 pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
-        <span>Updated: {new Date(pulse.generatedAt).toLocaleDateString()}</span>
-        <span className="flex items-center gap-1 text-orange-500">
-          <Sparkles className="h-2.5 w-2.5" />
-          Momentum Analysis
-        </span>
       </div>
     </div>
   );

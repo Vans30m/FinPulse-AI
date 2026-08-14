@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import axios from 'axios';
-import { getAiCache } from '../utils/aiCache.js';
+import { getAiCache, setAiCache } from '../utils/aiCache.js';
 const router = Router();
 // Centralized LLM fetcher helper
 async function queryLLM(prompt, fallbackData) {
@@ -128,57 +128,6 @@ router.get('/market-brief', async (req, res) => {
     "generatedAt": string (ISO timestamp)
   }
   IMPORTANT: You MUST generate entries for all 11 major global stock market sectors in the 'sectorStrength' array: Technology, Healthcare, Financials, Consumer Discretionary, Energy, Industrials, Materials, Consumer Defensive, Utilities, Real Estate, Communication Services. Reflect current global macroeconomic trends.`;
-    const result = await queryLLM(prompt, fallback);
-    result.generatedAt = new Date().toISOString();
-    res.json(result);
-});
-// GET /api/ai/market-drivers
-router.get('/market-drivers', async (req, res) => {
-    const cacheKey = 'ai:market-drivers';
-    const cached = getAiCache(cacheKey);
-    if (cached)
-        return res.json(cached);
-    const fallback = {
-        question: "What is driving the market today?",
-        analysis: [
-            "Jobs data miss fuels expectations of a rate cut.",
-            "Yield curve remains flat, suggesting cautious bond market sentiments."
-        ],
-        macroEvent: {
-            title: "July Payrolls Report",
-            impact: "High",
-            description: "Payroll growth slowed more than expected, raising rate cut possibilities."
-        },
-        bullishFactors: [
-            "Expected rate cuts lower cost of borrowing",
-            "Robust retail consumer spending holds steady"
-        ],
-        bearishFactors: [
-            "Geopolitical friction in Middle East channels",
-            "Weakening manufacturing PMI prints"
-        ],
-        watchNext: [
-            "Upcoming FOMC meeting minutes release",
-            "Crude oil inventory announcements"
-        ],
-        summary: "Today's main driver is the soft payrolls report which signals economic cooling but increases rate cut odds.",
-        generatedAt: new Date().toISOString()
-    };
-    const prompt = `Generate a JSON object describing the top market drivers of the day matching this schema:
-  {
-    "question": string,
-    "analysis": string[],
-    "macroEvent": {
-      "title": string,
-      "impact": "High" | "Medium" | "Low",
-      "description": string
-    },
-    "bullishFactors": string[],
-    "bearishFactors": string[],
-    "watchNext": string[],
-    "summary": string,
-    "generatedAt": string (ISO timestamp)
-  }`;
     const result = await queryLLM(prompt, fallback);
     result.generatedAt = new Date().toISOString();
     res.json(result);
@@ -331,6 +280,115 @@ router.get('/sector-momentum', async (req, res) => {
   IMPORTANT: You MUST include analysis for all 11 major global stock market sectors divided appropriately between 'topRally' (positive score) and 'topDecline' (negative score): Technology, Healthcare, Financials, Consumer Discretionary, Energy, Industrials, Materials, Consumer Defensive, Utilities, Real Estate, Communication Services.`;
     const result = await queryLLM(prompt, fallback);
     result.generatedAt = new Date().toISOString();
+    res.json(result);
+});
+// GET /api/ai/portfolio-advisor
+router.get('/portfolio-advisor', async (req, res) => {
+    const cacheKey = 'ai:portfolio-advisor';
+    const cached = getAiCache(cacheKey);
+    if (cached)
+        return res.json(cached);
+    const fallback = {
+        healthScore: 78,
+        healthGrade: "A-",
+        diversification: {
+            score: 82,
+            status: "Well Diversified",
+            sectorExposure: "Technology (28%), Financials (18%), Healthcare (12%)",
+            suggestedAllocation: "Increase defensive assets like Utilities or Consumer Staples by 5%",
+            confidence: 85,
+            reason: "Your portfolio has a solid mix of sectors, but tech exposure is slightly high."
+        },
+        riskAnalysis: {
+            score: 45,
+            risk: "Medium",
+            confidence: 80,
+            suggestedAction: "Hedge with gold or short-term treasury bills",
+            reason: "Overall beta is close to 1.1. Market volatility may impact short-term returns."
+        },
+        bestOpportunity: {
+            symbol: "NVDA",
+            company: "NVIDIA Corporation",
+            recommendation: "BUY",
+            currentPrice: 120.50,
+            targetPrice: 145.00,
+            expectedUpside: 20.3,
+            confidence: 75,
+            reason: "Strong demand for next-generation AI chips and cloud infrastructure spending."
+        },
+        portfolioHealth: {
+            outlook: "Bullish",
+            strengths: [
+                "Strong allocation to high-growth tech leaders",
+                "Consistent dividend yield from financial holdings",
+                "Low exposure to highly speculative penny stocks"
+            ],
+            weaknesses: [
+                "Overly concentrated in US equities",
+                "Slightly low cash reserves for market downturns"
+            ],
+            risks: [
+                "Semiconductor sector cyclicality",
+                "Interest rate fluctuations affecting growth stock valuations"
+            ],
+            recommendations: [
+                "Consider adding 5% exposure to emerging markets",
+                "Set trailing stop-losses on high-gain positions to lock in profits",
+                "Reallocate dividend payouts into defensive dividend Aristocrats"
+            ]
+        },
+        rebalanceSuggestions: [
+            { action: "BUY", asset: "VTI", reason: "Increase broad market diversification" },
+            { action: "SELL", asset: "NVDA", reason: "Trim position to lock in profits and reduce single-stock risk" }
+        ],
+        generatedAt: new Date().toISOString()
+    };
+    const prompt = `Generate a portfolio advisor analysis in JSON format matching this schema:
+  {
+    "healthScore": number (0-100),
+    "healthGrade": string,
+    "diversification": {
+      "score": number (0-100),
+      "status": string,
+      "sectorExposure": string,
+      "suggestedAllocation": string,
+      "confidence": number (0-100),
+      "reason": string
+    },
+    "riskAnalysis": {
+      "score": number (0-100),
+      "risk": "Low" | "Medium" | "High",
+      "confidence": number (0-100),
+      "suggestedAction": string,
+      "reason": string
+    },
+    "bestOpportunity": {
+      "symbol": string,
+      "company": string,
+      "recommendation": string,
+      "currentPrice": number,
+      "targetPrice": number,
+      "expectedUpside": number,
+      "confidence": number (0-100),
+      "reason": string
+    },
+    "portfolioHealth": {
+      "outlook": "Bullish" | "Bearish" | "Neutral",
+      "strengths": string[],
+      "weaknesses": string[],
+      "risks": string[],
+      "recommendations": string[]
+    },
+    "rebalanceSuggestions": [
+      { "action": "BUY" | "SELL" | "HOLD", "asset": string, "reason": string }
+    ],
+    "generatedAt": string (ISO timestamp)
+  }
+  Reflect professional and realistic asset management suggestions.`;
+    const result = await queryLLM(prompt, fallback);
+    result.generatedAt = new Date().toISOString();
+    // Set cache for future requests
+    setAiCache(cacheKey, result);
     res.json(result);
 });
 export default router;

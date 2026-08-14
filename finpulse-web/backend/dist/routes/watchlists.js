@@ -3,10 +3,12 @@ import { prisma } from '../prisma.js';
 import { protect } from '../utils/auth.js';
 import axios from 'axios';
 import { getAiCache, setAiCache } from '../utils/aiCache.js';
+import YahooFinance from 'yahoo-finance2';
+const yahooFinance = new YahooFinance();
 const router = Router();
 // Basic ticker format guard — also closes the prompt-injection surface
 // since anything that isn't a clean ticker never reaches the LLM prompt.
-const SYMBOL_REGEX = /^[A-Z0-9.\-]{1,10}$/i;
+const SYMBOL_REGEX = /^[A-Z0-9.\-=]{1,20}$/i;
 // GET /api/watchlists
 router.get('/watchlists', protect, async (req, res) => {
     try {
@@ -30,7 +32,39 @@ router.get('/watchlists', protect, async (req, res) => {
             });
             watchlists = [defaultWatchlist];
         }
-        res.json(watchlists);
+        // Fetch quotes for all symbols across all watchlists to enrich the items
+        const allSymbols = Array.from(new Set(watchlists.flatMap(w => w.items.map(i => i.symbol))));
+        let quotesMap = {};
+        if (allSymbols.length > 0) {
+            try {
+                const quotes = await yahooFinance.quote(allSymbols);
+                const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
+                quotesArray.forEach((q) => {
+                    if (q && q.symbol) {
+                        quotesMap[q.symbol.toUpperCase()] = q;
+                    }
+                });
+            }
+            catch (err) {
+                console.error('Failed to fetch quotes for watchlist items:', err.message);
+            }
+        }
+        // Map watchlists with enriched items
+        const enrichedWatchlists = watchlists.map(w => ({
+            ...w,
+            items: w.items.map(i => {
+                const quote = quotesMap[i.symbol.toUpperCase()];
+                return {
+                    ...i,
+                    name: quote?.shortName || quote?.longName || 'Stock Asset',
+                    price: quote?.regularMarketPrice ?? null,
+                    change: quote?.regularMarketChange ?? null,
+                    changePercent: quote?.regularMarketChangePercent ?? null,
+                    exchange: quote?.exchange ?? 'GLOBAL'
+                };
+            })
+        }));
+        res.json(enrichedWatchlists);
     }
     catch (error) {
         console.error('Failed to fetch watchlists:', error.message);
@@ -110,7 +144,7 @@ router.post('/watchlists/:listId/items', protect, async (req, res) => {
         // FIX: reject non-string / malformed symbols instead of only falsy ones.
         // This also prevents junk strings from ever reaching the LLM prompt.
         if (!symbol || typeof symbol !== 'string' || !SYMBOL_REGEX.test(symbol)) {
-            return res.status(400).json({ error: 'Symbol must be a valid ticker (letters/numbers, up to 10 chars)' });
+            return res.status(400).json({ error: 'Symbol must be a valid ticker (letters/numbers/dots/dashes, up to 20 chars)' });
         }
         if (notes !== undefined && notes !== null && (typeof notes !== 'string' || notes.length > 500)) {
             return res.status(400).json({ error: 'Notes must be a string under 500 characters' });
@@ -131,15 +165,31 @@ router.post('/watchlists/:listId/items', protect, async (req, res) => {
                 }
             },
             update: {
-                notes: notes !== undefined ? notes : undefined
+                notes: notes || undefined,
             },
             create: {
                 watchlistId: listId,
                 symbol: symbol.toUpperCase(),
                 notes: notes || null,
+                userId: userId,
             }
         });
-        res.status(201).json(item);
+        let quote = null;
+        try {
+            quote = await yahooFinance.quote(item.symbol);
+        }
+        catch (err) {
+            console.error('Failed to fetch quote for new watchlist item:', err.message);
+        }
+        const enrichedItem = {
+            ...item,
+            name: quote?.shortName || quote?.longName || 'Stock Asset',
+            price: quote?.regularMarketPrice ?? null,
+            change: quote?.regularMarketChange ?? null,
+            changePercent: quote?.regularMarketChangePercent ?? null,
+            exchange: quote?.exchange ?? 'GLOBAL'
+        };
+        res.status(201).json(enrichedItem);
     }
     catch (error) {
         console.error('Failed to add watchlist item:', error.message);
