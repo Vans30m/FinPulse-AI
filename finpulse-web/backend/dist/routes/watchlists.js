@@ -6,7 +6,7 @@ import { getAiCache, setAiCache } from '../utils/aiCache.js';
 const router = Router();
 // Basic ticker format guard — also closes the prompt-injection surface
 // since anything that isn't a clean ticker never reaches the LLM prompt.
-const SYMBOL_REGEX = /^[A-Z0-9.\-]{1,20}$/i;
+const SYMBOL_REGEX = /^[A-Z0-9.\-]{1,10}$/i;
 // GET /api/watchlists
 router.get('/watchlists', protect, async (req, res) => {
     try {
@@ -103,14 +103,14 @@ router.post('/watchlists/:listId/items', protect, async (req, res) => {
     try {
         const userId = req.userId;
         const listId = String(req.params.listId);
-        const { symbol, notes, favorite, pinned } = req.body;
+        const { symbol, notes } = req.body;
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
         // FIX: reject non-string / malformed symbols instead of only falsy ones.
         // This also prevents junk strings from ever reaching the LLM prompt.
         if (!symbol || typeof symbol !== 'string' || !SYMBOL_REGEX.test(symbol)) {
-            return res.status(400).json({ error: 'Symbol must be a valid ticker (letters/numbers, up to 20 chars)' });
+            return res.status(400).json({ error: 'Symbol must be a valid ticker (letters/numbers, up to 10 chars)' });
         }
         if (notes !== undefined && notes !== null && (typeof notes !== 'string' || notes.length > 500)) {
             return res.status(400).json({ error: 'Notes must be a string under 500 characters' });
@@ -131,16 +131,12 @@ router.post('/watchlists/:listId/items', protect, async (req, res) => {
                 }
             },
             update: {
-                notes: notes || undefined,
-                favorite: favorite !== undefined ? Boolean(favorite) : undefined,
-                pinned: pinned !== undefined ? Boolean(pinned) : undefined
+                notes: notes !== undefined ? notes : undefined
             },
             create: {
                 watchlistId: listId,
                 symbol: symbol.toUpperCase(),
                 notes: notes || null,
-                favorite: Boolean(favorite),
-                pinned: Boolean(pinned)
             }
         });
         res.status(201).json(item);

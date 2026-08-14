@@ -119,7 +119,7 @@ router.post('/watchlists/:listId/items', protect, async (req: AuthenticatedReque
   try {
     const userId = req.userId;
     const listId = String(req.params.listId);
-    const { symbol, notes, favorite, pinned } = req.body;
+    const { symbol, notes } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -153,16 +153,12 @@ router.post('/watchlists/:listId/items', protect, async (req: AuthenticatedReque
         }
       },
       update: {
-        notes: notes || undefined,
-        favorite: favorite !== undefined ? Boolean(favorite) : undefined,
-        pinned: pinned !== undefined ? Boolean(pinned) : undefined
+        notes: notes !== undefined ? notes : undefined
       },
       create: {
         watchlistId: listId,
         symbol: symbol.toUpperCase(),
         notes: notes || null,
-        favorite: Boolean(favorite),
-        pinned: Boolean(pinned)
       }
     });
 
