@@ -167,10 +167,6 @@ export default function RollingCagrSection() {
         </div>
       ) : (
         <>
-          <RollingCagrKpiCards metrics={kpis} />
-
-          <RollingCagrChart data={data} />
-
           <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-slate-50 dark:bg-[#050711]/70 border border-slate-205 dark:border-slate-900 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-3">
@@ -257,28 +253,28 @@ export default function RollingCagrSection() {
             </AnimatePresence>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2 justify-end">
+          <div className="mt-4 grid grid-cols-2 sm:flex sm:flex-row sm:justify-end gap-2">
             <button
               onClick={() => exportChartSeries(data, timeframe)}
-              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
             >
               <FileText className="h-3.5 w-3.5 text-blue-400" /> Export CSV
             </button>
             <button
               onClick={() => exportChartSeries(data, timeframe)}
-              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
             >
               <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" /> Export Excel
             </button>
             <button
               onClick={() => window.print()}
-              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
             >
               <Download className="h-3.5 w-3.5 text-purple-400" /> Export PDF
             </button>
             <button
               onClick={() => exportChartSeries(data, timeframe)}
-              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#050711] hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-205 dark:border-slate-900 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
             >
               <BarChart3 className="h-3.5 w-3.5 text-cyan-400" /> Download Chart
             </button>

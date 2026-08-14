@@ -204,7 +204,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
               <span className="text-5xl font-black text-slate-900 dark:text-white tracking-tight">
                 {animatedScore}
               </span>
-              <span className={`text-[10px] font-black tracking-widest uppercase mt-2 transition-colors duration-500 bg-white dark:bg-slate-850 px-3.5 py-1 rounded-full border border-slate-150/80 dark:border-slate-800/60 ${getLabelColors(brief.sentiment)}`}>
+              <span className={`text-[10px] font-black tracking-widest uppercase mt-2 transition-colors duration-500 bg-white dark:bg-[#0c1220] px-3.5 py-1.5 rounded-full border border-slate-150/80 dark:border-white/10 ${getLabelColors(brief.sentiment)} shadow-inner`}>
                 {brief.sentiment}
               </span>
             </div>

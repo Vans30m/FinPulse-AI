@@ -46,9 +46,9 @@ export default function Pulse() {
           </div>
         </div>
 
-        <FearGreedIndex />
-
         <TrendingSectorStreaks />
+
+        <FearGreedIndex />
 
         {/* Full-width Global Market Clock */}
         <div className="mt-8">
@@ -62,7 +62,7 @@ export default function Pulse() {
 
         {/* Bottom Full-width Row: Calculator & Live News side-by-side with equal height */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8 items-stretch">
-          <div className="h-[550px] lg:h-[600px]">
+          <div className="h-auto lg:h-[600px]">
             <InvestmentCalculator />
           </div>
           <div className="h-[550px] lg:h-[600px]">

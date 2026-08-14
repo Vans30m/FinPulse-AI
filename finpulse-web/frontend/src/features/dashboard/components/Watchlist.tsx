@@ -328,17 +328,17 @@ export default function Watchlist() {
                 </form>
               ) : (
                 <div className="flex items-center gap-1.5 bg-slate-100/60 dark:bg-white/[0.015] p-1.5 rounded-2xl border border-slate-200/60 dark:border-white/[0.02] shadow-inner">
-                  {watchlists.map((list) => (
+                  {watchlists.map((list, rIdx) => (
                     <div
                       key={list.id}
                       onClick={() => setActiveListId(list.id)}
-                      className={`group relative flex items-center gap-2 px-3.5 py-1.8 rounded-xl text-[11px] font-extrabold transition-all duration-200 cursor-pointer border whitespace-nowrap ${activeListId === list.id
-                        ? "bg-blue-600 text-white border-transparent shadow-md scale-[1.02]"
+                      className={`group relative flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black tracking-wide transition-all duration-200 cursor-pointer border whitespace-nowrap ${activeListId === list.id
+                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-transparent shadow-[0_4px_12px_rgba(37,99,235,0.25)] scale-[1.02]"
                         : "bg-transparent border-transparent hover:bg-slate-200/50 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                         }`}
                     >
                       <span>{list.name}</span>
-                      <span className={`text-[8.5px] px-1.5 py-0.2 rounded-full font-black ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200/60 dark:bg-white/10 text-slate-400 dark:text-slate-500"
+                      <span className={`text-[9.5px] px-2 py-0.5 rounded-full font-black ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200/60 dark:bg-white/10 text-slate-400 dark:text-slate-500"
                         }`}>
                         {list.items?.length || 0}
                       </span>
@@ -356,7 +356,7 @@ export default function Watchlist() {
                   ))}
                   <button
                     onClick={() => setIsCreatingList(true)}
-                    className="p-1.8 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-cyan-400 transition-all border border-blue-500/10 hover:border-blue-500/30 shadow-sm shrink-0"
+                    className="p-2.5 rounded-2xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-cyan-400 transition-all border border-blue-500/10 hover:border-blue-500/30 shadow-sm shrink-0"
                     title="Create custom watchlist"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -370,10 +370,10 @@ export default function Watchlist() {
           <div className="shrink-0 w-full sm:w-auto">
             <button
               onClick={handleExportCSV}
-              className="w-full justify-center px-4 py-2 border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.04] text-slate-700 dark:text-slate-350 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-sm"
+              className="w-full justify-center px-5 py-2.5 border border-blue-500/20 dark:border-cyan-500/20 bg-blue-600/10 dark:bg-cyan-500/5 hover:bg-blue-600/15 dark:hover:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-sm"
               title="Download watchlist items as CSV file"
             >
-              <Download className="h-4 w-4 text-blue-500 dark:text-cyan-400" />
+              <Download className="h-4 w-4" />
               <span>Export CSV</span>
             </button>
           </div>

@@ -30,6 +30,15 @@ export default function BenchmarkRadarSection() {
   const [showPortfolio, setShowPortfolio] = useState<boolean>(true);
   const [showBenchmark, setShowBenchmark] = useState<boolean>(true);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 450);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 450);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const [benchmarksData, setBenchmarksData] = useState<any>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -392,14 +401,14 @@ export default function BenchmarkRadarSection() {
           
           {/* LEFT: RADAR CHART CONTAINER */}
           <div className="bg-slate-50/50 dark:bg-[#050d1a] border border-slate-150 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-4 mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Relative Alignment Spider</span>
               
               {/* Interactive Legend with toggle options */}
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <button
                   onClick={() => setShowPortfolio(!showPortfolio)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase transition-all whitespace-nowrap ${
                     showPortfolio
                       ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400"
                       : "bg-slate-100 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 text-slate-500"
@@ -410,7 +419,7 @@ export default function BenchmarkRadarSection() {
                 </button>
                 <button
                   onClick={() => setShowBenchmark(!showBenchmark)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase transition-all whitespace-nowrap ${
                     showBenchmark
                       ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
                       : "bg-slate-100 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 text-slate-500"
@@ -425,11 +434,11 @@ export default function BenchmarkRadarSection() {
             {/* Recharts Radar Chart */}
             <div id="radar-chart-container" className="h-[360px] w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
+                <RadarChart cx="50%" cy="50%" outerRadius={isMobile ? "55%" : "72%"} data={chartData}>
                   <PolarGrid stroke={theme === "dark" ? "#1e293b" : "#cbd5e1"} strokeOpacity={0.8} />
                   <PolarAngleAxis
                     dataKey="subject"
-                    tick={{ fill: theme === "dark" ? "#94a3b8" : "#475569", fontSize: 10, fontWeight: 700 }}
+                    tick={{ fill: theme === "dark" ? "#94a3b8" : "#475569", fontSize: isMobile ? 8 : 10, fontWeight: 700 }}
                   />
                   <PolarRadiusAxis
                     angle={30}
@@ -501,15 +510,15 @@ export default function BenchmarkRadarSection() {
           <div className="space-y-4 flex flex-col justify-between">
             
             {/* Benchmark Verdict Scorecard */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex items-center justify-between bg-slate-50/50 dark:bg-[#050d1a] shadow-sm">
-              <div>
+            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-slate-50/50 dark:bg-[#050d1a] shadow-sm">
+              <div className="text-left">
                 <span className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider block">Benchmark Verdict</span>
-                <span className="text-xl font-extrabold text-emerald-500 dark:text-emerald-400 uppercase mt-1.5 block">
+                <span className="text-xl font-extrabold text-emerald-500 dark:text-emerald-400 uppercase mt-1 block">
                   {benchmarkData.rating}
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-455 font-semibold mt-0.5 block">vs {selectedBenchmark}</span>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <span className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider block">Comparison Score</span>
                 <span className="text-2xl font-black font-mono text-cyan-600 dark:text-cyan-400 block mt-1">
                   {benchmarkData.overallScore}
@@ -538,16 +547,16 @@ export default function BenchmarkRadarSection() {
                 </div>
 
                 <div className="space-y-2 pt-1 text-xs">
-                  {/* Pills styled matching white pill style with rounded border */}
-                  <div className="flex justify-between items-center bg-white dark:bg-white border border-slate-200 text-slate-900 px-3.5 py-2.5 rounded-xl shadow-sm">
-                    <span className="text-slate-500 font-extrabold text-[10px] uppercase">Best Lead Margin:</span>
-                    <span className="font-extrabold text-emerald-600 uppercase text-[10px] font-mono">
+                  {/* Pills styled matching theme-aware style with rounded border */}
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center bg-white dark:bg-[#121a2a]/40 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-200 px-3.5 py-2.5 rounded-xl shadow-sm gap-1">
+                    <span className="text-slate-500 dark:text-slate-400 font-extrabold text-[10px] uppercase">Best Lead Margin:</span>
+                    <span className="font-extrabold text-emerald-650 dark:text-emerald-400 uppercase text-[10px] font-mono sm:text-right">
                       {comparisonDetails.bestMetric.name} ({comparisonDetails.bestMetric.portfolioDisplay})
                     </span>
                   </div>
-                  <div className="flex justify-between items-center bg-white dark:bg-white border border-slate-200 text-slate-900 px-3.5 py-2.5 rounded-xl shadow-sm">
-                    <span className="text-slate-500 font-extrabold text-[10px] uppercase">Narrowest Gap:</span>
-                    <span className="font-extrabold text-amber-600 uppercase text-[10px] font-mono">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center bg-white dark:bg-[#121a2a]/40 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-200 px-3.5 py-2.5 rounded-xl shadow-sm gap-1">
+                    <span className="text-slate-500 dark:text-slate-400 font-extrabold text-[10px] uppercase">Narrowest Gap:</span>
+                    <span className="font-extrabold text-amber-600 dark:text-amber-450 uppercase text-[10px] font-mono sm:text-right">
                       {comparisonDetails.weakestMetric.name} ({comparisonDetails.weakestMetric.portfolioDisplay})
                     </span>
                   </div>
@@ -593,14 +602,12 @@ export default function BenchmarkRadarSection() {
 
           </div>
         </div>
-      )}
-
-      {/* 2. AI BENCHMARK INSIGHTS SECTION */}
+      )}      {/* 2. AI BENCHMARK INSIGHTS SECTION */}
       {benchmarkData && !loading && (
         <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-200 dark:border-slate-800 pt-5">
           
           {/* Strengths */}
-          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between">
+          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-450 mb-2.5 border-b border-slate-150 dark:border-slate-800/60 pb-2">
                 <CheckCircle size={14} />
@@ -618,7 +625,7 @@ export default function BenchmarkRadarSection() {
           </div>
 
           {/* Weaknesses */}
-          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between">
+          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-1.5 text-rose-500 dark:text-rose-400 mb-2.5 border-b border-slate-150 dark:border-slate-800/60 pb-2">
                 <AlertTriangle size={14} />
@@ -636,7 +643,7 @@ export default function BenchmarkRadarSection() {
           </div>
 
           {/* Recommendations */}
-          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-4.5 flex flex-col justify-between relative overflow-hidden">
+          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 blur-xl pointer-events-none rounded-full" />
             <div>
               <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 mb-2.5 border-b border-slate-150 dark:border-slate-800/60 pb-2">

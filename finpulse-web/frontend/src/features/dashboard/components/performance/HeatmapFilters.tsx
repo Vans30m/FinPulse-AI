@@ -39,25 +39,6 @@ export default function HeatmapFilters({ range, asset, onRangeChange, onAssetCha
           ))}
         </div>
       </div>
-
-      <div className="space-y-2 md:text-right">
-        <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider">Asset Filter</span>
-        <div className="flex flex-wrap gap-1.5 md:justify-end">
-          {assetOptions.map((option) => (
-            <button
-              key={option}
-              onClick={() => onAssetChange(option)}
-              className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${
-                asset === option
-                  ? "bg-blue-600/10 text-blue-400 border-blue-500/20 shadow-inner"
-                  : "bg-[#050711]/40 text-slate-400 border-slate-900/60 hover:text-white"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

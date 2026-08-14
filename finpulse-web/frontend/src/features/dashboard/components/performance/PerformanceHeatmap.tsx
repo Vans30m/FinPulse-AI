@@ -355,29 +355,6 @@ export default function PerformanceHeatmap() {
 
           <HeatmapLegend className="mt-4" />
 
-          <div className="mt-6">
-            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-200 dark:border-slate-900 pb-3 mb-4">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Monthly Summary</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {months.map((month) => (
-                <div key={month.monthLabel} className="rounded-2xl border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/70 p-4 text-xs">
-                  <p className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider">{month.monthLabel}</p>
-                  <p className={month.averageReturn >= 0 ? "text-sm font-black text-emerald-400 mt-1.5" : "text-sm font-black text-rose-400 mt-1.5"}>
-                    {month.averageReturn >= 0 ? "+" : ""}{month.averageReturn.toFixed(2)}%
-                  </p>
-                  <div className="mt-2.5 space-y-1 text-[10px] text-slate-500 dark:text-slate-400">
-                    <p>Best: <span className="text-emerald-400 font-bold">{month.best.portfolioReturn >= 0 ? "+" : ""}{month.best.portfolioReturn.toFixed(2)}%</span></p>
-                    <p>Worst: <span className="text-rose-400 font-bold">{month.worst.portfolioReturn.toFixed(2)}%</span></p>
-                    <p>Winning Days: <span className="text-slate-750 dark:text-slate-200 font-semibold">{month.winning}</span></p>
-                    <p>Losing Days: <span className="text-slate-750 dark:text-slate-200 font-semibold">{month.losing}</span></p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <HeatmapInsights insights={insights} />
         </>
       )}

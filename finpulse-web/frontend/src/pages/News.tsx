@@ -32,9 +32,6 @@ function TradingViewCalendar() {
   return (
     <div className="glass-panel p-5 rounded-3xl border border-slate-200/50 dark:border-white/5 bg-white/60 dark:bg-white/[0.02] backdrop-blur-sm shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[580px] overflow-hidden flex flex-col">
       <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-150 dark:border-white/5 bg-gradient-to-r from-blue-50/20 to-transparent dark:from-white/[0.01]">
-        <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-100/50 dark:border-cyan-400/10">
-          <Calendar className="h-5 w-5" />
-        </div>
         <div>
           <h2 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
             Economic Calendar

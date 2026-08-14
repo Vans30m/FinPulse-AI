@@ -670,15 +670,12 @@ router.get('/technical/:symbol', async (req: Request, res: Response) => {
     rsi: 55.4,
     macd: 1.25,
     signal: 0.85,
-    ema20: currentPrice * 0.99,
-    sma50: currentPrice * 0.97,
     verdict: "BUY",
     recommendation: "Bullish momentum holding",
     confidence: 78,
     reasons: [
       "Relative Strength Index (RSI) at 55.4 shows moderate bullish continuation without being overbought.",
-      "MACD line remains positive and above the signal line, supporting current price levels.",
-      `Price of $${currentPrice.toFixed(2)} trades cleanly above its key moving averages (EMA20 and SMA50).`
+      "MACD line remains positive and above the signal line, supporting current price levels."
     ]
   };
 
@@ -687,14 +684,11 @@ router.get('/technical/:symbol', async (req: Request, res: Response) => {
     "rsi": number (0-100),
     "macd": number,
     "signal": number,
-    "ema20": number,
-    "sma50": number,
     "verdict": "BUY" | "SELL" | "HOLD" | "NEUTRAL" | "STRONG BUY" | "STRONG SELL",
     "recommendation": string,
     "confidence": number (0-100),
     "reasons": string[]
-  }
-  Ensure moving averages (ema20 and sma50) are highly realistic in relation to the current price ($${currentPrice.toFixed(2)}).`;
+  }`;
 
   const result = await queryLLM(prompt, fallback);
   res.json(result);

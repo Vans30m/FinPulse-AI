@@ -181,6 +181,8 @@ const getInsightsYears = () => {
 export default function StockScreener() {
   const isScrollingRef = useRef(false);
   const loadTimerRef = useRef<number | null>(null);
+  const fundamentalsScrollRef = useRef<HTMLDivElement>(null);
+
   const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'market-data' | 'valuation' | 'fundamentals' | 'shareholding' | 'analysis'>('overview');
@@ -231,6 +233,12 @@ export default function StockScreener() {
   const [isMarketDataOpen, setIsMarketDataOpen] = useState(false);
   const [isValuationOpen, setIsValuationOpen] = useState(false);
   const [isFundamentalsOpen, setIsFundamentalsOpen] = useState(false);
+
+  useEffect(() => {
+    if (fundamentalsScrollRef.current) {
+      fundamentalsScrollRef.current.scrollLeft = 0;
+    }
+  }, [fundamentalsTab]);
   const [isShareholdingOpen, setIsShareholdingOpen] = useState(false);
   const [isMarketDataLoading, setIsMarketDataLoading] = useState(false);
   const [timeseriesData, setTimeseriesData] = useState<Record<string, any>>({});
@@ -271,35 +279,54 @@ export default function StockScreener() {
     }
   };
 
+  const scrollToSection = (id: string) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        const headerOffset = 90; // Adjust for sticky header height
+        const elementPosition = el.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 150);
+  };
+
   const handleToggleOverview = () => {
     const nextState = !isOverviewOpen;
     setIsOverviewOpen(nextState);
-    if (nextState && selectedStock) {
-      loadAssetDetailsOnDemand(selectedStock.symbol);
+    if (nextState) {
+      if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+      scrollToSection('screener-overview');
     }
   };
 
   const handleToggleMarketData = () => {
     const nextState = !isMarketDataOpen;
     setIsMarketDataOpen(nextState);
-    if (nextState && selectedStock) {
-      loadAssetDetailsOnDemand(selectedStock.symbol);
+    if (nextState) {
+      if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+      scrollToSection('screener-market-data');
     }
   };
 
   const handleToggleValuation = () => {
     const nextState = !isValuationOpen;
     setIsValuationOpen(nextState);
-    if (nextState && selectedStock) {
-      loadAssetDetailsOnDemand(selectedStock.symbol);
+    if (nextState) {
+      if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+      scrollToSection('screener-valuation');
     }
   };
 
   const handleToggleShareholding = () => {
     const nextState = !isShareholdingOpen;
     setIsShareholdingOpen(nextState);
-    if (nextState && selectedStock) {
-      loadAssetDetailsOnDemand(selectedStock.symbol);
+    if (nextState) {
+      if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+      scrollToSection('screener-shareholding');
     }
   };
 
@@ -310,6 +337,7 @@ export default function StockScreener() {
       setIsOverviewOpen(false);
       setIsMarketDataOpen(false);
       setIsValuationOpen(false);
+      setIsFundamentalsOpen(false);
       setIsShareholdingOpen(false);
     }
   }, [selectedStock?.symbol]);
@@ -349,7 +377,11 @@ export default function StockScreener() {
   };
 
   const handleToggleFundamentals = () => {
-    setIsFundamentalsOpen(!isFundamentalsOpen);
+    const nextState = !isFundamentalsOpen;
+    setIsFundamentalsOpen(nextState);
+    if (nextState) {
+      scrollToSection('screener-fundamentals');
+    }
   };
 
   useEffect(() => {
@@ -1818,16 +1850,21 @@ export default function StockScreener() {
                       <table className="w-full text-left border-collapse min-w-[750px]">
                         <thead>
                           <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
-                            <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-455 dark:text-slate-500">Valuation Metric</th>
+                            <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-455 dark:text-slate-500 sticky left-0 bg-slate-50 dark:bg-[#0b1022] z-20 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate rounded-tl-2xl">Valuation Metric</th>
                             {(fundamentalsData?.quarters || ['Jun 26', 'Mar 26', 'Dec 25', 'Sep 25']).map(q => (
                               <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-455 dark:text-slate-500 text-right">{q}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                          {valuationTableData.map((row) => (
-                            <tr key={row.label} className="hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
-                              <td className="p-3 text-xs font-semibold text-slate-700 dark:text-slate-350">{row.label}</td>
+                          {valuationTableData.map((row, rIdx) => (
+                            <tr key={row.label} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
+                              <td 
+                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-350 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === valuationTableData.length - 1 ? 'rounded-bl-2xl' : ''}`}
+                                title={row.label}
+                              >
+                                {row.label}
+                              </td>
                               {row.values.map((v, i) => (
                                 <td key={i} className="p-3 text-xs font-mono font-bold text-slate-900 dark:text-white text-right">{v}</td>
                               ))}
@@ -1883,7 +1920,7 @@ export default function StockScreener() {
                         <table className="w-full text-left border-collapse min-w-[650px]">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
-                              <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500">Metric (Quarterly)</th>
+                              <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 sticky left-0 bg-slate-50 dark:bg-[#0b1022] z-20 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate rounded-tl-2xl">Metric (Quarterly)</th>
                               {fundamentalsData.quarters.map(q => (
                                 <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 text-right">{q}</th>
                               ))}
@@ -1945,9 +1982,20 @@ export default function StockScreener() {
                             ];
                           }
 
-                          return metricsList.map((metric) => (
-                            <tr key={metric} className="hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
-                              <td className="p-3 text-xs font-semibold text-slate-700 dark:text-slate-350">{metric}</td>
+                          return metricsList.map((metric, rIdx) => (
+                            <tr key={metric} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
+                              <td 
+                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-350 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === metricsList.length - 1 ? 'rounded-bl-2xl' : ''}`}
+                                title={metric}
+                              >
+                                {metric === 'Cash Cash Equivalents & Short-Term Investments' 
+                                  ? 'Cash & ST Investments' 
+                                  : metric === 'Net Income Common Stockholders' 
+                                  ? 'Net Income (Common)' 
+                                  : metric === 'Net Income Continuous Operations' 
+                                  ? 'Net Income (Cont. Ops)' 
+                                  : metric}
+                              </td>
                               {fundamentalsData.quarters.map((q, idx) => (
                                 <td key={q} className="p-3 text-xs font-mono font-bold text-slate-900 dark:text-white text-right">
                                   {(fundamentalsData.qData[idx] as any)[metric] || '-'}

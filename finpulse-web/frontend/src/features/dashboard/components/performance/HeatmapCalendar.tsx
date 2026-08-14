@@ -36,29 +36,37 @@ function getCellClass(point: DailyPerformancePoint | null) {
 
 function HeatmapCalendar({ weeks, monthLabels, onHover, onLeave, onSelectDay }: Props) {
   return (
-    <div className="relative rounded-2xl border border-slate-900 bg-[#050711]/55 p-4 overflow-x-auto">
-      <div className="min-w-[940px]">
-        <div className="pl-10 grid gap-1 mb-1" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}>
-          {monthLabels.map((month) => (
-            <span
-              key={`${month.name}-${month.index}`}
-              className="text-[10px] text-slate-500 font-bold uppercase tracking-wider"
-              style={{ gridColumnStart: month.index + 1 }}
-            >
-              {month.name}
-            </span>
+    <div className="relative rounded-2xl border border-slate-900 bg-[#050711]/55 p-4 flex gap-3">
+      {/* Left side fixed day labels (always visible) */}
+      <div className="w-8 shrink-0 select-none flex flex-col justify-start">
+        {/* Spacer matching the month header row height */}
+        <div className="h-4.5 mb-1.5" />
+        <div className="grid gap-1">
+          {weekLabels.map((label) => (
+            <div key={label} className="h-3.5 text-[9px] text-slate-500 font-semibold flex items-center">
+              {visibleWeekLabels.includes(label) ? label : ""}
+            </div>
           ))}
         </div>
+      </div>
 
-        <div className="flex gap-2">
-          <div className="w-8 pt-1.5">
-            {weekLabels.map((label) => (
-              <div key={label} className="h-4 mb-1 text-[9px] text-slate-500 font-semibold flex items-center">
-                {visibleWeekLabels.includes(label) ? label : ""}
-              </div>
+      {/* Right side scrollable calendar grid */}
+      <div className="flex-1 overflow-x-auto scrollbar-thin">
+        <div className="min-w-[900px] pb-1">
+          {/* Month labels */}
+          <div className="grid gap-1 mb-1.5" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}>
+            {monthLabels.map((month) => (
+              <span
+                key={`${month.name}-${month.index}`}
+                className="text-[10px] text-slate-500 font-bold uppercase tracking-wider text-left"
+                style={{ gridColumnStart: month.index + 1 }}
+              >
+                {month.name}
+              </span>
             ))}
           </div>
 
+          {/* Grid maps */}
           <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}>
             {weeks.map((week) => (
               <div key={week.index} className="grid gap-1">

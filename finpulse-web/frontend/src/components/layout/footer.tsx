@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Twitter,
-  Linkedin,
   Github,
-  ArrowRight,
-  ShieldAlert,
-  CheckCircle2,
-  Loader2
+  ShieldAlert
 } from 'lucide-react';
 
 // Explicit interfaces for clean sitemap mapping
@@ -113,13 +108,7 @@ export default function Footer() {
             </p>
             {/* Social Interactivity Cluster */}
             <div className="flex items-center gap-4 text-slate-400 dark:text-slate-500">
-              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 hover:text-sky-500 transition-all duration-200" aria-label="Twitter X Link">
-                <Twitter className="h-4 w-4" />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 hover:text-blue-600 transition-all duration-200" aria-label="LinkedIn Link">
-                <Linkedin className="h-4 w-4" />
-              </a>
-              <a href="https://github.com" target="_blank" rel="noreferrer" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all duration-200" aria-label="GitHub Repository">
+              <a href="https://github.com/Vans30m/FinPulse-AI.git" target="_blank" rel="noreferrer" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all duration-200" aria-label="GitHub Repository">
                 <Github className="h-4 w-4" />
               </a>
             </div>
@@ -160,40 +149,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Middle Conversion Grid (Newsletter Subscription Banner) */}
-        <div className="border-y border-slate-200 dark:border-slate-800/60 py-8 my-4 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
-          <div className="lg:col-span-1">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Subscribe to Intelligence Dispatches</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Get advanced sentiment alerts delivered directly to your workstation.</p>
-          </div>
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row max-w-md w-full gap-2.5 sm:ml-auto">
-              <input
-                type="email"
-                required
-                value={email}
-                disabled={status === 'loading' || status === 'success'}
-                placeholder="Enter Your Email Address"
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={status === 'loading' || status === 'success'}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 dark:bg-cyan-500 px-5 py-2.5 text-xs font-bold text-white dark:text-slate-950 transition-all hover:bg-blue-700 dark:hover:bg-cyan-400 disabled:bg-emerald-600 disabled:text-white whitespace-nowrap min-h-[44px]"
-              >
-                {status === 'loading' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {status === 'success' && <CheckCircle2 className="h-3.5 w-3.5" />}
-                {status === 'idle' && (
-                  <>
-                    Subscribe <ArrowRight className="h-3.5 w-3.5" />
-                  </>
-                )}
-                {status === 'success' ? 'Added' : status === 'loading' ? 'Processing' : ''}
-              </button>
-            </form>
-          </div>
-        </div>
+
 
         {/* Lower Regulatory & Regulatory Compliance Asset Section */}
         <div className="pt-8 space-y-6">

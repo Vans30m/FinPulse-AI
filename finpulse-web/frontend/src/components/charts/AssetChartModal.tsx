@@ -1289,38 +1289,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         else if (rsi > 70) sellCount++;
                         else neutralCount++;
 
-                        // MAs (using technicals state with smart fallbacks to prevent NaN)
-                        const mas = [
-                          { name: "20", ema: Number(technicals?.ema20) || price * 0.99, sma: Number(technicals?.sma20) || price * 0.985 },
-                          { name: "50", ema: Number(technicals?.sma50) || price * 0.975, sma: Number(technicals?.sma50) || price * 0.97 },
-                          { name: "100", ema: Number(technicals?.sma50) * 0.99 || price * 0.95, sma: Number(technicals?.sma50) * 0.985 || price * 0.94 },
-                          { name: "200", ema: Number(technicals?.sma50) * 0.97 || price * 0.92, sma: Number(technicals?.sma50) * 0.965 || price * 0.91 }
-                        ];
 
-                        let maBuyCount = 0;
-                        let maSellCount = 0;
-                        mas.forEach(ma => {
-                          if (ma.sma && price) {
-                            if (price > ma.sma) {
-                              buyCount++;
-                              maBuyCount++;
-                            } else {
-                              sellCount++;
-                              maSellCount++;
-                            }
-                          }
-                          if (ma.ema && price) {
-                            if (price > ma.ema) {
-                              buyCount++;
-                              maBuyCount++;
-                            } else {
-                              sellCount++;
-                              maSellCount++;
-                            }
-                          }
-                        });
-                        const maVerdict = maBuyCount > maSellCount ? "Bullish" : maBuyCount < maSellCount ? "Bearish" : "Neutral";
-                        const maVerdictBadge = maVerdict === "Bullish" ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/5" : maVerdict === "Bearish" ? "text-rose-400 border-rose-500/20 bg-rose-500/5" : "text-slate-400 border-slate-800 bg-slate-800/10";
 
                         // MACD
                         if (macd !== 0 || macdSignal !== 0) {
@@ -1366,19 +1335,19 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                         let verdictColor = "bg-gradient-to-r from-slate-950 to-slate-900 border-slate-850 text-slate-350";
                         let verdictGlow = "shadow-slate-500/5";
 
-                        if (buyCount > sellCount + 2) {
+                        if (buyCount === 2) {
                           summaryVerdict = "STRONG BUY";
                           verdictColor = "bg-gradient-to-r from-emerald-950/20 via-[#070e17] to-[#040810] border-emerald-500/20 text-emerald-400";
                           verdictGlow = "shadow-emerald-500/5";
-                        } else if (buyCount > sellCount) {
+                        } else if (buyCount === 1 && sellCount === 0) {
                           summaryVerdict = "BUY";
                           verdictColor = "bg-gradient-to-r from-cyan-950/20 via-[#070e17] to-[#040810] border-cyan-500/20 text-cyan-400";
                           verdictGlow = "shadow-cyan-500/5";
-                        } else if (sellCount > buyCount + 2) {
+                        } else if (sellCount === 2) {
                           summaryVerdict = "STRONG SELL";
                           verdictColor = "bg-gradient-to-r from-rose-955/20 via-[#070e17] to-[#040810] border-rose-500/20 text-rose-400";
                           verdictGlow = "shadow-rose-500/5";
-                        } else if (sellCount > buyCount) {
+                        } else if (sellCount === 1 && buyCount === 0) {
                           summaryVerdict = "SELL";
                           verdictColor = "bg-gradient-to-r from-orange-955/20 via-[#070e17] to-[#040810] border-orange-500/20 text-orange-400";
                           verdictGlow = "shadow-orange-500/5";
@@ -1426,11 +1395,9 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   <span>Bearish ({sellPct.toFixed(0)}%)</span>
                                 </div>
                               </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            </div>                            <div className="grid grid-cols-1 gap-6">
                               {/* Oscillators */}
-                              <div className="col-span-1">
+                              <div className="w-full">
                                 <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md space-y-6 relative overflow-hidden">
                                   <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none" />
                                   <h4 className="text-xs font-black uppercase text-slate-300 border-b border-slate-900 pb-3 tracking-wider">
@@ -1441,7 +1408,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   <div className="space-y-2.5">
                                     <div className="flex justify-between text-xs font-mono">
                                       <span className="text-slate-450 font-sans font-bold">RSI (14)</span>
-                                      <span className={`font-black ${rsi < 30 ? "text-emerald-450" : rsi > 70 ? "text-rose-455" : "text-slate-200"}`}>
+                                      <span className={`font-black ${rsi < 30 ? "text-emerald-455" : rsi > 70 ? "text-rose-455" : "text-slate-200"}`}>
                                         {rsi.toFixed(2)} ({rsi < 30 ? "Oversold" : rsi > 70 ? "Overbought" : "Neutral"})
                                       </span>
                                     </div>
@@ -1481,65 +1448,6 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                       </div>
                                     </div>
                                   </div>
-                                </div>
-                              </div>
-
-                              {/* Moving Averages */}
-                              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-4 sm:p-6 shadow-md col-span-1 space-y-4 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
-                                <div className="flex justify-between items-center border-b border-slate-900 pb-3">
-                                  <h4 className="text-xs font-black uppercase text-slate-300 tracking-wider">
-                                    Moving Averages (MAs)
-                                  </h4>
-                                  <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border ${maVerdictBadge}`}>
-                                    {maVerdict}
-                                  </span>
-                                </div>
-
-                                <div className="overflow-x-auto custom-scrollbar">
-                                  <table className="w-full text-xs font-mono text-left">
-                                    <thead>
-                                      <tr className="border-b border-slate-900 text-[10px] text-slate-550 uppercase font-black tracking-wider">
-                                        <th className="pb-3 font-sans">Period</th>
-                                        <th className="pb-3 text-center">Simple (SMA)</th>
-                                        <th className="pb-3 text-right">Exponential (EMA)</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-900/40">
-                                      {mas.map((ma, i) => {
-                                        const smaDiff = ma.sma ? ((price - ma.sma) / ma.sma) * 100 : 0;
-                                        const emaDiff = ma.ema ? ((price - ma.ema) / ma.ema) * 100 : 0;
-
-                                        return (
-                                          <tr key={i} className="hover:bg-white/[0.01] transition-colors duration-150">
-                                            <td className="py-3 font-sans font-black text-slate-400 whitespace-nowrap pr-3">
-                                              MA {ma.name}
-                                            </td>
-                                            <td className="py-3 text-center whitespace-nowrap px-3">
-                                              <div className="inline-flex flex-col items-center">
-                                                <span className="text-slate-200 font-bold">{formatVal(ma.sma, true)}</span>
-                                                {ma.sma > 0 && (
-                                                  <span className={`inline-flex items-center gap-0.5 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md mt-1.5 leading-none ${price >= ma.sma ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-455"}`}>
-                                                    {price >= ma.sma ? "▲ Above" : "▼ Below"} {Math.abs(smaDiff).toFixed(1)}%
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </td>
-                                            <td className="py-3 text-right whitespace-nowrap pl-3">
-                                              <div className="inline-flex flex-col items-end">
-                                                <span className="text-slate-200 font-bold">{formatVal(ma.ema, true)}</span>
-                                                {ma.ema > 0 && (
-                                                  <span className={`inline-flex items-center gap-0.5 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md mt-1.5 leading-none ${price >= ma.ema ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-455"}`}>
-                                                    {price >= ma.ema ? "▲ Above" : "▼ Below"} {Math.abs(emaDiff).toFixed(1)}%
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
                                 </div>
                               </div>
                             </div>
