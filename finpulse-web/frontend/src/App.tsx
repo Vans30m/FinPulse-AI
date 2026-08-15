@@ -34,19 +34,10 @@ import StockScreener from './pages/StockScreener';
 import Pulse from './pages/Pulse';
 
 // New Footer Pages
-import Analytics from "./pages/Analytics";
-import Pricing from "./pages/Pricing";
-import Docs from "./pages/Docs";
-import ApiRef from "./pages/ApiRef";
-import Blog from "./pages/Blog";
 import About from "./pages/About";
-import Careers from "./pages/Careers";
-import Press from "./pages/Press";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
-import Disclosures from "./pages/Disclosures";
-import Security from "./pages/Security";
 import { useTheme } from './context/ThemeContext';
 import { profileService } from './profile/services/profileService';
 
@@ -379,19 +370,10 @@ export default function App() {
             />
 
             {/* Footer Routes */}
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/api" element={<ApiRef />} />
-            <Route path="/blog" element={<Blog />} />
             <Route path="/about" element={<About />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/press" element={<Press />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
-            <Route path="/disclosures" element={<Disclosures />} />
-            <Route path="/security" element={<Security />} />
           </Routes>
         </AnimatePresence>
       </main>

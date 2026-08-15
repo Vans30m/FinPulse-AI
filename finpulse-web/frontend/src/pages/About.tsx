@@ -2,9 +2,8 @@ import { Globe, Users, Target, ShieldCheck } from "lucide-react";
 
 export default function About() {
   const team = [
-    { name: "Vikram Malhotra", role: "Co-Founder & CEO", desc: "Ex-algorithmic trader at QuantGroup. Building AI systems for high-frequency index traders." },
-    { name: "Aarav Sharma", role: "Chief AI Architect", desc: "Ph.D. in NLP. Designing specialized financial models for low-latency sentiment decay." },
-    { name: "Ananya Patel", role: "Head of Infrastructure", desc: "Ex-Cloud Architect. Managing secure pipelines processing millions of daily feeds." }
+    { name: "Vansh Thakur" },
+    { name: "Tanish Mehta" }
   ];
 
   return (
@@ -52,18 +51,16 @@ export default function About() {
         </div>
       </div>
 
-      {/* Team Section */}
+      {/* Creators Section */}
       <div className="space-y-6 mt-16">
         <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white flex items-center justify-center gap-2">
           <Users className="h-6 w-6 text-blue-600 dark:text-cyan-400" />
-          Leadership Team
+          Creators
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           {team.map((t, idx) => (
-            <div key={idx} className="glass-panel p-6 space-y-3">
-              <h3 className="font-bold text-slate-900 dark:text-white">{t.name}</h3>
-              <span className="text-xs font-semibold text-blue-600 dark:text-cyan-400">{t.role}</span>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-2">{t.desc}</p>
+            <div key={idx} className="glass-panel p-6 text-center hover:shadow-lg transition-all duration-300 border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 rounded-3xl">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t.name}</h3>
             </div>
           ))}
         </div>

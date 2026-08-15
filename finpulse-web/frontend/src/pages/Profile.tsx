@@ -492,8 +492,6 @@ export default function Profile() {
       isPositive: profileStats ? profileStats.totalReturn >= 0 : true, 
       icon: <Activity className="h-5 w-5" /> 
     },
-    { title: "Watchlist Assets", value: watchlistSummary ? `${watchlistSummary.totalAssets} Items` : "0 Items", icon: <Bookmark className="h-5 w-5" /> },
-    { title: "Active Alerts", value: profileStats && typeof profileStats.alertsCount === 'number' ? `${profileStats.alertsCount} Active` : "0 Active", icon: <Bell className="h-5 w-5" /> },
     { title: "Total Holdings", value: profileStats && typeof profileStats.holdingsCount === 'number' ? `${profileStats.holdingsCount} Positions` : "0 Positions", icon: <Layers className="h-5 w-5" /> }
   ];
 
@@ -528,7 +526,7 @@ export default function Profile() {
       {/* SECTION 2 - Investment Statistics Grid */}
       <div className="space-y-4">
         <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Investment Summary Dashboard</h3>
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((stat, idx) => (
             <StatisticCard
               key={idx}

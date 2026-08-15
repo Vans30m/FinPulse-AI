@@ -24,32 +24,12 @@ export default function Footer() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-  // Organized Information Architecture
+  // Organized Information Architecture (Simplified)
   const sitemap: FooterSection[] = [
-    {
-      title: "Platform",
-      links: [
-        { label: "Pulse Engine", to: "/" },
-        { label: "Market Sentiment", to: "/markets" },
-        { label: "Advanced Analytics", to: "/analytics" },
-        { label: "Pricing Tiers", to: "/pricing" }
-      ]
-    },
-    {
-      title: "Resources",
-      links: [
-        { label: "Documentation", to: "/docs" },
-        { label: "API Reference", to: "/api" },
-        { label: "Market Insights", to: "/blog" },
-        { label: "System Status", to: "/status", isExternal: true }
-      ]
-    },
     {
       title: "Company",
       links: [
         { label: "About FinPulse", to: "/about" },
-        { label: "Careers", to: "/careers" },
-        { label: "Press Kit", to: "/press" },
         { label: "Contact Support", to: "/contact" }
       ]
     },
@@ -57,9 +37,7 @@ export default function Footer() {
       title: "Legal",
       links: [
         { label: "Privacy Policy", to: "/privacy" },
-        { label: "Terms of Service", to: "/terms" },
-        { label: "Risk Disclosures", to: "/disclosures" },
-        { label: "Cyber Security", to: "/security" }
+        { label: "Terms of Service", to: "/terms" }
       ]
     }
   ];
@@ -115,7 +93,7 @@ export default function Footer() {
           </div>
 
           {/* Dynamic Sitemap Navigation Links */}
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 lg:col-span-4">
+          <div className="grid grid-cols-2 gap-6 lg:col-span-4">
             {sitemap.map((section) => (
               <div key={section.title} className="space-y-4">
                 <h3 className="text-xs font-bold tracking-wider uppercase text-slate-900 dark:text-slate-200">
