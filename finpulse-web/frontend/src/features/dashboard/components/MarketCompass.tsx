@@ -3,78 +3,78 @@ import { Compass, Shield, Target, Award, Info, Brain } from "lucide-react";
 
 export default function MarketCompass() {
   const sentimentZones = [
-    { 
-      label: "Extreme Fear", 
-      range: "0-24", 
-      color: "bg-red-500", 
+    {
+      label: "Extreme Fear",
+      range: "0-24",
+      color: "bg-red-500",
       textColor: "text-red-500",
-      description: "High panic. Max opportunity; deep discount values." 
+      description: "High panic. Max opportunity; deep discount values."
     },
-    { 
-      label: "Fear", 
-      range: "25-44", 
-      color: "bg-orange-500", 
+    {
+      label: "Fear",
+      range: "25-44",
+      color: "bg-orange-500",
       textColor: "text-orange-500",
-      description: "Caution. Investors scale into defensive assets." 
+      description: "Caution. Investors scale into defensive assets."
     },
-    { 
-      label: "Neutral", 
-      range: "45-54", 
-      color: "bg-amber-500", 
+    {
+      label: "Neutral",
+      range: "45-54",
+      color: "bg-amber-500",
       textColor: "text-amber-500",
-      description: "Consolidation. Range-bound trading dominates." 
+      description: "Consolidation. Range-bound trading dominates."
     },
-    { 
-      label: "Greed", 
-      range: "55-74", 
-      color: "bg-emerald-500", 
+    {
+      label: "Greed",
+      range: "55-74",
+      color: "bg-emerald-500",
       textColor: "text-emerald-500",
-      description: "Momentum. Growth rallies; tighten stop-losses." 
+      description: "Momentum. Growth rallies; tighten stop-losses."
     },
-    { 
-      label: "Euphoria", 
-      range: "75-100", 
-      color: "bg-teal-500", 
+    {
+      label: "Euphoria",
+      range: "75-100",
+      color: "bg-teal-500",
       textColor: "text-teal-500",
-      description: "Extreme greed. Overvalued; scale out / hedge." 
+      description: "Extreme greed. Overvalued; scale out / hedge."
     },
   ];
 
   return (
-    <div className="w-full glass-panel p-5 rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white/60 dark:bg-white/[0.01] backdrop-blur-md shadow-lg flex flex-col gap-5 h-full">
-      
+    <div className="w-full h-full bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm flex flex-col gap-5">
+
       {/* Top Header */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-white/5">
-          <div className="p-2 rounded-xl bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-100/50 dark:border-cyan-400/10">
-            <Compass className="h-4.5 w-4.5" />
+        <div className="flex items-center gap-3 pb-3 border-b border-slate-200/60 dark:border-white/10">
+          <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-cyan-400 border border-indigo-100/50 dark:border-cyan-400/10">
+            <Compass className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               Market Compass
             </h3>
-            <p className="text-[10px] text-slate-550 dark:text-slate-455 mt-0.5">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
               Static reference guide for market cycles and investor psychology.
             </p>
           </div>
         </div>
 
         {/* Sentiment Spectrum bar */}
-        <div className="space-y-2.5 mb-5">
-          <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+        <div className="space-y-2.5 mb-3">
+          <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
             <span>Sentiment Spectrum</span>
             <span className="flex items-center gap-1"><Info className="h-3 w-3" /> Reference Guide</span>
           </div>
-          
+
           {/* Color bar */}
           <div className="flex h-2 w-full rounded-full overflow-hidden">
-            <div className="h-full w-[25%] bg-red-500" />
+            <div className="h-full w-[25%] bg-rose-500" />
             <div className="h-full w-[20%] bg-orange-500" />
             <div className="h-full w-[10%] bg-amber-500" />
             <div className="h-full w-[20%] bg-emerald-500" />
             <div className="h-full w-[25%] bg-teal-500" />
           </div>
-          
+
           {/* Labels under the bar */}
           <div className="grid grid-cols-5 gap-1 text-[9px] font-bold text-center text-slate-400 dark:text-slate-500">
             <div>Fear</div>
@@ -86,29 +86,29 @@ export default function MarketCompass() {
         </div>
 
         {/* Detailed Psychology Grid to Fill Vertical Space */}
-        <div className="mb-5">
-          <div className="text-[10px] font-black uppercase text-slate-505 dark:text-slate-400 tracking-wider mb-2.5 flex items-center gap-1.5">
-            <Brain className="h-3.5 w-3.5 text-indigo-500" />
+        <div className="mb-3">
+          <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2.5 flex items-center gap-1.5">
+            <Brain className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
             Psychology Zone Guide
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
             {sentimentZones.map((zone, idx) => (
-              <div 
-                key={idx} 
-                className="p-2.5 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5 flex flex-col justify-between hover:border-slate-200 dark:hover:border-white/10 transition-colors"
+              <div
+                key={idx}
+                className="p-3 rounded-xl bg-slate-550/20 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.04] flex flex-col justify-between hover:border-slate-300 dark:hover:border-white/10 transition-colors"
               >
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1">
+                  <div className="flex items-center gap-1.5 mb-1.5">
                     <span className={`h-1.5 w-1.5 rounded-full ${zone.color}`} />
-                    <span className={`text-[9px] font-black uppercase tracking-wider ${zone.textColor}`}>
+                    <span className={`text-[9px] font-bold uppercase tracking-wider ${zone.textColor}`}>
                       {zone.label}
                     </span>
                   </div>
-                  <p className="text-[9px] leading-relaxed text-slate-500 dark:text-slate-400 font-semibold">
+                  <p className="text-[9px] leading-relaxed text-slate-550 dark:text-slate-400 font-medium">
                     {zone.description}
                   </p>
                 </div>
-                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 mt-2 block border-t border-slate-100 dark:border-white/5 pt-1">
+                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-2 block border-t border-slate-200/60 dark:border-white/5 pt-1.5">
                   Score: {zone.range}
                 </span>
               </div>
@@ -118,30 +118,30 @@ export default function MarketCompass() {
       </div>
 
       {/* Strategic pillars at the bottom */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-slate-100 dark:border-white/5 pt-4">
-        <div className="p-3 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10 transition-colors">
-          <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400 mb-1">
-            <span className="text-[10px] font-black uppercase tracking-wider">Capital Guard</span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-slate-200/60 dark:border-white/10 pt-4">
+        <div className="p-3 rounded-xl bg-slate-550/20 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/10 transition-colors">
+          <div className="flex items-center gap-2 text-indigo-600 dark:text-cyan-400 mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider">Capital Guard</span>
           </div>
-          <p className="text-[10px] leading-relaxed text-slate-655 dark:text-slate-400 font-semibold">
+          <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 font-medium">
             Preserve core assets in high-risk volatility cycles; allocate cash to dips.
           </p>
         </div>
 
-        <div className="p-3 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10 transition-colors">
+        <div className="p-3 rounded-xl bg-slate-550/20 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/10 transition-colors">
           <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-1">
-            <span className="text-[10px] font-black uppercase tracking-wider">Asset Allocation</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">Asset Allocation</span>
           </div>
-          <p className="text-[10px] leading-relaxed text-slate-655 dark:text-slate-400 font-semibold">
+          <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 font-medium">
             Rebalance regularly; diversify across uncorrelated sectors and commodities.
           </p>
         </div>
 
-        <div className="p-3 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10 transition-colors">
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-450 mb-1">
-            <span className="text-[10px] font-black uppercase tracking-wider">Cycle Trading</span>
+        <div className="p-3 rounded-xl bg-slate-550/20 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/10 transition-colors">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider">Cycle Trading</span>
           </div>
-          <p className="text-[10px] leading-relaxed text-slate-655 dark:text-slate-400 font-semibold">
+          <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 font-medium">
             Accumulate slowly in Extreme Fear zones; take profits during Greed peaks.
           </p>
         </div>

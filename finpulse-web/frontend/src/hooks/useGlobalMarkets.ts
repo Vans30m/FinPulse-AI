@@ -7,12 +7,10 @@ import {
 from "../services/marketService";
 
 export function useGlobalMarkets() {
-
   return useQuery({
     queryKey: ["globalMarkets"],
     queryFn: fetchGlobalMarkets,
-    refetchInterval: false, // Disabled automatic polling
-    refetchOnWindowFocus: false, // Disabled background refetches on window focus
-    staleTime: Infinity, // Keep data fresh indefinitely once loaded
+    refetchInterval: 15000, // Refresh every 15 seconds
+    staleTime: 5000, // 5 seconds stale time
   });
 }

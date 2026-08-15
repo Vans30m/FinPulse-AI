@@ -164,7 +164,7 @@ export default function App() {
       <main
         className={`relative z-10 mx-auto w-full flex-1 transition-all duration-500 ${location.pathname.startsWith('/screener')
           ? 'max-w-none px-4 sm:px-8 py-6'
-          : 'max-w-7xl px-4 sm:px-6 py-8'
+          : 'max-w-[1440px] px-4 sm:px-6 lg:px-8 py-8'
           }`}
       >
         <AssetChartModal

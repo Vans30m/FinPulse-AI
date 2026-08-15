@@ -111,6 +111,27 @@ html {
   .dark .bg-grid {
     background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   }
+
+  /* ── Section label: consistent uppercase overline for all Pulse sections ── */
+  .section-overline {
+    @apply text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1.5;
+  }
+
+  /* ── Pulse Card: consistent surface style ── */
+  .pulse-card {
+    @apply rounded-2xl border border-slate-200/60 dark:border-white/[0.06] bg-white/60 dark:bg-white/[0.02] backdrop-blur-sm shadow-sm transition-all duration-200;
+  }
+
+  /* ── Horizontal fade mask for scroll containers ── */
+  .mask-fade-x {
+    mask-image: linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
+  }
+
+  /* ── Section divider line ── */
+  .section-divider {
+    @apply border-t border-slate-200/60 dark:border-white/[0.04] my-8 sm:my-10;
+  }
 }
 
 /* ========================================================

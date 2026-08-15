@@ -74,7 +74,7 @@ export default function MarketScreeners() {
     }
 
     return (
-      <div className="flex overflow-x-auto gap-2.5 sm:gap-4 pb-4 snap-x snap-mandatory custom-scrollbar -mx-2 px-2 mask-linear-edge">
+      <div className="flex overflow-x-auto gap-2.5 sm:gap-4 pb-4 snap-x snap-mandatory scrollbar-none -mx-2 px-2 mask-fade-x">
         {stocks.map((stock: Stock) => {
           const isPositive = Number(stock.changePercent) >= 0;
 
@@ -93,7 +93,7 @@ export default function MarketScreeners() {
                   changePercent: Number(stock.changePercent),
                 })
               }
-              className="min-w-[165px] sm:min-w-[190px] shrink-0 snap-start glass-card p-3.5 sm:p-4 text-left hover:border-blue-400/50 dark:hover:border-cyan-500/40 cursor-pointer group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="min-w-[160px] sm:min-w-[185px] shrink-0 snap-start rounded-xl border border-slate-200/70 dark:border-white/[0.07] bg-white/70 dark:bg-white/[0.03] p-3.5 sm:p-4 text-left hover:border-blue-400/50 dark:hover:border-cyan-500/40 cursor-pointer group transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-black/20 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <div className="mb-3">
                 <span className="text-[11px] sm:text-xs font-bold tracking-wide text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors block uppercase">
@@ -113,19 +113,18 @@ export default function MarketScreeners() {
                   })}
                 </span>
 
-                <div className="flex items-center justify-between gap-1 mt-1">
-                  <span className={`text-[10px] sm:text-xs font-medium ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                    {isPositive ? "+" : ""}
+                <div className="flex items-center justify-between gap-1 mt-1.5">
+                  <span className={`text-[10px] sm:text-xs font-semibold ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                    {isPositive ? "↑" : "↓"}{" "}
                     {Number(stock.change).toFixed(2)}
                   </span>
 
-                  <span className={`text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded-md ${
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
                     isPositive
                       ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
                       : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
                   }`}>
-                    {isPositive ? "+" : ""}
-                    {Number(stock.changePercent).toFixed(2)}%
+                    {isPositive ? "+" : ""}{Number(stock.changePercent).toFixed(2)}%
                   </span>
                 </div>
               </div>
@@ -137,9 +136,9 @@ export default function MarketScreeners() {
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4">
       {/* Tabs */}
-      <div className="flex items-center gap-2 sm:gap-4 border-b border-slate-200 dark:border-white/10 px-2 dynamic-scrollbar">
+      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-white/10">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -148,30 +147,23 @@ export default function MarketScreeners() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 pb-3 pt-1 text-sm font-medium transition-all relative focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-t px-1 ${
+              className={`flex items-center gap-1.5 pb-2.5 pt-1 text-xs font-semibold transition-all relative focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-t px-2 uppercase tracking-wide ${
                 isActive
-                  ? "text-blue-600 dark:text-cyan-400 font-semibold"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  ? "text-blue-600 dark:text-cyan-400"
+                  : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
-              <Icon className={`h-4 w-4 transition-transform ${isActive ? "scale-110" : ""}`} />
+              <Icon className="h-3.5 w-3.5" />
               <span>{tab.label}</span>
-
               {isActive && (
-                <span className="absolute bottom-[-1px] left-0 w-full h-[2px] bg-blue-600 dark:bg-cyan-400 rounded-t-full shadow-[0_-2px_10px_rgba(37,99,235,0.2)]" />
+                <span className="absolute bottom-[-1px] left-0 w-full h-[2px] bg-blue-600 dark:bg-cyan-400 rounded-t-full" />
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Screeners List Section */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide px-1">
-          {activeTab === "Gainers" ? "Global Top Gainers" : "Global Top Losers"}
-        </h3>
-        {renderScreenerList(globalStocks)}
-      </div>
+      {renderScreenerList(globalStocks)}
     </div>
   );
 }

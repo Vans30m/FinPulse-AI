@@ -27,6 +27,14 @@ export default function Footer() {
   // Organized Information Architecture (Simplified)
   const sitemap: FooterSection[] = [
     {
+      title: "Product",
+      links: [
+        { label: "Pulse Dashboard", to: "/pulse" },
+        { label: "Stock Screener", to: "/screener" },
+        { label: "News", to: "/news" },
+      ]
+    },
+    {
       title: "Company",
       links: [
         { label: "About FinPulse", to: "/about" },
@@ -69,10 +77,10 @@ export default function Footer() {
 
   return (
     <footer className="w-full border-t border-slate-200 dark:border-slate-800/60 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md mt-auto transition-colors duration-300">
-      <div className={`mx-auto pt-16 pb-8 sm:px-6 lg:px-8 ${isScreener ? 'max-w-none px-4 sm:px-8' : 'max-w-7xl px-4'}`}>
+      <div className={`mx-auto pt-10 pb-6 sm:px-6 lg:px-8 ${isScreener ? 'max-w-none px-4 sm:px-8' : 'max-w-[1440px] px-4'}`}>
 
         {/* Upper Master Grid */}
-        <div className="grid grid-cols-1 gap-12 pb-12 lg:grid-cols-6 lg:gap-8">
+        <div className="grid grid-cols-1 gap-10 pb-10 lg:grid-cols-5 lg:gap-8">
 
           {/* Brand & Value Proposition Column */}
           <div className="lg:col-span-2 space-y-6">
@@ -93,7 +101,7 @@ export default function Footer() {
           </div>
 
           {/* Dynamic Sitemap Navigation Links */}
-          <div className="grid grid-cols-2 gap-6 lg:col-span-4">
+          <div className="grid grid-cols-3 gap-6 lg:col-span-3">
             {sitemap.map((section) => (
               <div key={section.title} className="space-y-4">
                 <h3 className="text-xs font-bold tracking-wider uppercase text-slate-900 dark:text-slate-200">

@@ -120,9 +120,9 @@ export default function AIPickOfTheDay() {
   };
 
   return (
-    <div className="bg-white dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6 sm:p-7 rounded-3xl border border-slate-200 dark:border-slate-800/80 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.5)] transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.09)] dark:hover:shadow-[0_20px_50px_-12px_rgba(99,102,241,0.15)] relative overflow-hidden group">
+    <div className="h-full bg-white dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300 relative overflow-hidden group flex flex-col">
       {/* Main Flex Wrapper */}
-      <div className="flex flex-col gap-5 z-10">
+      <div className="flex flex-col gap-5 z-10 flex-1 justify-between">
         
         {/* Info and Summary */}
         <div className="flex flex-col space-y-3">
@@ -201,8 +201,25 @@ export default function AIPickOfTheDay() {
           </div>
         </div>
 
+        {/* Additional Stats Row */}
+        <div className="grid grid-cols-2 gap-3.5">
+          <div className="bg-slate-50/50 dark:bg-slate-950/30 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-900/60">
+            <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 block tracking-wider">AI Score</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <p className="text-xl font-black text-indigo-600 dark:text-indigo-400">{brief.aiScore}</p>
+              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">/100</span>
+            </div>
+          </div>
+          <div className="bg-slate-50/50 dark:bg-slate-950/30 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-900/60">
+            <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 block tracking-wider">Upside Potential</span>
+            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+              +{(((brief.target - brief.stopLoss) / brief.stopLoss) * 100).toFixed(1)}%
+            </p>
+          </div>
+        </div>
+
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5 pt-1">
+        <div className="flex items-center gap-2.5 pt-1 mt-auto">
           <span className={`text-[10px] font-black px-3 py-1.5 rounded-full border uppercase tracking-wider ${getRecColors(brief.recommendation)}`}>
             {brief.recommendation}
           </span>

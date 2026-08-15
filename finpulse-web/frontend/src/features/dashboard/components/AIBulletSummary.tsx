@@ -106,21 +106,21 @@ export default function AIBulletSummary() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
+    <div className="bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm relative overflow-hidden transition-all duration-300">
       {/* Top Header */}
-      <div className="flex justify-between items-center mb-3">
+      <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200/60 dark:border-white/10">
         <div className="flex items-center space-x-2">
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Global Market Pulse</h3>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">Global Market Pulse</h3>
         </div>
 
         {/* Sentiment Badge */}
         <div className="flex items-center gap-2.5">
-          <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${getSentimentColors(pulse.sentiment)}`}>
+          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getSentimentColors(pulse.sentiment)}`}>
             {pulse.sentiment}
           </span>
           <button
             onClick={() => fetchPulse(true)}
-            className="p-2 rounded-xl bg-slate-50/50 dark:bg-white/[0.02] text-slate-400 hover:text-slate-700 dark:text-slate-350 dark:hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md group"
+            className="p-2 rounded-xl bg-white/50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm group"
             title="Refresh AI Pulse"
           >
             <RotateCcw className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-180" />
@@ -129,26 +129,27 @@ export default function AIBulletSummary() {
       </div>
 
       {/* Summary statement */}
-      <p className="text-xs text-slate-500 dark:text-slate-300 font-bold mb-3 italic leading-relaxed">
-        "{pulse.summary}"
+      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mb-5 leading-relaxed pl-3 border-l-2 border-indigo-500 italic">
+        {pulse.summary}
       </p>
 
       {/* Bullet Insights */}
-      <ul className="space-y-2.5 border-t border-slate-100 dark:border-slate-850 pt-3">
+      <ul className="space-y-3">
         {pulse.insights.slice(0, 5).map((bullet, index) => (
           <li
             key={index}
-            className="flex items-start space-x-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300 transition-all duration-300 animate-fadeIn"
-            style={{ animationDelay: `${index * 150}ms` }}
+            className="flex items-start gap-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300 transition-all duration-300"
           >
-            <span className="text-indigo-500 dark:text-indigo-400 font-extrabold mt-0.5">•</span>
+            <span className="shrink-0 flex items-center justify-center h-5 w-5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black mt-0.5">
+              {String(index + 1).padStart(2, '0')}
+            </span>
             <span className="leading-relaxed font-medium">{bullet}</span>
           </li>
         ))}
       </ul>
 
       {/* Last Updated Timestamp */}
-      <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+      <div className="mt-5 pt-3 border-t border-slate-200/60 dark:border-white/10 flex items-center justify-between text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
         <span>Updated: {new Date(pulse.generatedAt).toLocaleTimeString()}</span>
       </div>
     </div>

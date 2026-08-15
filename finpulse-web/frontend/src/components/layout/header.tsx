@@ -83,7 +83,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="sticky top-0 z-40 w-full backdrop-blur-xl dark:!bg-night-950/80 transition-colors duration-300 flex items-center"
     >
-      <div className="mx-auto flex w-full max-w-none items-center justify-between px-4 sm:px-8">
+      <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8">
 
         {/* Left Column: Logo + brand name */}
         <div className="flex items-center gap-3">

@@ -129,16 +129,27 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg transition-all duration-500 hover:shadow-xl space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            Global Market Clock
-          </h3>
+    <div className="bg-white/70 dark:bg-white/[0.02] backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300 space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100/80 dark:border-white/[0.05]">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400">
+            <Clock className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Global Market Clock</h3>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Live exchange status — updates every second</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Live</span>
         </div>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {MARKETS_CONFIG.map((config) => {
           const status = getMarketStatus(config);
 
@@ -158,7 +169,11 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
           return (
             <div
               key={config.name}
-              className="p-3 sm:p-3.5 rounded-xl border border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all duration-300 hover:border-indigo-500/20"
+              className={`p-3 sm:p-3.5 rounded-xl border transition-all duration-300 ${
+                status.isOpen
+                  ? "border-emerald-500/25 bg-emerald-50/50 dark:bg-emerald-500/[0.03]"
+                  : "border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-2.5">

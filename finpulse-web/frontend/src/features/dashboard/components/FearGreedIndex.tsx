@@ -140,7 +140,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
   const pathY = 50 - 40 * Math.sin(pathAngleRad);
 
   return (
-    <div className={`bg-white dark:bg-slate-900/60 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-slate-200/60 dark:border-white/5 shadow-lg transition-all duration-500 hover:shadow-xl flex flex-col ${className}`}>
+    <div className={`bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300 flex flex-col ${className}`}>
       {/* Top Header Controls */}
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
         <div className="flex items-center gap-3">

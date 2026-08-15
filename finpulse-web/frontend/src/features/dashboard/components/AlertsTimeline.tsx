@@ -88,43 +88,48 @@ export default function AlertsTimeline({
   }, []);
 
   const formatTime = (unixTime: number) => {
+    const now = Date.now();
+    const diffMs = now - unixTime * 1000;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+    if (diffMin < 1) return "Just now";
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHr < 24) return `${diffHr}h ago`;
+    if (diffDay < 7) return `${diffDay}d ago`;
     const date = new Date(unixTime * 1000);
-    const today = new Date();
-    if (date.toDateString() === today.toDateString()) {
-      return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
   return (
     <div className={`
       w-full
-      glass-panel
       overflow-hidden
-      rounded-3xl
+      rounded-2xl
       border
       border-slate-200/60
-      dark:border-white/5
+      dark:border-white/[0.06]
       bg-white/60
-      dark:bg-white/[0.01]
-      backdrop-blur-md
-      shadow-[0_8px_30px_rgb(0,0,0,0.04)]
+      dark:bg-white/[0.02]
+      backdrop-blur-sm
+      shadow-sm
       transition-colors
       duration-300
       flex
       flex-col
-      ${fullPage ? "h-[580px]" : "max-h-[1300px]"}`}
+      ${fullPage ? "h-full" : "max-h-[1300px]"}`}
     >
       {/* HEADER */}
-      <div className="border-b border-slate-150 dark:border-white/5 p-5 shrink-0 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/20 to-transparent dark:from-white/[0.01]">
-        <div className="flex items-center gap-3">
+      <div className="border-b border-slate-150 dark:border-white/5 px-4 py-3.5 shrink-0 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400">
+            <Newspaper className="h-4 w-4" />
+          </div>
           <div>
-            <h2 className="text-base md:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
-              {fullPage
-                ? "Global Market News Center"
-                : "Live Market News"}
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+              {fullPage ? "Global Market News Center" : "Live Market News"}
             </h2>
-            <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 font-medium">Aggregated from Finnhub & Google News</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Aggregated from Finnhub & Google News</p>
           </div>
         </div>
       </div>

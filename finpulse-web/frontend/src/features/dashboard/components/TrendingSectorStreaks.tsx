@@ -113,17 +113,17 @@ export default function TrendingSectorStreaks() {
   const pulse = data!;
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:-translate-y-1 hover:scale-[1.005]">
+    <div className="bg-white/70 dark:bg-white/[0.02] p-4 sm:p-5 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300">
       {/* Header controls */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-5">
         <div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Sector Momentum</h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Global rotation index</p>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">AI Sector Rotation</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Top rallying and declining sectors</p>
         </div>
         <button
           onClick={() => fetchMomentum(true)}
-          className="p-2 rounded-xl bg-slate-50/50 dark:bg-white/[0.02] text-slate-400 hover:text-slate-700 dark:text-slate-350 dark:hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md group"
-          title="Refresh Sector Momentum"
+          className="p-2 rounded-xl bg-slate-50/80 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] text-slate-400 hover:text-slate-700 dark:text-slate-350 dark:hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm group"
+          title="Refresh Sector Rotation"
         >
           <RotateCcw className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-180" />
         </button>
@@ -131,9 +131,9 @@ export default function TrendingSectorStreaks() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Top Rally Section */}
-        <div className="space-y-3.5">
-          <h4 className="text-xs font-black text-emerald-600 dark:text-emerald-455 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-105/10 pb-1.5">
-            Top Rallying Sectors
+        <div className="space-y-2.5">
+          <h4 className="text-xs font-black text-emerald-600 dark:text-emerald-455 uppercase tracking-widest flex items-center gap-1.5 pb-1.5 border-b border-slate-100/70 dark:border-white/5">
+            ↑ Top Rallying Sectors
           </h4>
           <div className="space-y-2.5">
             {pulse.topRally.map((item, index) => (
@@ -175,9 +175,9 @@ export default function TrendingSectorStreaks() {
         </div>
 
         {/* Top Decline Section */}
-        <div className="space-y-3.5">
-          <h4 className="text-xs font-black text-rose-600 dark:text-rose-455 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-105/10 pb-1.5">
-            Top Declining Sectors
+        <div className="space-y-2.5">
+          <h4 className="text-xs font-black text-rose-600 dark:text-rose-455 uppercase tracking-widest flex items-center gap-1.5 pb-1.5 border-b border-slate-100/70 dark:border-white/5">
+            ↓ Top Declining Sectors
           </h4>
           <div className="space-y-2.5">
             {pulse.topDecline.map((item, index) => (

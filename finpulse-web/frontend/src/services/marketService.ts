@@ -452,29 +452,9 @@ export async function getAIScore(symbol: string) {
 }
 
 export async function fetchGlobalMarkets() {
-  const symbols = ['^NSEI', '^BSESN', 'NIFTY_IT.NS', 'NIFTY_BANK.NS', '^GSPC', '^IXIC', '^DJI', '^RUT', '^FTSE'];
-  return symbols.map(sym => {
-    const region = (sym.endsWith('.NS') || sym === '^NSEI' || sym === '^BSESN') ? 'India' : 'US';
-    let name = sym.replace('^', '');
-    if (sym === '^NSEI') name = 'Nifty 50';
-    else if (sym === '^BSESN') name = 'BSE Sensex';
-    else if (sym === 'NIFTY_IT.NS') name = 'Nifty IT';
-    else if (sym === 'NIFTY_BANK.NS') name = 'Nifty Bank';
-    else if (sym === '^GSPC') name = 'S&P 500';
-    else if (sym === '^IXIC') name = 'Nasdaq Composite';
-    else if (sym === '^DJI') name = 'Dow Jones';
-    else if (sym === '^RUT') name = 'Russell 2000';
-    else if (sym === '^FTSE') name = 'FTSE 100';
-
-    return {
-      symbol: sym,
-      name,
-      price: sym === '^NSEI' ? 24350.20 : sym === '^BSESN' ? 79650.40 : 15000,
-      change: 85.50,
-      changePercent: 0.35,
-      region
-    };
-  });
+  const response = await fetch(`${API_BASE_URL}/api/global-indices`);
+  if (!response.ok) throw new Error("Failed to fetch global indices");
+  return response.json();
 }
 
 export async function getMarketHistory(symbol: string, range: string = "1mo") {
