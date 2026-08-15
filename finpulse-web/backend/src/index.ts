@@ -39,7 +39,11 @@ if (process.env.FRONTEND_URL) {
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // Allow requests with no origin (like mobile apps or curl) or matching allowedOrigins
+    // Also allow any localhost origin (e.g. http://localhost:5174) for local development flexibility
+    if (!origin || allowedOrigins.includes(origin) || /^https?:\/\/localhost:\d+$/.test(origin)) {
+      return cb(null, true);
+    }
     cb(new Error(`Blocked by CORS: ${origin}`));
   },
   credentials: true
