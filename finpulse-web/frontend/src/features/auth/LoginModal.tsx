@@ -448,8 +448,17 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
               onLoginSuccess();
             } else {
               const errData = await res.json();
-              setError(errData.error || 'Incorrect PIN. Please try again.');
-              setPin('');
+              if (errData.error === 'User or PIN not set up') {
+                setError('PIN not set up. Redirecting to set up your PIN...');
+                setPin('');
+                setTimeout(() => {
+                  setStep('set-pin');
+                  setError('');
+                }, 1500);
+              } else {
+                setError(errData.error || 'Incorrect PIN. Please try again.');
+                setPin('');
+              }
             }
           }
         } catch (err) {
