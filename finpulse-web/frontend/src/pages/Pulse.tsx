@@ -76,31 +76,16 @@ export default function Pulse() {
 
         {/* ── 2. GLOBAL TOP MOVERS ── */}
         <section aria-label="Global Top Movers">
-          <SectionHeader
-            icon={<TrendingUp className="h-3.5 w-3.5" />}
-            label="Global Top Movers"
-            description="Real-time top gaining and losing equities across global markets"
-          />
           <MarketScreeners />
         </section>
 
         {/* ── 3. GLOBAL MARKET PULSE ── */}
         <section aria-label="Global Market Pulse">
-          <SectionHeader
-            icon={<Globe className="h-3.5 w-3.5" />}
-            label="Global Market Pulse"
-            description="AI-powered macro sentiment analysis and key global market insights"
-          />
           <AIBulletSummary />
         </section>
 
         {/* ── 4. AI SECTOR ROTATION ── */}
         <section aria-label="AI Sector Rotation">
-          <SectionHeader
-            icon={<Activity className="h-3.5 w-3.5" />}
-            label="AI Sector Rotation"
-            description="Top rallying and declining sectors based on AI momentum analysis"
-          />
           <TrendingSectorStreaks />
         </section>
         {/* ── 5. RISK & PSYCHOLOGY ── */}
@@ -108,40 +93,20 @@ export default function Pulse() {
           {/* Top row: Fear & Greed + AI Pick */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 sm:gap-6 items-stretch">
             <div className="lg:col-span-3 flex flex-col">
-              <SectionHeader
-                icon={<Shield className="h-3.5 w-3.5" />}
-                label="Fear & Greed Index"
-                description="Real-time investor sentiment and psychology telemetry"
-              />
               <FearGreedIndex className="h-full flex-1" />
             </div>
             <div className="lg:col-span-2 flex flex-col">
-              <SectionHeader
-                icon={<Brain className="h-3.5 w-3.5" />}
-                label="AI Pick of the Day"
-                description="Daily equity selection based on quantitative analysis"
-              />
               <AIPickOfTheDay />
             </div>
           </div>
           {/* Bottom row: Market Compass full width */}
           <div className="mt-8">
-            <SectionHeader
-              icon={<Compass className="h-3.5 w-3.5" />}
-              label="Market Compass"
-              description="Reference guide for market cycles and investor psychology"
-            />
             <MarketCompass />
           </div>
         </section>
 
         {/* ── 6. GLOBAL MARKET CLOCK ── */}
         <section aria-label="Global Market Clock">
-          <SectionHeader
-            icon={<Clock className="h-3.5 w-3.5" />}
-            label="Global Market Clock"
-            description="Real-time market open/closed status across major global exchanges"
-          />
           <GlobalMarketClock />
         </section>
 
@@ -149,21 +114,11 @@ export default function Pulse() {
         <section aria-label="News and Wealth Calculator">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-start">
             <div>
-              <SectionHeader
-                icon={<Newspaper className="h-3.5 w-3.5" />}
-                label="Global Market News"
-                description="Latest financial headlines from Finnhub and Google News"
-              />
               <div className="h-[600px]">
                 <AlertsTimeline fullPage={true} />
               </div>
             </div>
             <div>
-              <SectionHeader
-                icon={<Calculator className="h-3.5 w-3.5" />}
-                label="Wealth Compound Calculator"
-                description="Project your SIP or lumpsum investment growth over time"
-              />
               <div className="h-auto lg:h-[600px]">
                 <InvestmentCalculator />
               </div>

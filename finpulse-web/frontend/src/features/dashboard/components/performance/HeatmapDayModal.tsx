@@ -1,14 +1,32 @@
 import { X } from "lucide-react";
 import type { DailyPerformancePoint } from "./types";
+import { useAppData } from "../../../../context/AppDataContext";
 
 interface Props {
   point: DailyPerformancePoint | null;
   onClose: () => void;
 }
 
-const moneyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const getCurrencyCode = (currencyString?: string) => {
+  if (!currencyString) return 'USD';
+  if (currencyString.includes('₹') || currencyString.toUpperCase().includes('INR')) return 'INR';
+  if (currencyString.includes('€') || currencyString.toUpperCase().includes('EUR')) return 'EUR';
+  if (currencyString.includes('£') || currencyString.toUpperCase().includes('GBP')) return 'GBP';
+  return 'USD';
+};
+
+const formatMoney = (value: number, currencyString?: string) => {
+  const currencyCode = getCurrencyCode(currencyString);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
 
 export default function HeatmapDayModal({ point, onClose }: Props) {
+  const { user } = useAppData();
+
   if (!point) return null;
 
   const date = new Date(`${point.date}T00:00:00Z`);
@@ -31,15 +49,15 @@ export default function HeatmapDayModal({ point, onClose }: Props) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
           <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-3"><span className="text-slate-500 uppercase text-[10px] font-bold">Daily Return</span><p className={`font-black mt-1 ${point.portfolioReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{point.portfolioReturn >= 0 ? "+" : ""}{point.portfolioReturn.toFixed(2)}%</p></div>
-          <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-3"><span className="text-slate-500 uppercase text-[10px] font-bold">Portfolio Value</span><p className="font-black mt-1 text-white">{moneyFormatter.format(point.portfolioValue)}</p></div>
-          <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-3"><span className="text-slate-500 uppercase text-[10px] font-bold">Realized P/L</span><p className={point.realizedProfitLoss >= 0 ? "font-black mt-1 text-emerald-400" : "font-black mt-1 text-rose-400"}>{point.realizedProfitLoss >= 0 ? "+" : "-"}{moneyFormatter.format(Math.abs(point.realizedProfitLoss))}</p></div>
-          <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-3"><span className="text-slate-500 uppercase text-[10px] font-bold">Unrealized P/L</span><p className={point.unrealizedProfitLoss >= 0 ? "font-black mt-1 text-emerald-400" : "font-black mt-1 text-rose-400"}>{point.unrealizedProfitLoss >= 0 ? "+" : "-"}{moneyFormatter.format(Math.abs(point.unrealizedProfitLoss))}</p></div>
+          <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-3"><span className="text-slate-500 uppercase text-[10px] font-bold">Portfolio Value</span><p className="font-black mt-1 text-white">{formatMoney(point.portfolioValue, user?.currency)}</p></div>
+          <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-3"><span className="text-slate-500 uppercase text-[10px] font-bold">Realized P/L</span><p className={point.realizedProfitLoss >= 0 ? "font-black mt-1 text-emerald-400" : "font-black mt-1 text-rose-400"}>{point.realizedProfitLoss >= 0 ? "+" : "-"}{formatMoney(Math.abs(point.realizedProfitLoss), user?.currency)}</p></div>
+          <div className="bg-[#050711]/70 border border-slate-900 rounded-2xl p-3"><span className="text-slate-500 uppercase text-[10px] font-bold">Unrealized P/L</span><p className={point.unrealizedProfitLoss >= 0 ? "font-black mt-1 text-emerald-400" : "font-black mt-1 text-rose-400"}>{point.unrealizedProfitLoss >= 0 ? "+" : "-"}{formatMoney(Math.abs(point.unrealizedProfitLoss), user?.currency)}</p></div>
         </div>
 
         <div className="mt-4 rounded-2xl bg-[#050711]/70 border border-slate-900 p-4 text-xs space-y-2">
           <p className="text-slate-300"><span className="text-slate-500 uppercase text-[10px] font-bold">Assets Responsible:</span> {point.assetsResponsible.join(", ")}</p>
-          <p className="text-slate-300"><span className="text-slate-500 uppercase text-[10px] font-bold">Top Contributor:</span> <span className="text-emerald-400 font-bold">{point.topContributor.symbol}</span> ({point.topContributor.contribution >= 0 ? "+" : ""}{moneyFormatter.format(point.topContributor.contribution)})</p>
-          <p className="text-slate-300"><span className="text-slate-500 uppercase text-[10px] font-bold">Worst Performer:</span> <span className="text-rose-400 font-bold">{point.worstPerformer.symbol}</span> ({point.worstPerformer.contribution >= 0 ? "+" : ""}{moneyFormatter.format(point.worstPerformer.contribution)})</p>
+          <p className="text-slate-300"><span className="text-slate-500 uppercase text-[10px] font-bold">Top Contributor:</span> <span className="text-emerald-400 font-bold">{point.topContributor.symbol}</span> ({point.topContributor.contribution >= 0 ? "+" : ""}{formatMoney(point.topContributor.contribution, user?.currency)})</p>
+          <p className="text-slate-300"><span className="text-slate-500 uppercase text-[10px] font-bold">Worst Performer:</span> <span className="text-rose-400 font-bold">{point.worstPerformer.symbol}</span> ({point.worstPerformer.contribution >= 0 ? "+" : ""}{formatMoney(point.worstPerformer.contribution, user?.currency)})</p>
           <p className="text-slate-300"><span className="text-slate-500 uppercase text-[10px] font-bold">AI Summary:</span> {point.aiSummary}</p>
         </div>
       </div>

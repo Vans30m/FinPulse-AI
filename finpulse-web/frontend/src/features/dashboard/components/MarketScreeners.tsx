@@ -74,7 +74,7 @@ export default function MarketScreeners() {
     }
 
     return (
-      <div className="flex overflow-x-auto gap-2.5 sm:gap-4 pb-4 snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:-mx-2 sm:px-2">
+      <div className="flex overflow-x-auto gap-2.5 sm:gap-4 pt-2 pb-4 snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:-mx-2 sm:px-2">
         {stocks.map((stock: Stock) => {
           const isPositive = Number(stock.changePercent) >= 0;
 
