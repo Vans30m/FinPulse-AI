@@ -52,7 +52,10 @@ export default function RollingCagrSection() {
     setLoading(true);
     const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
     const userId = storedUser.id;
-    const headers = userId ? { 'X-User-Id': userId } : undefined;
+    const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+    const headers: any = {};
+    if (userId) headers['X-User-Id'] = userId;
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
     fetch(`${API_BASE_URL}/api/portfolio/rolling-cagr?timeframe=${timeframe}`, { headers })
       .then(res => res.json())

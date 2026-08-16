@@ -331,18 +331,25 @@ export default function PerformanceComparison() {
       {activeTab === "overview" && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {[
-            { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Aggregate return yield", grad: "from-cyan-600/10 to-blue-500/10" },
-            { label: "Total Profit / Loss", val: `${displayGain >= 0 ? "+" : ""}${cSymbol}${displayGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Unrealized ledger delta", grad: "from-emerald-600/10 to-teal-500/10" },
-            { label: "Capital Valuation Ledger", val: `${cSymbol}${displayValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Total asset valuation", grad: "from-blue-600/10 to-indigo-500/10" },
-            { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active ledger size", grad: "from-purple-600/10 to-pink-500/10" }
+            { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Aggregate return yield", grad: "from-cyan-600/10 to-blue-500/10", border: "border-cyan-500/15 dark:border-cyan-500/10", icon: <TrendingUp className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> },
+            { label: "Total Profit / Loss", val: `${displayGain >= 0 ? "+" : ""}${cSymbol}${displayGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Unrealized ledger delta", grad: "from-emerald-600/10 to-teal-500/10", border: "border-emerald-500/15 dark:border-emerald-500/10", icon: <Activity className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> },
+            { label: "Capital Valuation Ledger", val: `${cSymbol}${displayValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: "Total asset valuation", grad: "from-blue-600/10 to-indigo-500/10", border: "border-blue-500/15 dark:border-blue-500/10", icon: <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" /> },
+            { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active ledger size", grad: "from-purple-600/10 to-pink-500/10", border: "border-purple-500/15 dark:border-purple-500/10", icon: <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" /> }
           ].map((card, i) => (
             <div
               key={i}
-              className={`bg-white dark:bg-[#121a2a]/45 backdrop-blur-md border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg bg-gradient-to-br ${card.grad} hover:translate-y-[-2px] transition-all duration-300`}
+              className={`bg-white dark:bg-white/[0.02] backdrop-blur-md border ${card.border} rounded-3xl p-4 sm:p-5 shadow-sm bg-gradient-to-br ${card.grad} hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex flex-col justify-between`}
             >
-              <span className="text-[9px] sm:text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">{card.label}</span>
-              <h3 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1 sm:mt-2">{card.val}</h3>
-              <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 block mt-1 sm:mt-1.5 font-medium">{card.desc}</span>
+              <div className="flex justify-between items-start">
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-widest block pr-2">{card.label}</span>
+                <div className="p-1.5 rounded-xl bg-white/40 dark:bg-white/5 border border-slate-200/50 dark:border-white/10 shadow-sm shrink-0">
+                  {card.icon}
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">{card.val}</h3>
+                <span className="text-[9px] sm:text-[10px] text-slate-450 dark:text-slate-500 block mt-2 font-medium leading-none">{card.desc}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -402,14 +409,14 @@ export default function PerformanceComparison() {
                   </div>
 
                   {/* Benchmarks Selector Row */}
-                  <div className="mb-4 flex flex-row overflow-x-auto scrollbar-none gap-1.5 pb-1.5 flex-nowrap w-full snap-x">
+                  <div className="mb-5 flex flex-row overflow-x-auto scrollbar-none gap-2 pb-2.5 flex-nowrap w-full snap-x">
                     {BENCHMARK_OPTIONS.map((bench) => (
                       <button
                         key={bench.symbol}
                         onClick={() => setBenchmarkTicker(bench.symbol)}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border transition-all shrink-0 snap-start ${benchmarkTicker === bench.symbol
-                            ? "bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-inner"
-                            : "bg-slate-50 dark:bg-[#050711]/40 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-900/60 hover:text-slate-900 dark:hover:text-white"
+                        className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase border transition-all duration-300 shrink-0 snap-start active:scale-95 shadow-sm ${benchmarkTicker === bench.symbol
+                            ? "bg-[#3b82f6]/15 text-[#3b82f6] dark:bg-[#22d3ee]/10 dark:text-[#22d3ee] border-[#3b82f6]/30 dark:border-[#22d3ee]/20 shadow-md scale-[1.02]"
+                            : "bg-white dark:bg-white/[0.02] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/10 hover:scale-[1.01]"
                           }`}
                       >
                         {bench.name}
@@ -420,53 +427,67 @@ export default function PerformanceComparison() {
                   {/* Stats Grid Above the Chart */}
                   {comparisonData?.stats && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6 border-b border-slate-200 dark:border-slate-900/60 pb-5">
-                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
-                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Portfolio Return</span>
-                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono block mt-1">
+                      {/* Portfolio Return */}
+                      <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
+                        <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Portfolio Return">Portfolio</span>
+                        <span className={`text-xs font-black font-mono block mt-1.5 ${comparisonData.stats.portfolioReturn >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                           {comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%
                         </span>
                       </div>
-                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
-                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Benchmark Return</span>
-                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 font-mono block mt-1">
+                      
+                      {/* Benchmark Return */}
+                      <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
+                        <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Benchmark Return">Benchmark</span>
+                        <span className={`text-xs font-black font-mono block mt-1.5 ${comparisonData.stats.benchmarkReturn >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                           {comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%
                         </span>
                       </div>
-                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
-                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Outperformance</span>
-                        <span className={`text-xs font-black font-mono block mt-1 ${comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"
-                          }`}>
+
+                      {/* Outperformance */}
+                      <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
+                        <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Outperformance">Outperform</span>
+                        <span className={`text-xs font-black font-mono block mt-1.5 ${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn) >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                           {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn) >= 0 ? "+" : ""}
                           {(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%
                         </span>
                       </div>
-                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
-                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Alpha</span>
-                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
+
+                      {/* Alpha */}
+                      <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
+                        <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Alpha">Alpha</span>
+                        <span className={`text-xs font-black font-mono block mt-1.5 ${comparisonData.stats.alpha >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                           {comparisonData.stats.alpha >= 0 ? "+" : ""}{comparisonData.stats.alpha}
                         </span>
                       </div>
-                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
-                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Beta</span>
-                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
+
+                      {/* Beta */}
+                      <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
+                        <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Beta">Beta</span>
+                        <span className="text-xs font-black text-blue-500 dark:text-cyan-400 font-mono block mt-1.5">
                           {comparisonData.stats.beta}
                         </span>
                       </div>
-                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
-                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Sharpe Ratio</span>
-                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
+
+                      {/* Sharpe Ratio */}
+                      <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
+                        <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Sharpe Ratio">Sharpe</span>
+                        <span className={`text-xs font-black font-mono block mt-1.5 ${comparisonData.stats.sharpeRatio >= 1.5 ? "text-emerald-500" : comparisonData.stats.sharpeRatio >= 0 ? "text-indigo-500 dark:text-indigo-400" : "text-rose-500"}`}>
                           {comparisonData.stats.sharpeRatio}
                         </span>
                       </div>
-                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
-                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Volatility</span>
-                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block mt-1">
+
+                      {/* Volatility */}
+                      <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
+                        <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Volatility">Volatility</span>
+                        <span className="text-xs font-black text-amber-500 dark:text-amber-400 font-mono block mt-1.5">
                           {comparisonData.stats.volatility}%
                         </span>
                       </div>
-                      <div className="bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900/60 rounded-2xl p-3 text-center">
-                        <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Max Drawdown</span>
-                        <span className="text-xs font-black text-rose-500 dark:text-rose-400 font-mono block mt-1">
+
+                      {/* Max Drawdown */}
+                      <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
+                        <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Max Drawdown">Drawdown</span>
+                        <span className="text-xs font-black text-rose-500 dark:text-rose-400 font-mono block mt-1.5">
                           {comparisonData.stats.maxDrawdown}%
                         </span>
                       </div>
@@ -512,7 +533,7 @@ export default function PerformanceComparison() {
                           </div>
                         </div>
 
-                        <div className="space-y-2 border-t border-slate-200 dark:border-slate-900/60 pt-3">
+                        <div className="space-y-1 sm:space-y-1.5 border-t border-slate-200 dark:border-slate-900/60 pt-3">
                           {[
                             { label: "Alpha (Excess Return)", value: `${comparisonData.stats.alpha >= 0 ? "+" : ""}${comparisonData.stats.alpha}` },
                             { label: "Beta (Systemic Risk)", value: comparisonData.stats.beta },
@@ -523,7 +544,7 @@ export default function PerformanceComparison() {
                             { label: "Max Drawdown", value: `${comparisonData.stats.maxDrawdown}%` },
                             { label: "Portfolio Volatility", value: `${comparisonData.stats.volatility}%` }
                           ].map((stat, idx) => (
-                            <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-900/60 text-xs">
+                            <div key={idx} className="flex justify-between items-center py-2.5 sm:py-3 border-b border-slate-200/50 dark:border-white/5 text-xs">
                               <span className="text-slate-500 dark:text-slate-400 font-medium">{stat.label}</span>
                               <span className="font-mono font-black text-white">{stat.value}</span>
                             </div>
@@ -532,6 +553,22 @@ export default function PerformanceComparison() {
                       </div>
                     )}
                   </div>
+
+                  {comparisonData?.stats && (
+                    <div className="mt-4 p-3.5 rounded-2xl bg-indigo-500/[0.03] border border-indigo-500/10 flex flex-col gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1.5 text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
+                        <Activity className="h-3.5 w-3.5 animate-pulse" />
+                        AI Performance Insights
+                      </div>
+                      <p className="text-[11px] font-semibold leading-relaxed text-slate-700 dark:text-slate-350 italic">
+                        {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
+                          `Your portfolio has outperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name || 'index'} by ${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%. Excellent active alpha generation and risk-adjusted efficiency.`
+                        ) : (
+                          `Portfolio trailing ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name || 'index'} by ${Math.abs(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%. High volatility and drawdown profile indicate potential core allocation weaknesses.`
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
