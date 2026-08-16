@@ -95,7 +95,7 @@ export default function InvestmentCalculator() {
   };
 
   return (
-    <div className="glass-panel p-6 sm:p-8 overflow-hidden relative group h-full flex flex-col justify-between">
+    <>
       <style>{`
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
@@ -174,17 +174,18 @@ export default function InvestmentCalculator() {
           transform: scale(1.15);
         }
       `}</style>
+      <div className="glass-panel w-full overflow-hidden relative group h-full flex flex-col justify-between">
       
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.01] via-transparent to-cyan-500/[0.02] pointer-events-none" />
       
       {/* Header Row */}
-      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800/60">
+      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-3.5 border-b border-slate-150 dark:border-white/5 shrink-0">
         <div>
-          <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-            <Calculator className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-2.5">
+            <Calculator className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
             Wealth Compound Calculator
           </h2>
-          <p className="text-[11px] text-slate-500 dark:text-slate-455 mt-0.5">
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
             Project mutual fund and equity compounding returns dynamically.
           </p>
         </div>
@@ -215,9 +216,9 @@ export default function InvestmentCalculator() {
       </div>
 
       {/* Main Grid Content */}
-      <div className="relative grid gap-5 sm:gap-6 lg:grid-cols-12 flex-1 items-center">
+      <div className="relative grid gap-5 sm:gap-6 lg:grid-cols-12 flex-1 items-center p-4">
         {/* Left Side: Controls & Sliders */}
-        <div className="space-y-5 lg:col-span-7 flex flex-col justify-center h-full">
+        <div className="lg:col-span-7 flex flex-col justify-around h-full py-6">
           {/* Amount Field */}
           <div>
             <div className="flex justify-between items-center mb-2">
@@ -298,13 +299,13 @@ export default function InvestmentCalculator() {
         </div>
 
         {/* Right Side: Results Card with SVG Doughnut Visualizer */}
-        <div className="lg:col-span-5 h-full bg-slate-50/50 dark:bg-[#0c1220]/40 rounded-3xl p-4 sm:p-5 border border-slate-200/50 dark:border-white/5 flex flex-col items-center justify-between shadow-lg relative overflow-hidden">
+        <div className="lg:col-span-5 h-full bg-slate-50/50 dark:bg-[#0c1220]/40 rounded-3xl p-5 border border-slate-200/50 dark:border-white/5 flex flex-col items-center justify-between shadow-lg relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.01] via-transparent to-transparent pointer-events-none" />
 
           {/* Doughnut SVG */}
-          <div className="relative w-32 h-32 flex-shrink-0 flex items-center justify-center mt-1">
+          <div className="relative w-40 h-40 flex-shrink-0 flex items-center justify-center my-3">
             <div className="absolute inset-0 bg-emerald-500/5 dark:bg-cyan-500/5 blur-2xl rounded-full pointer-events-none" />
-            <svg viewBox="0 0 150 150" className="w-28 h-28 transform -rotate-90 filter drop-shadow-[0_2px_8px_rgba(16,185,129,0.15)] z-10">
+            <svg viewBox="0 0 150 150" className="w-36 h-36 transform -rotate-90 filter drop-shadow-[0_4px_12px_rgba(16,185,129,0.2)] z-10">
               {/* Invested amount (gray background base) */}
               <circle
                 cx="75"
@@ -312,7 +313,7 @@ export default function InvestmentCalculator() {
                 r={60}
                 fill="transparent"
                 stroke="#64748b"
-                strokeWidth="14"
+                strokeWidth="12"
                 className="opacity-15 dark:opacity-25"
               />
               {/* Returns amount overlay */}
@@ -322,7 +323,7 @@ export default function InvestmentCalculator() {
                 r={60}
                 fill="transparent"
                 stroke="#10b981"
-                strokeWidth="14"
+                strokeWidth="12"
                 strokeDasharray={results.circumference}
                 strokeDashoffset={results.returnsStrokeOffset}
                 strokeLinecap="round"
@@ -330,29 +331,40 @@ export default function InvestmentCalculator() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-              <span className="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-wider">Returns</span>
-              <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <span className="text-[9px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-wider">Est. Yield</span>
+              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {results.returnsPercentage.toFixed(0)}%
               </span>
             </div>
           </div>
 
+          {/* Capital Growth Multiplier Card */}
+          <div className="w-full bg-blue-500/[0.03] dark:bg-cyan-500/[0.02] border border-blue-500/10 dark:border-cyan-500/10 rounded-2xl p-4 text-center my-2 shadow-inner">
+            <span className="text-[9px] uppercase font-black tracking-wider text-slate-400 dark:text-slate-500 block">Compounding Multiplier</span>
+            <span className="text-base font-extrabold text-blue-600 dark:text-cyan-400 mt-1 block">
+              {(results.totalInvested > 0 ? (results.totalValue / results.totalInvested) : 1).toFixed(1)}x Capital Growth
+            </span>
+            <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 block">
+              Every ₹1 invested grows to ₹{(results.totalInvested > 0 ? (results.totalValue / results.totalInvested) : 1).toFixed(2)}
+            </span>
+          </div>
+
           {/* Breakdown labels */}
-          <div className="w-full space-y-4 mt-4">
-            <div className="space-y-2.5">
-              <div className="flex justify-between items-center text-xs">
+          <div className="w-full space-y-4 mt-3">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-xs sm:text-sm">
                 <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-semibold">
                   <span className="w-2.5 h-2.5 rounded-full bg-slate-400 dark:bg-slate-700 block" />
                   Invested Amount
                 </span>
-                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm">{formatCurrency(results.totalInvested)}</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{formatCurrency(results.totalInvested)}</span>
               </div>
-              <div className="flex justify-between items-center text-xs">
+              <div className="flex justify-between items-center text-xs sm:text-sm">
                 <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-semibold">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 block" />
                   Est. Returns
                 </span>
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">{formatCurrency(results.estimatedReturns)}</span>
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(results.estimatedReturns)}</span>
               </div>
             </div>
 
@@ -360,8 +372,8 @@ export default function InvestmentCalculator() {
 
             <div className="flex justify-between items-center pt-1">
               <span className="text-xs font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">Total Value</span>
-              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display flex items-center gap-2">
-                <TrendingUp className="h-4.5 w-4.5 text-blue-600 dark:text-cyan-400" />
+              <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-display flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-blue-600 dark:text-cyan-400" />
                 {formatCurrency(results.totalValue)}
               </span>
             </div>
@@ -369,5 +381,6 @@ export default function InvestmentCalculator() {
         </div>
       </div>
     </div>
+    </>
   );
 }

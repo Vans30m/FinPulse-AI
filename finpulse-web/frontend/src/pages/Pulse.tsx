@@ -21,6 +21,8 @@ import {
   Newspaper,
   Calculator,
   Activity,
+  Brain,
+  Compass,
 } from "lucide-react";
 
 /** Consistent section header used across all Pulse sections */
@@ -101,25 +103,34 @@ export default function Pulse() {
           />
           <TrendingSectorStreaks />
         </section>
-
         {/* ── 5. RISK & PSYCHOLOGY ── */}
         <section aria-label="Risk and Market Psychology">
-          <SectionHeader
-            icon={<Shield className="h-3.5 w-3.5" />}
-            label="Risk & Market Psychology"
-            description="Fear & Greed gauge, market compass reference, and AI stock pick of the day"
-          />
           {/* Top row: Fear & Greed + AI Pick */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 sm:gap-6 items-stretch">
-            <div className="lg:col-span-3 h-full">
-              <FearGreedIndex className="h-full" />
+            <div className="lg:col-span-3 flex flex-col">
+              <SectionHeader
+                icon={<Shield className="h-3.5 w-3.5" />}
+                label="Fear & Greed Index"
+                description="Real-time investor sentiment and psychology telemetry"
+              />
+              <FearGreedIndex className="h-full flex-1" />
             </div>
-            <div className="lg:col-span-2 h-full">
+            <div className="lg:col-span-2 flex flex-col">
+              <SectionHeader
+                icon={<Brain className="h-3.5 w-3.5" />}
+                label="AI Pick of the Day"
+                description="Daily equity selection based on quantitative analysis"
+              />
               <AIPickOfTheDay />
             </div>
           </div>
           {/* Bottom row: Market Compass full width */}
-          <div className="mt-6">
+          <div className="mt-8">
+            <SectionHeader
+              icon={<Compass className="h-3.5 w-3.5" />}
+              label="Market Compass"
+              description="Reference guide for market cycles and investor psychology"
+            />
             <MarketCompass />
           </div>
         </section>
@@ -153,7 +164,9 @@ export default function Pulse() {
                 label="Wealth Compound Calculator"
                 description="Project your SIP or lumpsum investment growth over time"
               />
-              <InvestmentCalculator />
+              <div className="h-auto lg:h-[600px]">
+                <InvestmentCalculator />
+              </div>
             </div>
           </div>
         </section>

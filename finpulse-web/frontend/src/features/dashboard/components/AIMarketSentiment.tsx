@@ -691,7 +691,7 @@ export default function AIMarketSentiment() {
                   High Momentum
                 </h3>
               </div>
-              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/5 scrollbar-track-transparent">
+              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
                 {strongSectors.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
                     No sectors in High Momentum.
@@ -718,7 +718,7 @@ export default function AIMarketSentiment() {
                   Moderate Momentum
                 </h3>
               </div>
-              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/5 scrollbar-track-transparent">
+              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
                 {neutralSectors.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
                     No sectors in Moderate Momentum.
@@ -745,7 +745,7 @@ export default function AIMarketSentiment() {
                   Bearish Momentum
                 </h3>
               </div>
-              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/5 scrollbar-track-transparent">
+              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
                 {bearishSectors.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
                     No sectors in Bearish Momentum.
@@ -767,8 +767,7 @@ export default function AIMarketSentiment() {
       </div>
 
       {/* MATRIX AND SECONDARY ANALYTICS GRID */}
-      <div className="relative z-10 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-        <MarketPulse confidence={brief.confidence} mood={brief.marketMood} />
+      <div className="relative z-10 mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-stretch">
         <SectorMomentumMatrix sectors={sortedSectors} />
         <TopSectorMovers sectors={sortedSectors} />
       </div>

@@ -43,21 +43,7 @@ export default function MarketCompass() {
   return (
     <div className="w-full h-full bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm flex flex-col gap-5">
 
-      {/* Top Header */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 pb-3 border-b border-slate-200/60 dark:border-white/10">
-          <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-cyan-400 border border-indigo-100/50 dark:border-cyan-400/10">
-            <Compass className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Market Compass
-            </h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-              Static reference guide for market cycles and investor psychology.
-            </p>
-          </div>
-        </div>
 
         {/* Sentiment Spectrum bar */}
         <div className="space-y-2.5 mb-3">

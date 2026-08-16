@@ -166,9 +166,9 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5 items-stretch">
         
         {/* Left Column: Gauge Visualization */}
-        <div className="lg:col-span-5 flex flex-col items-center justify-center p-5 rounded-2xl bg-slate-50/40 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5">
+        <div className="lg:col-span-5 flex flex-col items-center justify-center p-3 sm:p-5 rounded-2xl bg-slate-50/40 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5">
           {/* ARC Gauge visualization with analog needle pointer */}
-          <div className="relative flex flex-col items-center justify-center w-full max-w-[280px]">
+          <div className="relative flex flex-col items-center justify-center w-full max-w-[190px] sm:max-w-[280px]">
             <svg className="w-full drop-shadow-2xl" viewBox="0 0 100 55">
               {/* Background Arc */}
               <path
@@ -200,11 +200,11 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
             </svg>
 
             {/* Score & Label Overlay */}
-            <div className="absolute bottom-2 text-center flex flex-col items-center">
-              <span className="text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+            <div className="absolute bottom-1 sm:bottom-2 text-center flex flex-col items-center">
+              <span className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
                 {animatedScore}
               </span>
-              <span className={`text-[10px] font-black tracking-widest uppercase mt-2 transition-colors duration-500 bg-white dark:bg-[#0c1220] px-3.5 py-1.5 rounded-full border border-slate-150/80 dark:border-white/10 ${getLabelColors(brief.sentiment)} shadow-inner`}>
+              <span className={`text-[8px] sm:text-[10px] font-black tracking-widest uppercase mt-1.5 sm:mt-2 transition-colors duration-500 bg-white dark:bg-[#0c1220] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-slate-150/80 dark:border-white/10 ${getLabelColors(brief.sentiment)} shadow-inner`}>
                 {brief.sentiment}
               </span>
             </div>

@@ -74,7 +74,7 @@ export default function MarketScreeners() {
     }
 
     return (
-      <div className="flex overflow-x-auto gap-2.5 sm:gap-4 pb-4 snap-x snap-mandatory scrollbar-none -mx-2 px-2 mask-fade-x">
+      <div className="flex overflow-x-auto gap-2.5 sm:gap-4 pb-4 snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:-mx-2 sm:px-2">
         {stocks.map((stock: Stock) => {
           const isPositive = Number(stock.changePercent) >= 0;
 
@@ -93,7 +93,7 @@ export default function MarketScreeners() {
                   changePercent: Number(stock.changePercent),
                 })
               }
-              className="min-w-[160px] sm:min-w-[185px] shrink-0 snap-start rounded-xl border border-slate-200/70 dark:border-white/[0.07] bg-white/70 dark:bg-white/[0.03] p-3.5 sm:p-4 text-left hover:border-blue-400/50 dark:hover:border-cyan-500/40 cursor-pointer group transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-black/20 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="hover:relative hover:z-20 min-w-[160px] sm:min-w-[185px] shrink-0 snap-start rounded-xl border border-slate-200/70 dark:border-white/[0.07] bg-white/70 dark:bg-white/[0.03] p-3.5 sm:p-4 text-left hover:border-blue-400/50 dark:hover:border-cyan-500/40 cursor-pointer group transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-black/20 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <div className="mb-3">
                 <span className="text-[11px] sm:text-xs font-bold tracking-wide text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors block uppercase">
