@@ -4,10 +4,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import { authLimiter } from '../utils/security.js';
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
@@ -275,7 +276,7 @@ function queueResetPasswordEmail(email: string, code: string) {
 }
 
 // 1. Google Login Check
-router.post('/google-login', async (req: any, res: any) => {
+router.post('/google-login', authLimiter, async (req: any, res: any) => {
   try {
     let { email, name, avatar, providerId, token } = req.body;
 
@@ -424,8 +425,13 @@ router.post('/verify-pin', async (req: any, res: any) => {
       where: { email },
     });
 
-    if (!user || !user.devicePin) {
-      return res.status(400).json({ error: 'User or PIN not set up' });
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+    
+    // If user has no PIN set, tell the frontend to navigate to set-pin flow
+    if (!user.devicePin) {
+      return res.status(200).json({ needsPinSetup: true, email: user.email });
     }
 
     let isMatch = false;
@@ -441,6 +447,20 @@ router.post('/verify-pin', async (req: any, res: any) => {
     } else {
       const hash = crypto.createHmac('sha256', JWT_SECRET).update(pin).digest('hex');
       isMatch = (hash === user.devicePin);
+      
+      if (!isMatch) {
+        // Fallback check for PINs hashed with the old fallback key
+        const oldHash = crypto.createHmac('sha256', 'fallback_secret').update(pin).digest('hex');
+        if (oldHash === user.devicePin) {
+          isMatch = true;
+          // Automatically upgrade/migrate PIN hash to the new key
+          const newHash = crypto.createHmac('sha256', JWT_SECRET).update(pin).digest('hex');
+          prisma.user.update({
+            where: { id: user.id },
+            data: { devicePin: newHash }
+          }).catch(err => console.error("Error migrating PIN hash from old secret:", err));
+        }
+      }
     }
 
     if (!isMatch) {
@@ -470,7 +490,7 @@ router.post('/verify-pin', async (req: any, res: any) => {
 });
 
 // 4. Traditional Email & Password Signup (Register)
-router.post('/register', async (req: any, res: any) => {
+router.post('/register', authLimiter, async (req: any, res: any) => {
   try {
     const { email, name, password } = req.body;
     if (!email || !password) {
@@ -588,7 +608,7 @@ router.post('/verify-otp', async (req: any, res: any) => {
 });
 
 // 6. Traditional Email & Password Sign-in
-router.post('/login', async (req: any, res: any) => {
+router.post('/login', authLimiter, async (req: any, res: any) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -642,7 +662,7 @@ router.post('/login', async (req: any, res: any) => {
 });
 
 // 6.5 Verify Login OTP
-router.post('/login-verify-otp', async (req: any, res: any) => {
+router.post('/login-verify-otp', authLimiter, async (req: any, res: any) => {
   try {
     const { email, password, code } = req.body;
     if (!email || !password || !code) {

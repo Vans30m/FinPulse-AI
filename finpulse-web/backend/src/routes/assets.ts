@@ -32,62 +32,12 @@ async function setCachedData(key: string, data: any, ttlSeconds: number = CACHE_
 
 // Centralized LLM fetcher helper
 async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
-  const groqKey = process.env.GROQ_API_KEY;
-  const groqKeySecondary = process.env.GROQ_API_KEY_SECONDARY;
   const geminiKey = process.env.GEMINI_API_KEY;
+  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL;
+  const ollamaModel = process.env.OLLAMA_MODEL || 'qwen2.5';
+  const ollamaApiKey = process.env.OLLAMA_API_KEY;
 
-  async function tryGroq(key: string): Promise<any> {
-    const response = await axios.post(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        model: 'canopylabs/orpheus-arabic-saudi',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a professional financial AI assistant. You must return only a valid JSON object fitting the requested structure without any markdown formatting, backticks, or extra text.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.2
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${key}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 8000
-      }
-    );
-    const content = response.data?.choices?.[0]?.message?.content;
-    if (content) {
-      return JSON.parse(content);
-    }
-    throw new Error('Empty response from Groq');
-  }
-
-  // 1. Try Primary Groq
-  if (groqKey && groqKey.trim() !== '') {
-    try {
-      return await tryGroq(groqKey);
-    } catch (err) {
-      console.warn('Primary Groq key failed, attempting secondary...', err);
-    }
-  }
-
-  // 2. Try Secondary Groq
-  if (groqKeySecondary && groqKeySecondary.trim() !== '') {
-    try {
-      return await tryGroq(groqKeySecondary);
-    } catch (err) {
-      console.warn('Secondary Groq key failed, trying Gemini...', err);
-    }
-  }
-
-  // 3. Try Gemini (Secondary)
+  // 1. Try Gemini (Primary)
   if (geminiKey && geminiKey.trim() !== '') {
     try {
       const response = await axios.post(
@@ -115,11 +65,54 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
         return JSON.parse(cleaned);
       }
     } catch (err: any) {
-      console.warn('Gemini query failed in assets, using static fallback:', err.message || err);
+      console.warn('Gemini query failed in assets, attempting Ollama:', err.message || err);
     }
   }
 
-  // 4. Static mock fallback (Tertiary)
+  // 2. Try Ollama (Backup)
+  if (ollamaBaseUrl && ollamaBaseUrl.trim() !== '') {
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (ollamaApiKey && ollamaApiKey.trim() !== '') {
+        headers['Authorization'] = `Bearer ${ollamaApiKey}`;
+      }
+
+      // Query via OpenAI-compatible endpoint on Ollama
+      const response = await axios.post(
+        `${ollamaBaseUrl.replace(/\/$/, '')}/v1/chat/completions`,
+        {
+          model: ollamaModel,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a professional financial AI assistant. You must return only a valid JSON object fitting the requested structure without any markdown formatting, backticks, or extra text.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.2
+        },
+        {
+          headers,
+          timeout: 10000
+        }
+      );
+
+      const content = response.data?.choices?.[0]?.message?.content;
+      if (content) {
+        return JSON.parse(content);
+      }
+    } catch (err: any) {
+      console.warn('Ollama query failed in assets, using static fallback:', err.message || err);
+    }
+  }
+
+  // 3. Static mock fallback
   return fallbackData;
 }
 

@@ -438,6 +438,12 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
 
             if (res.ok) {
               const data = await res.json();
+              // Backend says no PIN is set up — redirect to set-pin flow
+              if (data.needsPinSetup) {
+                setPin('');
+                setStep('set-pin');
+                return;
+              }
               localStorage.setItem('finpulse_token', data.token);
               localStorage.setItem('finpulse-user', JSON.stringify(data.user));
               setUser(data.user);

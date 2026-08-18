@@ -243,6 +243,7 @@ export default function Profile() {
       }
     } catch (err: any) {
       console.error(err);
+      // Don't auto-logout — just show the error. Token validation is handled by the PIN flow.
       toast.error(err.message || "Failed to load profile details");
     } finally {
       setIsLoading(false);

@@ -640,7 +640,7 @@ router.get('/portfolio/benchmark-comparison', protect, async (req: Authenticated
       for (const date of sortedDates) {
         let portfolioVal = 0;
         holdingsHistories.forEach((h: any) => {
-          const quoteOnDate = h.quotes.find(q => q.date === date);
+          const quoteOnDate = h.quotes.find((q: any) => q.date === date);
           if (quoteOnDate && quoteOnDate.close > 0) {
             lastPrices[h.ticker] = quoteOnDate.close;
           }

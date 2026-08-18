@@ -51,7 +51,7 @@ export default function App() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Sync saved theme preference from database profile on load
+  // Sync saved theme preference from database profile on load (once on mount)
   useEffect(() => {
     const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
     if (token) {
@@ -61,9 +61,11 @@ export default function App() {
             setTheme(data.preferences.theme as any);
           }
         })
-        .catch(err => console.error("Failed to fetch profile theme preference on app load:", err));
+        .catch(() => {
+          // Silently ignore — stale token is handled when user is forced to re-enter PIN
+        });
     }
-  }, [isLoggedIn]);
+  }, []);
 
   // The state for managing selected region
   const [marketRegion, setMarketRegion] = useState<"india" | "us">("india");
@@ -71,13 +73,23 @@ export default function App() {
   // Set this to false so it doesn't pop up on load
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Force PIN verification on reload/load if logged in
+  // Force PIN verification on reload/load if logged in (only when token seems valid)
   useEffect(() => {
     const token = localStorage.getItem('finpulse_token');
     const pinVerified = sessionStorage.getItem('finpulse_pin_verified');
     if (token && pinVerified !== 'true') {
       setIsLoginModalOpen(true);
     }
+  }, []);
+
+  // Listen for force-login events dispatched by any page when their API call returns 401
+  useEffect(() => {
+    const handleForceLogin = () => {
+      setIsLoggedIn(false);
+      setIsLoginModalOpen(true);
+    };
+    window.addEventListener('finpulse:force-login', handleForceLogin);
+    return () => window.removeEventListener('finpulse:force-login', handleForceLogin);
   }, []);
 
   const {

@@ -124,7 +124,8 @@ profileRoutes.get('/', protect, async (req, res) => {
       connectedAccounts: user.connectedAccounts ? JSON.parse(user.connectedAccounts) : null
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    const isAuthError = error.message?.toLowerCase().includes('unauthorized') || error.message?.toLowerCase().includes('session');
+    res.status(isAuthError ? 401 : 500).json({ error: error.message });
   }
 });
 

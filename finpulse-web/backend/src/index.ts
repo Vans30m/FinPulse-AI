@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import watchlistRoutes from './routes/watchlists.js';
 import portfolioRoutes from './routes/portfolio.js';
+import { globalLimiter, sqlInjectionSanitizer } from './utils/security.js';
 
 // Global error handlers to prevent silent crashes
 process.on('uncaughtException', (err) => {
@@ -49,6 +50,10 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Global security sanitizers & rate limiters
+app.use(globalLimiter);
+app.use(sqlInjectionSanitizer);
 
 // Root endpoint
 app.get('/', (req: Request, res: Response) => {
