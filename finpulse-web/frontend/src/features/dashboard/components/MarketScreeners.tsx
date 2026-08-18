@@ -115,8 +115,8 @@ export default function MarketScreeners() {
 
                 <div className="flex items-center justify-between gap-1 mt-1.5">
                   <span className={`text-[10px] sm:text-xs font-semibold ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                    {isPositive ? "↑" : "↓"}{" "}
-                    {Number(stock.change).toFixed(2)}
+                    {isPositive ? "+" : "-"}{" "}
+                    {Math.abs(Number(stock.change)).toFixed(2)}
                   </span>
 
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${

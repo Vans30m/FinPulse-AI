@@ -133,7 +133,7 @@ export default function TrendingSectorStreaks() {
         {/* Top Rally Section */}
         <div className="space-y-2.5">
           <h4 className="text-xs font-black text-emerald-600 dark:text-emerald-455 uppercase tracking-widest flex items-center gap-1.5 pb-1.5 border-b border-slate-100/70 dark:border-white/5">
-            ↑ Top Rallying Sectors
+            Top Rallying Sectors
           </h4>
           <div className="space-y-2.5">
             {pulse.topRally.map((item, index) => (
@@ -142,10 +142,8 @@ export default function TrendingSectorStreaks() {
                 className="group relative flex flex-col p-3.5 sm:p-4 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all hover:border-emerald-500/30 hover:shadow-sm"
               >
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-lg">
-                      {getSectorIcon(item.sector)}
-                    </div>
+                  <div className="flex items-start gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
                     <div>
                       <span className="text-sm font-bold text-slate-800 dark:text-slate-200 block">{item.sector}</span>
                       <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mt-0.5">Score: {item.momentumScore}</span>
@@ -153,7 +151,7 @@ export default function TrendingSectorStreaks() {
                   </div>
 
                   <span className="px-2 py-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 rounded text-[9px] font-black uppercase tracking-wider shrink-0">
-                    ▲ {item.days}d Rally
+                    {item.days}d Rally
                   </span>
                 </div>
 
@@ -177,7 +175,7 @@ export default function TrendingSectorStreaks() {
         {/* Top Decline Section */}
         <div className="space-y-2.5">
           <h4 className="text-xs font-black text-rose-600 dark:text-rose-455 uppercase tracking-widest flex items-center gap-1.5 pb-1.5 border-b border-slate-100/70 dark:border-white/5">
-            ↓ Top Declining Sectors
+            Top Declining Sectors
           </h4>
           <div className="space-y-2.5">
             {pulse.topDecline.map((item, index) => (
@@ -186,10 +184,8 @@ export default function TrendingSectorStreaks() {
                 className="group relative flex flex-col p-3.5 sm:p-4 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all hover:border-rose-500/30 hover:shadow-sm"
               >
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-lg">
-                      {getSectorIcon(item.sector)}
-                    </div>
+                  <div className="flex items-start gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
                     <div>
                       <span className="text-sm font-bold text-slate-800 dark:text-slate-200 block">{item.sector}</span>
                       <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mt-0.5">Score: {item.momentumScore}</span>
@@ -197,7 +193,7 @@ export default function TrendingSectorStreaks() {
                   </div>
 
                   <span className="px-2 py-0.5 bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/10 rounded text-[9px] font-black uppercase tracking-wider shrink-0">
-                    ▼ {item.days}d Decline
+                    {item.days}d Decline
                   </span>
                 </div>
 
