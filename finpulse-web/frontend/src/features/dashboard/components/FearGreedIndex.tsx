@@ -145,7 +145,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
         <div className="flex items-center gap-3">
           <div>
-            <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+            <h3 className="text-xs sm:text-sm cool-heading uppercase">
               Fear & Greed Index
             </h3>
             <p className="text-[10px] text-slate-550 dark:text-slate-450 mt-0.5">
@@ -164,7 +164,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5 items-stretch">
-        
+
         {/* Left Column: Gauge Visualization */}
         <div className="lg:col-span-5 flex flex-col items-center justify-center p-3 sm:p-5 rounded-2xl bg-slate-50/40 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5">
           {/* ARC Gauge visualization with analog needle pointer */}
@@ -218,7 +218,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
 
         {/* Right Column: AI Strategy, Opportunities/Risks, and History */}
         <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
-          
+
           {/* Takeaways Section */}
           <div className="p-4 rounded-2xl bg-indigo-500/[0.02] border border-indigo-500/10 space-y-3">
             <h4 className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">

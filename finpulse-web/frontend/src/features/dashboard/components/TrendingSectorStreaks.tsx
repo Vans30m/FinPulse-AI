@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { 
+import {
   AlertCircle, RotateCcw, Flame, TrendingDown,
   Cpu, Activity, Zap, ShoppingBag, Briefcase, Settings, Layers, Home, Globe, HelpCircle, ShieldAlert
 } from "lucide-react";
@@ -117,7 +117,7 @@ export default function TrendingSectorStreaks() {
       {/* Header controls */}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">AI Sector Rotation</h3>
+          <h3 className="text-sm cool-heading">AI Sector Rotation</h3>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Top rallying and declining sectors</p>
         </div>
         <button
@@ -157,7 +157,7 @@ export default function TrendingSectorStreaks() {
 
                 {/* Score bar */}
                 <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-1 mt-2.5 overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-1000"
                     style={{ width: `${item.momentumScore}%` }}
                   />
@@ -199,7 +199,7 @@ export default function TrendingSectorStreaks() {
 
                 {/* Score bar */}
                 <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-1 mt-2.5 overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-rose-500 to-red-500 rounded-full transition-all duration-1000"
                     style={{ width: `${item.momentumScore}%` }}
                   />

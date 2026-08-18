@@ -562,7 +562,7 @@ export default function AIMarketSentiment() {
   const shapeStyles = getCardShapeStyles(brief.marketMood);
 
   return (
-    <div className={`backdrop-blur-xl bg-white/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] p-5 sm:p-8 shadow-2xl relative overflow-hidden transition-all duration-500 rounded-3xl ${shapeStyles.card}`}>
+    <div className={`backdrop-blur-xl bg-white/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] p-5 sm:p-8 shadow-2xl relative overflow-hidden transition-all duration-500 rounded-3xl ai-card-font ${shapeStyles.card}`}>
       {/* Background ambient glows */}
       <div className={`absolute -left-20 -top-20 z-0 h-64 w-64 rounded-full blur-[100px] pointer-events-none transition-all duration-500 ${shapeStyles.glowLeft}`} />
       <div className={`absolute -right-20 -bottom-20 z-0 h-64 w-64 rounded-full blur-[100px] pointer-events-none transition-all duration-500 ${shapeStyles.glowRight}`} />
@@ -576,7 +576,7 @@ export default function AIMarketSentiment() {
             </div>
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl cool-heading flex items-center gap-2">
               AI Market Brief
             </h2>
             <p className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400">

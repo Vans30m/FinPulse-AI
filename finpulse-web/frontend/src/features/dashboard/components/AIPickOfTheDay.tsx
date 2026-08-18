@@ -122,12 +122,12 @@ export default function AIPickOfTheDay() {
     <div className="bg-white dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300 relative overflow-hidden group">
       {/* Main Grid Wrapper */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 z-10">
-        
+
         {/* Left Column: Info and Summary & Action Buttons */}
         <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
           <div className="flex flex-col space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <span className="text-[10px] cool-heading uppercase flex items-center gap-1">
                 AI Pick of the Day
               </span>
               <span className="px-2 py-0.5 bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 text-[10px] font-bold rounded-lg">
@@ -173,7 +173,7 @@ export default function AIPickOfTheDay() {
 
         {/* Right Column: Confidence, Targets, holding info, and stats */}
         <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
-          
+
           {/* Confidence Bar */}
           <div className="bg-slate-50 dark:bg-slate-950/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-900/80">
             <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
@@ -232,8 +232,8 @@ export default function AIPickOfTheDay() {
               </p>
             </div>
           </div>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

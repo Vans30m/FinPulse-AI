@@ -110,7 +110,7 @@ export default function AIBulletSummary() {
       {/* Top Header */}
       <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200/60 dark:border-white/10">
         <div className="flex items-center space-x-2">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Global Market Pulse</h3>
+          <h3 className="text-base cool-heading">Global Market Pulse</h3>
         </div>
 
         {/* Sentiment Badge */}

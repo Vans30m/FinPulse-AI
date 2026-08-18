@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -23,7 +23,23 @@
   h4 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
     letter-spacing: -0.02em;
+    font-weight: 800;
   }
+}
+
+.cool-heading {
+  font-family: 'Outfit', system-ui, sans-serif;
+  @apply font-black tracking-tight text-slate-900 dark:text-white;
+}
+
+.ai-card-font {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.ai-card-font h1,
+.ai-card-font h2,
+.ai-card-font h3,
+.ai-card-font h4 {
+  font-family: 'Outfit', system-ui, sans-serif;
 }
 
 @layer components {
@@ -268,7 +284,8 @@ iframe[src*="tradingview.com"]+a {
 
 
 /* Muted colors for table headers */
-#screener-workbook table thead tr th, #screener-shareholding table thead tr th {
+#screener-workbook table thead tr th,
+#screener-shareholding table thead tr th {
   position: sticky;
   top: 0;
   background: #1e293b;
@@ -293,17 +310,20 @@ iframe[src*="tradingview.com"]+a {
 /* Light mode overrides for text/border colors in workbook and shareholding tables */
 html:not(.dark) #screener-workbook table tbody tr td,
 html:not(.dark) #screener-shareholding table tbody tr td {
-  color: #475569 !important; /* slate-600 */
+  color: #475569 !important;
+  /* slate-600 */
 }
 
 html:not(.dark) #screener-workbook table tbody tr td:first-child,
 html:not(.dark) #screener-shareholding table tbody tr td:first-child {
-  color: #0f172a !important; /* slate-900 */
+  color: #0f172a !important;
+  /* slate-900 */
 }
 
 html:not(.dark) #screener-workbook table thead tr th,
 html:not(.dark) #screener-shareholding table thead tr th {
-  color: #64748b !important; /* slate-500 */
+  color: #64748b !important;
+  /* slate-500 */
   border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
@@ -311,7 +331,8 @@ html:not(.dark) #screener-workbook h3,
 html:not(.dark) #screener-shareholding h3,
 html:not(.dark) #screener-workbook h4,
 html:not(.dark) #screener-shareholding h4 {
-  color: #0f172a !important; /* slate-900 */
+  color: #0f172a !important;
+  /* slate-900 */
 }
 
 /* Discreet PDF download icon hover states */
@@ -330,17 +351,21 @@ html:not(.dark) #screener-shareholding h4 {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
   height: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.2);
   border-radius: 999px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
 }
@@ -353,7 +378,8 @@ html:not(.dark) #screener-shareholding h4 {
   position: sticky !important;
   left: 0 !important;
   z-index: 10 !important;
-  background-color: #0b1020 !important; /* Matches dark theme background */
+  background-color: #0b1020 !important;
+  /* Matches dark theme background */
 }
 
 /* Light mode override for sticky column background */

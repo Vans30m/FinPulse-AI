@@ -136,7 +136,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
             <Clock className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Global Market Clock</h3>
+            <h3 className="text-sm cool-heading">Global Market Clock</h3>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Live exchange status — updates every second</p>
           </div>
         </div>
@@ -169,11 +169,10 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
           return (
             <div
               key={config.name}
-              className={`p-3 sm:p-3.5 rounded-xl border transition-all duration-300 ${
-                status.isOpen
+              className={`p-3 sm:p-3.5 rounded-xl border transition-all duration-300 ${status.isOpen
                   ? "border-emerald-500/25 bg-emerald-50/50 dark:bg-emerald-500/[0.03]"
                   : "border-slate-200/40 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40"
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-2.5">
@@ -216,10 +215,10 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
                     )}
 
                     <span className={`text-[9px] font-black uppercase tracking-wider ${status.isOpen
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : status.isLunch
-                          ? "text-amber-600 dark:text-amber-400"
-                          : "text-rose-600 dark:text-rose-455"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : status.isLunch
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-rose-600 dark:text-rose-455"
                       }`}>
                       {status.isOpen ? "Open" : status.isLunch ? "Lunch" : "Closed"}
                     </span>

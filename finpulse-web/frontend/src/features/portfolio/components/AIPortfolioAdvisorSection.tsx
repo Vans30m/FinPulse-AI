@@ -499,7 +499,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                 className="w-full flex items-center justify-between p-3 px-4 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-white/[0.01]"
               >
                 <div className="flex items-center gap-2">
-                  <SecIcon className={`h-4 w-4 ${sec.color}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full ${sec.color.replace('text-', 'bg-')} shrink-0`} />
                   <span>{sec.title}</span>
                 </div>
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
