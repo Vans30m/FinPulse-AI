@@ -15,16 +15,17 @@ const USER_AGENTS = [
 // Memory cache for quotes
 interface CachedQuote {
   price: number;
-  change: number;
+  change: number;         // Absolute price change
+  changePercent: number;  // Percentage change (e.g. 0.04 for 0.04%)
   timestamp: number;
 }
 const quoteCache = new Map<string, CachedQuote>();
 const CACHE_TTL_MS = 30 * 1000; // 30 seconds TTL
 
 // Helper to fetch live quotes from Yahoo Finance
-async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { price: number; change: number }>> {
+async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { price: number; change: number; changePercent: number }>> {
   if (symbols.length === 0) return {};
-  const results: Record<string, { price: number; change: number }> = {};
+  const results: Record<string, { price: number; change: number; changePercent: number }> = {};
   const cleanSymbols = symbols.map(s => s.trim().toUpperCase());
   const now = Date.now();
 
@@ -33,7 +34,7 @@ async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { 
   for (const sym of cleanSymbols) {
     const cached = quoteCache.get(sym);
     if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-      results[sym] = { price: cached.price, change: cached.change };
+      results[sym] = { price: cached.price, change: cached.change, changePercent: cached.changePercent };
     } else {
       symbolsToFetch.push(sym);
     }
@@ -51,10 +52,11 @@ async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { 
       if (q.symbol) {
         const sym = q.symbol.toUpperCase();
         const price = q.regularMarketPrice ?? 100;
-        const change = q.regularMarketChangePercent ?? 0;
+        const change = q.regularMarketChange ?? 0;
+        const changePercent = q.regularMarketChangePercent ?? 0;
 
-        results[sym] = { price, change };
-        quoteCache.set(sym, { price, change, timestamp: now });
+        results[sym] = { price, change, changePercent };
+        quoteCache.set(sym, { price, change, changePercent, timestamp: now });
       }
     }
   } catch (err: any) {
@@ -78,10 +80,11 @@ async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { 
         if (q.symbol) {
           const sym = q.symbol.toUpperCase();
           const price = q.regularMarketPrice ?? 100;
-          const change = q.regularMarketChangePercent ?? 0;
+          const change = q.regularMarketChange ?? 0;
+          const changePercent = q.regularMarketChangePercent ?? 0;
           
-          results[sym] = { price, change };
-          quoteCache.set(sym, { price, change, timestamp: now });
+          results[sym] = { price, change, changePercent };
+          quoteCache.set(sym, { price, change, changePercent, timestamp: now });
         }
       }
     } catch (subErr: any) {
@@ -90,7 +93,7 @@ async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { 
       for (const sym of symbolsToFetch) {
         const expiredCache = quoteCache.get(sym);
         if (expiredCache) {
-          results[sym] = { price: expiredCache.price, change: expiredCache.change };
+          results[sym] = { price: expiredCache.price, change: expiredCache.change, changePercent: expiredCache.changePercent };
         } else {
           // Hardcoded fallback price based on asset type/name
           let defaultPrice = 150;
@@ -99,7 +102,7 @@ async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { 
           else if (sym === 'GC=F') defaultPrice = 2300; // Gold
           else if (sym === 'SI=F') defaultPrice = 28; // Silver
           
-          results[sym] = { price: defaultPrice, change: 0 };
+          results[sym] = { price: defaultPrice, change: 0, changePercent: 0 };
         }
       }
     }
@@ -108,7 +111,7 @@ async function fetchMultipleQuotes(symbols: string[]): Promise<Record<string, { 
   // Ensure all requested symbols have a entry in results
   for (const sym of cleanSymbols) {
     if (!results[sym]) {
-      results[sym] = { price: 150, change: 0 };
+      results[sym] = { price: 150, change: 0, changePercent: 0 };
     }
   }
 
@@ -144,7 +147,9 @@ router.get('/portfolio/holdings', protect, async (req: AuthenticatedRequest, res
       const quote = quotes[tickerUpper];
       
       const currentPrice = typeof quote?.price === 'number' && !isNaN(quote.price) ? quote.price : h.avgCost;
-      const dailyGain = typeof quote?.change === 'number' && !isNaN(quote.change) ? quote.change : 0;
+      const absoluteChange = typeof quote?.change === 'number' && !isNaN(quote.change) ? quote.change : 0;
+      const dailyGain = h.shares * absoluteChange;
+      const dailyGainPercent = typeof quote?.changePercent === 'number' && !isNaN(quote.changePercent) ? quote.changePercent : 0;
       
       const marketValue = h.shares * currentPrice;
       const totalGain = (currentPrice - h.avgCost) * h.shares;
@@ -162,7 +167,8 @@ router.get('/portfolio/holdings', protect, async (req: AuthenticatedRequest, res
         marketValue: isNaN(marketValue) ? 0 : marketValue,
         totalGain: isNaN(totalGain) ? 0 : totalGain,
         gainPercent: isNaN(gainPercent) ? 0 : gainPercent,
-        dailyGain: isNaN(dailyGain) ? 0 : dailyGain
+        dailyGain: isNaN(dailyGain) ? 0 : dailyGain,
+        dailyGainPercent: isNaN(dailyGainPercent) ? 0 : dailyGainPercent
       };
     });
 
@@ -486,7 +492,7 @@ router.get('/portfolio/analysis', protect, async (req: AuthenticatedRequest, res
       { horizon: '1 Year', expectedReturn: 15.5, bias: 'Strong Bullish', confidence: 64 }
     ];
 
-    const topContributors = dbHoldings.slice(0, 3).map((h: any) => `${h.ticker} (+${((quotes[h.ticker.toUpperCase()]?.change || 0)).toFixed(2)}%)`);
+    const topContributors = dbHoldings.slice(0, 3).map((h: any) => `${h.ticker} (+${((quotes[h.ticker.toUpperCase()]?.changePercent || 0)).toFixed(2)}%)`);
     if (topContributors.length === 0) topContributors.push('None');
 
     const missedOpportunities = ['NVDA', 'RELIANCE.NS', 'BTC-USD'];

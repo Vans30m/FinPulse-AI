@@ -147,7 +147,7 @@ export default function PortfolioDashboard() {
     const cached = sessionStorage.getItem("portfolioPerformanceData");
     return cached ? JSON.parse(cached) : [];
   });
-  const [liveQuotes, setLiveQuotes] = useState<Record<string, { price: number; change: number }>>(() => {
+  const [liveQuotes, setLiveQuotes] = useState<Record<string, { price: number; change: number; changePercent: number }>>(() => {
     const cached = sessionStorage.getItem("portfolioLiveQuotes");
     return cached ? JSON.parse(cached) : {};
   });
@@ -964,16 +964,19 @@ export default function PortfolioDashboard() {
           // Look up real-time price from liveQuotes first, then database sections
           let livePrice = h.avgCost;
           let changeVal = 0;
+          let changePercentVal = 0;
           const uppercaseTicker = h.ticker.toUpperCase();
           if (liveQuotes && liveQuotes[uppercaseTicker]) {
             livePrice = liveQuotes[uppercaseTicker].price;
             changeVal = liveQuotes[uppercaseTicker].change;
+            changePercentVal = liveQuotes[uppercaseTicker].changePercent || 0;
           } else {
             const realSec = sections.find(s => s.id === h.marketId);
             const realHold = realSec?.holdings.find(rh => rh.ticker.toUpperCase() === uppercaseTicker);
             if (realHold) {
               livePrice = realHold.currentPrice;
-              changeVal = (realHold as any).dailyGain / realHold.shares;
+              changeVal = realHold.shares !== 0 ? (realHold as any).dailyGain / realHold.shares : 0;
+              changePercentVal = (realHold as any).dailyGainPercent || 0;
             }
           }
           const marketValue = Math.abs(h.shares) * livePrice;
@@ -998,6 +1001,7 @@ export default function PortfolioDashboard() {
             totalGain,
             gainPercent,
             dailyGain,
+            dailyGainPercent: changePercentVal,
             colorClass,
             sector: h.marketId === 'crypto' ? 'Crypto' : 'Technology'
           };
@@ -1685,10 +1689,7 @@ export default function PortfolioDashboard() {
                 const displayMarketValue = asset.marketValue;
                 const displayTotalGain = asset.totalGain;
                 const displayDailyGain = asset.dailyGain || 0;
-
-                const changePerShare = asset.shares > 0 ? displayDailyGain / asset.shares : 0;
-                const prevPrice = displayCurrentPrice - changePerShare;
-                const dailyGainPercent = prevPrice > 0 ? (changePerShare / prevPrice) * 100 : 0;
+                const dailyGainPercent = asset.dailyGainPercent || 0;
 
                 return (
                   <tr key={asset.id || `${asset.ticker}-${index}`} className="hover:bg-slate-50/30 dark:hover:bg-white/[0.005] transition-colors group align-middle">

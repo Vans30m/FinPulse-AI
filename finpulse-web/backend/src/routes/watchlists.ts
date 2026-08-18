@@ -279,30 +279,12 @@ function normalizeLLMArray(parsed: any): any[] {
 }
 
 async function queryLLMForRankings(prompt: string, fallbackData: any): Promise<{ source: 'live' | 'fallback'; data: any }> {
-  const geminiKey = process.env.GEMINI_API_KEY;
   const ollamaBaseUrl = process.env.OLLAMA_BASE_URL;
   const ollamaModel = process.env.OLLAMA_MODEL || 'qwen2.5';
   const ollamaApiKey = process.env.OLLAMA_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_API_KEY_SECONDARY;
 
-  // 1. Gemini
-  if (geminiKey && geminiKey.trim() !== '') {
-    try {
-      const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-        { contents: [{ parts: [{ text: `${prompt}\n\nIMPORTANT: Respond with ONLY a raw JSON array.` }] }] },
-        { headers: { 'Content-Type': 'application/json' }, timeout: LLM_TIMEOUT_MS }
-      );
-      const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (rawText) {
-        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return { source: 'live', data: normalizeLLMArray(JSON.parse(cleaned)) };
-      }
-    } catch (err) {
-      console.warn('Gemini failed in watchlists, attempting Ollama:', err);
-    }
-  }
-
-  // 2. Ollama
+  // 1. Ollama (Primary)
   if (ollamaBaseUrl && ollamaBaseUrl.trim() !== '') {
     try {
       const headers: Record<string, string> = {
@@ -340,8 +322,65 @@ async function queryLLMForRankings(prompt: string, fallbackData: any): Promise<{
       if (content) {
         return { source: 'live', data: normalizeLLMArray(JSON.parse(content)) };
       }
-    } catch (err) {
-      console.warn('Ollama failed in watchlists, using static fallback:', err);
+    } catch (err: any) {
+      console.warn('Ollama failed in watchlists, attempting Groq:', err.message);
+    }
+  }
+
+  // 2. Groq (Secondary)
+  if (groqKey && groqKey.trim() !== '') {
+    try {
+      const response = await axios.post(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a professional financial AI assistant. Return a JSON array of objects with fields: symbol, score (0-100), reason. Return ONLY raw JSON array. No extra text.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.3
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`
+          },
+          timeout: LLM_TIMEOUT_MS
+        }
+      );
+
+      const content = response.data?.choices?.[0]?.message?.content;
+      if (content) {
+        return { source: 'live', data: normalizeLLMArray(JSON.parse(content)) };
+      }
+    } catch (err: any) {
+      console.warn('Groq failed in watchlists, attempting Gemini:', err.message);
+    }
+  }
+
+  // 3. Gemini (Tertiary)
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey && geminiKey.trim() !== '') {
+    try {
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+        { contents: [{ parts: [{ text: `${prompt}\n\nIMPORTANT: Respond with ONLY a raw JSON array.` }] }] },
+        { headers: { 'Content-Type': 'application/json' }, timeout: LLM_TIMEOUT_MS }
+      );
+      const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (rawText) {
+        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        return { source: 'live', data: normalizeLLMArray(JSON.parse(cleaned)) };
+      }
+    } catch (err: any) {
+      console.warn('Gemini failed in watchlists, using static fallback:', err.message);
     }
   }
 

@@ -79,13 +79,15 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
           <p className="text-[10px] text-slate-400 mt-0.5">
             {isLoading
               ? "Analyzing technicals, financials & sentiment…"
-              : isError || isFallback
+              : isError
                 ? "Failed to load AI rankings — click reload to try again"
                 : hasNoStocks
                   ? "Add stocks to your watchlist to see AI rankings"
-                  : assets.length === 0
-                    ? "Fetching scores for your watchlist…"
-                    : "Top picks ranked by AI score — updated on demand"}
+                  : isFallback
+                    ? "Offline Mode — Showing simulated fallback rankings"
+                    : assets.length === 0
+                      ? "Fetching scores for your watchlist…"
+                      : "Top picks ranked by AI score — updated on demand"}
           </p>
         </div>
 
@@ -111,20 +113,32 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
         {isLoading ? (
           // Show 3 skeleton rows while loading
           [1, 2, 3].map((i) => <SkeletonRow key={i} />)
-        ) : isError || isFallback ? (
+        ) : isError ? (
           <div className="text-center py-8 space-y-3">
             <div className="text-3xl">⚠️</div>
             <p className="text-sm font-bold text-slate-600 dark:text-slate-300">AI Rankings Unavailable</p>
             <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
-              {isFallback
-                ? "AI providers were unreachable. Real-time ranking is currently unavailable."
-                : "The AI ranking service could not be reached. Please check back later."}
+              The AI ranking service could not be reached. Please check back later.
             </p>
             <button
               onClick={handleRetry}
               className="mt-2 text-xs font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl transition-colors"
             >
               ↺ Reload AI Rankings
+            </button>
+          </div>
+        ) : isFallback && assets.length === 0 ? (
+          <div className="text-center py-8 space-y-3">
+            <div className="text-3xl">⚠️</div>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Offline Mode</p>
+            <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
+              AI providers are unreachable and no cached/fallback rankings could be loaded.
+            </p>
+            <button
+              onClick={handleRetry}
+              className="mt-2 text-xs font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl transition-colors"
+            >
+              ↺ Retry Connection
             </button>
           </div>
         ) : hasNoStocks ? (
