@@ -181,11 +181,10 @@ export default function InvestmentCalculator() {
       {/* Header Row */}
       <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-3.5 border-b border-slate-150 dark:border-white/5 shrink-0">
         <div>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-2.5">
-            <Calculator className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
+          <h2 className="text-sm cool-heading uppercase leading-tight">
             Wealth Compound Calculator
           </h2>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+          <p className="text-[10px] text-slate-550 dark:text-slate-455 mt-0.5">
             Project mutual fund and equity compounding returns dynamically.
           </p>
         </div>

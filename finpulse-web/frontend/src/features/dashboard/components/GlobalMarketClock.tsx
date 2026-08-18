@@ -131,13 +131,12 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
   return (
     <div className="bg-white/70 dark:bg-white/[0.02] backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300 space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100/80 dark:border-white/[0.05]">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400">
-            <Clock className="h-4 w-4" />
-          </div>
+        <div className="flex items-center gap-3">
           <div>
-            <h3 className="text-sm cool-heading">Global Market Clock</h3>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Live exchange status — updates every second</p>
+            <h3 className="text-sm cool-heading uppercase">
+              Global Market Clock
+            </h3>
+            <p className="text-[10px] text-slate-550 dark:text-slate-455 mt-0.5">Live exchange status — updates every second</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -155,15 +154,26 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
 
           // Flag Mapping
           const getMarketFlag = (city: string) => {
-            if (city.includes("New York")) return "🇺🇸";
-            if (city.includes("Mumbai")) return "🇮🇳";
-            if (city.includes("London")) return "🇬🇧";
-            if (city.includes("Tokyo")) return "🇯🇵";
-            if (city.includes("Sydney")) return "🇦🇺";
-            if (city.includes("Frankfurt")) return "🇩🇪";
-            if (city.includes("Toronto")) return "🇨🇦";
-            if (city.includes("Singapore")) return "🇸🇬";
-            return "🌐";
+            let code = "us";
+            if (city.includes("New York")) code = "us";
+            else if (city.includes("Mumbai")) code = "in";
+            else if (city.includes("London")) code = "gb";
+            else if (city.includes("Tokyo")) code = "jp";
+            else if (city.includes("Sydney")) code = "au";
+            else if (city.includes("Frankfurt")) code = "de";
+            else if (city.includes("Toronto")) code = "ca";
+            else if (city.includes("Singapore")) code = "sg";
+            else return <span className="text-lg">🌐</span>;
+
+            return (
+              <img 
+                src={`https://flagcdn.com/w40/${code}.png`} 
+                srcSet={`https://flagcdn.com/w80/${code}.png 2x`}
+                width="20"
+                alt={city}
+                className="rounded shadow-sm mt-0.5 border border-slate-200/50 dark:border-white/10"
+              />
+            );
           };
 
           return (
@@ -176,7 +186,7 @@ export const GlobalMarketClock = memo(function GlobalMarketClock() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-2.5">
-                  <span className="text-lg leading-none mt-0.5 select-none" role="img" aria-label={config.city}>
+                  <span className="flex-shrink-0 mt-0.5 select-none">
                     {getMarketFlag(config.city)}
                   </span>
                   <div>

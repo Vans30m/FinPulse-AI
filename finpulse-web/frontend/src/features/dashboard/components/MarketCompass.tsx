@@ -43,13 +43,27 @@ export default function MarketCompass() {
   return (
     <div className="w-full h-full bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm flex flex-col gap-5">
 
+      {/* Top Header Controls (Fear & Greed Style) */}
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+        <div className="flex items-center gap-3">
+          <div>
+            <h3 className="text-xs sm:text-sm cool-heading uppercase">
+              Sentiment Spectrum & Market Compass
+            </h3>
+            <p className="text-[10px] text-slate-550 dark:text-slate-455 mt-0.5">
+              Reference guide for market cycles, psychological zone guides, and investment strategy.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-4">
 
         {/* Sentiment Spectrum bar */}
         <div className="space-y-2.5 mb-3">
           <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
             <span>Sentiment Spectrum</span>
-            <span className="flex items-center gap-1"><Info className="h-3 w-3" /> Reference Guide</span>
+            <span className="flex items-center gap-1">Reference Guide</span>
           </div>
 
           {/* Color bar */}
@@ -73,8 +87,7 @@ export default function MarketCompass() {
 
         {/* Detailed Psychology Grid to Fill Vertical Space */}
         <div className="mb-3">
-          <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2.5 flex items-center gap-1.5">
-            <Brain className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
+          <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2.5">
             Psychology Zone Guide
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">

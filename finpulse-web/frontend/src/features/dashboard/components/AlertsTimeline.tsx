@@ -121,15 +121,12 @@ export default function AlertsTimeline({
     >
       {/* HEADER */}
       <div className="border-b border-slate-150 dark:border-white/5 px-4 py-3.5 shrink-0 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-cyan-400">
-            <Newspaper className="h-4 w-4" />
-          </div>
+        <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+            <h2 className="text-sm cool-heading uppercase leading-tight">
               {fullPage ? "Global Market News Center" : "Live Market News"}
             </h2>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Aggregated from Finnhub & Google News</p>
+            <p className="text-[10px] text-slate-550 dark:text-slate-455 mt-0.5">Aggregated from Finnhub & Google News</p>
           </div>
         </div>
       </div>

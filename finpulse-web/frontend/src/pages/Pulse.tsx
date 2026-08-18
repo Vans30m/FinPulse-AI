@@ -96,12 +96,12 @@ export default function Pulse() {
               <FearGreedIndex className="h-full flex-1" />
             </div>
             <div className="lg:col-span-2 flex flex-col">
-              <MarketCompass />
+              <AIPickOfTheDay className="h-full flex-1" />
             </div>
           </div>
-          {/* Bottom row: AI Pick of the Day below them */}
-          <div className="mt-6 sm:mt-8">
-            <AIPickOfTheDay />
+          {/* Bottom row: Market Compass full width */}
+          <div className="mt-8">
+            <MarketCompass />
           </div>
         </section>
 
