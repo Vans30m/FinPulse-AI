@@ -14,6 +14,7 @@ interface Props {
   // FIX: new prop — lets the card distinguish real LLM output from the
   // backend's random mock fallback (sent when all providers fail).
   source?: 'live' | 'fallback';
+  onReload?: () => void;
 }
 
 function ScoreBadge({ score }: { score: number }) {
@@ -39,19 +40,6 @@ function VerdictBadge({ verdict }: { verdict: string }) {
   return <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Hold</span>;
 }
 
-// FIX: small badge shown when the backend had to serve mock fallback
-// data (all LLM providers failed) instead of a real ranking.
-function EstimatedBadge() {
-  return (
-    <span
-      title="AI providers were unreachable — these scores are placeholder mock data, not real analysis."
-      className="text-[9px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full dark:text-amber-400"
-    >
-      Estimated
-    </span>
-  );
-}
-
 function SkeletonRow() {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-white/5 p-4 animate-pulse">
@@ -65,11 +53,15 @@ function SkeletonRow() {
   );
 }
 
-export default function AIRankingCard({ assets, isLoading = false, isError = false, stockCount = 0, source }: Props) {
+export default function AIRankingCard({ assets, isLoading = false, isError = false, stockCount = 0, source, onReload }: Props) {
   const queryClient = useQueryClient();
 
   const handleRetry = () => {
-    queryClient.invalidateQueries({ queryKey: ['watchlist-ai-rankings'] });
+    if (onReload) {
+      onReload();
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['watchlist-ai-rankings'] });
+    }
   };
 
   const hasNoStocks = stockCount === 0;
@@ -83,24 +75,17 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
           <h2 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
             <span className="text-lg">✦</span>
             FinPulse AI Rankings
-            {/* FIX: surfaced next to the title so it's visible even before
-                reading the subtext line below. */}
-            {!isLoading && !isError && !hasNoStocks && assets.length > 0 && isFallback && (
-              <EstimatedBadge />
-            )}
           </h2>
           <p className="text-[10px] text-slate-400 mt-0.5">
             {isLoading
               ? "Analyzing technicals, financials & sentiment…"
-              : isError
-                ? "Failed to load AI rankings — click retry"
+              : isError || isFallback
+                ? "Failed to load AI rankings — click reload to try again"
                 : hasNoStocks
                   ? "Add stocks to your watchlist to see AI rankings"
                   : assets.length === 0
                     ? "Fetching scores for your watchlist…"
-                    : isFallback
-                      ? "AI providers were unreachable — showing placeholder scores, not real analysis"
-                      : "Top picks ranked by AI score — updated on demand"}
+                    : "Top picks ranked by AI score — updated on demand"}
           </p>
         </div>
 
@@ -111,12 +96,12 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
               Analyzing
             </div>
           )}
-          {(isError || (!isLoading && !hasNoStocks && assets.length === 0) || isFallback) && (
+          {!isLoading && !hasNoStocks && (
             <button
               onClick={handleRetry}
               className="text-[10px] font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
             >
-              ↺ Retry
+              ↺ Reload
             </button>
           )}
         </div>
@@ -126,18 +111,20 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
         {isLoading ? (
           // Show 3 skeleton rows while loading
           [1, 2, 3].map((i) => <SkeletonRow key={i} />)
-        ) : isError ? (
+        ) : isError || isFallback ? (
           <div className="text-center py-8 space-y-3">
             <div className="text-3xl">⚠️</div>
             <p className="text-sm font-bold text-slate-600 dark:text-slate-300">AI Rankings Unavailable</p>
             <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
-              The AI ranking service could not be reached. This usually means the backend needs to be redeployed with the latest changes.
+              {isFallback
+                ? "AI providers were unreachable. Real-time ranking is currently unavailable."
+                : "The AI ranking service could not be reached. Please check back later."}
             </p>
             <button
               onClick={handleRetry}
               className="mt-2 text-xs font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl transition-colors"
             >
-              ↺ Retry Now
+              ↺ Reload AI Rankings
             </button>
           </div>
         ) : hasNoStocks ? (

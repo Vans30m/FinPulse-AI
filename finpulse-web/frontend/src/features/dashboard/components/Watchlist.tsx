@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   TrendingUp, TrendingDown, Plus, Trash2,
   Download, Star, Pin, Info, Search, X, Activity, Loader2, Check
@@ -15,10 +16,12 @@ import { useChart } from "../../../context/ChartContext";
 import { pageCache } from "../../../utils/cache";
 import PageLoader from "../../../components/ui/PageLoader";
 import { StockLogo } from '../../../utils/logo';
+import { dashboardService } from "../../../services/dashboardService";
 
 export default function Watchlist() {
   const { openAsset } = useChart();
   const { data: watchlistsData, isLoading } = useWatchlists();
+  const queryClient = useQueryClient();
 
   // Cache check for instant load
   const cachedData = pageCache.get('watchlists');
@@ -250,6 +253,22 @@ export default function Watchlist() {
 
   // Lazy AI rankings — fetched from a dedicated endpoint after the main watchlist loads
   const { data: aiRankingsData, isLoading: aiRankingsLoading, isError: aiRankingsError } = useWatchlistAIRankings(activeListId);
+
+  const [isRefreshingAIRankings, setIsRefreshingAIRankings] = useState(false);
+
+  const handleReloadAIRankings = async () => {
+    if (!activeListId) return;
+    setIsRefreshingAIRankings(true);
+    try {
+      const result = await dashboardService.getWatchlistAIRankings(activeListId, true);
+      queryClient.setQueryData(['watchlist-ai-rankings', activeListId], result);
+      toast.success("AI Rankings refreshed!");
+    } catch (err: any) {
+      toast.error("Failed to refresh AI Rankings");
+    } finally {
+      setIsRefreshingAIRankings(false);
+    }
+  };
 
   // FIX: backend now returns { source: 'live' | 'fallback', rankings: [...] }
   // instead of a bare array, so the UI can tell real AI rankings apart
@@ -542,13 +561,13 @@ export default function Watchlist() {
         )}
       </div>
 
-      {/* AI RANKINGS CARD */}
       <AIRankingCard
         assets={rankedAssets}
-        isLoading={aiRankingsLoading}
+        isLoading={aiRankingsLoading || isRefreshingAIRankings}
         isError={aiRankingsError}
         stockCount={(activeWatchlist.items || []).length}
         source={aiRankingsSource}
+        onReload={handleReloadAIRankings}
       />
     </div>
   );

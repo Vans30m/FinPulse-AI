@@ -40,7 +40,7 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.3-70b-versatile',
+        model: 'canopylabs/orpheus-arabic-saudi',
         messages: [
           {
             role: 'system',
@@ -813,11 +813,11 @@ router.get('/charts/:symbol', async (req: Request, res: Response) => {
       }
     } catch (directErr: any) {
       console.warn(`Direct Yahoo chart fetch failed for ${symbol}, trying yahooFinance.chart fallback:`, directErr.message);
-      
+
       const getPeriod1ForRange = (r: string): Date => {
         const now = new Date();
         const lower = r.toLowerCase();
-        
+
         const match = lower.match(/^(\d+)(d|wk|mo|y)$/);
         if (match) {
           const value = parseInt(match[1]);
@@ -1131,7 +1131,7 @@ router.get('/global-indices', async (req: Request, res: Response) => {
     if (cached) return res.json(cached);
 
     const symbols = ['^NSEI', '^BSESN', 'NIFTY_IT.NS', 'NIFTY_BANK.NS', '^GSPC', '^IXIC', '^DJI', '^RUT', '^FTSE'];
-    
+
     const getFallbackQuote = (sym: string) => {
       if (sym === '^NSEI') return { price: 24541.10, change: 125.40, changePercent: 0.51 };
       if (sym === '^BSESN') return { price: 80436.80, change: 412.30, changePercent: 0.51 };
@@ -1156,7 +1156,7 @@ router.get('/global-indices', async (req: Request, res: Response) => {
         }
       })
     );
-    
+
     const mapped = symbols.map(sym => {
       const q = quotes.find(item => item.symbol === sym)?.quote;
       const fallback = getFallbackQuote(sym);

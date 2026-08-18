@@ -14,7 +14,7 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.3-70b-versatile',
+        model: 'canopylabs/orpheus-arabic-saudi',
         messages: [
           {
             role: 'system',
@@ -313,7 +313,7 @@ router.get('/portfolio-advisor', async (req: Request, res: Response) => {
   const cacheKey = 'ai:portfolio-advisor';
   const cached = getAiCache(cacheKey);
   if (cached) return res.json(cached);
-  
+
   const fallback = {
     healthScore: 78,
     healthGrade: "A-",
@@ -415,7 +415,7 @@ router.get('/portfolio-advisor', async (req: Request, res: Response) => {
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
-  
+
   // Set cache for future requests
   setAiCache(cacheKey, result);
   res.json(result);

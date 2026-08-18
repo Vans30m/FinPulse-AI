@@ -256,11 +256,14 @@ export const dashboardService = {
   // source" errors in watchlist.tsx and useDashboard.ts — the old signature
   // here still promised a bare array, which conflicted with the new shape
   // no matter how the hook or component tried to type/cast around it.
-  async getWatchlistAIRankings(id: string): Promise<{
+  async getWatchlistAIRankings(id: string, refresh?: boolean): Promise<{
     source: 'live' | 'fallback';
     rankings: { symbol: string; score: number; reason: string }[];
   }> {
-    const res = await fetch(`${API_BASE}/watchlists/${id}/ai-rankings`, {
+    const url = refresh
+      ? `${API_BASE}/watchlists/${id}/ai-rankings?refresh=true`
+      : `${API_BASE}/watchlists/${id}/ai-rankings`;
+    const res = await fetch(url, {
       headers: getHeaders()
     });
     if (!res.ok) throw new Error('Failed to fetch AI rankings');

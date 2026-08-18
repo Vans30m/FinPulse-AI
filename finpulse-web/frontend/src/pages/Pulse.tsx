@@ -90,18 +90,18 @@ export default function Pulse() {
         </section>
         {/* ── 5. RISK & PSYCHOLOGY ── */}
         <section aria-label="Risk and Market Psychology">
-          {/* Top row: Fear & Greed + AI Pick */}
+          {/* Top row: Fear & Greed + Market Compass come together */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 sm:gap-6 items-stretch">
             <div className="lg:col-span-3 flex flex-col">
               <FearGreedIndex className="h-full flex-1" />
             </div>
             <div className="lg:col-span-2 flex flex-col">
-              <AIPickOfTheDay />
+              <MarketCompass />
             </div>
           </div>
-          {/* Bottom row: Market Compass full width */}
-          <div className="mt-8">
-            <MarketCompass />
+          {/* Bottom row: AI Pick of the Day below them */}
+          <div className="mt-6 sm:mt-8">
+            <AIPickOfTheDay />
           </div>
         </section>
 

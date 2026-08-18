@@ -185,7 +185,7 @@ The backend uses RESTful conventions with the following major route domains:
 
 ## AI Features
 
-FinPulse-AI leverages a robust fallback system prioritizing **Groq (Llama-3.3-70b-versatile)** for speed, falling back to **Google Gemini (2.5-flash)** if needed. 
+FinPulse-AI leverages a robust fallback system prioritizing **Groq (canopylabs/orpheus-arabic-saudi)** for speed, falling back to **Google Gemini (2.5-flash)** if needed. 
 
 - **Data Processing**: AI models process structured prompts containing real-time market data and indices.
 - **Strict JSON Returns**: Prompts enforce raw JSON generation, which the backend parses directly.
