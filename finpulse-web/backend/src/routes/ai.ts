@@ -7,11 +7,9 @@ const router = Router();
 // Centralized LLM fetcher helper
 async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
   const geminiKey = process.env.GEMINI_API_KEY;
-  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL;
-  const ollamaModel = process.env.OLLAMA_MODEL || 'qwen2.5';
-  const ollamaApiKey = process.env.OLLAMA_API_KEY;
+  const geminiKeySecondary = process.env.GEMINI_API_KEY_SECONDARY;
 
-  // 1. Try Gemini (Primary)
+  // 1. Try Gemini Primary
   if (geminiKey && geminiKey.trim() !== '') {
     try {
       const response = await axios.post(
@@ -29,36 +27,60 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
         },
         {
           headers: { 'Content-Type': 'application/json' },
-          timeout: 8000
+          timeout: 5000
         }
       );
 
       const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (rawText) {
-        // Clean up markdown code block if returned
         const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleaned);
       }
-    } catch (err) {
-      console.warn('Gemini query failed, attempting Ollama...', err);
+    } catch (err: any) {
+      console.warn('Gemini primary query failed, trying secondary...', err.message);
     }
   }
 
-  // 2. Try Ollama (Backup)
-  if (ollamaBaseUrl && ollamaBaseUrl.trim() !== '') {
+  // 2. Try Gemini Secondary
+  if (geminiKeySecondary && geminiKeySecondary.trim() !== '') {
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      if (ollamaApiKey && ollamaApiKey.trim() !== '') {
-        headers['Authorization'] = `Bearer ${ollamaApiKey}`;
-      }
-
-      // Query via OpenAI-compatible endpoint on Ollama
       const response = await axios.post(
-        `${ollamaBaseUrl.replace(/\/$/, '')}/v1/chat/completions`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKeySecondary}`,
         {
-          model: ollamaModel,
+          contents: [
+            {
+              parts: [
+                {
+                  text: `${prompt}\n\nIMPORTANT: Respond with ONLY a raw JSON block, matching the exact format. No markdown, no triple backticks.`
+                }
+              ]
+            }
+          ]
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 5000
+        }
+      );
+
+      const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (rawText) {
+        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleaned);
+      }
+    } catch (err: any) {
+      console.warn('Gemini secondary query failed, trying Groq...', err.message);
+    }
+  }
+
+  // 3. Try Groq
+  const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_API_KEY_SECONDARY;
+  if (groqKey && groqKey.trim() !== '') {
+    try {
+      const response = await axios.post(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          model: 'qwen/qwen3.6-27b',
           messages: [
             {
               role: 'system',
@@ -73,21 +95,25 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
           temperature: 0.3
         },
         {
-          headers,
-          timeout: 10000
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`
+          },
+          timeout: 5000
         }
       );
 
       const content = response.data?.choices?.[0]?.message?.content;
       if (content) {
-        return JSON.parse(content);
+        const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleaned);
       }
-    } catch (err) {
-      console.warn('Ollama query failed, using static fallback...', err);
+    } catch (err: any) {
+      console.warn('Groq query failed, using static fallback...', err.message);
     }
   }
 
-  // 3. Static mock fallback
+  // 4. Static mock fallback
   return fallbackData;
 }
 

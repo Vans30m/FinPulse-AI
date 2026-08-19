@@ -14,7 +14,10 @@ import {
   Users,
   Scissors,
   DollarSign,
-  Globe
+  Globe,
+  Plus,
+  Check,
+  Loader2
 } from "lucide-react";
 import {
   getUnifiedAssetDetails,
@@ -22,6 +25,13 @@ import {
   getTechnicals,
   getAIScore
 } from "../services/marketService";
+import {
+  useWatchlists,
+  useAddWatchlistItem,
+  useRemoveWatchlistItem,
+  useCreateWatchlist
+} from "../hooks/useDashboard";
+import toast from "react-hot-toast";
 import CandlestickChart from "../components/charts/CandlestickChart";
 import { ChartHeader } from "../components/charts/ChartHeader";
 import { isIndexSymbol } from "../utils/assetUtils";
@@ -58,6 +68,118 @@ function resolveExchangeLocation(symbol: string, assetType: string, stateExchang
     return "GLOBAL";
   }
   return "GLOBAL";
+}
+
+function WatchlistToggleButton({ symbol }: { symbol: string }) {
+  const isLoggedIn = !!localStorage.getItem('finpulse_token') || !!localStorage.getItem('finpulse-token');
+  const { data: watchlists = [] } = useWatchlists();
+  const addWatchlistItemMutation = useAddWatchlistItem();
+  const removeWatchlistItemMutation = useRemoveWatchlistItem();
+  const createWatchlistMutation = useCreateWatchlist();
+
+  const watchlistItem = useMemo(() => {
+    if (!isLoggedIn || !symbol) return null;
+    for (const list of watchlists) {
+      const found = list.items?.find(
+        (item: any) => item.symbol.toUpperCase() === symbol.toUpperCase()
+      );
+      if (found) {
+        return { ...found, listId: list.id };
+      }
+    }
+    return null;
+  }, [watchlists, symbol, isLoggedIn]);
+
+  const isFollowing = !!watchlistItem;
+  const isPending =
+    addWatchlistItemMutation.isPending ||
+    removeWatchlistItemMutation.isPending ||
+    createWatchlistMutation.isPending;
+
+  const handleFollowToggle = async () => {
+    if (!isLoggedIn) {
+      toast.error("Please log in to add assets to your watchlist");
+      window.dispatchEvent(new CustomEvent('finpulse:force-login'));
+      return;
+    }
+
+    if (!symbol) return;
+
+    if (isFollowing && watchlistItem) {
+      removeWatchlistItemMutation.mutate(watchlistItem.id, {
+        onSuccess: () => {
+          toast.success(`Removed ${symbol} from watchlist`);
+        },
+        onError: (err: any) => {
+          toast.error(`Failed to remove: ${err.message || err}`);
+        }
+      });
+    } else {
+      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+      const userName = storedUser.name || storedUser.username || 'User';
+      const targetListName = `${userName}'s Watchlist`;
+
+      const existingList = watchlists.find(
+        (list: any) => list.name.toLowerCase() === targetListName.toLowerCase()
+      );
+
+      if (!existingList) {
+        createWatchlistMutation.mutate({ name: targetListName }, {
+          onSuccess: (newList) => {
+            addWatchlistItemMutation.mutate({
+              listId: newList.id,
+              item: { symbol, notes: "" }
+            });
+            toast.success(`Created watchlist "${targetListName}" and added ${symbol}`);
+          },
+          onError: (err: any) => {
+            toast.error(`Failed to create watchlist: ${err.message || err}`);
+          }
+        });
+      } else {
+        addWatchlistItemMutation.mutate({
+          listId: existingList.id,
+          item: { symbol, notes: "" }
+        }, {
+          onSuccess: () => {
+            toast.success(`Added ${symbol} to "${targetListName}"`);
+          },
+          onError: (err: any) => {
+            toast.error(`Failed to add item: ${err.message || err}`);
+          }
+        });
+      }
+    }
+  };
+
+  return (
+    <button
+      onClick={handleFollowToggle}
+      disabled={isPending}
+      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${
+        isFollowing
+          ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 border border-emerald-500/30'
+          : 'bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950 border border-transparent'
+      }`}
+    >
+      {isPending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Processing...</span>
+        </>
+      ) : isFollowing ? (
+        <>
+          <Check className="h-4 w-4 stroke-[3]" />
+          <span>Watchlisted</span>
+        </>
+      ) : (
+        <>
+          <Plus className="h-4 w-4 stroke-[3]" />
+          <span>Add to Watchlist</span>
+        </>
+      )}
+    </button>
+  );
 }
 
 function IndexDetails({ symbol }: { symbol: string }) {
@@ -157,7 +279,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Navigation Row */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
@@ -165,6 +287,7 @@ function IndexDetails({ symbol }: { symbol: string }) {
           <ArrowLeft className="h-4 w-4 stroke-[3]" />
           <span>Back</span>
         </button>
+        <WatchlistToggleButton symbol={symbol} />
       </div>
 
       {/* Main Tab Controller Space */}
@@ -257,7 +380,7 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Navigation Row */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
@@ -265,6 +388,7 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
           <ArrowLeft className="h-4 w-4 stroke-[3]" />
           <span>Back</span>
         </button>
+        <WatchlistToggleButton symbol={symbol} />
       </div>
 
       {/* Header Info */}
@@ -824,6 +948,7 @@ export default function AssetDetails() {
           <ArrowLeft className="h-4 w-4 stroke-[3]" />
           <span>Back</span>
         </button>
+        <WatchlistToggleButton symbol={symbol} />
       </div>
 
       {/* Header Info */}

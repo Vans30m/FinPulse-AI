@@ -35,7 +35,6 @@ export default function PaperTradingLedger({
       <div className="p-6 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <FileText className="h-5 w-5 text-indigo-500" />
             <span>Paper Trading Ledger</span>
           </h2>
           <p className="text-xs text-slate-400 dark:text-slate-500">Historical logs of all virtual market orders executed in this session.</p>

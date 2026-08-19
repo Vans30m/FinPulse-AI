@@ -1411,9 +1411,9 @@ export default function StockScreener() {
           {/* Logo & Subtitle */}
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-2">
-              <span className="text-slate-800 dark:text-white font-extrabold text-5xl tracking-tight">
+              <h1 className="text-slate-800 dark:text-white font-black text-5xl tracking-tight font-display">
                 screener
-              </span>
+              </h1>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-medium">
               Stock analysis and screening tool for investors in India & global markets.

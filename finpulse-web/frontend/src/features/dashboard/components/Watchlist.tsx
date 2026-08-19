@@ -23,26 +23,9 @@ export default function Watchlist() {
   const { data: watchlistsData, isLoading } = useWatchlists();
   const queryClient = useQueryClient();
 
-  // Cache check for instant load
-  const cachedData = pageCache.get('watchlists');
-  const [showLoader, setShowLoader] = useState(!cachedData && isLoading);
-
-  useEffect(() => {
-    if (watchlistsData) {
-      pageCache.set('watchlists', watchlistsData);
-    }
-  }, [watchlistsData]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      setShowLoader(false);
-    }
-  }, [isLoading]);
-
   const watchlists = useMemo(() => {
-    const activeData = watchlistsData || cachedData;
-    return Array.isArray(activeData) ? activeData : [];
-  }, [watchlistsData, cachedData]);
+    return Array.isArray(watchlistsData) ? watchlistsData : [];
+  }, [watchlistsData]);
 
   const createListMutation = useCreateWatchlist();
   const deleteListMutation = useDeleteWatchlist();
@@ -63,6 +46,7 @@ export default function Watchlist() {
   // spinner, instead of disabling/animating the whole list on any change.
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<"remove" | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string } | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<string>("position");
@@ -188,24 +172,30 @@ export default function Watchlist() {
 
   const handleDeleteWatchlist = (e: React.MouseEvent, id: string, name: string) => {
     e.stopPropagation();
-    if (confirm(`Are you sure you want to delete the watchlist "${name}"?`)) {
-      deleteListMutation.mutate(id, {
-        onSuccess: () => {
-          toast.success(`Deleted watchlist "${name}"`);
-          if (activeListId === id) {
-            const remaining = watchlists.filter((w) => w.id !== id);
-            if (remaining.length > 0) {
-              setActiveListId(remaining[0].id);
-            } else {
-              setActiveListId("");
-            }
+    setDeleteConfirmation({ id, name });
+  };
+
+  const confirmDeleteWatchlist = () => {
+    if (!deleteConfirmation) return;
+    const { id, name } = deleteConfirmation;
+    deleteListMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success(`Deleted watchlist "${name}"`);
+        if (activeListId === id) {
+          const remaining = watchlists.filter((w) => w.id !== id);
+          if (remaining.length > 0) {
+            setActiveListId(remaining[0].id);
+          } else {
+            setActiveListId("");
           }
-        },
-        onError: (err: any) => {
-          toast.error(`Failed to delete watchlist: ${err.message || err}`);
         }
-      });
-    }
+        setDeleteConfirmation(null);
+      },
+      onError: (err: any) => {
+        toast.error(`Failed to delete watchlist: ${err.message || err}`);
+        setDeleteConfirmation(null);
+      }
+    });
   };
 
   // FIX: escape embedded quotes so notes containing `"` don't break the CSV.
@@ -297,7 +287,7 @@ export default function Watchlist() {
     return { total: totalCount, gainers, losers, avgChange: `${(sumChange / (totalCount || 1)).toFixed(2)}%` };
   }, [activeWatchlist]);
 
-  if (showLoader) {
+  if (isLoading && watchlists.length === 0) {
     return <PageLoader title="Loading Watchlists" message="Analyzing watchlists and active tickers..." />;
   }
 
@@ -307,9 +297,6 @@ export default function Watchlist() {
       <div className="flex flex-col gap-1 p-1">
         <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
           Your Watchlists
-          <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full dark:bg-blue-900/40 dark:text-blue-300">
-            Realtime Trackers
-          </span>
           {(addItemMutation.isPending || removeItemMutation.isPending || updateItemMutation.isPending) && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full">
               <Loader2 className="h-3 w-3 animate-spin" /> Saving…
@@ -523,7 +510,7 @@ export default function Watchlist() {
                       </div>
 
                       {/* Middle Notes Indicator */}
-                      {item.notes && item.notes !== "Added to watchlist" && (
+                      {item.notes && item.notes !== "Added to watchlist" && item.notes !== "Added from Details Page" && (
                         <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center gap-1.5 text-[10px] md:text-xs text-slate-400 dark:text-slate-500 italic font-medium">
                           <Info className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
                           <span className="truncate">{item.notes}</span>
@@ -569,6 +556,56 @@ export default function Watchlist() {
         source={aiRankingsSource}
         onReload={handleReloadAIRankings}
       />
+
+      {/* Custom Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmation && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteConfirmation(null)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-md bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 p-6 rounded-3xl shadow-2xl z-10 flex flex-col gap-4 overflow-hidden"
+            >
+              <div className="flex flex-col gap-1">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                  Delete Watchlist
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Are you sure you want to delete the watchlist <strong className="text-slate-800 dark:text-slate-200">"{deleteConfirmation.name}"</strong>? This action cannot be undone.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 mt-2">
+                <button
+                  onClick={() => setDeleteConfirmation(null)}
+                  className="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteWatchlist}
+                  disabled={deleteListMutation.isPending}
+                  className="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-60 text-white flex items-center gap-1.5 transition-all shadow-md shadow-rose-600/20"
+                >
+                  {deleteListMutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

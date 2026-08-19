@@ -21,15 +21,19 @@
   h2,
   h3,
   h4 {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
-    letter-spacing: -0.02em;
-    font-weight: 800;
+    font-family: 'Outfit', system-ui, sans-serif;
+    letter-spacing: -0.03em;
+    font-weight: 900;
   }
 }
 
 .cool-heading {
   font-family: 'Outfit', system-ui, sans-serif;
   @apply font-black tracking-tight text-slate-900 dark:text-white;
+}
+
+.font-display {
+  font-family: 'Outfit', system-ui, sans-serif !important;
 }
 
 .ai-card-font {
