@@ -5,7 +5,6 @@ import { fetchGlobalMarkets } from "../services/marketService";
 
 import AIMarketSentiment from "../features/dashboard/components/AIMarketSentiment";
 import AIBulletSummary from "../features/dashboard/components/AIBulletSummary";
-import TrendingSectorStreaks from "../features/dashboard/components/TrendingSectorStreaks";
 import { GlobalMarketClock } from "../features/dashboard/components/GlobalMarketClock";
 import FearGreedIndex from "../features/dashboard/components/FearGreedIndex";
 import AIPickOfTheDay from "../features/dashboard/components/AIPickOfTheDay";
@@ -84,24 +83,19 @@ export default function Pulse() {
           <AIBulletSummary />
         </section>
 
-        {/* ── 4. AI SECTOR ROTATION ── */}
-        <section aria-label="AI Sector Rotation">
-          <TrendingSectorStreaks />
-        </section>
         {/* ── 5. RISK & PSYCHOLOGY ── */}
         <section aria-label="Risk and Market Psychology">
-          {/* Top row: Fear & Greed + Market Compass come together */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 sm:gap-6 items-stretch">
-            <div className="lg:col-span-3 flex flex-col">
-              <FearGreedIndex className="h-full flex-1" />
-            </div>
-            <div className="lg:col-span-2 flex flex-col">
-              <AIPickOfTheDay className="h-full flex-1" />
-            </div>
+          {/* Top row: Fear & Greed full width */}
+          <div>
+            <FearGreedIndex />
           </div>
-          {/* Bottom row: Market Compass full width */}
+          {/* Middle row: Market Compass full width */}
           <div className="mt-8">
             <MarketCompass />
+          </div>
+          {/* Bottom row: AI Pick of the Day full width */}
+          <div className="mt-8">
+            <AIPickOfTheDay />
           </div>
         </section>
 

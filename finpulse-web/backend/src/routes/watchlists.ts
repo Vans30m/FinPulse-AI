@@ -316,22 +316,124 @@ function normalizeLLMArray(parsed: any): any[] {
   throw new Error('LLM response did not contain a recognizable array');
 }
 
+// Shared bracket-counting JSON extractor for watchlists (mirrors ai.ts extractJSON).
+// Returns the LAST complete JSON object/array found — qwen puts actual data last.
+function extractJSONFromLLM(raw: string): string {
+  let text = raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*/gi, '')
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim();
+
+  // Collect ALL top-level JSON objects/arrays via bracket counting
+  const candidates: string[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '{' || ch === '[') {
+      const openChar = ch;
+      const closeChar = ch === '{' ? '}' : ']';
+      let depth = 0, inStr = false, esc = false;
+      const start = i;
+      let closed = false;
+      for (let j = i; j < text.length; j++) {
+        const c = text[j];
+        if (esc) { esc = false; continue; }
+        if (c === '\\' && inStr) { esc = true; continue; }
+        if (c === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (c === openChar) depth++;
+        else if (c === closeChar) {
+          depth--;
+          if (depth === 0) { candidates.push(text.slice(start, j + 1)); i = j + 1; closed = true; break; }
+        }
+      }
+      if (!closed) break;
+    } else { i++; }
+  }
+
+  let best = candidates.length > 0
+    ? candidates[candidates.length - 1]
+    : (raw.match(/(\{[\s\S]+?\}|\[[\s\S]+?\])/) ?? [''])[1] ?? '';
+
+  // Strip ellipsis placeholders
+  best = best
+    .replace(/\[\s*\.{2,}\s*\]/g, '[]')
+    .replace(/\{\s*\.{2,}\s*\}/g, '{}')
+    .replace(/:\s*\.{2,}/gm, ': null')
+    .replace(/,\s*\.{2,}\s*(?=[,\]\}])/g, '')
+    .replace(/\.{2,}/g, '')
+    .replace(/\u2026/g, '')
+    .replace(/,\s*([}\]])/g, '$1')
+    .replace(/,\s*,/g, ',');
+
+  return best;
+}
+
+function repairJSON(jsonStr: string): string {
+  let str = jsonStr.trim().replace(/,\s*$/, '');
+  const stack: string[] = [];
+  let inStr = false;
+  let esc = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\' && inStr) { esc = true; continue; }
+    if (c === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+
+    if (c === '{' || c === '[') {
+      stack.push(c);
+    } else if (c === '}' || c === ']') {
+      const top = stack[stack.length - 1];
+      if ((c === '}' && top === '{') || (c === ']' && top === '[')) {
+        stack.pop();
+      }
+    }
+  }
+
+  if (inStr) {
+    str += '"';
+  }
+  str = str.replace(/,\s*$/, '');
+
+  while (stack.length > 0) {
+    const top = stack.pop();
+    if (top === '{') str += '}';
+    else if (top === '[') str += ']';
+  }
+
+  return str;
+}
+
+function safeParseJSON(rawText: string): any {
+  const extracted = extractJSONFromLLM(rawText);
+  try {
+    return JSON.parse(extracted);
+  } catch (err) {
+    const repaired = repairJSON(extracted);
+    return JSON.parse(repaired);
+  }
+}
+
 async function queryLLMForRankings(prompt: string, fallbackData: any): Promise<{ source: 'live' | 'fallback'; data: any }> {
   const geminiKey = process.env.GEMINI_API_KEY;
   const geminiKeySecondary = process.env.GEMINI_API_KEY_SECONDARY;
+  const rankingPrompt = `${prompt}\n\nReturn ONLY a valid JSON array like this example (replace values with real data):\n[{"symbol":"AAPL","score":82,"reason":"Strong revenue growth and AI integration."},{"symbol":"MSFT","score":75,"reason":"Cloud dominance and enterprise AI adoption."}]\nNo markdown, no backticks, no extra text. Just the raw JSON array.`;
 
   // 1. Try Gemini Primary
   if (geminiKey && geminiKey.trim() !== '') {
     try {
       const response = await axios.post(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-        { contents: [{ parts: [{ text: `${prompt}\n\nIMPORTANT: Respond with ONLY a raw JSON array.` }] }] },
+        { contents: [{ parts: [{ text: rankingPrompt }] }] },
         { headers: { 'Content-Type': 'application/json' }, timeout: LLM_TIMEOUT_MS }
       );
       const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (rawText) {
-        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return { source: 'live', data: normalizeLLMArray(JSON.parse(cleaned)) };
+        return { source: 'live', data: normalizeLLMArray(safeParseJSON(rawText)) };
       }
     } catch (err: any) {
       console.warn('Gemini primary failed in watchlists, trying secondary...', err.message);
@@ -343,13 +445,12 @@ async function queryLLMForRankings(prompt: string, fallbackData: any): Promise<{
     try {
       const response = await axios.post(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKeySecondary}`,
-        { contents: [{ parts: [{ text: `${prompt}\n\nIMPORTANT: Respond with ONLY a raw JSON array.` }] }] },
+        { contents: [{ parts: [{ text: rankingPrompt }] }] },
         { headers: { 'Content-Type': 'application/json' }, timeout: LLM_TIMEOUT_MS }
       );
       const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (rawText) {
-        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return { source: 'live', data: normalizeLLMArray(JSON.parse(cleaned)) };
+        return { source: 'live', data: normalizeLLMArray(safeParseJSON(rawText)) };
       }
     } catch (err: any) {
       console.warn('Gemini secondary failed in watchlists, trying Groq...', err.message);
@@ -367,29 +468,21 @@ async function queryLLMForRankings(prompt: string, fallbackData: any): Promise<{
           messages: [
             {
               role: 'system',
-              content: 'You are a professional financial AI assistant. Return a JSON array of objects with fields: symbol, score (0-100), reason. Return ONLY raw JSON array. No extra text.'
+              content: 'You are a professional financial AI assistant. After your reasoning, output ONLY a raw JSON array. No markdown, no backticks, no extra text.'
             },
-            {
-              role: 'user',
-              content: prompt
-            }
+            { role: 'user', content: rankingPrompt }
           ],
-          response_format: { type: 'json_object' },
-          temperature: 0.3
+          temperature: 0.3,
+          max_tokens: 4096
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`
-          },
-          timeout: LLM_TIMEOUT_MS
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+          timeout: 15000
         }
       );
-
       const content = response.data?.choices?.[0]?.message?.content;
       if (content) {
-        const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/```json/g, '').replace(/```/g, '').trim();
-        return { source: 'live', data: normalizeLLMArray(JSON.parse(cleaned)) };
+        return { source: 'live', data: normalizeLLMArray(safeParseJSON(content)) };
       }
     } catch (err: any) {
       console.warn('Groq failed in watchlists, using fallback...', err.message);

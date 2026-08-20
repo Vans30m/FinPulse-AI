@@ -169,7 +169,7 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
                 <div className="flex items-center gap-1.5 mt-1">
                   <VerdictBadge verdict={asset.verdict} />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1 leading-snug truncate max-w-[200px]">
+                <p className="text-[10px] text-slate-400 mt-1 leading-snug">
                   {asset.verdict}
                 </p>
               </div>

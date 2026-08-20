@@ -26,7 +26,6 @@ import MarketExplanation from "./features/dashboard/components/MarketExplanation
 import FearGreedIndex from './features/dashboard/components/FearGreedIndex';
 import AIBulletSummary from './features/dashboard/components/AIBulletSummary';
 import AIPickOfTheDay from './features/dashboard/components/AIPickOfTheDay';
-import TrendingSectorStreaks from './features/dashboard/components/TrendingSectorStreaks';
 import { GlobalMarketClock } from './features/dashboard/components/GlobalMarketClock';
 
 // Stock Screener Page Component Integration

@@ -381,28 +381,6 @@ export async function getAIPickOfTheDay(): Promise<AIPickOfTheDayData> {
   return response.json();
 }
 
-export interface AISectorMomentumData {
-  topRally: {
-    sector: string;
-    days: number;
-    momentumScore: number;
-    reason: string;
-  }[];
-  topDecline: {
-    sector: string;
-    days: number;
-    momentumScore: number;
-    reason: string;
-  }[];
-  generatedAt: string;
-}
-
-export async function getAISectorMomentum(): Promise<AISectorMomentumData> {
-  const response = await fetch(`${API_BASE_URL}/api/ai/sector-momentum`);
-  if (!response.ok) throw new Error("Failed to fetch AI sector momentum");
-  return response.json();
-}
-
 export async function getAISentiment() {
   const response = await fetch(`${API_BASE_URL}/api/news-sentiment/sentiment`);
   return response.json();

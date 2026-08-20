@@ -84,13 +84,13 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg space-y-6 ai-card-font">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Fear & Greed Index</h3>
-            <p className="text-xs text-slate-505 mt-0.5">Calculating Global Fear & Greed Index...</p>
+            <h3 className="text-xs sm:text-sm cool-heading uppercase">Fear & Greed Index</h3>
+            <p className="text-[10px] text-slate-550 dark:text-slate-450 mt-0.5">Calculating Global Fear & Greed Index...</p>
           </div>
-          <span className="h-2 w-2 rounded-full bg-cyan-500 animate-ping" />
+          <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 animate-ping mr-2" />
         </div>
         <div className="flex flex-col items-center justify-center py-4">
           <div className="w-56 h-28 border-8 border-slate-100 dark:border-slate-800 border-b-0 rounded-t-full animate-spin" style={{ animationDuration: '3s' }} />
@@ -102,7 +102,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
 
   if (errorMsg && !data) {
     return (
-      <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-rose-200 dark:border-rose-950 shadow-lg flex flex-col items-center justify-center text-center gap-3">
+      <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-rose-200 dark:border-rose-950 shadow-lg flex flex-col items-center justify-center text-center gap-3 ai-card-font">
         <AlertCircle className="h-8 w-8 text-rose-500" />
         <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{errorMsg}</p>
         <button
@@ -140,7 +140,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
   const pathY = 50 - 40 * Math.sin(pathAngleRad);
 
   return (
-    <div className={`bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300 flex flex-col ${className}`}>
+    <div className={`bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300 flex flex-col ai-card-font ${className}`}>
       {/* Top Header Controls */}
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
         <div className="flex items-center gap-3">

@@ -4,6 +4,128 @@ import { getAiCache, setAiCache } from '../utils/aiCache.js';
 
 const router = Router();
 
+// Robustly extract the best JSON object/array from an LLM response.
+// Strategy: strip <think> blocks, collect ALL complete JSON structures via
+// stack-based bracket tracking, then return the LAST one.
+function extractJSON(raw: string): string {
+  // Step 1: strip think blocks (closed and unclosed)
+  let text = raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*/gi, '')
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim();
+
+  // Step 2: collect ALL top-level JSON structures via stack-based tracking
+  const candidates: string[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '{' || ch === '[') {
+      const start = i;
+      const stack: string[] = [];
+      let inStr = false;
+      let esc = false;
+      let closed = false;
+
+      for (let j = i; j < text.length; j++) {
+        const c = text[j];
+        if (esc) { esc = false; continue; }
+        if (c === '\\' && inStr) { esc = true; continue; }
+        if (c === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+
+        if (c === '{' || c === '[') {
+          stack.push(c);
+        } else if (c === '}' || c === ']') {
+          const top = stack[stack.length - 1];
+          if ((c === '}' && top === '{') || (c === ']' && top === '[')) {
+            stack.pop();
+            if (stack.length === 0) {
+              candidates.push(text.slice(start, j + 1));
+              i = j; // fast forward outer index
+              closed = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!closed) break; // unclosed bracket — stop scanning
+    }
+    i++;
+  }
+
+  // Step 3: pick the best candidate — prefer the last one (actual data, not schema)
+  let best = '';
+  if (candidates.length > 0) {
+    best = candidates[candidates.length - 1];
+  } else {
+    // Greedy match fallback
+    const m = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+    best = m ? m[1] : text;
+  }
+
+  // Step 4: strip ellipsis placeholders qwen/LLMs use in schema examples
+  best = best
+    .replace(/\[\s*\.{2,}\s*\]/g, '[]')        // [ ... ] -> []
+    .replace(/\{\s*\.{2,}\s*\}/g, '{}')        // { ... } -> {}
+    .replace(/:\s*\.{2,}/gm, ': null')          // "key": ... -> "key": null
+    .replace(/,\s*\.{2,}\s*(?=[,\]\}])/g, '')  // , ... , or , ... ]
+    .replace(/\.{2,}/g, '')                      // any remaining dot sequences
+    .replace(/\u2026/g, '')                       // Unicode ellipsis
+    .replace(/,\s*([}\]])/g, '$1')               // trailing commas
+    .replace(/,\s*,/g, ',');                      // double commas
+
+  return best;
+}
+
+function repairJSON(jsonStr: string): string {
+  let str = jsonStr.trim().replace(/,\s*$/, '');
+  const stack: string[] = [];
+  let inStr = false;
+  let esc = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\' && inStr) { esc = true; continue; }
+    if (c === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+
+    if (c === '{' || c === '[') {
+      stack.push(c);
+    } else if (c === '}' || c === ']') {
+      const top = stack[stack.length - 1];
+      if ((c === '}' && top === '{') || (c === ']' && top === '[')) {
+        stack.pop();
+      }
+    }
+  }
+
+  if (inStr) {
+    str += '"';
+  }
+  str = str.replace(/,\s*$/, '');
+
+  while (stack.length > 0) {
+    const top = stack.pop();
+    if (top === '{') str += '}';
+    else if (top === '[') str += ']';
+  }
+
+  return str;
+}
+
+function safeParseJSON(rawText: string): any {
+  const extracted = extractJSON(rawText);
+  try {
+    return JSON.parse(extracted);
+  } catch (err) {
+    const repaired = repairJSON(extracted);
+    return JSON.parse(repaired);
+  }
+}
+
 // Centralized LLM fetcher helper
 async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -33,8 +155,7 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
 
       const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (rawText) {
-        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleaned);
+        return safeParseJSON(rawText);
       }
     } catch (err: any) {
       console.warn('Gemini primary query failed, trying secondary...', err.message);
@@ -65,8 +186,7 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
 
       const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (rawText) {
-        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleaned);
+        return safeParseJSON(rawText);
       }
     } catch (err: any) {
       console.warn('Gemini secondary query failed, trying Groq...', err.message);
@@ -84,29 +204,28 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
           messages: [
             {
               role: 'system',
-              content: 'You are a professional financial AI assistant. You must return only a valid JSON object fitting the requested structure without any markdown formatting, backticks, or extra text.'
+              content: 'You are a professional financial AI assistant. After your reasoning, output ONLY a valid raw JSON object with no markdown, no backticks, no extra text.'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          response_format: { type: 'json_object' },
-          temperature: 0.3
+          temperature: 0.3,
+          max_tokens: 4096
         },
         {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${groqKey}`
           },
-          timeout: 5000
+          timeout: 15000
         }
       );
 
       const content = response.data?.choices?.[0]?.message?.content;
       if (content) {
-        const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleaned);
+        return safeParseJSON(content);
       }
     } catch (err: any) {
       console.warn('Groq query failed, using static fallback...', err.message);
@@ -149,18 +268,30 @@ router.get('/market-brief', async (req: Request, res: Response) => {
     generatedAt: new Date().toISOString()
   };
 
-  const prompt = `Generate a daily market brief in JSON format matching this schema:
-  {
-    "marketMood": "Bullish" | "Neutral" | "Bearish",
-    "confidence": number (0-100),
-    "riskLevel": "Low" | "Medium" | "High",
-    "insights": string[],
-    "sectorStrength": [{"sector": string, "score": number (0-100), "reason": string}],
-    "todayRisk": string,
-    "summary": string,
-    "generatedAt": string (ISO timestamp)
-  }
-  IMPORTANT: You MUST generate entries for all 11 major global stock market sectors in the 'sectorStrength' array: Technology, Healthcare, Financials, Consumer Discretionary, Energy, Industrials, Materials, Consumer Defensive, Utilities, Real Estate, Communication Services. Reflect current global macroeconomic trends.`;
+  const prompt = `You are a financial market analyst. Return a single valid JSON object. Do NOT use "..." or ellipsis or any placeholder — write out every item in full.
+{
+  "marketMood": "Bullish",
+  "confidence": 72,
+  "riskLevel": "Medium",
+  "insights": ["Fed signals rate pause amid cooling inflation.", "Tech earnings beat estimates broadly.", "Energy sector pressured by supply surplus."],
+  "sectorStrength": [
+    {"sector": "Technology", "score": 85, "reason": "AI spending drives cloud growth."},
+    {"sector": "Healthcare", "score": 78, "reason": "Strong biotech pipeline results."},
+    {"sector": "Financials", "score": 65, "reason": "Net interest margins solid but loan growth slows."},
+    {"sector": "Consumer Discretionary", "score": 70, "reason": "Travel and luxury spending resilient."},
+    {"sector": "Energy", "score": 60, "reason": "Crude supply surplus pressures oil prices."},
+    {"sector": "Industrials", "score": 55, "reason": "Capital expenditure cuts weigh on sector."},
+    {"sector": "Materials", "score": 48, "reason": "Slowing global manufacturing dampens demand."},
+    {"sector": "Consumer Defensive", "score": 74, "reason": "Pricing power on essentials supports margins."},
+    {"sector": "Utilities", "score": 80, "reason": "Defensive rotation on rate cut expectations."},
+    {"sector": "Real Estate", "score": 68, "reason": "Housing recovers as mortgage rates cool."},
+    {"sector": "Communication Services", "score": 76, "reason": "Robust ad spend and streaming engagement."}
+  ],
+  "todayRisk": "Watch for CPI print volatility at market open.",
+  "summary": "Markets are biased bullish with tech leading. Inflation cooling supports rate-cut bets.",
+  "generatedAt": "2024-01-01T00:00:00.000Z"
+}
+Replace ALL values above with REAL, CURRENT, insightful data. All 11 sectors MUST appear in sectorStrength. Return ONLY the raw JSON object. No markdown, no backticks, no extra text, no ellipsis.`;
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
@@ -185,13 +316,14 @@ router.get('/global-market-pulse', async (req: Request, res: Response) => {
     generatedAt: new Date().toISOString()
   };
 
-  const prompt = `Generate a global market pulse snapshot in JSON format matching this schema:
-  {
-    "sentiment": "Bullish" | "Neutral" | "Bearish",
-    "summary": string,
-    "insights": string[],
-    "generatedAt": string (ISO timestamp)
-  }`;
+  const prompt = `You are a financial market analyst. Return a single valid JSON object (no extra text, no markdown) with exactly these keys and value types shown in the example:
+{
+  "sentiment": "Bullish",
+  "summary": "Global indices trade cautiously as investors await Fed minutes. Asian markets closed mixed.",
+  "insights": ["European indices softer on energy drag.", "Crude oil rebounds from support.", "Gold gains on safe-haven demand."],
+  "generatedAt": "2024-01-01T00:00:00.000Z"
+}
+Replace ALL example values with real, current data. Return only the JSON object.`;
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
@@ -219,19 +351,20 @@ router.get('/fear-greed', async (req: Request, res: Response) => {
     generatedAt: new Date().toISOString()
   };
 
-  const prompt = `Generate a Fear and Greed Index report in JSON format matching this schema:
-  {
-    "score": number (0-100),
-    "sentiment": string,
-    "description": string,
-    "investorTakeaways": string[],
-    "risk": string,
-    "opportunity": string,
-    "yesterday": number (0-100),
-    "lastWeek": number (0-100),
-    "lastMonth": number (0-100),
-    "generatedAt": string (ISO timestamp)
-  }`;
+  const prompt = `You are a financial market analyst. Return a single valid JSON object (no extra text, no markdown) with exactly these keys and value types shown in the example:
+{
+  "score": 52,
+  "sentiment": "Neutral",
+  "description": "Markets show balanced sentiment. Volatility has eased but long-term momentum is capped by macro headwinds.",
+  "investorTakeaways": ["Avoid chasing high-beta tech breakouts.", "Accumulate dividend-yielding defensive names."],
+  "risk": "AI valuation premiums remain stretched.",
+  "opportunity": "Undervalued financials and healthcare leaders offer entry points.",
+  "yesterday": 50,
+  "lastWeek": 46,
+  "lastMonth": 55,
+  "generatedAt": "2024-01-01T00:00:00.000Z"
+}
+Replace ALL example values with real, current data. Return only the JSON object.`;
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
@@ -284,43 +417,6 @@ router.get('/pick-of-the-day', async (req: Request, res: Response) => {
     "risks": string[],
     "generatedAt": string (ISO timestamp)
   }`;
-
-  const result = await queryLLM(prompt, fallback);
-  result.generatedAt = new Date().toISOString();
-  res.json(result);
-});
-
-// GET /api/ai/sector-momentum
-router.get('/sector-momentum', async (req: Request, res: Response) => {
-  const cacheKey = 'ai:sector-momentum';
-  const cached = getAiCache(cacheKey);
-  if (cached) return res.json(cached);
-  const fallback = {
-    topRally: [
-      { sector: "Utilities", days: 5, momentumScore: 82, reason: "Defensive rotation into high dividend yield stocks" },
-      { sector: "Real Estate", days: 3, momentumScore: 75, reason: "Mortgage rates cool down on rate cut expectations" },
-      { sector: "Healthcare", days: 2, momentumScore: 68, reason: "Safe-haven flows and strong corporate earnings" },
-      { sector: "Communication Services", days: 2, momentumScore: 65, reason: "Tech rebound in mega-cap streaming and search giants" },
-      { sector: "Consumer Defensive", days: 1, momentumScore: 60, reason: "Inflation cooling supports defensive business models" }
-    ],
-    topDecline: [
-      { sector: "Technology", days: 4, momentumScore: -68, reason: "Short-term valuation profit taking in semiconductor sector" },
-      { sector: "Materials", days: 2, momentumScore: -45, reason: "Slowing global industrial manufacturing demands" },
-      { sector: "Energy", days: 2, momentumScore: -40, reason: "Crude supply levels surpass expectations, lowering oil prices" },
-      { sector: "Industrials", days: 1, momentumScore: -35, reason: "Capital expenditure cuts by large commercial shipping lines" },
-      { sector: "Financials", days: 1, momentumScore: -30, reason: "Yield curve flattening limits bank margin expansion" },
-      { sector: "Consumer Discretionary", days: 1, momentumScore: -25, reason: "Consumer sentiment dips slightly on jobs data revisions" }
-    ],
-    generatedAt: new Date().toISOString()
-  };
-
-  const prompt = `Generate daily sector momentum analysis in JSON format matching this schema:
-  {
-    "topRally": [{"sector": string, "days": number, "momentumScore": number, "reason": string}],
-    "topDecline": [{"sector": string, "days": number, "momentumScore": number, "reason": string}],
-    "generatedAt": string (ISO timestamp)
-  }
-  IMPORTANT: You MUST include analysis for all 11 major global stock market sectors divided appropriately between 'topRally' (positive score) and 'topDecline' (negative score): Technology, Healthcare, Financials, Consumer Discretionary, Energy, Industrials, Materials, Consumer Defensive, Utilities, Real Estate, Communication Services.`;
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
