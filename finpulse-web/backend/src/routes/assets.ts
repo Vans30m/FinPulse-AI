@@ -32,7 +32,7 @@ async function setCachedData(key: string, data: any, ttlSeconds: number = CACHE_
 
 // Centralized LLM fetcher helper
 async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
-  const geminiKey = process.env.GEMINI_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_SECONDARY;
   const ollamaBaseUrl = process.env.OLLAMA_BASE_URL;
   const ollamaModel = process.env.OLLAMA_MODEL || 'qwen2.5';
   const ollamaApiKey = process.env.OLLAMA_API_KEY;

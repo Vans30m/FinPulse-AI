@@ -128,8 +128,8 @@ function safeParseJSON(rawText: string): any {
 
 // Centralized LLM fetcher helper
 async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  const geminiKeySecondary = process.env.GEMINI_API_KEY_SECONDARY;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_SECONDARY;
+  const geminiKeySecondary = process.env.GEMINI_API_KEY_SECONDARY || process.env.GEMINI_API_KEY;
 
   // 1. Try Gemini Primary
   if (geminiKey && geminiKey.trim() !== '') {

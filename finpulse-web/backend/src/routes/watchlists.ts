@@ -419,8 +419,8 @@ function safeParseJSON(rawText: string): any {
 }
 
 async function queryLLMForRankings(prompt: string, fallbackData: any): Promise<{ source: 'live' | 'fallback'; data: any }> {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  const geminiKeySecondary = process.env.GEMINI_API_KEY_SECONDARY;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_SECONDARY;
+  const geminiKeySecondary = process.env.GEMINI_API_KEY_SECONDARY || process.env.GEMINI_API_KEY;
   const rankingPrompt = `${prompt}\n\nReturn ONLY a valid JSON array like this example (replace values with real data):\n[{"symbol":"AAPL","score":82,"reason":"Strong revenue growth and AI integration."},{"symbol":"MSFT","score":75,"reason":"Cloud dominance and enterprise AI adoption."}]\nNo markdown, no backticks, no extra text. Just the raw JSON array.`;
 
   // 1. Try Gemini Primary
