@@ -111,9 +111,7 @@ FinPulse-AI/                  # Repository root
 
 Watch a full walkthrough of **FinPulse-AI** here:
 
-[![Watch the FinPulse-AI Demo](https://youtu.be/pr6GPR8tfd4)
-
-> Prefer a direct file download? [Download the 100MB demo video](./docs/finpulse-demo.mp4)
+https://github.com/user-attachments/assets/1b245ae1-c78a-4135-bc9b-016f4a439472
 
 ## Getting Started
 
