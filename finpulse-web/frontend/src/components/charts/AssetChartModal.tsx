@@ -283,8 +283,12 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
       setLoading(true);
       setError(null);
       try {
-        const unifiedData = await getUnifiedAssetDetails(symbol);
+        const [unifiedData, techData] = await Promise.all([
+          getUnifiedAssetDetails(symbol),
+          getTechnicals(symbol).catch(() => null)
+        ]);
         setData(unifiedData);
+        setTechnicals(techData);
 
         const newMeta = {
           name: unifiedData.profile?.name || asset?.name || symbol,
@@ -828,7 +832,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed mt-5 pt-5 border-t border-slate-900/60 text-justify">
+                        <p className="text-xs text-slate-400 leading-relaxed mt-5 pt-5 text-justify">
                           {data.profile.description}
                         </p>
                       </div>
@@ -927,26 +931,25 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-2 mb-6 tracking-wider">
                             Analyst Recommendation Rating
                           </h4>
-
                           <div className="flex items-center justify-between mb-8">
                             <div>
                               <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Consensus Rating</span>
                               <span className="text-3xl font-black text-white mt-1 block capitalize font-sans">
-                                {data.analysts.recommendationKey}
+                                {data.analysts.recommendationKey && data.analysts.recommendationKey.toLowerCase() !== "none" ? data.analysts.recommendationKey : "N/A"}
                               </span>
                             </div>
                             <div className="text-right">
                               <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Mean Score (1-5)</span>
                               <span className="text-3xl font-black text-emerald-400 mt-1 block font-mono">
-                                {typeof data.analysts.recommendationMean === 'number'
+                                {typeof data.analysts.recommendationMean === 'number' && data.analysts.recommendationMean > 0
                                   ? data.analysts.recommendationMean.toFixed(2)
-                                  : data.analysts.recommendationMean}
+                                  : "N/A"}
                               </span>
                             </div>
                           </div>
 
                           {/* Consensus Gauge Track */}
-                          {typeof data.analysts.recommendationMean === 'number' && (
+                          {typeof data.analysts.recommendationMean === 'number' && data.analysts.recommendationMean > 0 && (
                             <div className="space-y-4 mb-6">
                               <div className="relative h-2 bg-gradient-to-r from-emerald-500 via-yellow-500 to-rose-500 rounded-full w-full">
                                 {/* Glowing Pointer */}
@@ -971,7 +974,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               <span className="text-slate-300 text-xs mt-0.5 block font-sans">Based on professional analyst evaluations</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-2xl font-black text-white font-mono">{data.analysts.numberOfAnalysts}</span>
+                              <span className="text-2xl font-black text-white font-mono">{data.analysts.numberOfAnalysts || 0}</span>
                               <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider block">Analysts</span>
                             </div>
                           </div>
@@ -1044,29 +1047,40 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   style={{ left: `${lowPct}%`, right: `${100 - highPct}%` }}
                                 />
 
-                                {/* Low Marker Anchor & Label */}
-                                <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${lowPct}%` }}>
-                                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Low</span>
-                                  <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(low, true)}</span>
-                                  <div className="w-0.5 h-3.5 bg-blue-500/40 my-0.5" />
-                                  <div className="w-3.5 h-3.5 bg-blue-500 border-2 border-slate-900 rounded-full shadow-md shadow-blue-500/30" />
-                                </div>
+                                {Math.abs(high - low) < 0.01 * (median || 1) ? (
+                                   <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
+                                     <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Consensus Target</span>
+                                     <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median || low, true)}</span>
+                                     <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
+                                     <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
+                                   </div>
+                                 ) : (
+                                   <>
+                                     {/* Low Marker Anchor & Label */}
+                                     <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${lowPct}%` }}>
+                                       <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Low</span>
+                                       <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(low, true)}</span>
+                                       <div className="w-0.5 h-3.5 bg-blue-500/40 my-0.5" />
+                                       <div className="w-3.5 h-3.5 bg-blue-500 border-2 border-slate-900 rounded-full shadow-md shadow-blue-500/30" />
+                                     </div>
 
-                                {/* Median Marker Anchor & Label */}
-                                <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
-                                  <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Median</span>
-                                  <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median, true)}</span>
-                                  <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
-                                  <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
-                                </div>
+                                     {/* Median Marker Anchor & Label */}
+                                     <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
+                                       <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Median</span>
+                                       <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median, true)}</span>
+                                       <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
+                                       <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
+                                     </div>
 
-                                {/* High Marker Anchor & Label */}
-                                <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${highPct}%` }}>
-                                  <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">High</span>
-                                  <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(high, true)}</span>
-                                  <div className="w-0.5 h-3.5 bg-emerald-500/40 my-0.5" />
-                                  <div className="w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-md shadow-emerald-500/30" />
-                                </div>
+                                     {/* High Marker Anchor & Label */}
+                                     <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${highPct}%` }}>
+                                       <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">High</span>
+                                       <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(high, true)}</span>
+                                       <div className="w-0.5 h-3.5 bg-emerald-500/40 my-0.5" />
+                                       <div className="w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-md shadow-emerald-500/30" />
+                                     </div>
+                                   </>
+                                 )}
 
                                 {/* Current Price Pointer */}
                                 <div className="absolute top-12 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${currentPct}%` }}>
@@ -1105,13 +1119,17 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           <h4 className="text-xs font-black uppercase text-slate-300 border-b border-slate-900 pb-2">
                             Sentiment Analysis Parameters
                           </h4>
-                          <ul className="space-y-3 text-xs text-slate-300">
-                            {sentiment.reasons.map((reason: string, i: number) => (
-                              <li key={i} className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                                <span>{reason}</span>
-                              </li>
-                            ))}
+                          <ul className="space-y-3 text-xs text-slate-350">
+                            {sentiment.reasons && sentiment.reasons.length > 0 ? (
+                              sentiment.reasons.map((reason: string, i: number) => (
+                                <li key={i} className="flex items-start gap-2.5 leading-relaxed">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                                  <span>{reason}</span>
+                                </li>
+                              ))
+                            ) : (
+                              <li className="text-slate-500 italic py-2">No key sentiment drivers detected for this asset currently.</li>
+                            )}
                           </ul>
                         </div>
                       </div>
@@ -1413,13 +1431,15 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                       </span>
                                     </div>
                                     {/* Upgraded slider bar track with indicator region highlights */}
-                                    <div className="relative w-full bg-slate-950 rounded-full h-3 border border-slate-900/60 overflow-hidden">
-                                      <div className="absolute left-0 w-[30%] h-full bg-emerald-500/10" />
-                                      <div className="absolute left-[30%] w-[40%] h-full bg-slate-500/[0.03]" />
-                                      <div className="absolute left-[70%] w-[30%] h-full bg-rose-500/10" />
+                                    <div className="relative w-full bg-slate-950 rounded-full h-3 border border-slate-900/60">
+                                      <div className="absolute inset-0 rounded-full overflow-hidden">
+                                        <div className="absolute left-0 w-[30%] h-full bg-emerald-500/10" />
+                                        <div className="absolute left-[30%] w-[40%] h-full bg-slate-500/[0.03]" />
+                                        <div className="absolute left-[70%] w-[30%] h-full bg-rose-500/10" />
+                                      </div>
                                       <div
                                         style={{ left: `${Math.min(97, Math.max(3, rsi))}%` }}
-                                        className="absolute -translate-x-1/2 top-1/2 -translate-y-1/2 w-4 h-4 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee] border-2 border-[#090d1a] ring-2 ring-cyan-400/20"
+                                        className="absolute -translate-x-1/2 top-1/2 -translate-y-1/2 w-4 h-4 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee] border-2 border-[#090d1a] ring-2 ring-cyan-400/20 z-10"
                                       />
                                     </div>
                                     <div className="flex justify-between text-[8px] text-slate-500 font-bold uppercase tracking-wider">
@@ -1713,11 +1733,17 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                 {items.map((item, idx) => (
                                   <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
                                     <td className="px-4 py-3 align-middle w-20">
-                                      <img
-                                        src={item.thumbnail?.resolutions?.[0]?.url || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=200&q=80"}
-                                        alt="News thumbnail"
-                                        className="w-16 h-11 rounded-lg object-cover border border-slate-900 shadow-sm shrink-0 bg-slate-950"
-                                      />
+                                      {item.thumbnail?.resolutions?.[0]?.url ? (
+                                        <img
+                                          src={item.thumbnail.resolutions[0].url}
+                                          alt="News thumbnail"
+                                          className="w-16 h-11 rounded-lg object-cover border border-slate-900 shadow-sm shrink-0 bg-slate-950"
+                                        />
+                                      ) : (
+                                        <div className="w-16 h-11 rounded-lg border border-slate-900/60 shadow-sm shrink-0 bg-gradient-to-br from-[#0c1022] to-[#090d1a] flex items-center justify-center text-slate-500 hover:text-cyan-400 transition-colors">
+                                          <Newspaper className="h-5 w-5 opacity-60" />
+                                        </div>
+                                      )}
                                     </td>
                                     <td className="px-4 py-3.5 align-middle space-y-1">
                                       <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block">

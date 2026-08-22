@@ -1850,9 +1850,9 @@ export default function StockScreener() {
                       <table className="w-full text-left border-collapse min-w-[750px]">
                         <thead>
                           <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
-                            <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-455 dark:text-slate-500 sticky left-0 bg-slate-50 dark:bg-[#0b1022] z-20 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate rounded-tl-2xl">Valuation Metric</th>
+                            <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 sticky left-0 bg-slate-50 dark:bg-[#0b1022] z-20 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate rounded-tl-2xl">Valuation Metric</th>
                             {(fundamentalsData?.quarters || ['Jun 26', 'Mar 26', 'Dec 25', 'Sep 25']).map(q => (
-                              <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-455 dark:text-slate-500 text-right">{q}</th>
+                              <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">{q}</th>
                             ))}
                           </tr>
                         </thead>
@@ -1860,7 +1860,7 @@ export default function StockScreener() {
                           {valuationTableData.map((row, rIdx) => (
                             <tr key={row.label} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
                               <td 
-                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-350 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === valuationTableData.length - 1 ? 'rounded-bl-2xl' : ''}`}
+                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === valuationTableData.length - 1 ? 'rounded-bl-2xl' : ''}`}
                                 title={row.label}
                               >
                                 {row.label}
@@ -1920,9 +1920,9 @@ export default function StockScreener() {
                         <table className="w-full text-left border-collapse min-w-[650px]">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
-                              <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 sticky left-0 bg-slate-50 dark:bg-[#0b1022] z-20 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate rounded-tl-2xl">Metric (Quarterly)</th>
+                              <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 sticky left-0 bg-slate-50 dark:bg-[#0b1022] z-20 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate rounded-tl-2xl">Metric (Quarterly)</th>
                               {fundamentalsData.quarters.map(q => (
-                                <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 text-right">{q}</th>
+                                <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">{q}</th>
                               ))}
                             </tr>
                           </thead>
@@ -1985,7 +1985,7 @@ export default function StockScreener() {
                           return metricsList.map((metric, rIdx) => (
                             <tr key={metric} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
                               <td 
-                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-350 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === metricsList.length - 1 ? 'rounded-bl-2xl' : ''}`}
+                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === metricsList.length - 1 ? 'rounded-bl-2xl' : ''}`}
                                 title={metric}
                               >
                                 {metric === 'Cash Cash Equivalents & Short-Term Investments' 
@@ -2027,10 +2027,9 @@ export default function StockScreener() {
 
                 {isShareholdingOpen && (
                   <div className="mt-6 animate-fadeIn">
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-3xl p-5 sm:p-7 max-w-2xl shadow-xl backdrop-blur-md">
+                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-3xl p-5 sm:p-7 w-full shadow-xl backdrop-blur-md">
                       <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-4 mb-5">
                         <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Breakdown</h4>
-                        <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-cyan-400 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Real-Time Data</span>
                       </div>
                       {!assetDetails ? (
                         <div className="py-12 flex flex-col items-center justify-center gap-3 text-xs font-semibold text-slate-500">
