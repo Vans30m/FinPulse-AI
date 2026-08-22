@@ -2,8 +2,8 @@ import { Globe, Users, Target, ShieldCheck } from "lucide-react";
 
 export default function About() {
   const team = [
-    { name: "Vansh Thakur" },
-    { name: "Tanish Mehta" }
+    { name: "Vansh Thakur", url: "https://vanshthakur.me" },
+    { name: "Tanish Mehta", url: "https://tanishmehta.me" }
   ];
 
   return (
@@ -59,9 +59,15 @@ export default function About() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           {team.map((t, idx) => (
-            <div key={idx} className="glass-panel p-6 text-center hover:shadow-lg transition-all duration-300 border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 rounded-3xl">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t.name}</h3>
-            </div>
+            <a
+              key={idx}
+              href={t.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="glass-panel p-6 text-center hover:shadow-lg transition-all duration-300 border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 rounded-3xl block cursor-pointer"
+            >
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white hover:text-blue-500 dark:hover:text-cyan-400 transition-colors">{t.name}</h3>
+            </a>
           ))}
         </div>
       </div>

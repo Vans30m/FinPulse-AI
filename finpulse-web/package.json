@@ -1,7 +1,7 @@
 {
   "name": "finpulse-ai",
   "version": "1.0.0",
-  "description": "FinPulse AI Desktop Application",
+  "description": "FinPulse AI Desktop Tool",
   "main": "electron/main.js",
   "scripts": {
     "electron": "electron .",

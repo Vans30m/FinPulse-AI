@@ -22,20 +22,20 @@ FinPulse-AI is a comprehensive, AI-driven financial analysis and portfolio manag
 - **Watchlists:** Create multiple custom watchlists with tagging and positional sorting.
 
 ### News & Market Analysis
-- **Integrated News Feed:** Aggregates top financial news using Google News RSS and custom parsers.
+- **Integrated News Feed:** Aggregates top financial news using Finnhub API and Google News RSS feeds.
 - **Stock Screener:** Filter and discover assets based on customized metrics.
 
 ### Authentication & User Features
 - **Secure Authentication:** JWT-based login, OTP verification, and Google OAuth integration.
 - **User Profiles:** Manage preferences, risk profiles, investment goals, and session history.
-- **Multi-Platform:** Accessible via web browser or as a dedicated Electron desktop app.
+- **Multi-Platform:** Accessible via web browser or as a dedicated Electron desktop tool.
 
 ## Architecture
 
 ```mermaid
 graph TD
     User([User]) --> Frontend
-    User --> Desktop[Electron App]
+    User --> Desktop[Electron Tool]
     Desktop -.-> Frontend
     
     subgraph Client
@@ -58,12 +58,16 @@ graph TD
         YF[Yahoo Finance]
         OAuth[Google OAuth]
         DB[(PostgreSQL)]
+        Finnhub[Finnhub API]
+        GoogleNews[Google News RSS]
     end
     
     AI_R <--> Groq
     MD <--> YF
     Auth <--> OAuth
     DB_Layer <--> DB
+    News_R <--> Finnhub
+    News_R <--> GoogleNews
 ```
 
 ## Tech Stack
@@ -75,34 +79,41 @@ graph TD
 | **Charts / UI** | Lightweight Charts, Framer Motion | Professional financial charts and animations |
 | **Backend** | Node.js, Express | REST API and business logic |
 | **Database** | PostgreSQL, Prisma ORM | Relational data storage and schema management |
-| **AI** | Groq (Llama-3), Gemini | Generative AI for market sentiment and analysis |
+| **AI** | Groq (Qwen), Gemini | Generative AI for market sentiment and analysis |
 | **Market Data** | Yahoo Finance (`yahoo-finance2`) | Real-time and historical financial data |
 | **Authentication** | JWT, bcrypt, `@react-oauth/google` | Secure access and session handling |
-| **Desktop** | Electron | Desktop application wrapper |
+| **Desktop** | Electron | Desktop tool wrapper |
 | **Deployment** | Render | Managed hosting for static frontend and Node backend |
 
 ## Project Structure
 
 ```text
-finpulse-web/
-├── backend/                  # Node.js / Express server
-│   ├── prisma/               # PostgreSQL Schema (schema.prisma)
-│   ├── src/
-│   │   ├── routes/           # API endpoints (ai, assets, auth, portfolio, etc.)
-│   │   └── utils/            # Caching and helper functions
-│   └── package.json
-├── frontend/                 # React / Vite application
-│   ├── src/
-│   │   ├── components/       # Reusable UI elements
-│   │   ├── features/         # Domain-specific components (auth, dashboard, portfolio)
-│   │   ├── pages/            # Main route views (Pulse, AssetDetails, Screener, etc.)
-│   │   ├── services/         # API client functions (Tanstack Query)
-│   │   └── App.tsx           # Application router
-│   └── package.json
-├── electron/                 # Desktop wrapper
-│   └── main.js               # Electron entry point loading the web URL
+FinPulse-AI/                  # Repository root
+├── finpulse-web/             # Main web application project
+│   ├── backend/              # Node.js / Express server
+│   │   ├── prisma/           # PostgreSQL Schema (schema.prisma)
+│   │   └── src/
+│   │       ├── routes/       # API endpoints (ai, assets, auth, portfolio, etc.)
+│   │       └── utils/        # Caching and helper functions
+│   ├── frontend/             # React / Vite application
+│   │   └── src/
+│   │       ├── components/   # Reusable UI elements
+│   │       ├── features/     # Domain-specific components (auth, dashboard, portfolio)
+│   │       ├── pages/        # Main route views (Pulse, AssetDetails, Screener, etc.)
+│   │       ├── services/     # API client functions (Tanstack Query)
+│   │       └── App.tsx       # Application router
+│   └── electron/             # Desktop tool wrapper
+│       └── main.js           # Electron entry point loading the web URL
 └── render.yaml               # Infrastructure-as-code for Render deployment
 ```
+
+## 🎥 Project Demo Video
+
+Watch a full walkthrough of **FinPulse-AI** here:
+
+[![Watch the FinPulse-AI Demo](https://youtu.be/pr6GPR8tfd4)
+
+> Prefer a direct file download? [Download the 100MB demo video](./docs/finpulse-demo.mp4)
 
 ## Getting Started
 
@@ -134,6 +145,9 @@ SMTP_HOST=your_smtp_host
 SMTP_PORT=your_smtp_port
 SMTP_USER=your_smtp_user
 SMTP_PASS=your_smtp_pass
+
+# News API
+FINNHUB_API_KEY=your_finnhub_api_key
 ```
 
 Create a `.env` file in the `frontend` directory:
@@ -162,7 +176,7 @@ npm install
 npm run dev
 ```
 
-### Run the Desktop App (Optional)
+### Run the Desktop Tool (Optional)
 ```bash
 # From finpulse-web
 npm install
@@ -182,10 +196,11 @@ The backend uses RESTful conventions with the following major route domains:
 | `/api/watchlists` | CRUD operations for custom watchlists and their items |
 | `/api/news` | Aggregation and parsing of recent financial news |
 | `/api/profile` | User preferences, risk profile, and avatar management |
+| `/api/search` | Asset and stock search query processing |
 
 ## AI Features
 
-FinPulse-AI leverages a robust fallback system prioritizing **Groq (canopylabs/orpheus-arabic-saudi)** for speed, falling back to **Google Gemini (2.5-flash)** if needed. 
+FinPulse-AI leverages a robust fallback system prioritizing **Google Gemini (2.5-flash)**, falling back to **Groq (qwen/qwen3.6-27b)** if needed. 
 
 - **Data Processing**: AI models process structured prompts containing real-time market data and indices.
 - **Strict JSON Returns**: Prompts enforce raw JSON generation, which the backend parses directly.
@@ -209,7 +224,7 @@ The project is natively configured for deployment on **Render**:
 
 ## Performance & Reliability
 
-- **API Fallbacks**: The AI router implements a try-catch cascade (Primary Groq -> Secondary Groq -> Gemini -> Static Mock) to ensure the dashboard always renders.
+- **API Fallbacks**: The AI router implements a try-catch cascade (Primary Gemini -> Secondary Gemini -> Groq -> Static Mock) to ensure the dashboard always renders.
 - **Caching (`node-cache`)**: Employed in the backend to store AI inferences and heavy external market data responses.
 - **Asynchronous UI**: The frontend leverages `Tanstack Query` for asynchronous fetching, aggressive stale-time management, and loading states, ensuring a responsive interface.
 
