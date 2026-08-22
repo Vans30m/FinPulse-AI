@@ -107,6 +107,14 @@ FinPulse-AI/                  # Repository root
 └── render.yaml               # Infrastructure-as-code for Render deployment
 ```
 
+## 🎥 Project Demo Video
+
+Watch a full walkthrough of **FinPulse-AI** here:
+
+[![Watch the FinPulse-AI Demo](https://youtu.be/pr6GPR8tfd4)
+
+> Prefer a direct file download? [Download the 100MB demo video](./docs/finpulse-demo.mp4)
+
 ## Getting Started
 
 ### Prerequisites
