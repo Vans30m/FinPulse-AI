@@ -896,4 +896,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 Built with love by the FinPulse AI team - [Live App](https://finpulse-frontend-jrsd.onrender.com)
 
+<<<<<<< Updated upstream
 </div>
+=======
+</div>
+>>>>>>> Stashed changes
