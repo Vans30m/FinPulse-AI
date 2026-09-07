@@ -658,7 +658,7 @@ Neither present -> 401 Unauthorized
 
 ## Environment Configuration
 
-### Backend â€” `finpulse-web/backend/.env`
+### Backend `finpulse-web/backend/.env`
 
 | Variable | Required | Description | Example |
 |---|---|---|---|
@@ -689,7 +689,7 @@ Neither present -> 401 Unauthorized
 | `OLLAMA_API_KEY` | Optional | Bearer key for secured Ollama deployments | optional |
 | `AI_CACHE_TTL_MS` | Optional | AI response cache TTL in ms (default: `86400000`) | `86400000` |
 
-### Frontend â€” `finpulse-web/frontend/.env`
+### Frontend `finpulse-web/frontend/.env`
 
 | Variable | Required | Description | Example |
 |---|---|---|---|
