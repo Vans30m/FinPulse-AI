@@ -200,7 +200,7 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
       const response = await axios.post(
         'https://api.groq.com/openai/v1/chat/completions',
         {
-          model: 'qwen/qwen3.8-27b',
+          model: 'qwen/qwen3.6-27b',
           messages: [
             {
               role: 'system',
