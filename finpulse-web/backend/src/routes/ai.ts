@@ -126,8 +126,19 @@ function safeParseJSON(rawText: string): any {
   }
 }
 
-// Centralized LLM fetcher helper
+// Centralized LLM fetcher helper with sequential queue
+let llmQueueChain: Promise<any> = Promise.resolve();
+
 async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
+  const currentTask = llmQueueChain.then(
+    () => executeLLMQuery(prompt, fallbackData),
+    () => executeLLMQuery(prompt, fallbackData)
+  );
+  llmQueueChain = currentTask;
+  return currentTask;
+}
+
+async function executeLLMQuery(prompt: string, fallbackData: any): Promise<any> {
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_SECONDARY;
   const geminiKeySecondary = process.env.GEMINI_API_KEY_SECONDARY || process.env.GEMINI_API_KEY;
 

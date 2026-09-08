@@ -168,9 +168,9 @@ export default function CumulativeReturnChart({
   return (
     <div className="space-y-4">
       {/* Legend & Hover Tooltip Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-500/[0.02] dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-500/[0.02] dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl p-3 sm:p-4 overflow-x-auto scrollbar-none touch-pan-x">
         {/* Dynamic Tooltip Data */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
+        <div className="flex flex-nowrap sm:flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 text-xs min-w-max">
           {activeDate && (
             <div className="flex items-center gap-1.5">
               <span className="font-extrabold text-slate-400 dark:text-slate-500 uppercase">Date:</span>

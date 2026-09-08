@@ -314,10 +314,23 @@ export interface AIMarketDriversData {
   generatedAt: string;
 }
 
+let aiSequenceQueue: Promise<any> = Promise.resolve();
+
+function enqueueAIRequest<T>(fetcher: () => Promise<T>): Promise<T> {
+  const nextCall = aiSequenceQueue.then(
+    () => fetcher(),
+    () => fetcher()
+  );
+  aiSequenceQueue = nextCall;
+  return nextCall;
+}
+
 export async function getAIMarketBrief(): Promise<AIMarketBriefData> {
-  const response = await fetch(`${API_BASE_URL}/api/ai/market-brief`);
-  if (!response.ok) throw new Error("Failed to fetch AI market brief");
-  return response.json();
+  return enqueueAIRequest(async () => {
+    const response = await fetch(`${API_BASE_URL}/api/ai/market-brief`);
+    if (!response.ok) throw new Error("Failed to fetch AI market brief");
+    return response.json();
+  });
 }
 
 export async function getAIMarketDrivers(): Promise<AIMarketDriversData> {
@@ -334,9 +347,11 @@ export interface AIGlobalMarketPulseData {
 }
 
 export async function getAIGlobalMarketPulse(): Promise<AIGlobalMarketPulseData> {
-  const response = await fetch(`${API_BASE_URL}/api/ai/global-market-pulse`);
-  if (!response.ok) throw new Error("Failed to fetch AI global market pulse");
-  return response.json();
+  return enqueueAIRequest(async () => {
+    const response = await fetch(`${API_BASE_URL}/api/ai/global-market-pulse`);
+    if (!response.ok) throw new Error("Failed to fetch AI global market pulse");
+    return response.json();
+  });
 }
 
 export interface AIFearGreedData {
@@ -353,9 +368,11 @@ export interface AIFearGreedData {
 }
 
 export async function getAIFearGreed(): Promise<AIFearGreedData> {
-  const response = await fetch(`${API_BASE_URL}/api/ai/fear-greed`);
-  if (!response.ok) throw new Error("Failed to fetch AI fear and greed index");
-  return response.json();
+  return enqueueAIRequest(async () => {
+    const response = await fetch(`${API_BASE_URL}/api/ai/fear-greed`);
+    if (!response.ok) throw new Error("Failed to fetch AI fear and greed index");
+    return response.json();
+  });
 }
 
 export interface AIPickOfTheDayData {
@@ -376,9 +393,11 @@ export interface AIPickOfTheDayData {
 }
 
 export async function getAIPickOfTheDay(): Promise<AIPickOfTheDayData> {
-  const response = await fetch(`${API_BASE_URL}/api/ai/pick-of-the-day`);
-  if (!response.ok) throw new Error("Failed to fetch AI Pick of the Day");
-  return response.json();
+  return enqueueAIRequest(async () => {
+    const response = await fetch(`${API_BASE_URL}/api/ai/pick-of-the-day`);
+    if (!response.ok) throw new Error("Failed to fetch AI Pick of the Day");
+    return response.json();
+  });
 }
 
 export async function getAISentiment() {

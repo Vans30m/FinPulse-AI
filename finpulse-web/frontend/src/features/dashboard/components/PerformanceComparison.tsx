@@ -409,24 +409,26 @@ export default function PerformanceComparison() {
                   </div>
 
                   {/* Benchmarks Selector Row */}
-                  <div className="mb-5 flex flex-row overflow-x-auto scrollbar-none gap-2 pb-2.5 flex-nowrap w-full snap-x">
-                    {BENCHMARK_OPTIONS.map((bench) => (
-                      <button
-                        key={bench.symbol}
-                        onClick={() => setBenchmarkTicker(bench.symbol)}
-                        className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase border transition-all duration-300 shrink-0 snap-start active:scale-95 shadow-sm ${benchmarkTicker === bench.symbol
-                            ? "bg-[#3b82f6]/15 text-[#3b82f6] dark:bg-[#22d3ee]/10 dark:text-[#22d3ee] border-[#3b82f6]/30 dark:border-[#22d3ee]/20 shadow-md scale-[1.02]"
-                            : "bg-white dark:bg-white/[0.02] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/10 hover:scale-[1.01]"
-                          }`}
-                      >
-                        {bench.name}
-                      </button>
-                    ))}
+                  <div className="relative mb-5 w-full">
+                    <div className="flex flex-row overflow-x-auto scrollbar-none gap-2 pb-2.5 flex-nowrap w-full snap-x touch-pan-x select-none scroll-smooth">
+                      {BENCHMARK_OPTIONS.map((bench) => (
+                        <button
+                          key={bench.symbol}
+                          onClick={() => setBenchmarkTicker(bench.symbol)}
+                          className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase border transition-all duration-300 shrink-0 snap-start active:scale-95 shadow-sm whitespace-nowrap ${benchmarkTicker === bench.symbol
+                              ? "bg-[#3b82f6]/15 text-[#3b82f6] dark:bg-[#22d3ee]/10 dark:text-[#22d3ee] border-[#3b82f6]/30 dark:border-[#22d3ee]/20 shadow-md scale-[1.02]"
+                              : "bg-white dark:bg-white/[0.02] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/10 hover:scale-[1.01]"
+                            }`}
+                        >
+                          {bench.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Stats Grid Above the Chart */}
                   {comparisonData?.stats && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6 border-b border-slate-200 dark:border-slate-900/60 pb-5">
+                    <div className="flex sm:grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 overflow-x-auto sm:overflow-x-visible scrollbar-none touch-pan-x gap-3 mb-6 border-b border-slate-200 dark:border-slate-900/60 pb-5">
                       {/* Portfolio Return */}
                       <div className="bg-white/40 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md group">
                         <span className="text-[7.5px] xl:text-[9px] text-slate-450 dark:text-slate-400 font-extrabold uppercase tracking-tighter xl:tracking-wider block group-hover:text-slate-600 dark:group-hover:text-white transition-colors truncate" title="Portfolio Return">Portfolio</span>
