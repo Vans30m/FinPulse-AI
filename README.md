@@ -92,7 +92,7 @@
     |                                                        |
     |  +--------------+  +--------------+  +--------------+  |
     |  | Google Gemini|  |  Groq API    |  | Yahoo Finance|  |
-    |  | 2.5 Flash    |  | qwen3.6-27b  |  | (yahoo-fin2) |  |
+    |  | 2.5 Flash    |  | qwen3.8-27b  |  | (yahoo-fin2) |  |
     |  | (Primary AI) |  | (Fallback AI)|  |              |  |
     |  +--------------+  +--------------+  +--------------+  |
     |  +--------------+  +--------------+  +--------------+  |
@@ -168,7 +168,7 @@
 | Service | Model | Role |
 |---|---|---|
 | Google Gemini API | `gemini-2.5-flash` | **Primary** LLM — market briefs, fear/greed, pick of the day, portfolio advisor, asset analysis |
-| Groq API | `qwen/qwen3.6-27b` | **Secondary** LLM fallback when Gemini is unavailable |
+| Groq API | `qwen/qwen3.8-27b` | **Secondary** LLM fallback when Gemini is unavailable |
 | Ollama (optional) | `qwen2.5` (configurable) | **Tertiary** local LLM fallback via OpenAI-compatible endpoint |
 
 ### DevOps & Deployment
@@ -525,7 +525,7 @@ Request - Check In-Memory Cache (24h TTL, 200-entry LRU cap)
        Instruction appended: "Respond with ONLY a raw JSON block. No markdown."
                 - Fail (rate-limit / network / timeout)
                 |
-    - Groq API - qwen/qwen3.6-27b
+    - Groq API - qwen/qwen3.8-27b
        Endpoint: api.groq.com/openai/v1/chat/completions
        Timeout: 15s | Temperature: 0.3 | Max tokens: 4096
        System: "You are a professional financial AI assistant.
@@ -666,7 +666,7 @@ Neither present -> 401 Unauthorized
 | `JWT_SECRET` | Required | Secret for JWT signing and PIN hashing | Any 32+ character random string |
 | `GEMINI_API_KEY` | Required | Google Gemini API key (Primary AI) | `AIzaSy...` |
 | `GEMINI_API_KEY_SECONDARY` | Optional | Secondary Gemini key for automatic failover | `AIzaSy...` |
-| `GROQ_API_KEY` | Required | Groq API key (Secondary AI - `qwen3.6-27b`) | `gsk_...` |
+| `GROQ_API_KEY` | Required | Groq API key (Secondary AI - `qwen3.8-27b`) | `gsk_...` |
 | `GOOGLE_CLIENT_ID` | Required | Google OAuth Client ID for token verification | `<id>.apps.googleusercontent.com` |
 | `FINNHUB_API_KEY` | Required | Finnhub API key for financial news feed | `d8dud89r...` |
 | `TWELVEDATA_API_KEY` | Optional | Twelve Data API key (chart data fallback) | `2b1c716b...` |

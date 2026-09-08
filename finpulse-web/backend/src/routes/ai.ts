@@ -200,7 +200,7 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
       const response = await axios.post(
         'https://api.groq.com/openai/v1/chat/completions',
         {
-          model: 'qwen/qwen3.6-27b',
+          model: 'qwen/qwen3.8-27b',
           messages: [
             {
               role: 'system',
@@ -212,7 +212,7 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
             }
           ],
           temperature: 0.3,
-          max_tokens: 4096
+          max_tokens: 1200
         },
         {
           headers: {
@@ -291,7 +291,7 @@ router.get('/market-brief', async (req: Request, res: Response) => {
   "summary": "Markets are biased bullish with tech leading. Inflation cooling supports rate-cut bets.",
   "generatedAt": "2024-01-01T00:00:00.000Z"
 }
-Replace ALL values above with REAL, CURRENT, insightful data. All 11 sectors MUST appear in sectorStrength. Return ONLY the raw JSON object. No markdown, no backticks, no extra text, no ellipsis.`;
+Replace ALL values above with REAL, CURRENT, insightful data. Keep reason strings concise (under 12 words each). All 11 sectors MUST appear in sectorStrength. Return ONLY the raw JSON object. No markdown, no backticks, no extra text, no ellipsis.`;
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
@@ -332,7 +332,7 @@ Replace ALL example values with real, current data. Return only the JSON object.
 
 // GET /api/ai/fear-greed
 router.get('/fear-greed', async (req: Request, res: Response) => {
-  const cacheKey = 'ai:global-market-pulse';
+  const cacheKey = 'ai:fear-greed';
   const cached = getAiCache(cacheKey);
   if (cached) return res.json(cached);
   const fallback = {
