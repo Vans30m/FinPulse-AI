@@ -26,7 +26,7 @@ export default function AIPickOfTheDay({ className = "" }: { className?: string 
           if (parsed && parsed.symbol && typeof parsed.aiScore === "number") {
             setData(parsed);
             setIsLoading(false);
-            return;
+            // Do not return early — continue fetching fresh data in background
           }
         }
       }

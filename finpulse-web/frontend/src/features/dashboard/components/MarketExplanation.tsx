@@ -26,7 +26,7 @@ export default function MarketExplanation() {
           if (parsed && parsed.question && Array.isArray(parsed.analysis)) {
             setData(parsed);
             setIsLoading(false);
-            return;
+            // Do not return early — continue fetching fresh data in background
           }
         }
       }

@@ -26,7 +26,7 @@ export default function AIBulletSummary() {
           if (parsed && parsed.sentiment && Array.isArray(parsed.insights)) {
             setData(parsed);
             setIsLoading(false);
-            return;
+            // Do not return early — continue fetching fresh Groq data in background
           }
         }
       }

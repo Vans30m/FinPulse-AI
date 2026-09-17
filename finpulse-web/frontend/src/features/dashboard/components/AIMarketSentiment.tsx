@@ -304,7 +304,7 @@ export default function AIMarketSentiment() {
           if (parsed && parsed.marketMood && Array.isArray(parsed.insights)) {
             setData(parsed);
             setIsLoading(false);
-            return;
+            // Do not return early — continue fetching fresh Groq data in background
           }
         }
       }

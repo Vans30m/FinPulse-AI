@@ -28,7 +28,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
             setData(parsed);
             animateValue(parsed.score);
             setIsLoading(false);
-            return;
+            // Do not return early — continue fetching fresh data in background
           }
         }
       }
