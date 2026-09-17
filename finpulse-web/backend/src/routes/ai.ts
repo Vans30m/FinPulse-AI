@@ -306,10 +306,9 @@ Replace ALL values above with REAL, CURRENT, insightful data. Keep reason string
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
+  setAiCache(cacheKey, result);
   res.json(result);
 });
-
-
 
 // GET /api/ai/global-market-pulse
 router.get('/global-market-pulse', async (req: Request, res: Response) => {
@@ -338,6 +337,7 @@ Replace ALL example values with real, current data. Return only the JSON object.
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
+  setAiCache(cacheKey, result);
   res.json(result);
 });
 
@@ -379,6 +379,7 @@ Replace ALL example values with real, current data. Return only the JSON object.
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
+  setAiCache(cacheKey, result);
   res.json(result);
 });
 
@@ -431,6 +432,7 @@ router.get('/pick-of-the-day', async (req: Request, res: Response) => {
 
   const result = await queryLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
+  setAiCache(cacheKey, result);
   res.json(result);
 });
 
