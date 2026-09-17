@@ -92,7 +92,7 @@ export function aggregateToMonthly(quotes: any[], monthsPerCandle: number = 1): 
 
     const year = date.getFullYear();
     const month = date.getMonth(); // 0-11
-    
+
     // Group keys depending on monthsPerCandle
     const periodIndex = Math.floor(month / monthsPerCandle);
     const key = `${year}-${periodIndex}`;
@@ -325,18 +325,22 @@ function enqueueAIRequest<T>(fetcher: () => Promise<T>): Promise<T> {
   return nextCall;
 }
 
-export async function getAIMarketBrief(): Promise<AIMarketBriefData> {
+export async function getAIMarketBrief(forceRefresh = false): Promise<AIMarketBriefData> {
   return enqueueAIRequest(async () => {
-    const response = await fetch(`${API_BASE_URL}/api/ai/market-brief`);
+    const url = `${API_BASE_URL}/api/ai/market-brief${forceRefresh ? '?refresh=true' : ''}`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch AI market brief");
     return response.json();
   });
 }
 
-export async function getAIMarketDrivers(): Promise<AIMarketDriversData> {
-  const response = await fetch(`${API_BASE_URL}/api/ai/market-drivers`);
-  if (!response.ok) throw new Error("Failed to fetch AI market drivers");
-  return response.json();
+export async function getAIMarketDrivers(forceRefresh = false): Promise<AIMarketDriversData> {
+  return enqueueAIRequest(async () => {
+    const url = `${API_BASE_URL}/api/ai/market-drivers${forceRefresh ? '?refresh=true' : ''}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch AI market drivers");
+    return response.json();
+  });
 }
 
 export interface AIGlobalMarketPulseData {
@@ -346,9 +350,10 @@ export interface AIGlobalMarketPulseData {
   generatedAt: string;
 }
 
-export async function getAIGlobalMarketPulse(): Promise<AIGlobalMarketPulseData> {
+export async function getAIGlobalMarketPulse(forceRefresh = false): Promise<AIGlobalMarketPulseData> {
   return enqueueAIRequest(async () => {
-    const response = await fetch(`${API_BASE_URL}/api/ai/global-market-pulse`);
+    const url = `${API_BASE_URL}/api/ai/global-market-pulse${forceRefresh ? '?refresh=true' : ''}`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch AI global market pulse");
     return response.json();
   });
@@ -367,9 +372,10 @@ export interface AIFearGreedData {
   generatedAt: string;
 }
 
-export async function getAIFearGreed(): Promise<AIFearGreedData> {
+export async function getAIFearGreed(forceRefresh = false): Promise<AIFearGreedData> {
   return enqueueAIRequest(async () => {
-    const response = await fetch(`${API_BASE_URL}/api/ai/fear-greed`);
+    const url = `${API_BASE_URL}/api/ai/fear-greed${forceRefresh ? '?refresh=true' : ''}`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch AI fear and greed index");
     return response.json();
   });
@@ -392,9 +398,10 @@ export interface AIPickOfTheDayData {
   generatedAt: string;
 }
 
-export async function getAIPickOfTheDay(): Promise<AIPickOfTheDayData> {
+export async function getAIPickOfTheDay(forceRefresh = false): Promise<AIPickOfTheDayData> {
   return enqueueAIRequest(async () => {
-    const response = await fetch(`${API_BASE_URL}/api/ai/pick-of-the-day`);
+    const url = `${API_BASE_URL}/api/ai/pick-of-the-day${forceRefresh ? '?refresh=true' : ''}`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch AI Pick of the Day");
     return response.json();
   });

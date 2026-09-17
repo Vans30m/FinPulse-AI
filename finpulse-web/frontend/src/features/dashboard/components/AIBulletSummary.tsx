@@ -31,7 +31,7 @@ export default function AIBulletSummary() {
         }
       }
 
-      const result = await getAIGlobalMarketPulse();
+      const result = await getAIGlobalMarketPulse(forceRefresh);
       if (!result || !result.sentiment || !Array.isArray(result.insights)) {
         throw new Error("Invalid schema received from AI Global Market Pulse");
       }

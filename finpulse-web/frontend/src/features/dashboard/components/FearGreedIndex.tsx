@@ -33,7 +33,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
         }
       }
 
-      const result = await getAIFearGreed();
+      const result = await getAIFearGreed(forceRefresh);
       if (!result || typeof result.score !== "number" || !result.sentiment) {
         throw new Error("Invalid schema received from AI Fear & Greed service");
       }

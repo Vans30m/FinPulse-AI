@@ -31,7 +31,7 @@ export default function MarketExplanation() {
         }
       }
 
-      const result = await getAIMarketDrivers();
+      const result = await getAIMarketDrivers(forceRefresh);
       if (!result || !result.question || !Array.isArray(result.analysis)) {
         throw new Error("Invalid schema received from AI market-drivers service");
       }

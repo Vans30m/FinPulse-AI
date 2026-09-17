@@ -31,7 +31,7 @@ export default function AIPickOfTheDay({ className = "" }: { className?: string 
         }
       }
 
-      const result = await getAIPickOfTheDay();
+      const result = await getAIPickOfTheDay(forceRefresh);
       if (!result || !result.symbol || typeof result.aiScore !== "number") {
         throw new Error("Invalid schema received from AI Pick of the Day service");
       }

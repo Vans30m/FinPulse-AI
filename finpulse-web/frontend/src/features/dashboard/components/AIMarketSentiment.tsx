@@ -310,7 +310,7 @@ export default function AIMarketSentiment() {
       }
 
       // 2. Fetch from backend
-      const result = await getAIMarketBrief();
+      const result = await getAIMarketBrief(forceRefresh);
       
       // Validate schema
       if (!result || !result.marketMood || !Array.isArray(result.sectorStrength)) {
