@@ -11,7 +11,7 @@ export const TIMEFRAMES = [
 
 function TimeframeSelector({ selected, onChange }: TimeframeSelectorProps) {
   return (
-    <div className="w-full overflow-x-auto no-scrollbar scroll-smooth flex items-center bg-slate-100/80 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/40 dark:border-white/5">
+    <div className="w-full overflow-x-auto no-scrollbar scroll-smooth flex items-center bg-[#0D0D0D] p-1 rounded-md border border-[#242424]">
       <div className="flex items-center gap-1 min-w-max">
         {TIMEFRAMES.map((tf) => {
           const isActive = selected === tf;
@@ -20,9 +20,9 @@ function TimeframeSelector({ selected, onChange }: TimeframeSelectorProps) {
               key={tf}
               type="button"
               onClick={() => onChange(tf)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wide font-mono transition-all duration-150 ${isActive
-                ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm scale-[1.02]"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-white/[0.02]"
+              className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-all duration-150 ${isActive
+                ? "bg-[#1C1C1C] text-[#F5F5F5] border border-[#2A2A2A]"
+                : "bg-[#141414] text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-[#1C1C1C] border border-transparent"
                 }`}
             >
               {tf}

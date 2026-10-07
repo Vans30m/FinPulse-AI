@@ -75,13 +75,10 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     <motion.header
       animate={{
         height: isScrolled ? "56px" : "64px",
-        backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0.95)",
-        boxShadow: isScrolled 
-          ? "0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02), 0 8px 30px -15px rgba(99, 102, 241, 0.08)" 
-          : "0 0px 0px rgba(0, 0, 0, 0)"
+        backgroundColor: isScrolled ? "rgba(10, 10, 10, 0.95)" : "rgba(10, 10, 10, 1)",
       }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="sticky top-0 z-40 w-full backdrop-blur-xl dark:!bg-night-950/80 transition-colors duration-300 flex items-center"
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-[#242424] bg-white dark:bg-[#0A0A0A] transition-colors duration-200 flex items-center"
     >
       <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8">
 
@@ -91,16 +88,16 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
             <img
               src={DarkLogo}
               alt="FinPulse Logo"
-              className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 block dark:hidden mix-blend-multiply"
+              className="h-12 w-auto -ml-2 -mr-1 object-contain block dark:hidden mix-blend-multiply"
             />
             <img
               src={LightLogo}
               alt="FinPulse Logo"
-              className="h-14 w-auto -ml-2 -mr-1 object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block mix-blend-screen"
+              className="h-12 w-auto -ml-2 -mr-1 object-contain hidden dark:block mix-blend-screen"
             />
             {/* Brand name */}
-            <span className="hidden sm:inline font-black text-lg tracking-tight text-slate-900 dark:text-white ml-1">
-              FinPulse<span className="bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">AI</span>
+            <span className="hidden sm:inline font-bold text-base tracking-tight text-slate-900 dark:text-white ml-1">
+              FinPulse<span className="text-emerald-500 font-extrabold ml-0.5">AI</span>
             </span>
           </Link>
         </div>
@@ -129,9 +126,9 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                       }
                     }}
                     className={({ isActive }) =>
-                      `relative px-4 py-2 text-sm font-semibold transition-colors duration-300 z-10 ${isActive
-                        ? "text-blue-600 dark:text-cyan-400"
-                        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      `relative px-3.5 py-1.5 text-xs font-medium transition-colors duration-200 z-10 ${isActive
+                        ? "text-slate-900 dark:text-white font-semibold"
+                        : "text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white"
                       }`
                     }
                   >
@@ -141,16 +138,16 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                         {hoveredTab === item.id && !isActive && (
                           <motion.span
                             layoutId="navbarHoverPill"
-                            className="absolute inset-0 -mx-1.5 -my-0.5 rounded-xl bg-slate-100/70 dark:bg-white/[0.04] -z-20"
+                            className="absolute inset-0 rounded-md bg-slate-100 dark:bg-[#171717] -z-20"
                             transition={{ type: "spring", stiffness: 350, damping: 28 }}
                           />
                         )}
 
-                        {/* Active Selection Sliding Indicator (Minimalist Underline) */}
+                        {/* Active Selection Sliding Indicator (Minimalist Accent Line) */}
                         {isActive && (
                           <motion.span
                             layoutId="activeNavIndicator"
-                            className="absolute bottom-[-6px] left-0 right-0 h-[2.5px] bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-500 rounded-full shadow-[0_1px_4px_rgba(6,182,212,0.4)]"
+                            className="absolute bottom-[-8px] left-0 right-0 h-[2px] bg-slate-900 dark:bg-white rounded-full"
                             transition={{ type: "spring", stiffness: 380, damping: 30 }}
                           />
                         )}
@@ -165,36 +162,36 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Global Search Button: near notification bell on all viewports */}
+          {/* Global Search Button */}
           <button
             onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-            className="flex items-center justify-between w-32 xs:w-40 sm:w-48 md:w-56 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-3 py-1.5 sm:px-3.5 sm:py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all duration-300 hover:bg-white dark:hover:bg-night-900 hover:border-blue-500/40 dark:hover:border-cyan-400/40 shadow-inner shrink-0"
+            className="flex items-center justify-between w-32 xs:w-40 sm:w-48 md:w-56 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#111111] px-3 py-1.5 text-xs text-slate-500 dark:text-neutral-400 hover:border-slate-300 dark:hover:border-[#2A2A2A] transition-colors shrink-0"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Search className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
-              <span className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate">Search</span>
+              <Search className="h-3.5 w-3.5 text-slate-400 dark:text-neutral-500 shrink-0" />
+              <span className="text-xs font-medium truncate">Search markets...</span>
             </div>
-            <kbd className="hidden sm:inline-block rounded bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-slate-500 dark:text-slate-400">Ctrl K</kbd>
+            <kbd className="hidden sm:inline-block rounded bg-slate-200 dark:bg-[#1C1C1C] px-1.5 py-0.5 text-[9px] font-mono text-slate-500 dark:text-neutral-400 border border-slate-300 dark:border-[#242424]">Ctrl K</kbd>
           </button>
 
-          <div className="hidden sm:block h-6 w-px bg-slate-200 dark:bg-white/10 mx-1"></div>
+          <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-[#242424] mx-1"></div>
 
           {/* Conditional Rendering: Login / Profile Menu */}
           {!isLoggedIn ? (
             <button
               onClick={onLoginClick}
-              className="flex items-center gap-2 rounded-xl bg-blue-600 dark:bg-cyan-400 px-3.5 py-2 text-xs font-black uppercase tracking-wider text-white dark:text-night-950 shadow-md hover:shadow-lg transition-all duration-350 hover:bg-blue-700 dark:hover:bg-cyan-300 hover:-translate-y-0.5"
+              className="flex items-center gap-2 rounded-md bg-slate-900 dark:bg-white px-3 py-1.5 text-xs font-semibold text-white dark:text-black hover:bg-slate-800 dark:hover:bg-neutral-200 transition-colors"
             >
-              <LogIn className="h-3.5 w-3.5 stroke-[2.5]" />
+              <LogIn className="h-3.5 w-3.5" />
               <span className="hidden xs:inline">Sign In</span>
             </button>
           ) : (
             <div className="relative profile-menu-container">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-2 rounded-xl p-1 sm:px-2.5 sm:py-1.5 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all"
+                className="flex items-center gap-2 rounded-md p-1 sm:px-2 sm:py-1 hover:bg-slate-100 dark:hover:bg-[#141414] transition-colors"
               >
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md text-xs font-black shrink-0 overflow-hidden">
+                <div className="h-7 w-7 rounded-md bg-[#1C1C1C] border border-[#242424] flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
                   {user?.avatar ? (
                     <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
                   ) : (
@@ -210,44 +207,43 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                 </div>
 
                 <div className="text-left hidden sm:block">
-                  <p className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                     {user?.name || 'User'}
                   </p>
-                  <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 leading-none">Account</p>
                 </div>
 
                 <ChevronDown className="h-3.5 w-3.5 text-slate-400 hidden sm:block" />
               </button>
 
-              {/* Jitter-Free Animated Profile Dropdown */}
+              {/* Profile Dropdown */}
               <AnimatePresence>
                 {showProfileMenu && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.85, y: -10 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
                     style={{ transformOrigin: "top right" }}
-                    transition={{ duration: 0.18, ease: "easeInOut" }}
-                    className="absolute right-0 mt-2 w-52 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-xl overflow-hidden z-50 p-1.5"
+                    transition={{ duration: 0.15, ease: "easeInOut" }}
+                    className="absolute right-0 mt-2 w-48 rounded-md border border-slate-200 dark:border-[#242424] bg-white dark:bg-[#111111] shadow-lg overflow-hidden z-50 p-1"
                   >
                     <Link
                       to="/profile"
                       onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-[#171717] rounded transition-colors"
                     >
                       <UserCircle className="h-4 w-4" />
                       <span>Profile</span>
                     </Link>
- 
+
                     <button
                       onClick={() => {
                         setTheme(theme === 'dark' ? 'light' : 'dark');
                         setShowProfileMenu(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-[#171717] rounded transition-colors"
                     >
-                      {theme === 'dark' ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-slate-400" />}
-                      <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+                      {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-slate-400" />}
+                      <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                     </button>
                   </motion.div>
                 )}
@@ -255,64 +251,56 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
             </div>
           )}
 
-          {/* Hamburger Menu Toggle Button */}
+          {/* Mobile Menu Toggle Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="flex md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-450 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all mobile-menu-toggle"
+            className="flex md:hidden p-1.5 rounded-md text-slate-500 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-[#141414] transition-colors mobile-menu-toggle"
             aria-label="Toggle navigation menu"
           >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer Slide-out Navigation */}
+      {/* Mobile Drawer Navigation */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="absolute top-full left-0 right-0 z-30 md:hidden bg-white/95 dark:bg-night-950/95 backdrop-blur-lg border-b border-slate-200 dark:border-white/10 px-6 py-4 flex flex-col gap-2 shadow-xl mobile-menu-container"
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="absolute top-full left-0 right-0 z-30 md:hidden bg-white dark:bg-[#0A0A0A] border-b border-slate-200 dark:border-[#242424] px-4 py-3 flex flex-col gap-1 shadow-lg mobile-menu-container"
           >
-            {navItems.map((item, index) => {
+            {navItems.map((item) => {
               const path = item.id === "pulse" ? "/pulse" : `/${item.id.toLowerCase()}`;
               return (
-                <div key={item.id} className="flex flex-col w-full">
-                  {index > 0 && (
-                    <div className="h-[1px] bg-gradient-to-r from-transparent via-slate-200/60 to-transparent dark:via-white/10 w-full my-1 shrink-0" />
-                  )}
-                  <NavLink
-                    to={path}
-                    end={item.id === "pulse"}
-                    onClick={(e) => {
-                      setIsMobileMenuOpen(false);
-                      const protectedIds = ['portfolio', 'watchlist', 'performance', 'profile'];
-                      if (protectedIds.includes(item.id.toLowerCase()) && !isLoggedIn) {
-                        e.preventDefault();
-                        onLoginClick();
-                      }
-                    }}
-                    className={({ isActive }) =>
-                      `px-4 py-3 rounded-xl text-sm font-bold transition-all ${isActive
-                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/10"
-                        : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-150/50 dark:hover:bg-white/5"
-                      }`
+                <NavLink
+                  key={item.id}
+                  to={path}
+                  end={item.id === "pulse"}
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    const protectedIds = ['portfolio', 'watchlist', 'performance', 'profile'];
+                    if (protectedIds.includes(item.id.toLowerCase()) && !isLoggedIn) {
+                      e.preventDefault();
+                      onLoginClick();
                     }
-                  >
-                    {item.label}
-                  </NavLink>
-                </div>
+                  }}
+                  className={({ isActive }) =>
+                    `px-3 py-2 rounded-md text-xs font-medium transition-colors ${isActive
+                      ? "bg-slate-900 text-white dark:bg-[#1C1C1C] dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#141414]"
+                    }`
+                  }
+                >
+                  {item.label}
+                </NavLink>
               );
             })}
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Ambient Gradient Glow Line at the bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-600 to-transparent dark:via-cyan-400 opacity-90 dark:opacity-100 pointer-events-none" />
-      {/* Blurred secondary glow layer for light and dark mode ambient radiance */}
-      <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent dark:via-cyan-500/30 blur-[2px] pointer-events-none" />
     </motion.header>
   );
 }
