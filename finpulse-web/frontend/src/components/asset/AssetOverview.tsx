@@ -213,17 +213,17 @@ export default function AssetOverview({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Title Header Card Container */}
-      <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/80 p-6 bg-white dark:bg-night-900 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-lg border border-[#242424] p-5 bg-[#111111] flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 mb-2">
+          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-[#1C1C1C] text-[#A3A3A3] mb-2 uppercase tracking-wide">
             {assetType} • {exchange}
           </span>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-[#F5F5F5] uppercase">
             {name}
           </h1>
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
+          <p className="text-xs font-mono text-[#A3A3A3] mt-0.5">
             {symbol}
           </p>
         </div>
@@ -232,28 +232,28 @@ export default function AssetOverview({
         <div className="text-left md:text-right flex flex-col md:items-end justify-center">
           <div className="flex items-center gap-1.5 justify-start md:justify-end">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22C55E]"></span>
             </span>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#737373]">
               {assetType === "Index" ? "Index Points" : "Current Price"}
             </p>
           </div>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className={`text-4xl font-black font-mono tracking-tight transition-all duration-300 ${
+            <span className={`text-3xl font-bold font-mono tracking-tight transition-all duration-300 ${
               priceDirection === "up" 
-                ? "text-emerald-500 scale-[1.03] drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" 
+                ? "text-[#22C55E]" 
                 : priceDirection === "down" 
-                  ? "text-rose-500 scale-[0.97] drop-shadow-[0_0_8px_rgba(251,113,133,0.4)]" 
-                  : "text-slate-900 dark:text-white"
+                  ? "text-[#EF4444]" 
+                  : "text-[#F5F5F5]"
             }`}>
               {formatVal(price)}
             </span>
             {hasChange && (
-              <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-xs font-extrabold font-mono ${
+              <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded text-xs font-bold font-mono ${
                 isPositive 
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-450" 
-                  : "bg-rose-500/10 text-rose-550 dark:text-rose-400"
+                  ? "bg-[#22C55E]/10 text-[#22C55E]" 
+                  : "bg-[#EF4444]/10 text-[#EF4444]"
               }`}>
                 {isPositive ? "▲" : "▼"}
                 {isPositive ? "+" : "-"}{formatNum(change)} ({isPositive ? "+" : "-"}{Math.abs(changePercent).toFixed(2)}%)
@@ -264,18 +264,17 @@ export default function AssetOverview({
       </div>
 
       {/* Overview Statistics Layout Card Container */}
-      <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/80 p-6 bg-white dark:bg-night-900 shadow-lg">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-          Overview Statistics
+      <div className="rounded-lg border border-[#242424] p-5 bg-[#111111]">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#A3A3A3] mb-4 border-b border-[#242424] pb-2">
+          Compact Metric Grid
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {statItems.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/[0.01] rounded-xl border border-slate-100 dark:border-white/5">
+            <div key={idx} className="flex items-center justify-between p-3 bg-[#141414] rounded border border-[#242424]">
               <div className="flex items-center gap-2">
-                {item.icon}
-                <span className="text-xs font-bold text-slate-400 dark:text-slate-500">{item.label}</span>
+                <span className="text-xs font-medium text-[#737373]">{item.label}</span>
               </div>
-              <span className="text-sm font-extrabold text-slate-850 dark:text-slate-200 font-mono">{item.value}</span>
+              <span className="text-xs font-bold text-[#F5F5F5] font-mono">{item.value}</span>
             </div>
           ))}
         </div>

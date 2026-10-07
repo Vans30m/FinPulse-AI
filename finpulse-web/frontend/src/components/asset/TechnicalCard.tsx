@@ -98,43 +98,43 @@ export default function TechnicalCard({
   const curPrefix = isIndex ? "" : "$";
 
   return (
-    <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/80 p-6 bg-white dark:bg-night-900 shadow-lg space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Activity className="h-5 w-5 text-blue-500" /> Structural Levels
+    <div className="rounded-lg border border-[#242424] p-5 bg-[#111111] space-y-4">
+      <div className="flex items-center justify-between border-b border-[#242424] pb-3">
+        <h3 className="text-sm font-bold text-[#F5F5F5] uppercase tracking-wide flex items-center gap-2">
+          <Activity className="h-4 w-4 text-[#A3A3A3]" /> Structural Technical Levels
         </h3>
-        <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase border ${getVerdictColor(data.verdict)}`}>
+        <span className={`px-2.5 py-0.5 rounded text-xs font-bold uppercase border font-mono ${getVerdictColor(data.verdict)}`}>
           {data.verdict || "Neutral"}
         </span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Core Indicators Sub-Card */}
-        <div className="bg-slate-50 dark:bg-[#0c1022]/20 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-5 flex flex-col justify-start space-y-4">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-200/60 dark:border-slate-850 pb-2">Core Indicators</h4>
+        <div className="bg-[#141414] border border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
+          <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3] border-b border-[#242424] pb-2">Core Indicators</h4>
           
-          <div className="space-y-3.5 text-sm flex-1 flex flex-col justify-center">
-            <div className="flex justify-between items-center py-1 border-b border-slate-150 dark:border-white/[0.02]">
-              <span className="text-slate-500 dark:text-slate-400 font-bold">RSI (14)</span>
-              <span className="font-mono font-black text-slate-900 dark:text-white">{data.rsi || "N/A"}</span>
+          <div className="space-y-2 text-xs flex-1 flex flex-col justify-center">
+            <div className="flex justify-between items-center py-1 border-b border-[#242424]">
+              <span className="text-[#A3A3A3] font-medium">RSI (14)</span>
+              <span className="font-mono font-bold text-[#F5F5F5]">{data.rsi || "N/A"}</span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-slate-150 dark:border-white/[0.02]">
-              <span className="text-slate-500 dark:text-slate-400 font-bold">MACD Line</span>
-              <span className="font-mono font-black text-slate-900 dark:text-white">{data.macd || "N/A"}</span>
+            <div className="flex justify-between items-center py-1 border-b border-[#242424]">
+              <span className="text-[#A3A3A3] font-medium">MACD Line</span>
+              <span className="font-mono font-bold text-[#F5F5F5]">{data.macd || "N/A"}</span>
             </div>
             <div className="flex justify-between items-center py-1">
-              <span className="text-slate-500 dark:text-slate-400 font-bold">Signal Line</span>
-              <span className="font-mono font-black text-slate-950 dark:text-slate-200">{data.signal || "N/A"}</span>
+              <span className="text-[#A3A3A3] font-medium">Signal Line</span>
+              <span className="font-mono font-bold text-[#F5F5F5]">{data.signal || "N/A"}</span>
             </div>
           </div>
         </div>
 
         {/* Major Key Levels Sub-Card */}
         {hasKeyLevels ? (
-          <div className="bg-slate-50 dark:bg-[#0c1022]/20 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-5 flex flex-col justify-start space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-slate-850 pb-2">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Major Key Levels</h4>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${verdictColor}`}>
+          <div className="bg-[#141414] border border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
+            <div className="flex justify-between items-center border-b border-[#242424] pb-2">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3]">Major Key Levels</h4>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border font-mono ${verdictColor}`}>
                 {keyVerdict}
               </span>
             </div>
@@ -150,58 +150,57 @@ export default function TechnicalCard({
               const pricePct = getPct(price);
 
               return (
-                <div className="space-y-4 pt-1 flex-1 flex flex-col justify-between">
+                <div className="space-y-3 pt-1 flex-1 flex flex-col justify-between">
                   {/* Price Position Gauge */}
-                  <div className="p-3 bg-white dark:bg-[#0c1022]/40 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+                  <div className="p-2.5 bg-[#0D0D0D] rounded border border-[#242424]">
                     <div className="relative pt-6 pb-2">
                       {/* Current Price Pointer above track */}
                       <div 
                         className="absolute top-0 -translate-x-1/2 flex flex-col items-center transition-all duration-300 ease-out z-10"
                         style={{ left: `${pricePct}%` }}
                       >
-                        <span className="bg-cyan-950 text-cyan-400 border border-cyan-800 px-1.5 py-0.5 rounded text-[10px] font-black font-mono shadow-[0_0_10px_rgba(6,182,212,0.2)] whitespace-nowrap">
+                        <span className="bg-[#1C1C1C] text-[#F5F5F5] border border-[#2A2A2A] px-1.5 py-0.5 rounded text-[10px] font-bold font-mono whitespace-nowrap">
                           {curPrefix}{formatNum(price)}
                         </span>
-                        {/* Downward triangle indicator */}
-                        <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-cyan-400 mt-0.5" />
+                        <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-[#F5F5F5] mt-0.5" />
                       </div>
 
                       {/* Horizontal track */}
-                      <div className="h-2 w-full rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-rose-500 opacity-80 border border-slate-200 dark:border-slate-800 relative" />
+                      <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-[#22C55E] via-[#A3A3A3] to-[#EF4444] opacity-80 border border-[#242424] relative" />
 
                       {/* Tick marks on the track */}
-                      <div className="relative flex justify-between text-[9px] font-bold font-mono mt-1 text-slate-450 dark:text-slate-400">
-                        <span className="text-emerald-600 dark:text-emerald-455">S2</span>
-                        <span className="text-emerald-500 dark:text-emerald-400">S1</span>
-                        <span className="text-blue-500 dark:text-blue-400">PP</span>
-                        <span className="text-rose-455">R1</span>
-                        <span className="text-rose-500 dark:text-rose-400">R2</span>
+                      <div className="relative flex justify-between text-[9px] font-bold font-mono mt-1 text-[#737373]">
+                        <span className="text-[#22C55E]">S2</span>
+                        <span className="text-[#22C55E]">S1</span>
+                        <span className="text-[#A3A3A3]">PP</span>
+                        <span className="text-[#EF4444]">R1</span>
+                        <span className="text-[#EF4444]">R2</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Detailed Levels List */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {[
-                      { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-500 dark:text-rose-455", dotClass: "bg-rose-500", bgClass: "hover:bg-rose-500/5" },
-                      { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-400", dotClass: "bg-rose-400", bgClass: "hover:bg-rose-500/5" },
-                      { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-500 dark:text-blue-400", dotClass: "bg-blue-500", bgClass: "bg-blue-500/5 border border-blue-500/10 dark:border-blue-500/20" },
-                      { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-500 dark:text-emerald-455", dotClass: "bg-emerald-500", bgClass: "hover:bg-emerald-500/5" },
-                      { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-600 dark:text-emerald-400", dotClass: "bg-emerald-600", bgClass: "hover:bg-emerald-500/5" },
+                      { label: "R2 (Resistance 2)", value: R2, textClass: "text-[#EF4444]", dotClass: "bg-[#EF4444]", bgClass: "hover:bg-[#EF4444]/5" },
+                      { label: "R1 (Resistance 1)", value: R1, textClass: "text-[#EF4444]", dotClass: "bg-[#EF4444]", bgClass: "hover:bg-[#EF4444]/5" },
+                      { label: "PP (Pivot Point)", value: PP, textClass: "text-[#A3A3A3]", dotClass: "bg-[#A3A3A3]", bgClass: "bg-[#1C1C1C]/40 border border-[#242424]" },
+                      { label: "S1 (Support 1)", value: S1, textClass: "text-[#22C55E]", dotClass: "bg-[#22C55E]", bgClass: "hover:bg-[#22C55E]/5" },
+                      { label: "S2 (Support 2)", value: S2, textClass: "text-[#22C55E]", dotClass: "bg-[#22C55E]", bgClass: "hover:bg-[#22C55E]/5" },
                     ].map((lvl, idx) => {
                       const isAbove = price >= lvl.value;
                       return (
                         <div 
                           key={idx} 
-                          className={`flex justify-between items-center px-3 py-1 rounded-xl transition-all duration-200 ${lvl.bgClass}`}
+                          className={`flex justify-between items-center px-2.5 py-1 rounded transition-all duration-150 ${lvl.bgClass}`}
                         >
                           <div className="flex items-center gap-2">
                             <span className={`w-1.5 h-1.5 rounded-full ${lvl.dotClass}`} />
-                            <span className={`font-sans font-bold text-[11px] ${lvl.textClass}`}>{lvl.label}</span>
+                            <span className={`font-mono text-[11px] font-medium ${lvl.textClass}`}>{lvl.label}</span>
                           </div>
-                          <div className="flex items-center gap-3 font-mono text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                          <div className="flex items-center gap-2.5 font-mono text-[11px] font-bold text-[#F5F5F5]">
                             <span>{curPrefix}{formatNum(lvl.value)}</span>
-                            <span className={`text-[9px] font-sans px-1.5 py-0.2 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-500 dark:text-rose-400"}`}>
+                            <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded ${isAbove ? "bg-[#22C55E]/10 text-[#22C55E]" : "bg-[#EF4444]/10 text-[#EF4444]"}`}>
                               {isAbove ? "Above" : "Below"}
                             </span>
                           </div>
@@ -214,32 +213,32 @@ export default function TechnicalCard({
             })()}
           </div>
         ) : (
-          <div className="bg-slate-50 dark:bg-[#0c1022]/20 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-5 text-center py-12 text-slate-500">
+          <div className="bg-[#141414] border border-[#242424] rounded-md p-4 text-center py-8 text-[#A3A3A3] text-xs">
             No price stats available to compute pivot levels.
           </div>
         )}
 
         {/* AI Verdict Summary Sub-Card */}
-        <div className="bg-slate-50 dark:bg-[#0c1022]/20 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-5 flex flex-col justify-start space-y-4">
-          <div className="border-b border-slate-200/60 dark:border-slate-850 pb-2">
-            <div className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">AI Verdict Summary</div>
+        <div className="bg-[#141414] border border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
+          <div className="border-b border-[#242424] pb-2">
+            <div className="text-[11px] font-bold text-[#A3A3A3] uppercase tracking-wider">AI Verdict Summary</div>
           </div>
           
-          <div className="flex-1 flex flex-col justify-center space-y-4">
-            <div className="text-2xl font-black text-slate-850 dark:text-white flex items-baseline gap-1">
+          <div className="flex-1 flex flex-col justify-center space-y-3">
+            <div className="text-xl font-bold text-[#F5F5F5] flex items-baseline gap-1 font-mono uppercase">
               {data.recommendation || "HOLD"}
               {data.confidence && (
-                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 ml-1 font-sans">
+                <span className="text-xs font-medium text-[#737373] ml-1 font-mono">
                   ({data.confidence}% confidence)
                 </span>
               )}
             </div>
 
             {data.reasons && data.reasons.length > 0 && (
-              <ul className="space-y-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <ul className="space-y-1.5 text-xs text-[#A3A3A3]">
                 {data.reasons.slice(0, 3).map((r, i) => (
                   <li key={i} className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#A3A3A3] shrink-0" />
                     <span>{r}</span>
                   </li>
                 ))}
