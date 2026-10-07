@@ -361,24 +361,24 @@ export default function AIMarketSentiment() {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-[#0B1220] animate-pulse space-y-6">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 dark:border-[#242424] dark:bg-[#111111] animate-pulse space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Brain className="h-7 w-7 text-cyan-600 dark:text-cyan-450 animate-bounce" />
+            <Brain className="h-6 w-6 text-slate-800 dark:text-neutral-200" />
             <div>
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white">AI is analyzing global markets...</h2>
-              <div className="h-3 w-40 bg-slate-200 dark:bg-slate-800 rounded mt-1" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">AI is analyzing global markets...</h2>
+              <div className="h-3 w-40 bg-slate-200 dark:bg-[#1C1C1C] rounded mt-1" />
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800/40" />
-          <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800/40" />
-          <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800/40" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="h-16 rounded-md bg-slate-100 dark:bg-[#141414]" />
+          <div className="h-16 rounded-md bg-slate-100 dark:bg-[#141414]" />
+          <div className="h-16 rounded-md bg-slate-100 dark:bg-[#141414]" />
         </div>
-        <div className="space-y-2.5">
-          <div className="h-8 rounded bg-slate-100 dark:bg-slate-800/40" />
-          <div className="h-8 rounded bg-slate-100 dark:bg-slate-800/40" />
+        <div className="space-y-2">
+          <div className="h-8 rounded bg-slate-100 dark:bg-[#171717]" />
+          <div className="h-8 rounded bg-slate-100 dark:bg-[#171717]" />
         </div>
       </div>
     );
@@ -443,33 +443,28 @@ export default function AIMarketSentiment() {
   const shapeStyles = getCardShapeStyles(brief.marketMood);
 
   return (
-    <div className={`backdrop-blur-xl bg-white/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.08] p-5 sm:p-8 shadow-2xl relative overflow-hidden transition-all duration-500 rounded-3xl ai-card-font ${shapeStyles.card}`}>
-      {/* Background ambient glows */}
-      <div className={`absolute -left-20 -top-20 z-0 h-64 w-64 rounded-full blur-[100px] pointer-events-none transition-all duration-500 ${shapeStyles.glowLeft}`} />
-      <div className={`absolute -right-20 -bottom-20 z-0 h-64 w-64 rounded-full blur-[100px] pointer-events-none transition-all duration-500 ${shapeStyles.glowRight}`} />
+    <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] p-5 sm:p-6 rounded-lg relative overflow-hidden transition-all duration-200">
 
       {/* Header */}
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 border-b border-slate-200/60 dark:border-white/10 pb-5 sm:pb-6">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-cyan-500 p-[1px] shadow-lg shadow-indigo-500/20">
-            <div className="flex h-full w-full items-center justify-center rounded-xl bg-white dark:bg-slate-950">
-              <Brain className="h-5 w-5 text-indigo-500 dark:text-cyan-400" />
-            </div>
+      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-[#242424] pb-4">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-md bg-slate-100 dark:bg-[#171717] border border-slate-200 dark:border-[#242424] flex items-center justify-center">
+            <Brain className="h-4 w-4 text-slate-800 dark:text-neutral-200" />
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl cool-heading flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               AI Market Brief
             </h2>
-            <p className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-neutral-400">
               Real-time AI-powered global market intelligence
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => fetchBrief(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/[0.03] text-slate-650 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white text-xs font-semibold tracking-wide transition-all hover:bg-slate-100 dark:hover:bg-white/[0.08] active:scale-[0.98] shadow-sm"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#171717] text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-[#202020] text-xs font-medium transition-colors"
             title="Force refresh analysis"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -479,41 +474,41 @@ export default function AIMarketSentiment() {
       </div>
 
       {/* HERO SECTION: Main Telemetry & High-Level Summary */}
-      <div className="relative z-10 mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 items-stretch">
+      <div className="relative z-10 mt-5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         {/* Main Telemetry Indicators (5 cols on lg) */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
+        <div className="lg:col-span-5 flex flex-col gap-3">
           {/* Market Mood Card */}
-          <div className="flex-1 rounded-2xl border border-slate-200/50 dark:border-white/5 bg-slate-50/40 p-4 sm:p-5 dark:bg-white/[0.02] shadow-sm flex items-center justify-between hover:border-slate-300 dark:hover:border-white/10 transition-all group">
+          <div className="flex-1 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414] p-4 flex items-center justify-between">
             <div>
-              <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Market Mood</div>
-              <div className="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">Market Mood</div>
+              <div className="mt-0.5 text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                 {brief.marketMood}
               </div>
             </div>
-            <div className={`rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-widest border transition-all duration-300 ${
+            <div className={`rounded px-2.5 py-1 text-xs font-bold uppercase tracking-wider border ${
               brief.marketMood === "Bullish"
-                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)] group-hover:scale-105"
+                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                 : brief.marketMood === "Bearish"
-                ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-450 dark:border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-105"
-                : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-450 dark:border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.15)] group-hover:scale-105"
+                ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                : "bg-amber-500/10 text-amber-500 border-amber-500/20"
             }`}>
               {brief.marketMood === "Bullish" ? "BUY" : brief.marketMood === "Bearish" ? "SELL" : "HOLD"}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 flex-1">
+          <div className="grid grid-cols-2 gap-3 flex-1">
             {/* Confidence Card */}
-            <div className="rounded-2xl border border-slate-200/50 dark:border-white/5 bg-slate-50/40 p-4 sm:p-5 dark:bg-white/[0.02] shadow-sm hover:border-slate-300 dark:hover:border-white/10 transition-all flex flex-col justify-center">
-              <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Confidence</div>
-              <div className="mt-1 text-2xl font-extrabold text-indigo-600 dark:text-cyan-400 tracking-tight">
+            <div className="rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414] p-3.5 flex flex-col justify-center">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">Confidence</div>
+              <div className="mt-0.5 text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                 {brief.confidence}%
               </div>
             </div>
 
             {/* Risk Card */}
-            <div className="rounded-2xl border border-slate-200/50 dark:border-white/5 bg-slate-50/40 p-4 sm:p-5 dark:bg-white/[0.02] shadow-sm hover:border-slate-300 dark:hover:border-white/10 transition-all flex flex-col justify-center">
-              <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Risk Level</div>
-              <div className="mt-1 text-2xl font-extrabold text-amber-650 dark:text-amber-400 tracking-tight">
+            <div className="rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414] p-3.5 flex flex-col justify-center">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">Risk Level</div>
+              <div className="mt-0.5 text-xl font-bold text-amber-500 tracking-tight">
                 {brief.riskLevel}
               </div>
             </div>
@@ -521,58 +516,57 @@ export default function AIMarketSentiment() {
         </div>
 
         {/* High-Level AI Summary Panel (7 cols on lg) */}
-        <div className="lg:col-span-7 rounded-2xl border border-indigo-500/10 dark:border-white/[0.06] bg-gradient-to-tr from-indigo-500/[0.04] to-cyan-500/[0.04] dark:from-white/[0.01] dark:to-white/[0.03] p-5 sm:p-6 shadow-sm flex flex-col justify-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-500 opacity-60" />
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-cyan-400">
-            <span>Executive Analyst Summary</span>
+        <div className="lg:col-span-7 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414] p-4 flex flex-col justify-center relative">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-neutral-400 mb-1">
+            Executive Analyst Summary
           </div>
-          <p className="mt-3 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+          <p className="text-xs sm:text-sm text-slate-800 dark:text-neutral-200 leading-relaxed font-normal">
             {brief.summary}
           </p>
         </div>
       </div>
 
       {/* MIDDLE SECTION: Detailed AI Insights Feed */}
-      <div className="relative z-10 mt-6 sm:mt-8">
-        <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+      <div className="relative z-10 mt-5">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
           Detailed Market Insights
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {brief.insights.map((item: string, index: number) => (
             <div
               key={index}
-              className="flex flex-col gap-3 rounded-2xl border border-slate-200/50 dark:border-white/[0.05] bg-slate-50/30 dark:bg-white/[0.02] p-5 hover:bg-slate-100/50 dark:hover:bg-white/[0.04] shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/10 transition-all duration-300 hover:-translate-y-1"
+              className="flex flex-col gap-2 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414] p-3.5 hover:border-slate-300 dark:hover:border-[#2A2A2A] transition-colors"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-600 to-cyan-500 dark:from-indigo-500/10 dark:to-cyan-400/10 text-white dark:text-cyan-400 text-xs font-black shadow-md shadow-indigo-500/10 dark:shadow-none">
+              <div className="flex h-5 w-5 items-center justify-center rounded bg-slate-200 dark:bg-[#202020] text-slate-800 dark:text-white text-[10px] font-mono font-bold">
                 {index + 1}
               </div>
-              <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-300 leading-relaxed">{item}</p>
+              <p className="text-xs text-slate-700 dark:text-neutral-300 leading-relaxed">{item}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* BOTTOM SECTION: 3-Column Layout for Sectors */}
-      <div className="relative z-10 mt-6 sm:mt-8">
-        <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      <div className="relative z-10 mt-5">
+        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
           Sector Momentum
         </h3>
-        <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-4 -mt-3">
+        <p className="text-[11px] text-slate-500 dark:text-neutral-500 mb-3">
           Market-wide sector strength and rotation signals
         </p>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
           {/* Column 1: Strong momentum sectors */}
-          <div className="backdrop-blur-md bg-slate-50/20 dark:bg-white/[0.01] border border-slate-200/40 dark:border-white/[0.04] p-5 rounded-2xl flex flex-col h-full justify-between gap-4">
+          <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] p-4 rounded-md flex flex-col h-full justify-between gap-3">
             <div>
-              <div className="mb-3 flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-white/10">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-500 dark:text-emerald-400 flex items-center gap-2">
+              <div className="mb-3 flex items-center justify-between pb-2 border-b border-slate-200 dark:border-[#242424]">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-500 flex items-center gap-1.5">
                   High Momentum
                 </h3>
               </div>
-              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
                 {strongSectors.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
+                  <div className="p-3 text-center text-xs text-slate-400 dark:text-neutral-500 border border-dashed border-slate-200 dark:border-[#242424] rounded-md bg-slate-50 dark:bg-[#111111]">
                     No sectors in High Momentum.
                   </div>
                 ) : (
@@ -590,16 +584,16 @@ export default function AIMarketSentiment() {
           </div>
 
           {/* Column 2: Moderate momentum sectors */}
-          <div className="backdrop-blur-md bg-slate-50/20 dark:bg-white/[0.01] border border-slate-200/40 dark:border-white/[0.04] p-5 rounded-2xl flex flex-col h-full justify-between gap-4">
+          <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] p-4 rounded-md flex flex-col h-full justify-between gap-3">
             <div>
-              <div className="mb-3 flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-white/10">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400 flex items-center gap-2">
+              <div className="mb-3 flex items-center justify-between pb-2 border-b border-slate-200 dark:border-[#242424]">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
                   Moderate Momentum
                 </h3>
               </div>
-              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
                 {neutralSectors.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
+                  <div className="p-3 text-center text-xs text-slate-400 dark:text-neutral-500 border border-dashed border-slate-200 dark:border-[#242424] rounded-md bg-slate-50 dark:bg-[#111111]">
                     No sectors in Moderate Momentum.
                   </div>
                 ) : (
@@ -617,16 +611,16 @@ export default function AIMarketSentiment() {
           </div>
 
           {/* Column 3: Bearish sector momentum */}
-          <div className="backdrop-blur-md bg-slate-50/20 dark:bg-white/[0.01] border border-slate-200/40 dark:border-white/[0.04] p-5 rounded-2xl flex flex-col h-full justify-between gap-4">
+          <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] p-4 rounded-md flex flex-col h-full justify-between gap-3">
             <div>
-              <div className="mb-3 flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-white/10">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-rose-500 dark:text-rose-455 flex items-center gap-2">
+              <div className="mb-3 flex items-center justify-between pb-2 border-b border-slate-200 dark:border-[#242424]">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
                   Bearish Momentum
                 </h3>
               </div>
-              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
                 {bearishSectors.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50/20 dark:bg-white/[0.01]">
+                  <div className="p-3 text-center text-xs text-slate-400 dark:text-neutral-500 border border-dashed border-slate-200 dark:border-[#242424] rounded-md bg-slate-50 dark:bg-[#111111]">
                     No sectors in Bearish Momentum.
                   </div>
                 ) : (
@@ -645,17 +639,17 @@ export default function AIMarketSentiment() {
         </div>
       </div>
 
-      {/* Active Market Threats Section (Full width at bottom) */}
-      <div className="relative z-10 mt-8 pt-5 border-t border-slate-200/60 dark:border-white/10">
-        <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+      {/* Active Market Threats Section */}
+      <div className="relative z-10 mt-5 pt-4 border-t border-slate-200 dark:border-[#242424]">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
           Active Market Threats
         </h3>
-        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.04] p-4 sm:p-5 shadow-sm">
-          <div className="font-bold text-amber-700 dark:text-amber-400 flex items-center gap-2 text-xs uppercase tracking-wider">
-            <AlertCircle className="h-4 w-4 text-amber-500 animate-pulse" />
+        <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3.5">
+          <div className="font-semibold text-amber-500 flex items-center gap-2 text-xs uppercase tracking-wider">
+            <AlertCircle className="h-4 w-4" />
             <span>Critical Threat Focus</span>
           </div>
-          <p className="mt-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
+          <p className="mt-1.5 text-xs text-slate-700 dark:text-neutral-300 leading-relaxed">
             {brief.todayRisk}
           </p>
         </div>

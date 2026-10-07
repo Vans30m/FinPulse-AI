@@ -42,13 +42,13 @@ function VerdictBadge({ verdict }: { verdict: string }) {
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-white/5 p-4 animate-pulse">
-      <div className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-white/10 shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3 w-20 rounded bg-slate-200 dark:bg-white/10" />
-        <div className="h-2.5 w-36 rounded bg-slate-100 dark:bg-white/5" />
+    <div className="flex items-center gap-3 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414] p-3 animate-pulse">
+      <div className="w-6 h-6 rounded bg-slate-200 dark:bg-[#1C1C1C] shrink-0" />
+      <div className="flex-1 space-y-1.5">
+        <div className="h-3 w-20 rounded bg-slate-200 dark:bg-[#1C1C1C]" />
+        <div className="h-2.5 w-32 rounded bg-slate-100 dark:bg-[#171717]" />
       </div>
-      <div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-white/10 shrink-0" />
+      <div className="w-12 h-12 rounded-md bg-slate-200 dark:bg-[#1C1C1C] shrink-0" />
     </div>
   );
 }
@@ -68,15 +68,15 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
   const isFallback = source === 'fallback';
 
   return (
-    <div className="bg-white/70 dark:bg-night-900/70 backdrop-blur-xl rounded-3xl border border-slate-200 dark:border-white/10 p-6 shadow-lg">
+    <div className="bg-white dark:bg-[#111111] rounded-lg border border-slate-200 dark:border-[#242424] p-5 shadow-sm">
 
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
-            <span className="text-lg">✦</span>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>✦</span>
             FinPulse AI Rankings
           </h2>
-          <p className="text-[10px] text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
             {isLoading
               ? "Analyzing technicals, financials & sentiment…"
               : isError
@@ -93,15 +93,15 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
 
         <div className="flex items-center gap-2">
           {isLoading && (
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-full">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Analyzing
             </div>
           )}
           {!isLoading && !hasNoStocks && (
             <button
               onClick={handleRetry}
-              className="text-[10px] font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+              className="text-xs font-medium text-slate-700 dark:text-neutral-300 bg-slate-100 dark:bg-[#171717] hover:bg-slate-200 dark:hover:bg-[#202020] border border-slate-200 dark:border-[#242424] px-2.5 py-1 rounded transition-colors flex items-center gap-1"
             >
               ↺ Reload
             </button>
@@ -109,44 +109,42 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
         </div>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {isLoading ? (
-          // Show 3 skeleton rows while loading
           [1, 2, 3].map((i) => <SkeletonRow key={i} />)
         ) : isError ? (
-          <div className="text-center py-8 space-y-3">
-            <div className="text-3xl">⚠️</div>
-            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">AI Rankings Unavailable</p>
-            <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
+          <div className="text-center py-6 space-y-2">
+            <div className="text-2xl">⚠️</div>
+            <p className="text-xs font-bold text-slate-700 dark:text-neutral-200">AI Rankings Unavailable</p>
+            <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
               The AI ranking service could not be reached. Please check back later.
             </p>
             <button
               onClick={handleRetry}
-              className="mt-2 text-xs font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl transition-colors"
+              className="mt-2 text-xs font-semibold text-slate-900 dark:text-white bg-slate-100 dark:bg-[#171717] hover:bg-slate-200 dark:hover:bg-[#202020] border border-slate-200 dark:border-[#242424] px-3 py-1.5 rounded transition-colors"
             >
               ↺ Reload AI Rankings
             </button>
           </div>
         ) : isFallback && assets.length === 0 ? (
-          <div className="text-center py-8 space-y-3">
-            <div className="text-3xl">⚠️</div>
-            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Offline Mode</p>
-            <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
-              AI providers are unreachable and no cached/fallback rankings could be loaded.
+          <div className="text-center py-6 space-y-2">
+            <div className="text-2xl">⚠️</div>
+            <p className="text-xs font-bold text-slate-700 dark:text-neutral-200">Offline Mode</p>
+            <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+              AI providers are unreachable and no cached rankings could be loaded.
             </p>
             <button
               onClick={handleRetry}
-              className="mt-2 text-xs font-bold text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl transition-colors"
+              className="mt-2 text-xs font-semibold text-slate-900 dark:text-white bg-slate-100 dark:bg-[#171717] hover:bg-slate-200 dark:hover:bg-[#202020] border border-slate-200 dark:border-[#242424] px-3 py-1.5 rounded transition-colors"
             >
               ↺ Retry Connection
             </button>
           </div>
         ) : hasNoStocks ? (
-          <div className="text-center py-8 text-slate-400 text-xs">
+          <div className="text-center py-6 text-slate-400 dark:text-neutral-500 text-xs">
             Add stocks to your watchlist to see AI-powered rankings.
           </div>
         ) : assets.length === 0 ? (
-          // Data loading but still empty — likely first load
           [1, 2, 3].map((i) => <SkeletonRow key={i} />)
         ) : (
           [...assets]
@@ -154,22 +152,22 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
             .map((asset, index) => (
             <div
               key={asset.symbol}
-              className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 p-4 hover:bg-slate-100/70 dark:hover:bg-white/10 hover:border-slate-200 dark:hover:border-white/10 transition-all duration-300"
+              className="flex items-center gap-3 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414] p-3 hover:bg-slate-100 dark:hover:bg-[#171717] transition-colors"
             >
               {/* Rank badge */}
-              <div className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-white/10 flex items-center justify-center shrink-0">
-                <span className="text-[11px] font-black text-slate-500 dark:text-slate-400">#{index + 1}</span>
+              <div className="w-6 h-6 rounded bg-slate-200 dark:bg-[#202020] flex items-center justify-center shrink-0">
+                <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-neutral-400">#{index + 1}</span>
               </div>
 
               {/* Symbol + verdict */}
               <div className="flex-1 min-w-0">
-                <div className="font-black text-slate-800 dark:text-white text-sm leading-tight">
+                <div className="font-bold text-slate-900 dark:text-white text-xs leading-tight uppercase">
                   {asset.symbol}
                 </div>
-                <div className="flex items-center gap-1.5 mt-1">
+                <div className="flex items-center gap-1.5 mt-0.5">
                   <VerdictBadge verdict={asset.verdict} />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                <p className="text-[10px] text-slate-400 dark:text-neutral-400 mt-0.5 leading-snug">
                   {asset.verdict}
                 </p>
               </div>
