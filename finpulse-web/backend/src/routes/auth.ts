@@ -945,6 +945,16 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
   try {
     const userId = req.params.userId;
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { currency: true }
+    });
+    const currency = String(user?.currency || 'INR').toUpperCase();
+    const targetCurrency = currency.includes('USD') || currency.includes('$') ? 'USD'
+      : currency.includes('EUR') || currency.includes('€') ? 'EUR'
+        : currency.includes('GBP') || currency.includes('£') ? 'GBP'
+          : 'INR';
+
     const holdings = await prisma.holding.findMany({
       where: { userId }
     });
@@ -969,10 +979,11 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
 
     const symbols = holdings.map(h => h.ticker.toUpperCase());
     const quotes: Record<string, { price: number; changePercent: number }> = {};
+    const fxSymbols = ['USDINR=X', 'USDEUR=X', 'USDGBP=X'];
     
     try {
       const yahooFinance = new (await import('yahoo-finance2')).default();
-      const results = await yahooFinance.quote(symbols);
+      const results = await yahooFinance.quote([...symbols, ...fxSymbols]);
       const quotesArray = Array.isArray(results) ? results : [results];
       for (const q of quotesArray) {
         if (q.symbol) {
@@ -986,6 +997,15 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
       console.warn("Error fetching quotes in profile stats:", err);
     }
 
+    const usdToInr = quotes['USDINR=X']?.price || 83.45;
+    const usdToEur = quotes['USDEUR=X']?.price || 0.92;
+    const usdToGbp = quotes['USDGBP=X']?.price || 0.79;
+    const targetPerUsd = targetCurrency === 'INR' ? usdToInr : targetCurrency === 'EUR' ? usdToEur : targetCurrency === 'GBP' ? usdToGbp : 1;
+    const toTargetCurrency = (value: number, marketId: string) => {
+      const usdValue = marketId === 'domestic' ? value / usdToInr : value;
+      return usdValue * targetPerUsd;
+    };
+
     let portfolioValue = 0;
     let totalCost = 0;
     let totalReturn = 0;
@@ -997,8 +1017,8 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
       const currentPrice = quote && quote.price > 0 ? quote.price : h.avgCost;
       const changePercent = quote ? quote.changePercent : 0;
 
-      const marketValue = h.shares * currentPrice;
-      const cost = h.shares * h.avgCost;
+      const marketValue = toTargetCurrency(h.shares * currentPrice, h.marketId);
+      const cost = toTargetCurrency(h.shares * h.avgCost, h.marketId);
       const profitLoss = marketValue - cost;
       const dailyGain = marketValue * (changePercent / 100);
 
