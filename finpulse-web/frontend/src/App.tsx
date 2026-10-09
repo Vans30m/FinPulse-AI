@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from './components/layout/header';
 import Footer from './components/layout/footer';
-import InvestmentCalculator from './features/dashboard/components/InvestmentCalculator';
-import MarketScreeners from './features/dashboard/components/MarketScreeners';
 import Watchlist from './features/dashboard/components/Watchlist';
-import MarketFeedStream from './features/dashboard/components/MarketFeedStream';
 import LoginModal from './features/auth/LoginModal';
 import { Toaster, toast } from 'react-hot-toast';
 import PortfolioDashboard from './features/portfolio/components/PortfolioDashboard';
@@ -19,15 +16,6 @@ import Profile from "./pages/Profile";
 import Preferences from "./profile/pages/Preferences";
 import AssetChartModal from "./components/charts/AssetChartModal";
 import { useChart } from "./context/ChartContext";
-import AIMarketSentiment from "./features/dashboard/components/AIMarketSentiment";
-import MarketExplanation from "./features/dashboard/components/MarketExplanation";
-
-// New Pulse Page Components
-import FearGreedIndex from './features/dashboard/components/FearGreedIndex';
-import AIBulletSummary from './features/dashboard/components/AIBulletSummary';
-import AIPickOfTheDay from './features/dashboard/components/AIPickOfTheDay';
-import { GlobalMarketClock } from './features/dashboard/components/GlobalMarketClock';
-
 // Stock Screener Page Component Integration
 import StockScreener from './pages/StockScreener';
 import Pulse from './pages/Pulse';
@@ -37,12 +25,17 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import SystemStatus from "./pages/SystemStatus";
+import ApiDocumentation from "./pages/ApiDocumentation";
+import CookiePolicy from "./pages/CookiePolicy";
+import RiskDisclosure from "./pages/RiskDisclosure";
 import { useTheme } from './context/ThemeContext';
 import { profileService } from './profile/services/profileService';
 
 export default function App() {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const isSecondaryPage = location.pathname !== '/pulse';
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('finpulse_token'));
 
   // Scroll to top on navigation/page change
@@ -65,9 +58,6 @@ export default function App() {
         });
     }
   }, []);
-
-  // The state for managing selected region
-  const [marketRegion, setMarketRegion] = useState<"india" | "us">("india");
 
   // Set this to false so it doesn't pop up on load
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -107,18 +97,8 @@ export default function App() {
     { id: "news", label: "News" },
   ];
 
-  // The Interceptor: If not logged in, any click forces the modal open
-  const handleProtectedAction = (e: React.MouseEvent) => {
-    if (!isLoggedIn) {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsLoginModalOpen(true);
-    }
-  };
-
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-night-900 text-slate-900 dark:text-slate-200 transition-colors duration-300 overflow-x-clip">
+    <div className={`min-h-screen flex flex-col bg-slate-50 dark:bg-night-900 text-slate-900 dark:text-slate-200 transition-colors duration-300 overflow-x-clip ${isSecondaryPage ? 'secondary-page' : ''}`}>
 
       <LoginModal
         isOpen={isLoginModalOpen}
@@ -141,15 +121,6 @@ export default function App() {
         navItems={navItems}
         isLoggedIn={isLoggedIn}
         onLoginClick={() => setIsLoginModalOpen(true)}
-        onLogoutClick={() => {
-          localStorage.removeItem('finpulse_token');
-          localStorage.removeItem('finpulse-token');
-          localStorage.removeItem('finpulse-user');
-          sessionStorage.removeItem('finpulse_pin_verified');
-          setIsLoggedIn(false);
-          toast.success("Logged out successfully");
-          window.location.href = '/';
-        }}
       />
 
       <Toaster
@@ -385,6 +356,10 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/status" element={<SystemStatus />} />
+            <Route path="/api-docs" element={<ApiDocumentation />} />
+            <Route path="/cookies" element={<CookiePolicy />} />
+            <Route path="/risk-disclosure" element={<RiskDisclosure />} />
           </Routes>
         </AnimatePresence>
       </main>

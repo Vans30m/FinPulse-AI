@@ -215,15 +215,15 @@ export default function AssetOverview({
   return (
     <div className="space-y-4">
       {/* Title Header Card Container */}
-      <div className="rounded-lg border border-[#242424] p-5 bg-[#111111] flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-lg border border-slate-200 dark:border-[#242424] p-5 bg-white dark:bg-[#111111] flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
         <div>
-          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-[#1C1C1C] text-[#A3A3A3] mb-2 uppercase tracking-wide">
+          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 dark:bg-[#1C1C1C] text-slate-500 dark:text-[#A3A3A3] mb-2 uppercase tracking-wide">
             {assetType} • {exchange}
           </span>
-          <h1 className="text-2xl font-bold tracking-tight text-[#F5F5F5] uppercase">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-[#F5F5F5] uppercase">
             {name}
           </h1>
-          <p className="text-xs font-mono text-[#A3A3A3] mt-0.5">
+          <p className="text-xs font-mono text-slate-500 dark:text-[#A3A3A3] mt-0.5">
             {symbol}
           </p>
         </div>
@@ -235,7 +235,7 @@ export default function AssetOverview({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22C55E]"></span>
             </span>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#737373]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#737373]">
               {assetType === "Index" ? "Index Points" : "Current Price"}
             </p>
           </div>
@@ -245,7 +245,7 @@ export default function AssetOverview({
                 ? "text-[#22C55E]" 
                 : priceDirection === "down" 
                   ? "text-[#EF4444]" 
-                  : "text-[#F5F5F5]"
+                  : "text-slate-900 dark:text-[#F5F5F5]"
             }`}>
               {formatVal(price)}
             </span>
@@ -264,17 +264,17 @@ export default function AssetOverview({
       </div>
 
       {/* Overview Statistics Layout Card Container */}
-      <div className="rounded-lg border border-[#242424] p-5 bg-[#111111]">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#A3A3A3] mb-4 border-b border-[#242424] pb-2">
+      <div className="rounded-lg border border-slate-200 dark:border-[#242424] p-5 bg-white dark:bg-[#111111] transition-colors">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#A3A3A3] mb-4 border-b border-slate-200 dark:border-[#242424] pb-2">
           Compact Metric Grid
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {statItems.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3 bg-[#141414] rounded border border-[#242424]">
+            <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-[#141414] rounded border border-slate-200 dark:border-[#242424]">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-[#737373]">{item.label}</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-[#737373]">{item.label}</span>
               </div>
-              <span className="text-xs font-bold text-[#F5F5F5] font-mono">{item.value}</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-[#F5F5F5] font-mono">{item.value}</span>
             </div>
           ))}
         </div>

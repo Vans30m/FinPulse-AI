@@ -145,15 +145,18 @@ router.get('/portfolio/holdings', protect, async (req: AuthenticatedRequest, res
     const holdingsWithQuotes = dbHoldings.map((h: any) => {
       const tickerUpper = h.ticker.toUpperCase();
       const quote = quotes[tickerUpper];
-      
+      const positionUnits = Number(h.shares) || 0;
+      const absShares = Math.abs(positionUnits);
+
       const currentPrice = typeof quote?.price === 'number' && !isNaN(quote.price) ? quote.price : h.avgCost;
       const absoluteChange = typeof quote?.change === 'number' && !isNaN(quote.change) ? quote.change : 0;
-      const dailyGain = h.shares * absoluteChange;
+      const dailyGain = positionUnits * absoluteChange;
       const dailyGainPercent = typeof quote?.changePercent === 'number' && !isNaN(quote.changePercent) ? quote.changePercent : 0;
-      
-      const marketValue = h.shares * currentPrice;
-      const totalGain = (currentPrice - h.avgCost) * h.shares;
-      const gainPercent = h.avgCost > 0 ? (totalGain / (h.avgCost * h.shares)) * 100 : 0;
+
+      const costBasis = absShares * Number(h.avgCost || 0);
+      const marketValue = absShares * currentPrice;
+      const totalGain = positionUnits < 0 ? costBasis - marketValue : marketValue - costBasis;
+      const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
 
       return {
         id: h.id,
