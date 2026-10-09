@@ -15,7 +15,6 @@ import API_BASE_URL from "../../../config/api";
 import { useChart } from "../../../context/ChartContext";
 import { pageCache } from "../../../utils/cache";
 import PageLoader from "../../../components/ui/PageLoader";
-import { StockLogo } from '../../../utils/logo';
 import { dashboardService } from "../../../services/dashboardService";
 
 export default function Watchlist() {
@@ -40,6 +39,7 @@ export default function Watchlist() {
   const [newAssetSymbol, setNewAssetSymbol] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showAddAsset, setShowAddAsset] = useState(false);
   const [selectedAssetInfo, setSelectedAssetInfo] = useState<any>(null);
 
   // Tracks which item is mid-request so only that row's button shows a
@@ -131,7 +131,9 @@ export default function Watchlist() {
       onSuccess: () => {
         setNewAssetSymbol("");
         setSelectedAssetInfo(null);
+        setShowAddAsset(false);
         toast.success(`Saved ${symbol} to watchlist`);
+        handleReloadAIRankings();
       },
       onError: (err: any) => {
         toast.error(`Failed to add stock: ${err.message || err}`);
@@ -143,6 +145,7 @@ export default function Watchlist() {
     setNewAssetSymbol("");
     setSelectedAssetInfo(null);
     setShowSuggestions(false);
+    setShowAddAsset(false);
 
     if (!activeListId) {
       toast.error("Please select or create a watchlist first!");
@@ -152,6 +155,7 @@ export default function Watchlist() {
     addItemMutation.mutate({ listId: activeListId, item: { symbol: s.symbol, notes: "Added to watchlist" } }, {
       onSuccess: () => {
         toast.success(`Added ${s.symbol} to watchlist!`);
+        handleReloadAIRankings();
       },
       onError: (err: any) => {
         toast.error(`Failed to add stock: ${err.message || err}`);
@@ -163,6 +167,9 @@ export default function Watchlist() {
     setPendingItemId(itemId);
     setPendingAction("remove");
     removeItemMutation.mutate(itemId, {
+      onSuccess: () => {
+        handleReloadAIRankings();
+      },
       onSettled: () => {
         setPendingItemId(null);
         setPendingAction(null);
@@ -267,7 +274,6 @@ export default function Watchlist() {
     const rankings = aiRankingsData?.rankings;
     if (!Array.isArray(rankings)) return [];
     return rankings
-      .slice(0, 5)
       .map((item: any) => ({ symbol: item.symbol, score: item.score, verdict: item.reason }));
   }, [aiRankingsData]);
 
@@ -308,43 +314,58 @@ export default function Watchlist() {
         </p>
       </div>
 
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
+        <div className="rounded-md border border-slate-200 bg-white p-3 dark:border-[#242424] dark:bg-[#111111]">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#737373]">Tracked assets</p>
+          <p className="mt-1 font-mono text-lg font-black text-slate-900 dark:text-[#f5f5f5]">{stats.total}</p>
+        </div>
+        <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Gainers</p>
+          <p className="mt-1 font-mono text-lg font-black text-emerald-600 dark:text-emerald-400">{stats.gainers}</p>
+        </div>
+        <div className={`rounded-md border p-3 ${stats.avgChange.startsWith('-') ? 'border-rose-500/20 bg-rose-500/5 dark:border-rose-500/25 dark:bg-rose-500/10' : 'border-blue-500/20 bg-blue-500/5 dark:border-cyan-500/25 dark:bg-cyan-500/10'}`}>
+          <p className={`text-[9px] font-bold uppercase tracking-wider ${stats.avgChange.startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-cyan-400'}`}>Average move</p>
+          <p className={`mt-1 font-mono text-lg font-black ${stats.avgChange.startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-cyan-400'}`}>{stats.avgChange}</p>
+        </div>
+      </div>
+
 
 
       {/* WATCHLIST SWITCHER & CONTROLS */}
-      <div className="relative z-30 bg-slate-50/50 dark:bg-[#0c1220]/45 backdrop-blur-xl border border-slate-200 dark:border-white/5 p-5 rounded-3xl shadow-xl flex flex-col gap-5">
+      <div className="watchlist-controls relative z-30 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] p-4 md:p-5 rounded-lg flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
           {/* List selection segment selector */}
           <div className="flex-1 overflow-x-auto scrollbar-none w-full">
             <div className="flex items-center gap-2">
               {isCreatingList ? (
-                <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2 bg-slate-100/50 dark:bg-white/[0.02] p-1.5 rounded-2xl border border-slate-200/50 dark:border-white/[0.03]">
+                <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2 bg-slate-100 dark:bg-[#141414] p-1.5 rounded-md border border-slate-200 dark:border-[#242424]">
                   <input
                     autoFocus
                     type="text"
                     placeholder="Name..."
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
-                    className="bg-white dark:bg-night-900 border dark:border-white/10 px-3 py-1.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 text-slate-900 dark:text-white font-semibold"
+                    className="bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-[#242424] px-3 py-1 text-xs rounded focus:outline-none w-32 text-slate-900 dark:text-white font-medium"
                   />
-                  <button type="submit" disabled={createListMutation.isPending} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shadow-md">
+                  <button type="submit" disabled={createListMutation.isPending} className="bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-neutral-200 disabled:opacity-60 px-3 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1">
                     {createListMutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
                     Save
                   </button>
-                  <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-[10px] font-black uppercase px-2">Cancel</button>
+                  <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs px-2">Cancel</button>
                 </form>
               ) : (
-                <div className="flex items-center gap-1.5 bg-slate-100/60 dark:bg-white/[0.015] p-1.5 rounded-2xl border border-slate-200/60 dark:border-white/[0.02] shadow-inner">
+                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#141414] p-1 rounded-md border border-slate-200 dark:border-[#242424]">
                   {watchlists.map((list, rIdx) => (
                     <div
                       key={list.id}
                       onClick={() => setActiveListId(list.id)}
-                      className={`group relative flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black tracking-wide transition-all duration-200 cursor-pointer border whitespace-nowrap ${activeListId === list.id
-                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-transparent shadow-[0_4px_12px_rgba(37,99,235,0.25)] scale-[1.02]"
-                        : "bg-transparent border-transparent hover:bg-slate-200/50 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                      className={`group relative flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium tracking-wide transition-colors cursor-pointer border ${activeListId === list.id
+                        ? "watchlist-active-tab bg-blue-600 dark:bg-cyan-500 text-white dark:text-[#07110a] border-transparent shadow-sm"
+                        : "bg-transparent border-transparent hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-slate-500 dark:text-neutral-400 hover:text-blue-700 dark:hover:text-cyan-400"
                         }`}
                     >
                       <span>{list.name}</span>
-                      <span className={`text-[9.5px] px-2 py-0.5 rounded-full font-black ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200/60 dark:bg-white/10 text-slate-400 dark:text-slate-500"
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-[#242424] text-slate-500 dark:text-neutral-400"
                         }`}>
                         {list.items?.length || 0}
                       </span>
@@ -373,10 +394,18 @@ export default function Watchlist() {
           </div>
 
           {/* Export & Actions */}
-          <div className="shrink-0 w-full sm:w-auto">
+          <div className="shrink-0 w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={() => setShowAddAsset((current) => !current)}
+              className="watchlist-add w-full justify-center px-5 py-2.5 border border-blue-500/40 dark:border-cyan-500/40 bg-blue-600 text-white dark:bg-cyan-500 dark:text-[#07110a] hover:bg-blue-700 dark:hover:bg-cyan-400 rounded-md text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-sm"
+              title="Add an asset to this watchlist"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Asset</span>
+            </button>
             <button
               onClick={handleExportCSV}
-              className="w-full justify-center px-5 py-2.5 border border-blue-500/20 dark:border-cyan-500/20 bg-blue-600/10 dark:bg-cyan-500/5 hover:bg-blue-600/15 dark:hover:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-sm"
+              className="watchlist-export w-full justify-center px-5 py-2.5 border border-blue-500/40 dark:border-cyan-500/40 bg-blue-600/10 dark:bg-cyan-500/10 hover:bg-blue-600/20 dark:hover:bg-cyan-500/15 text-blue-600 dark:text-cyan-400 rounded-md text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-sm"
               title="Download watchlist items as CSV file"
             >
               <Download className="h-4 w-4" />
@@ -385,11 +414,13 @@ export default function Watchlist() {
           </div>
         </div>
 
-        {/* ADD ASSET SEARCH BAR */}
+        {/* ADD ASSET PANEL */}
+        {showAddAsset && (
         <div className="relative pt-4 border-t border-slate-200/60 dark:border-white/5 w-full">
-          <form onSubmit={handleAddAsset} className="w-full">
+          <form onSubmit={handleAddAsset} className="w-full max-w-xl">
             <div className="relative w-full">
               <input
+                autoFocus
                 type="text"
                 value={newAssetSymbol}
                 disabled={addItemMutation.isPending}
@@ -397,20 +428,23 @@ export default function Watchlist() {
                   setNewAssetSymbol(e.target.value);
                   setShowSuggestions(true);
                 }}
-                className="w-full bg-white dark:bg-[#070b14]/50 border border-slate-200 dark:border-white/5 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pl-10 text-slate-800 dark:text-white disabled:opacity-60 transition-all shadow-inner font-semibold placeholder:text-slate-400/80 dark:placeholder:text-slate-500"
-                placeholder="Search"
+                className="w-full bg-white dark:bg-[#070b14]/50 border border-slate-200 dark:border-white/5 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pl-10 pr-20 text-slate-800 dark:text-white disabled:opacity-60 transition-all shadow-inner font-semibold placeholder:text-slate-400/80 dark:placeholder:text-slate-500"
+                placeholder="Search symbol or asset name"
               />
               {addItemMutation.isPending ? (
                 <Loader2 className="absolute left-3.5 top-3 h-4 w-4 text-blue-500 animate-spin" />
               ) : (
                 <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
               )}
+              <button type="submit" disabled={addItemMutation.isPending || !newAssetSymbol.trim()} className="absolute right-1.5 top-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-white hover:bg-blue-700 disabled:opacity-40 dark:bg-cyan-500 dark:text-[#07110a] dark:hover:bg-cyan-400">
+                Add
+              </button>
             </div>
           </form>
 
           {/* Auto Suggestions Dropdown */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl z-[100] max-w-md max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+            <div className="absolute left-0 top-full mt-2 w-full max-w-xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl z-[100] max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
               {suggestions.map((s) => (
                 <div
                   key={s.symbol}
@@ -432,6 +466,7 @@ export default function Watchlist() {
             </div>
           )}
         </div>
+        )}
 
         {/* FIX: filter/sort/search bar — this UI didn't exist before, so
             searchQuery/showOnlyFavorites/showOnlyPinned/sortField/sortDirection
@@ -450,7 +485,7 @@ export default function Watchlist() {
             <Star className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
             <h3 className="font-bold text-base text-slate-700 dark:text-slate-300">No assets found</h3>
             <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-              Add some tickers in the box above or clear your active filters to see the watchlist stock items.
+              Use Add Asset above to start tracking a market.
             </p>
           </div>
         ) : (
@@ -470,7 +505,7 @@ export default function Watchlist() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="group rounded-3xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-4 md:p-5 shadow-lg hover:shadow-xl hover:border-slate-350 dark:hover:border-white/20 transition-all flex flex-col justify-between"
+                    className={`group rounded-3xl border border-slate-200 dark:border-white/10 ${isPositive ? 'border-l-2 border-l-emerald-500/70' : 'border-l-2 border-l-rose-500/70'} bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-4 md:p-5 shadow-lg hover:shadow-xl hover:border-slate-350 dark:hover:border-white/20 transition-all flex flex-col justify-between`}
                   >
                     <div>
                       {/* Top bar with symbol, title, delete and pin buttons */}
@@ -486,9 +521,8 @@ export default function Watchlist() {
                           })}
                           title="Click to view detailed asset profile page"
                         >
-                          <StockLogo symbol={item.symbol} name={item.name || 'Stock Asset'} className="w-10 h-10 md:w-11 md:h-11 shadow-md rounded-2xl" imgSizeClass="w-6 h-6 md:w-7 md:h-7" />
                           <div className="min-w-0">
-                            <h3 className="font-extrabold text-sm md:text-base text-slate-800 dark:text-white leading-tight">
+                            <h3 className="font-extrabold text-sm md:text-base text-slate-800 dark:text-white leading-tight transition-colors group-hover:text-blue-600 dark:group-hover:text-cyan-400">
                               {item.symbol}
                             </h3>
                             <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 truncate max-w-[100px] md:max-w-[140px] font-medium mt-0.5">{item.name || "Stock Asset"}</p>
@@ -498,7 +532,7 @@ export default function Watchlist() {
                         {/* Live Quote Details */}
                         {formattedPrice && (
                           <div className="text-right">
-                            <div className="font-black text-sm md:text-base text-slate-900 dark:text-white leading-tight">
+                            <div className={`font-black text-sm md:text-base leading-tight ${isPositive ? 'text-slate-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
                               {formattedPrice}
                             </div>
                             <div className={`text-[10px] md:text-xs font-black mt-0.5 flex items-center justify-end gap-1 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>

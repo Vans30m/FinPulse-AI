@@ -89,7 +89,7 @@ const getHoldingColorClass = (marketId: string, ticker: string) => {
   const tick = (ticker || '').toUpperCase();
 
   if (mid === 'domestic' || tick.endsWith('.NS') || tick.endsWith('.BO')) {
-    return { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/50 dark:border-blue-900/50' };
+    return { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
   }
   if (mid === 'us') {
     return { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200/50 dark:border-emerald-900/50' };
@@ -101,9 +101,9 @@ const getHoldingColorClass = (marketId: string, ticker: string) => {
     return { bg: 'bg-yellow-50 dark:bg-yellow-950/40', text: 'text-yellow-600 dark:text-yellow-500', border: 'border-yellow-200/50 dark:border-yellow-900/50' };
   }
   if (mid === 'other') {
-    return { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200/50 dark:border-purple-900/50' };
+    return { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200/50 dark:border-amber-900/50' };
   }
-  return { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200/50 dark:border-indigo-900/50' };
+  return { bg: 'bg-rose-50 dark:bg-rose-950/40', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200/50 dark:border-rose-900/50' };
 };
 
 export default function PortfolioDashboard() {
@@ -1182,13 +1182,25 @@ export default function PortfolioDashboard() {
       return simulatedValues;
     }
 
-    return performanceData.map(d => ({
+    const convertedData = performanceData.map(d => ({
       ...d,
       value: d.value * currencyMultiplier,
       invested: d.invested * currencyMultiplier,
       profit: d.profit * currencyMultiplier
     }));
-  }, [performanceData, currencyMultiplier, isSandboxMode, virtualHoldings, liveQuotes, usdToInrRate]);
+
+    if (convertedData.length === 0) return convertedData;
+
+    const lastIndex = convertedData.length - 1;
+    return convertedData.map((point, index) => index === lastIndex
+      ? {
+        ...point,
+        value: isSandboxMode ? totalNetValue : totalHoldingsValue,
+        invested: totalInvestedAmount,
+        profit: (isSandboxMode ? totalNetValue : totalHoldingsValue) - totalInvestedAmount,
+      }
+      : point);
+  }, [performanceData, currencyMultiplier, isSandboxMode, virtualHoldings, liveQuotes, usdToInrRate, totalNetValue, totalHoldingsValue, totalInvestedAmount]);
 
   if (loading) {
     return <PageLoader title="Loading Portfolio" message="Syncing asset allocations and latest transaction valuations..." />;
@@ -1465,7 +1477,8 @@ export default function PortfolioDashboard() {
               <button
                 key={cur.code}
                 onClick={() => handleCurrencyChange(cur.code as any)}
-                className={`px-2.5 py-1 rounded-xl text-[9px] font-bold border transition-all whitespace-nowrap min-h-[30px] flex items-center justify-center ${portfolioCurrency === cur.code
+                aria-pressed={portfolioCurrency === cur.code}
+                className={`currency-selector ${portfolioCurrency === cur.code ? 'currency-selector-active' : ''} px-2.5 py-1 rounded-md text-[9px] font-bold border transition-all whitespace-nowrap min-h-[30px] flex items-center justify-center ${portfolioCurrency === cur.code
                   ? 'bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 border-transparent font-black shadow-sm'
                   : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-655 dark:text-slate-400 border-slate-200 dark:border-white/5'
                   }`}
@@ -1738,8 +1751,8 @@ export default function PortfolioDashboard() {
                           {asset.totalGain >= 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
                           {posCurrency}{Math.abs(displayTotalGain).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
-                        <span className="text-[10px] font-medium opacity-85">
-                          {asset.gainPercent.toFixed(2)}%
+                        <span className="text-xs font-black opacity-100">
+                          {asset.gainPercent >= 0 ? '+' : ''}{asset.gainPercent.toFixed(2)}%
                         </span>
                       </div>
                     </td>
@@ -1749,7 +1762,7 @@ export default function PortfolioDashboard() {
                           {displayDailyGain >= 0 ? '+' : ''}
                           {posCurrency}{displayDailyGain.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
-                        <span className="text-[10px] font-medium opacity-85">
+                        <span className="text-xs font-black opacity-100">
                           {displayDailyGain >= 0 ? '+' : ''}{dailyGainPercent.toFixed(2)}%
                         </span>
                       </div>
@@ -2060,33 +2073,42 @@ export default function PortfolioDashboard() {
       {isCloseModalOpen && closeTradeAsset && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 dark:bg-night-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsCloseModalOpen(false)} />
-          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-night-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white font-display">Close Position - {closeTradeAsset.name}</h3>
-              <button disabled={isClosingPosition} onClick={() => setIsCloseModalOpen(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50">
+          <div className="close-position-modal relative z-10 w-full max-w-md overflow-hidden rounded-lg border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#111111] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-[#242424] px-5 py-4">
+              <div className="min-w-0">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-blue-600 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-400">
+                    {closeTradeAsset.ticker}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#737373]">Position exit</span>
+                </div>
+                <h3 className="truncate text-base font-bold text-slate-900 dark:text-[#f5f5f5] font-display">Close Position</h3>
+                <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-[#a3a3a3]">{closeTradeAsset.name}</p>
+              </div>
+              <button disabled={isClosingPosition} onClick={() => setIsCloseModalOpen(false)} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-[#1c1c1c] dark:hover:text-white transition-colors disabled:opacity-50">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleClosePositionSubmit} className="space-y-4">
-              <div className="p-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-2xl space-y-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+            <form onSubmit={handleClosePositionSubmit} className="space-y-4 p-5">
+              <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs dark:border-[#242424] dark:bg-[#0d0d0d]">
                 <div className="flex justify-between">
-                  <span>Current Shares:</span>
-                  <span className="font-mono text-slate-800 dark:text-slate-200">
+                  <span className="font-medium text-slate-500 dark:text-[#a3a3a3]">Current shares</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-[#f5f5f5]">
                     {closeTradeAsset.shares < 0
                       ? `${Math.abs(closeTradeAsset.shares).toLocaleString()} (Short)`
                       : closeTradeAsset.shares.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Avg Purchase Cost:</span>
-                  <span className="font-mono text-slate-800 dark:text-slate-200">
+                  <span className="font-medium text-slate-500 dark:text-[#a3a3a3]">Average cost</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-[#f5f5f5]">
                     {closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}{closeTradeAsset.avgCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Current Market Price:</span>
-                  <span className="font-mono text-slate-800 dark:text-slate-200">
+                  <span className="font-medium text-slate-500 dark:text-[#a3a3a3]">Market price</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-[#f5f5f5]">
                     {closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}{closeTradeAsset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -2094,7 +2116,7 @@ export default function PortfolioDashboard() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Shares to Close</label>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#a3a3a3]">Shares to close</label>
                   <input
                     type="number"
                     step="any"
@@ -2103,11 +2125,11 @@ export default function PortfolioDashboard() {
                     value={closeTradeShares}
                     onChange={e => setCloseTradeShares(e.target.value)}
                     max={Math.abs(closeTradeAsset.shares)}
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors disabled:opacity-50"
+                    className="w-full rounded-md border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 dark:border-[#242424] dark:bg-[#171717] dark:text-white dark:focus:border-cyan-400 disabled:opacity-50"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Closing Price ($)</label>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#a3a3a3]">Closing price ({closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'})</label>
                   <input
                     type="number"
                     step="any"
@@ -2115,7 +2137,7 @@ export default function PortfolioDashboard() {
                     disabled={isClosingPosition}
                     value={closeTradePrice}
                     onChange={e => setCloseTradePrice(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 transition-colors disabled:opacity-50"
+                    className="w-full rounded-md border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 dark:border-[#242424] dark:bg-[#171717] dark:text-white dark:focus:border-cyan-400 disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -2131,28 +2153,29 @@ export default function PortfolioDashboard() {
                   : (priceNum - closeTradeAsset.avgCost) * sharesNum;
                 const isGain = pl >= 0;
                 return (
-                  <div className={`p-4 rounded-2xl border text-center space-y-1 ${isGain ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-450' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
-                    <span className="text-[10px] font-black uppercase tracking-wider block">Estimated Booked Profit/Loss</span>
-                    <span className="text-lg font-black font-mono">
+                  <div className={`rounded-md border p-4 text-center ${isGain ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400'}`}>
+                    <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.16em]">Estimated realized P&L</span>
+                    <span className="block text-xl font-black font-mono">
                       {isGain ? '+' : ''}{closeTradeAsset.sectionId === 'domestic' ? '₹' : '$'}{pl.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
+                    <span className="mt-1 block text-[10px] font-bold opacity-80">Based on the entered closing price</span>
                   </div>
                 );
               })()}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 border-t border-slate-200 pt-4 dark:border-[#242424]">
                 <button
                   type="button"
                   disabled={isClosingPosition}
                   onClick={() => setIsCloseModalOpen(false)}
-                  className="flex-1 py-3 rounded-xl border border-slate-250 dark:border-white/10 text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 text-xs font-bold transition-all disabled:opacity-50"
+                  className="flex-1 rounded-md border border-slate-200 py-3 text-xs font-bold text-slate-700 transition-all hover:bg-slate-50 dark:border-[#2a2a2a] dark:text-[#a3a3a3] dark:hover:bg-[#171717] disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isClosingPosition}
-                  className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-900 text-xs font-black uppercase shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  className="close-position-submit flex-1 rounded-md bg-blue-600 py-3 text-xs font-black uppercase text-white shadow-md transition-all hover:bg-blue-500 active:scale-95 dark:bg-cyan-500 dark:text-[#07110a] dark:hover:bg-cyan-400 disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                   {isClosingPosition && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Execute Close

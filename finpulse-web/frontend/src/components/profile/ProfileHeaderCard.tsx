@@ -31,17 +31,17 @@ export default function ProfileHeaderCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="relative rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 shadow-xl overflow-hidden"
+      className="profile-header-card relative rounded-lg border border-slate-200/60 dark:border-[#242424] bg-white dark:bg-[#111111] shadow-xl overflow-hidden"
     >
       {/* Background Gradient Header banner */}
-      <div className="h-32 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 relative overflow-hidden">
+      <div className="profile-hero-banner h-32 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       </div>
 
       <div className="px-6 pb-6 relative z-10">
         {/* Avatar Area */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between -mt-16 mb-6 gap-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
+        <div className="flex flex-col items-center justify-between -mt-16 mb-6 gap-6 text-center">
+          <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <div className="h-28 w-28 rounded-3xl bg-slate-100 dark:bg-night-855 p-1 border-4 border-white dark:border-night-900 shadow-xl overflow-hidden flex items-center justify-center">
                 {avatar ? (
@@ -68,7 +68,7 @@ export default function ProfileHeaderCard({
             </div>
 
             <div className="mb-2">
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight flex items-center justify-center sm:justify-start gap-2">
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight flex items-center justify-center gap-2">
                 <span>{name}</span>
                 <button
                   onClick={onEditProfile}
@@ -78,7 +78,7 @@ export default function ProfileHeaderCard({
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>
               </h1>
-              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center justify-center sm:justify-start gap-1 mt-1">
+              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1 mt-1">
                 <Mail className="h-3 w-3 shrink-0" /> {email}
               </p>
             </div>
@@ -86,7 +86,7 @@ export default function ProfileHeaderCard({
         </div>
 
         {/* User Info Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5">
+        <div className="profile-info-grid grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-md bg-slate-50/50 dark:bg-[#0d0d0d] border border-slate-200/50 dark:border-[#242424]">
           <div className="space-y-1">
             <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 flex items-center gap-1">
               <Calendar className="h-3 w-3" /> Member Since
