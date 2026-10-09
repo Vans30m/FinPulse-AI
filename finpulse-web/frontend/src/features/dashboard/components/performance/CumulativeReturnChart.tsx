@@ -45,6 +45,23 @@ export default function CumulativeReturnChart({
   const activePoint = hoveredPoint || lastPoint;
   const activeDate = hoveredDate || (lastPoint ? lastPoint.time : null);
 
+  const formatAxisTick = (time: any) => {
+    let timestamp = Number(time);
+
+    if (typeof time === "object" && time !== null && "year" in time) {
+      const day = Number((time as { day?: number }).day ?? 1);
+      const month = Number((time as { month?: number }).month ?? 1);
+      const year = Number((time as { year?: number }).year ?? 1970);
+      timestamp = Date.UTC(year, month - 1, day) / 1000;
+    }
+
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !data || data.length === 0) return;
@@ -56,7 +73,7 @@ export default function CumulativeReturnChart({
     // Initialize Chart
     const chart = createChart(container, {
       layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
+        background: { type: ColorType.Solid, color: "rgba(15, 23, 42, 0.08)" },
         textColor: textColorVal,
         fontSize: 11,
         fontFamily: "JetBrains Mono, Menlo, monospace",
@@ -71,12 +88,12 @@ export default function CumulativeReturnChart({
       crosshair: {
         mode: CrosshairMode.Normal,
         vertLine: {
-          color: "#64748b",
+          color: "rgba(148, 163, 184, 0.65)",
           width: 1,
           style: LineStyle.Dashed,
         },
         horzLine: {
-          color: "#64748b",
+          color: "rgba(148, 163, 184, 0.5)",
           width: 1,
           style: LineStyle.Dashed,
         },
@@ -84,11 +101,20 @@ export default function CumulativeReturnChart({
       rightPriceScale: {
         borderVisible: false,
         autoScale: true,
+        scaleMargins: { top: 0.12, bottom: 0.18 },
       },
       timeScale: {
         borderVisible: false,
         timeVisible: true,
         secondsVisible: false,
+        rightOffset: 10,
+        barSpacing: 12,
+        minBarSpacing: 6,
+        fixLeftEdge: false,
+        tickMarkFormatter: (time: any) => formatAxisTick(time),
+      },
+      localization: {
+        locale: "en-US",
       },
     });
 
@@ -98,13 +124,13 @@ export default function CumulativeReturnChart({
     let portSeries: ISeriesApi<"Area"> | null = null;
     if (showPortfolio) {
       portSeries = chart.addAreaSeries({
-        lineColor: "#3b82f6",
-        topColor: "rgba(59, 130, 246, 0.18)",
-        bottomColor: "rgba(59, 130, 246, 0.01)",
+        lineColor: "#60a5fa",
+        topColor: "rgba(96, 165, 250, 0.22)",
+        bottomColor: "rgba(96, 165, 250, 0.03)",
         lineWidth: 2,
         lineType: LineType.Curved,
         priceLineVisible: false,
-        lastValueVisible: false,
+        lastValueVisible: true,
       });
       const portData = data.map((d) => ({
         time: d.time,
@@ -118,12 +144,12 @@ export default function CumulativeReturnChart({
     let benchSeries: ISeriesApi<"Line"> | null = null;
     if (showBenchmark) {
       benchSeries = chart.addLineSeries({
-        color: "#f59e42",
+        color: "#fbbf24",
         lineWidth: 2,
         lineStyle: LineStyle.Dashed,
         lineType: LineType.Curved,
         priceLineVisible: false,
-        lastValueVisible: false,
+        lastValueVisible: true,
       });
       const benchData = data.map((d) => ({
         time: d.time,

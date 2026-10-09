@@ -84,17 +84,17 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg space-y-6 ai-card-font">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+      <div className="bg-white dark:bg-[#111111] p-5 rounded-lg border border-slate-200 dark:border-[#242424] shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#242424] pb-3">
           <div>
-            <h3 className="text-xs sm:text-sm cool-heading uppercase">Fear & Greed Index</h3>
-            <p className="text-[10px] text-slate-550 dark:text-slate-450 mt-0.5">Calculating Global Fear & Greed Index...</p>
+            <h3 className="text-xs sm:text-sm font-bold uppercase text-slate-900 dark:text-white">Fear & Greed Index</h3>
+            <p className="text-[10px] text-slate-400 dark:text-neutral-500 mt-0.5">Calculating Global Fear & Greed Index...</p>
           </div>
-          <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 animate-ping mr-2" />
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping mr-2" />
         </div>
         <div className="flex flex-col items-center justify-center py-4">
-          <div className="w-56 h-28 border-8 border-slate-100 dark:border-slate-800 border-b-0 rounded-t-full animate-spin" style={{ animationDuration: '3s' }} />
-          <div className="h-6 w-24 bg-slate-100 dark:bg-slate-800 rounded mt-4 animate-pulse" />
+          <div className="w-48 h-24 border-6 border-slate-100 dark:border-[#202020] border-b-0 rounded-t-full animate-spin" style={{ animationDuration: '3s' }} />
+          <div className="h-6 w-24 bg-slate-100 dark:bg-[#1C1C1C] rounded mt-4 animate-pulse" />
         </div>
       </div>
     );
@@ -102,12 +102,12 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
 
   if (errorMsg && !data) {
     return (
-      <div className="bg-white dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-rose-200 dark:border-rose-950 shadow-lg flex flex-col items-center justify-center text-center gap-3 ai-card-font">
+      <div className="bg-white dark:bg-[#111111] p-5 rounded-lg border border-rose-200 dark:border-rose-950 shadow-sm flex flex-col items-center justify-center text-center gap-3">
         <AlertCircle className="h-8 w-8 text-rose-500" />
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{errorMsg}</p>
+        <p className="text-xs text-slate-500 dark:text-neutral-400 font-semibold">{errorMsg}</p>
         <button
           onClick={() => fetchIndex(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-bold transition-all shadow active:scale-95"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md text-xs font-bold transition-colors"
         >
           <RotateCcw className="h-3 w-3" /> Retry Index Calculation
         </button>
@@ -119,11 +119,10 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
 
   const getLabelColors = (sentiment: string) => {
     const s = (sentiment || "").toLowerCase();
-    if (s.includes("extreme greed")) return "text-teal-550 dark:text-cyan-400";
-    if (s.includes("greed")) return "text-emerald-555 dark:text-emerald-450";
-    if (s.includes("neutral")) return "text-amber-500 dark:text-amber-400";
-    if (s.includes("extreme fear")) return "text-red-500 dark:text-red-400";
-    return "text-orange-500 dark:text-orange-400";
+    if (s.includes("extreme greed") || s.includes("greed")) return "text-emerald-500";
+    if (s.includes("neutral")) return "text-amber-500";
+    if (s.includes("fear")) return "text-rose-500";
+    return "text-amber-500";
   };
 
   const getHistoricalLabel = (val: number) => {
@@ -140,33 +139,33 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
   const pathY = 50 - 40 * Math.sin(pathAngleRad);
 
   return (
-    <div className={`bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm transition-all duration-300 flex flex-col ai-card-font ${className}`}>
+    <div className={`bg-white dark:bg-[#111111] p-5 sm:p-6 rounded-lg border border-slate-200 dark:border-[#242424] shadow-sm transition-all duration-200 flex flex-col ${className}`}>
       {/* Top Header Controls */}
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#242424] pb-3">
         <div className="flex items-center gap-3">
           <div>
-            <h3 className="text-xs sm:text-sm cool-heading uppercase">
+            <h3 className="text-xs sm:text-sm font-bold uppercase text-slate-900 dark:text-white">
               Fear & Greed Index
             </h3>
-            <p className="text-[10px] text-slate-550 dark:text-slate-450 mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
               Real-time market sentiment and investor psychology analysis.
             </p>
           </div>
         </div>
         <button
           onClick={() => fetchIndex(true)}
-          className="p-2 rounded-xl border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] text-slate-450 hover:text-slate-700 dark:text-slate-350 dark:hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 group"
+          className="p-1.5 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#171717] text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
           title="Refresh Fear & Greed"
         >
-          <RotateCcw className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-180" />
+          <RotateCcw className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-4 items-stretch">
 
         {/* Left Column: Gauge Visualization */}
-        <div className="lg:col-span-5 flex flex-col items-center justify-center p-3 sm:p-5 rounded-2xl bg-slate-50/40 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5">
+        <div className="lg:col-span-5 flex flex-col items-center justify-center p-4 rounded-md bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424]">
           {/* ARC Gauge visualization with analog needle pointer */}
           <div className="relative flex flex-col items-center justify-center w-full max-w-[190px] sm:max-w-[280px]">
             <svg className="w-full drop-shadow-2xl" viewBox="0 0 100 55">
@@ -227,7 +226,7 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
             <ul className="space-y-2">
               {brief.investorTakeaways.map((item: string, index: number) => (
                 <li key={index} className="text-[11px] flex items-start gap-2 text-slate-805 dark:text-white leading-relaxed font-semibold">
-                  <span className="text-indigo-500 dark:text-indigo-400 font-black mt-0.5">•</span>
+                  <span className="text-slate-200 dark:text-slate-200 font-black mt-0.5">•</span>
                   <span>{item}</span>
                 </li>
               ))}

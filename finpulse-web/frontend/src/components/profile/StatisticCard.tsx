@@ -19,12 +19,16 @@ export default function StatisticCard({
   isPositive = true,
   delayIndex = 0
 }: StatisticCardProps) {
+  const accent = title.includes('Profit') || title.includes('Return')
+    ? isPositive ? 'border-t-emerald-500/70' : 'border-t-rose-500/70'
+    : title.includes('Holdings') ? 'border-t-amber-500/70' : 'border-t-blue-500/70 dark:border-t-cyan-400/70';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: delayIndex * 0.04 }}
-      className="group rounded-2xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-3 sm:p-5 shadow-md hover:shadow-lg hover:border-blue-500/30 dark:hover:border-cyan-400/30 hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
+      className={`profile-stat-card group rounded-lg border border-slate-200/60 dark:border-[#242424] border-t-2 ${accent} bg-white dark:bg-[#111111] p-3 sm:p-5 shadow-md hover:shadow-lg hover:border-blue-500/30 dark:hover:border-cyan-400/30 hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden`}
     >
       <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/[0.01] dark:bg-cyan-500/[0.01] blur-xl pointer-events-none rounded-full" />
       
@@ -36,7 +40,7 @@ export default function StatisticCard({
           </div>
           
           {change !== undefined && (
-            <span className={`px-1.5 py-0.5 rounded-lg text-[8px] sm:text-[10px] font-black border flex items-center gap-0.5 ${
+            <span className={`px-2 py-1 rounded-md text-[10px] sm:text-xs font-black border flex items-center gap-1 ${
               isPositive
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border-emerald-500/20"
                 : "bg-rose-500/10 text-rose-600 dark:text-rose-455 border-rose-500/20"
