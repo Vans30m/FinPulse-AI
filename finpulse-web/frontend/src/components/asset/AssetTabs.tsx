@@ -26,15 +26,15 @@ export default function AssetTabs({ tabs, activeTab, onChangeTab }: AssetTabsPro
   };
 
   return (
-    <div className="flex bg-[#0D0D0D] p-1 rounded-md border border-[#242424] text-xs font-semibold overflow-x-auto custom-scrollbar gap-1">
+    <div className="flex bg-slate-100 dark:bg-[#0D0D0D] p-1 rounded-md border border-slate-200 dark:border-[#242424] text-xs font-semibold overflow-x-auto custom-scrollbar gap-1">
       {tabs.map((tab) => (
         <button
           key={tab}
           onClick={() => onChangeTab(tab)}
           className={`px-3 py-1.5 rounded uppercase tracking-wide transition-all duration-150 whitespace-nowrap ${
             activeTab === tab
-              ? "bg-[#1C1C1C] text-[#F5F5F5] border border-[#2A2A2A]"
-              : "bg-[#141414] text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-[#1C1C1C] border border-transparent"
+              ? "bg-white dark:bg-[#1C1C1C] text-slate-900 dark:text-[#F5F5F5] border border-slate-200 dark:border-[#2A2A2A]"
+              : "bg-slate-50 dark:bg-[#141414] text-slate-500 dark:text-[#A3A3A3] hover:text-slate-900 dark:hover:text-[#F5F5F5] hover:bg-slate-200 dark:hover:bg-[#1C1C1C] border border-transparent"
           }`}
         >
           {getTabLabel(tab)}

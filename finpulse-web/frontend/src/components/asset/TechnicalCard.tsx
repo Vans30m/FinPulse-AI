@@ -37,11 +37,11 @@ export default function TechnicalCard({
 }: TechnicalCardProps) {
   if (loading) {
     return (
-      <div className="p-6 border border-slate-150 dark:border-white/5 bg-white dark:bg-night-900 rounded-2xl animate-pulse space-y-4">
-        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
+      <div className="p-6 border border-slate-200 dark:border-[#242424] bg-white dark:bg-[#111111] rounded-2xl animate-pulse space-y-4">
+        <div className="h-4 bg-slate-200 dark:bg-[#1C1C1C] rounded w-1/3" />
         <div className="grid grid-cols-2 gap-4">
-          <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded" />
-          <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="h-10 bg-slate-200 dark:bg-[#1C1C1C] rounded" />
+          <div className="h-10 bg-slate-200 dark:bg-[#1C1C1C] rounded" />
         </div>
       </div>
     );
@@ -98,9 +98,9 @@ export default function TechnicalCard({
   const curPrefix = isIndex ? "" : "$";
 
   return (
-    <div className="rounded-lg border border-[#242424] p-5 bg-[#111111] space-y-4">
-      <div className="flex items-center justify-between border-b border-[#242424] pb-3">
-        <h3 className="text-sm font-bold text-[#F5F5F5] uppercase tracking-wide flex items-center gap-2">
+    <div className="rounded-lg border border-slate-200 dark:border-[#242424] p-5 bg-white dark:bg-[#111111] space-y-4 transition-colors">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#242424] pb-3">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-[#F5F5F5] uppercase tracking-wide flex items-center gap-2">
           <Activity className="h-4 w-4 text-[#A3A3A3]" /> Structural Technical Levels
         </h3>
         <span className={`px-2.5 py-0.5 rounded text-xs font-bold uppercase border font-mono ${getVerdictColor(data.verdict)}`}>
@@ -110,30 +110,30 @@ export default function TechnicalCard({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Core Indicators Sub-Card */}
-        <div className="bg-[#141414] border border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
-          <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3] border-b border-[#242424] pb-2">Core Indicators</h4>
+        <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
+          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#A3A3A3] border-b border-slate-200 dark:border-[#242424] pb-2">Core Indicators</h4>
           
           <div className="space-y-2 text-xs flex-1 flex flex-col justify-center">
-            <div className="flex justify-between items-center py-1 border-b border-[#242424]">
-              <span className="text-[#A3A3A3] font-medium">RSI (14)</span>
-              <span className="font-mono font-bold text-[#F5F5F5]">{data.rsi || "N/A"}</span>
+            <div className="flex justify-between items-center py-1 border-b border-slate-200 dark:border-[#242424]">
+              <span className="text-slate-500 dark:text-[#A3A3A3] font-medium">RSI (14)</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-[#F5F5F5]">{data.rsi || "N/A"}</span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-[#242424]">
-              <span className="text-[#A3A3A3] font-medium">MACD Line</span>
-              <span className="font-mono font-bold text-[#F5F5F5]">{data.macd || "N/A"}</span>
+            <div className="flex justify-between items-center py-1 border-b border-slate-200 dark:border-[#242424]">
+              <span className="text-slate-500 dark:text-[#A3A3A3] font-medium">MACD Line</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-[#F5F5F5]">{data.macd || "N/A"}</span>
             </div>
             <div className="flex justify-between items-center py-1">
-              <span className="text-[#A3A3A3] font-medium">Signal Line</span>
-              <span className="font-mono font-bold text-[#F5F5F5]">{data.signal || "N/A"}</span>
+              <span className="text-slate-500 dark:text-[#A3A3A3] font-medium">Signal Line</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-[#F5F5F5]">{data.signal || "N/A"}</span>
             </div>
           </div>
         </div>
 
         {/* Major Key Levels Sub-Card */}
         {hasKeyLevels ? (
-          <div className="bg-[#141414] border border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
-            <div className="flex justify-between items-center border-b border-[#242424] pb-2">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3]">Major Key Levels</h4>
+          <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-[#242424] pb-2">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#A3A3A3]">Major Key Levels</h4>
               <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border font-mono ${verdictColor}`}>
                 {keyVerdict}
               </span>
@@ -152,14 +152,14 @@ export default function TechnicalCard({
               return (
                 <div className="space-y-3 pt-1 flex-1 flex flex-col justify-between">
                   {/* Price Position Gauge */}
-                  <div className="p-2.5 bg-[#0D0D0D] rounded border border-[#242424]">
+                  <div className="p-2.5 bg-white dark:bg-[#0D0D0D] rounded border border-slate-200 dark:border-[#242424]">
                     <div className="relative pt-6 pb-2">
                       {/* Current Price Pointer above track */}
                       <div 
                         className="absolute top-0 -translate-x-1/2 flex flex-col items-center transition-all duration-300 ease-out z-10"
                         style={{ left: `${pricePct}%` }}
                       >
-                        <span className="bg-[#1C1C1C] text-[#F5F5F5] border border-[#2A2A2A] px-1.5 py-0.5 rounded text-[10px] font-bold font-mono whitespace-nowrap">
+                        <span className="bg-slate-100 dark:bg-[#1C1C1C] text-slate-900 dark:text-[#F5F5F5] border border-slate-200 dark:border-[#2A2A2A] px-1.5 py-0.5 rounded text-[10px] font-bold font-mono whitespace-nowrap">
                           {curPrefix}{formatNum(price)}
                         </span>
                         <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-[#F5F5F5] mt-0.5" />
@@ -169,7 +169,7 @@ export default function TechnicalCard({
                       <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-[#22C55E] via-[#A3A3A3] to-[#EF4444] opacity-80 border border-[#242424] relative" />
 
                       {/* Tick marks on the track */}
-                      <div className="relative flex justify-between text-[9px] font-bold font-mono mt-1 text-[#737373]">
+                      <div className="relative flex justify-between text-[9px] font-bold font-mono mt-1 text-slate-500 dark:text-[#737373]">
                         <span className="text-[#22C55E]">S2</span>
                         <span className="text-[#22C55E]">S1</span>
                         <span className="text-[#A3A3A3]">PP</span>
@@ -198,7 +198,7 @@ export default function TechnicalCard({
                             <span className={`w-1.5 h-1.5 rounded-full ${lvl.dotClass}`} />
                             <span className={`font-mono text-[11px] font-medium ${lvl.textClass}`}>{lvl.label}</span>
                           </div>
-                          <div className="flex items-center gap-2.5 font-mono text-[11px] font-bold text-[#F5F5F5]">
+                          <div className="flex items-center gap-2.5 font-mono text-[11px] font-bold text-slate-900 dark:text-[#F5F5F5]">
                             <span>{curPrefix}{formatNum(lvl.value)}</span>
                             <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded ${isAbove ? "bg-[#22C55E]/10 text-[#22C55E]" : "bg-[#EF4444]/10 text-[#EF4444]"}`}>
                               {isAbove ? "Above" : "Below"}
@@ -213,29 +213,29 @@ export default function TechnicalCard({
             })()}
           </div>
         ) : (
-          <div className="bg-[#141414] border border-[#242424] rounded-md p-4 text-center py-8 text-[#A3A3A3] text-xs">
+          <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] rounded-md p-4 text-center py-8 text-slate-500 dark:text-[#A3A3A3] text-xs">
             No price stats available to compute pivot levels.
           </div>
         )}
 
         {/* AI Verdict Summary Sub-Card */}
-        <div className="bg-[#141414] border border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
-          <div className="border-b border-[#242424] pb-2">
-            <div className="text-[11px] font-bold text-[#A3A3A3] uppercase tracking-wider">AI Verdict Summary</div>
+        <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] rounded-md p-4 flex flex-col justify-start space-y-3">
+          <div className="border-b border-slate-200 dark:border-[#242424] pb-2">
+            <div className="text-[11px] font-bold text-slate-500 dark:text-[#A3A3A3] uppercase tracking-wider">AI Verdict Summary</div>
           </div>
           
           <div className="flex-1 flex flex-col justify-center space-y-3">
-            <div className="text-xl font-bold text-[#F5F5F5] flex items-baseline gap-1 font-mono uppercase">
+            <div className="text-xl font-bold text-slate-900 dark:text-[#F5F5F5] flex items-baseline gap-1 font-mono uppercase">
               {data.recommendation || "HOLD"}
               {data.confidence && (
-                <span className="text-xs font-medium text-[#737373] ml-1 font-mono">
+                <span className="text-xs font-medium text-slate-500 dark:text-[#737373] ml-1 font-mono">
                   ({data.confidence}% confidence)
                 </span>
               )}
             </div>
 
             {data.reasons && data.reasons.length > 0 && (
-              <ul className="space-y-1.5 text-xs text-[#A3A3A3]">
+              <ul className="space-y-1.5 text-xs text-slate-500 dark:text-[#A3A3A3]">
                 {data.reasons.slice(0, 3).map((r, i) => (
                   <li key={i} className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#A3A3A3] shrink-0" />

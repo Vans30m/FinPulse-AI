@@ -40,7 +40,7 @@ export default function SecurityCard({
   };
 
   return (
-    <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-xl space-y-6">
+    <div className="profile-security-card rounded-lg border border-slate-200/60 dark:border-[#242424] bg-white dark:bg-[#111111] p-6 shadow-xl space-y-6">
       <div>
         <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
           <Fingerprint className="h-5 w-5 text-indigo-500" /> Security & Login Actions
@@ -101,7 +101,7 @@ export default function SecurityCard({
         </div>
 
         {/* Sessions Activity */}
-        <div className="p-5 bg-slate-50/50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl space-y-4">
+        <div className="p-5 bg-slate-50/50 dark:bg-[#0d0d0d] border border-slate-200/50 dark:border-[#242424] rounded-md space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-400 dark:text-slate-500">
               <History className="h-4 w-4 text-indigo-500" />

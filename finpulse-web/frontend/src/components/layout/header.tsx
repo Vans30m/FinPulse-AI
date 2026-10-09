@@ -4,7 +4,6 @@ import {
   LogIn,
   UserCircle,
   ChevronDown,
-  LogOut,
   Menu,
   X,
   Sun,
@@ -17,7 +16,6 @@ import DarkLogo from '../../assets/Light_Logo.png';
 import { Link, NavLink } from "react-router-dom";
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useChart } from "../../context/ChartContext";
-import API_BASE_URL from "../../config/api";
 
 interface NavItem {
   id: string;
@@ -28,10 +26,9 @@ interface HeaderProps {
   navItems: NavItem[];
   isLoggedIn: boolean;
   onLoginClick: () => void;
-  onLogoutClick: () => void;
 }
 
-export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutClick }: HeaderProps) {
+export default function Header({ navItems, isLoggedIn, onLoginClick }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { user } = useAppData();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -75,10 +72,9 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
     <motion.header
       animate={{
         height: isScrolled ? "56px" : "64px",
-        backgroundColor: isScrolled ? "rgba(10, 10, 10, 0.95)" : "rgba(10, 10, 10, 1)",
       }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-[#242424] bg-white dark:bg-[#0A0A0A] transition-colors duration-200 flex items-center"
+      className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white shadow-sm dark:border-[#242424] dark:bg-[#0A0A0A] dark:shadow-none transition-colors duration-200 flex items-center"
     >
       <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8">
 
@@ -97,7 +93,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
             />
             {/* Brand name */}
             <span className="hidden sm:inline font-bold text-base tracking-tight text-slate-900 dark:text-white ml-1">
-              FinPulse<span className="text-emerald-500 font-extrabold ml-0.5">AI</span>
+              FinPulse<span className="text-blue-600 dark:text-cyan-400 font-extrabold ml-0.5">.ai</span>
             </span>
           </Link>
         </div>
@@ -106,7 +102,8 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
         <div className="hidden md:flex flex-1 justify-center max-w-2xl mx-auto px-4">
           <LayoutGroup id="navbar">
             <nav
-              className="flex items-center gap-1 relative"
+              aria-label="Primary navigation"
+              className="relative flex items-center gap-2 border-b border-slate-200/70 pb-0.5 dark:border-[#242424]"
               onMouseLeave={() => setHoveredTab(null)}
             >
               {navItems.map((item) => {
@@ -126,28 +123,26 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                       }
                     }}
                     className={({ isActive }) =>
-                      `relative px-3.5 py-1.5 text-xs font-medium transition-colors duration-200 z-10 ${isActive
-                        ? "text-slate-900 dark:text-white font-semibold"
-                        : "text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white"
+                        `navbar-nav-link group relative px-3 py-2 text-xs font-medium transition-colors duration-200 z-10 ${isActive
+                        ? "navbar-nav-link-active text-blue-600 font-semibold dark:text-cyan-400"
+                        : "text-slate-500 hover:text-blue-600 dark:text-neutral-400 dark:hover:text-cyan-400"
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <span className="relative z-10 flex items-center justify-center py-1">
-                        {/* Hover Pill Background */}
                         {hoveredTab === item.id && !isActive && (
                           <motion.span
                             layoutId="navbarHoverPill"
-                            className="absolute inset-0 rounded-md bg-slate-100 dark:bg-[#171717] -z-20"
+                            className="navbar-nav-link-hover absolute bottom-0 left-1 right-1 h-px"
                             transition={{ type: "spring", stiffness: 350, damping: 28 }}
                           />
                         )}
 
-                        {/* Active Selection Sliding Indicator (Minimalist Accent Line) */}
                         {isActive && (
                           <motion.span
                             layoutId="activeNavIndicator"
-                            className="absolute bottom-[-8px] left-0 right-0 h-[2px] bg-slate-900 dark:bg-white rounded-full"
+                            className="navbar-nav-link-active-line absolute bottom-0 left-1 right-1 h-0.5 rounded-full"
                             transition={{ type: "spring", stiffness: 380, damping: 30 }}
                           />
                         )}
@@ -289,7 +284,7 @@ export default function Header({ navItems, isLoggedIn, onLoginClick, onLogoutCli
                   }}
                   className={({ isActive }) =>
                     `px-3 py-2 rounded-md text-xs font-medium transition-colors ${isActive
-                      ? "bg-slate-900 text-white dark:bg-[#1C1C1C] dark:text-white"
+                      ? "bg-blue-50 text-blue-600 dark:bg-cyan-400/10 dark:text-cyan-400"
                       : "text-slate-600 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#141414]"
                     }`
                   }
