@@ -12,26 +12,30 @@ const config: Config = {
       // Light Mode automatically uses Tailwind's default Slate & Blue colors!
       colors: {
         night: {
-          950: '#070A14',
-          900: '#0B1020',
-          800: '#11162A',
-          700: '#181E36',
+          950: '#080808',
+          900: '#0A0A0A',
+          800: '#111111',
+          700: '#141414',
+          600: '#171717',
+          500: '#1C1C1C',
+          400: '#242424',
+          300: '#2A2A2A',
         },
         cyan: {
-          400: '#00D1FF',
-          300: '#6BE8FF',
+          400: '#38BDF8',
+          300: '#7DD3FC',
         },
         emerald: {
-          400: '#00FFB2',
+          400: '#22C55E',
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        glow: '0 0 30px rgba(0, 209, 255, 0.25)',
-        glass: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 24px 60px rgba(2, 6, 23, 0.55)',
+        glow: 'none',
+        glass: '0 1px 2px rgba(0, 0, 0, 0.4)',
       },
       backgroundImage: {
         grid: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)',

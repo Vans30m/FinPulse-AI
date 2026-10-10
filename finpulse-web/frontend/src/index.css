@@ -51,16 +51,14 @@
   /* Dual Theme Cards */
   .glass-panel,
   .glass-card {
-    @apply rounded-2xl border bg-white border-slate-200 shadow-sm dark:bg-night-800/60 dark:border-white/10 dark:backdrop-blur-xl dark:shadow-glass transition-all duration-300;
+    @apply rounded-lg border bg-white border-slate-200 shadow-sm dark:bg-[#111111] dark:border-[#242424] transition-all duration-200;
   }
 }
 
 /* Global Custom Scrollbar Style */
 ::-webkit-scrollbar {
-  width: 8px;
-  /* Vertical scrollbar width */
-  height: 8px;
-  /* Horizontal scrollbar height */
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -68,44 +66,32 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.25);
-  /* Slate-500 with opacity */
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  /* Creates padding around the thumb */
-  background-clip: padding-box;
+  background: rgba(163, 163, 163, 0.2);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(79, 70, 229, 0.6);
-  /* Indigo-600 on hover */
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: rgba(163, 163, 163, 0.4);
 }
 
 /* Dark Mode Scrollbar Thumb adjustments */
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
-  /* Slate-400 with opacity */
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: #242424;
+  border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(6, 182, 212, 0.6);
-  /* Cyan-500 on hover */
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: #333333;
 }
 
 /* Firefox compatibility */
 html {
   scrollbar-width: thin;
-  scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
+  scrollbar-color: rgba(163, 163, 163, 0.2) transparent;
 }
 
 .dark html {
-  scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+  scrollbar-color: #242424 transparent;
 }
 
 /* Hide scrollbar completely but retain scrolling */
@@ -115,9 +101,7 @@ html {
 
 .scrollbar-none {
   -ms-overflow-style: none;
-  /* IE and Edge */
   scrollbar-width: none;
-  /* Firefox */
 }
 
 @layer utilities {
@@ -129,17 +113,17 @@ html {
   }
 
   .dark .bg-grid {
-    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   }
 
   /* ── Section label: consistent uppercase overline for all Pulse sections ── */
   .section-overline {
-    @apply text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1.5;
+    @apply text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-neutral-500 flex items-center gap-1.5;
   }
 
   /* ── Pulse Card: consistent surface style ── */
   .pulse-card {
-    @apply rounded-2xl border border-slate-200/60 dark:border-white/[0.06] bg-white/60 dark:bg-white/[0.02] backdrop-blur-sm shadow-sm transition-all duration-200;
+    @apply rounded-lg border border-slate-200 dark:border-[#242424] bg-white dark:bg-[#111111] transition-all duration-200;
   }
 
   /* ── Horizontal fade mask for scroll containers ── */
@@ -150,7 +134,7 @@ html {
 
   /* ── Section divider line ── */
   .section-divider {
-    @apply border-t border-slate-200/60 dark:border-white/[0.04] my-8 sm:my-10;
+    @apply border-t border-slate-200 dark:border-[#242424] my-6 sm:my-8;
   }
 }
 
@@ -273,13 +257,25 @@ iframe[src*="tradingview.com"]+a {
 #screener-shareholding table tbody tr td:first-child {
   position: sticky;
   left: 0;
-  background: #1e293b;
+  background: #0A0A0A;
   z-index: 5;
   min-width: 120px;
   white-space: nowrap;
   font-family: Inter, system-ui, sans-serif !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   color: #f8fafc !important;
+}
+
+/* Muted colors for table headers */
+#screener-workbook table thead tr th,
+#screener-shareholding table thead tr th {
+  position: sticky;
+  top: 0;
+  background: #0A0A0A;
+  z-index: 6;
+  color: #A3A3A3 !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid #242424 !important;
 }
 
 
@@ -382,8 +378,7 @@ html:not(.dark) #screener-shareholding h4 {
   position: sticky !important;
   left: 0 !important;
   z-index: 10 !important;
-  background-color: #0b1020 !important;
-  /* Matches dark theme background */
+  background-color: #0A0A0A !important;
 }
 
 /* Light mode override for sticky column background */
@@ -397,7 +392,7 @@ html:not(.dark) #screener-shareholding table tbody tr td:first-child {
 /* Zebra striping background for sticky column */
 #screener-workbook table tbody tr:nth-child(even) td:first-child,
 #screener-shareholding table tbody tr:nth-child(even) td:first-child {
-  background-color: #0d1222 !important;
+  background-color: #111111 !important;
 }
 
 html:not(.dark) #screener-workbook table tbody tr:nth-child(even) td:first-child,
@@ -408,10 +403,375 @@ html:not(.dark) #screener-shareholding table tbody tr:nth-child(even) td:first-c
 /* Row hover highlight background for sticky column */
 #screener-workbook table tbody tr:hover td:first-child,
 #screener-shareholding table tbody tr:hover td:first-child {
-  background-color: #161f38 !important;
+  background-color: #171717 !important;
 }
 
 html:not(.dark) #screener-workbook table tbody tr:hover td:first-child,
 html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
   background-color: #f1f5f9 !important;
+}
+
+/* Neutral-black terminal treatment for every route except the Pulse home view. */
+.dark .secondary-page {
+  --terminal-bg: #080808;
+  --terminal-surface: #111111;
+  --terminal-elevated: #171717;
+  --terminal-border: #242424;
+  --terminal-text: #f5f5f5;
+  --terminal-secondary: #a3a3a3;
+  --terminal-muted: #737373;
+  background-color: var(--terminal-bg) !important;
+  color: var(--terminal-text);
+}
+
+.dark .secondary-page main,
+.dark .secondary-page .glass-panel,
+.dark .secondary-page .glass-card,
+.dark .secondary-page .pulse-card {
+  background-color: var(--terminal-bg) !important;
+  border-color: var(--terminal-border) !important;
+  box-shadow: none !important;
+}
+
+.dark .secondary-page [class*="dark:bg-night-"],
+.dark .secondary-page [class*="dark:bg-slate-"],
+.dark .secondary-page [class*="dark:bg-white/"],
+.dark .secondary-page [class*="dark:bg-[#"],
+.dark .secondary-page [class*="bg-[#"],
+.dark .secondary-page [class*="bg-night-"] {
+  background-color: var(--terminal-surface) !important;
+}
+
+.dark .secondary-page [class*="dark:border-slate-"],
+.dark .secondary-page [class*="dark:border-white/"],
+.dark .secondary-page [class*="dark:border-[#"] {
+  border-color: var(--terminal-border) !important;
+}
+
+.dark .secondary-page [class*="dark:text-slate-"],
+.dark .secondary-page [class*="dark:text-neutral-"],
+.dark .secondary-page [class*="dark:text-cyan-"],
+.dark .secondary-page [class*="dark:text-blue-"],
+.dark .secondary-page [class*="dark:text-indigo-"],
+.dark .secondary-page [class*="dark:text-purple-"] {
+  color: var(--terminal-secondary) !important;
+}
+
+.dark .secondary-page [class*="dark:bg-cyan-"],
+.dark .secondary-page [class*="dark:bg-blue-"],
+.dark .secondary-page [class*="dark:bg-indigo-"],
+.dark .secondary-page [class*="dark:bg-purple-"] {
+  background-color: var(--terminal-elevated) !important;
+}
+
+.dark .secondary-page [class*="bg-blue-"],
+.dark .secondary-page [class*="bg-indigo-"],
+.dark .secondary-page [class*="bg-purple-"] {
+  background-color: var(--terminal-elevated) !important;
+}
+
+.dark .secondary-page [class*="bg-gradient-"] {
+  background-image: none !important;
+}
+
+.dark .secondary-page [class*="dark:hover:bg-"]:hover {
+  background-color: var(--terminal-elevated) !important;
+}
+
+.dark .secondary-page input,
+.dark .secondary-page select,
+.dark .secondary-page textarea {
+  background-color: var(--terminal-surface) !important;
+  border-color: var(--terminal-border) !important;
+  color: var(--terminal-text) !important;
+  border-radius: 6px;
+}
+
+.dark .secondary-page input:focus,
+.dark .secondary-page select:focus,
+.dark .secondary-page textarea:focus {
+  background-color: var(--terminal-elevated) !important;
+  border-color: #2a2a2a !important;
+  outline: none;
+  box-shadow: 0 0 0 1px #2a2a2a !important;
+}
+
+.dark .secondary-page table thead tr th {
+  background-color: #0a0a0a !important;
+  color: var(--terminal-secondary) !important;
+  border-bottom-color: var(--terminal-border) !important;
+}
+
+.dark .secondary-page #screener-workbook table thead tr th,
+.dark .secondary-page #screener-shareholding table thead tr th,
+.dark .secondary-page #screener-workbook table thead tr th:first-child,
+.dark .secondary-page #screener-shareholding table thead tr th:first-child {
+  background-color: #0a0a0a !important;
+  color: var(--terminal-secondary) !important;
+  border-bottom: 1px solid var(--terminal-border) !important;
+}
+
+.dark .secondary-page table tbody tr {
+  background-color: #0d0d0d !important;
+  border-bottom-color: var(--terminal-border) !important;
+}
+
+.dark .secondary-page table tbody tr:nth-child(even) {
+  background-color: #111111 !important;
+}
+
+.dark .secondary-page table tbody tr:hover {
+  background-color: #171717 !important;
+}
+
+.dark .secondary-page #screener-workbook table tbody tr td,
+.dark .secondary-page #screener-shareholding table tbody tr td {
+  color: var(--terminal-secondary) !important;
+}
+
+.dark .secondary-page table tbody td,
+.dark .secondary-page table tbody td .font-mono,
+.dark .secondary-page .font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .secondary-page [class*="rounded-2xl"],
+.dark .secondary-page [class*="rounded-3xl"],
+.dark .secondary-page [class*="rounded-xl"] {
+  border-radius: 6px !important;
+}
+
+.dark .secondary-page [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+}
+
+.dark .secondary-page .shadow-xl,
+.dark .secondary-page .shadow-2xl,
+.dark .secondary-page [class*="shadow-["] {
+  box-shadow: none !important;
+}
+
+/* Keep the footer newsletter action blue when it lives inside a secondary route. */
+.dark .secondary-page footer .footer-newsletter-submit {
+  background-color: #22d3ee !important;
+  color: #07110a !important;
+}
+
+.dark .secondary-page footer .footer-newsletter-submit:hover {
+  background-color: #67e8f9 !important;
+}
+
+.dark .secondary-page .close-position-submit {
+  background-color: #22d3ee !important;
+  color: #07110a !important;
+}
+
+.dark .secondary-page .close-position-submit:hover {
+  background-color: #67e8f9 !important;
+}
+
+.dark .secondary-page .currency-selector-active {
+  background-color: #22d3ee !important;
+  border-color: #22d3ee !important;
+  color: #07110a !important;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25), 0 4px 14px rgba(34, 211, 238, 0.14) !important;
+}
+
+.dark .secondary-page .currency-selector-active:hover {
+  background-color: #67e8f9 !important;
+}
+
+.dark .secondary-page .watchlist-active-tab {
+  background-color: #22d3ee !important;
+  color: #07110a !important;
+  border-color: #22d3ee !important;
+}
+
+.dark .secondary-page .watchlist-active-tab:hover {
+  background-color: #67e8f9 !important;
+}
+
+.dark .secondary-page .watchlist-export {
+  background-color: rgba(34, 211, 238, 0.12) !important;
+  border-color: rgba(34, 211, 238, 0.45) !important;
+  color: #67e8f9 !important;
+}
+
+.dark .secondary-page .watchlist-export:hover {
+  background-color: rgba(34, 211, 238, 0.2) !important;
+}
+
+.dark .secondary-page .watchlist-add {
+  background-color: #22d3ee !important;
+  border-color: #22d3ee !important;
+  color: #07110a !important;
+}
+
+.dark .secondary-page .watchlist-add:hover {
+  background-color: #67e8f9 !important;
+}
+
+.dark .secondary-page .profile-theme-active {
+  background-color: #22d3ee !important;
+  border-color: #22d3ee !important;
+  color: #07110a !important;
+}
+
+.navbar-nav-link-hover,
+.navbar-nav-link-active-line {
+  background-color: #2563eb;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.navbar-nav-link-active-line {
+  height: 2px;
+}
+
+.navbar-nav-link-active {
+  color: #2563eb !important;
+}
+
+.dark .navbar-nav-link-hover,
+.dark .navbar-nav-link-active-line {
+  background-color: #22d3ee !important;
+}
+
+.dark .navbar-nav-link-active {
+  color: #22d3ee !important;
+}
+
+/* Restore the profile workspace's intentional blue/cyan visual hierarchy. */
+.dark .secondary-page .profile-hero-banner {
+  background-image: linear-gradient(115deg, #0891b2 0%, #2563eb 52%, #4338ca 100%) !important;
+}
+
+
+.dark .secondary-page .profile-header-card,
+.dark .secondary-page .profile-stat-card,
+.dark .secondary-page .profile-info-grid {
+  border-color: #242424 !important;
+}
+
+.dark .secondary-page .profile-info-grid {
+  background-color: #0d0d0d !important;
+}
+
+.dark .secondary-page .profile-stat-card:nth-child(1) {
+  border-top-color: #38bdf8 !important;
+  background-color: #101820 !important;
+}
+
+.dark .secondary-page .profile-stat-card:nth-child(2) {
+  border-top-color: #22c55e !important;
+  background-color: #101a15 !important;
+}
+
+.dark .secondary-page .profile-stat-card:nth-child(3) {
+  border-top-color: #f59e0b !important;
+  background-color: #1a1610 !important;
+}
+
+.dark .secondary-page .profile-stat-card:nth-child(4) {
+  border-top-color: #a78bfa !important;
+  background-color: #15121d !important;
+}
+
+.dark .secondary-page .profile-section-card,
+.dark .secondary-page .profile-security-card {
+  border-color: #242424 !important;
+}
+
+.dark .secondary-page .profile-watchlist-section { border-top: 2px solid #22d3ee !important; }
+.dark .secondary-page .profile-appearance-section { border-top: 2px solid #a78bfa !important; }
+.dark .secondary-page .profile-export-section { border-top: 2px solid #3b82f6 !important; }
+.dark .secondary-page .profile-security-card { border-top: 2px solid #f59e0b !important; }
+
+/* Light mode foundation: cool surfaces, crisp borders, and readable controls. */
+html:not(.dark) body {
+  background: #f4f7fb;
+  color: #172033;
+}
+
+html:not(.dark) .secondary-page {
+  background: #f4f7fb !important;
+}
+
+html:not(.dark) .secondary-page .glass-panel,
+html:not(.dark) .secondary-page .glass-card,
+html:not(.dark) .secondary-page .pulse-card,
+html:not(.dark) .secondary-page .profile-section-card,
+html:not(.dark) .secondary-page .profile-security-card,
+html:not(.dark) .secondary-page .profile-header-card,
+html:not(.dark) .secondary-page .profile-stat-card {
+  background-color: #ffffff !important;
+  border-color: #dce4ee !important;
+  box-shadow: 0 8px 24px rgba(30, 64, 95, 0.06) !important;
+}
+
+html:not(.dark) .secondary-page input,
+html:not(.dark) .secondary-page select,
+html:not(.dark) .secondary-page textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd6e3 !important;
+  color: #172033 !important;
+}
+
+html:not(.dark) .secondary-page input:focus,
+html:not(.dark) .secondary-page select:focus,
+html:not(.dark) .secondary-page textarea:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+}
+
+html:not(.dark) .secondary-page table thead tr th {
+  background-color: #eef4fa !important;
+  color: #526174 !important;
+  border-bottom-color: #cbd6e3 !important;
+}
+
+html:not(.dark) .secondary-page table tbody tr:nth-child(even) {
+  background-color: #f8fbfe !important;
+}
+
+html:not(.dark) .secondary-page table tbody tr:hover {
+  background-color: #edf5ff !important;
+}
+
+html:not(.dark) .secondary-page .profile-info-grid {
+  background-color: #f6f9fc !important;
+  border-color: #dce4ee !important;
+}
+
+html:not(.dark) .secondary-page .profile-watchlist-section { border-top: 2px solid #06b6d4 !important; }
+html:not(.dark) .secondary-page .profile-appearance-section { border-top: 2px solid #8b5cf6 !important; }
+html:not(.dark) .secondary-page .profile-export-section { border-top: 2px solid #3b82f6 !important; }
+html:not(.dark) .secondary-page .profile-security-card { border-top: 2px solid #f59e0b !important; }
+
+html:not(.dark) header,
+html:not(.dark) footer {
+  border-color: #dce4ee !important;
+}
+
+/* Asset detail pages keep the chart terminal dark, while surrounding panels follow light mode. */
+html:not(.dark) .secondary-page [class*="from-\[#0d122e\]"] {
+  background-image: linear-gradient(115deg, #ffffff 0%, #f2f7ff 100%) !important;
+  border-color: #cbd6e3 !important;
+  box-shadow: 0 8px 24px rgba(30, 64, 95, 0.08) !important;
+}
+
+html:not(.dark) .secondary-page [class*="from-\[#090d1a\]"] {
+  background-image: linear-gradient(145deg, #ffffff 0%, #f7faff 100%) !important;
+  background-color: #ffffff !important;
+  border-color: #dce4ee !important;
+  box-shadow: 0 6px 18px rgba(30, 64, 95, 0.06) !important;
+}
+
+.dark .secondary-page .asset-watchlist-button {
+  background-color: #22d3ee !important;
+  border-color: #22d3ee !important;
+  color: #07110a !important;
+}
+
+.dark .secondary-page .asset-watchlist-button:hover {
+  background-color: #67e8f9 !important;
 }

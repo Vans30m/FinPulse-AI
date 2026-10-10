@@ -87,6 +87,13 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           {metrics.map((metric, index) => {
             const Icon = SUMMARY_ICON_MAP[metric.iconKey];
+            const accentClass = metric.iconKey === "today" || metric.iconKey === "total"
+              ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+              : metric.iconKey === "return"
+                ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                : metric.iconKey === "cash" || metric.iconKey === "power"
+                  ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
+                  : "text-cyan-400 bg-cyan-500/10 border-cyan-500/20";
 
             return (
               <motion.article
@@ -100,7 +107,7 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] to-cyan-500/[0.05] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                 <div className="relative flex items-center justify-between gap-1.5 sm:gap-3 mb-3 sm:mb-4 flex-nowrap">
-                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5 text-blue-600 dark:text-cyan-400 shadow-sm shrink-0">
+                  <div className={`flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl border shadow-sm shrink-0 ${accentClass}`}>
                     <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
 

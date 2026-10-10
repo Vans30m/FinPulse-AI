@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useEffect } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BrainCircuit,
@@ -17,11 +17,9 @@ import {
   AlertTriangle,
   Download,
   FileSpreadsheet,
-  Activity,
   RefreshCcw
 } from "lucide-react";
 import AnimatedNumber from "./AnimatedNumber";
-import API_BASE_URL from "../../../config/api";
 
 interface Props {
   advisor: {
@@ -51,6 +49,7 @@ interface Props {
       expectedUpside: number;
       confidence: number;
       reason: string;
+      currency?: string;
     };
     portfolioHealth: {
       outlook: string;
@@ -83,7 +82,7 @@ function ProgressRing({ value }: { value: number }) {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="url(#portfolio-advisor-gradient)"
+          stroke="#22d3ee"
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"
@@ -92,12 +91,6 @@ function ProgressRing({ value }: { value: number }) {
           animate={{ strokeDashoffset }}
           transition={{ duration: 1.2, ease: "easeOut" }}
         />
-        <defs>
-          <linearGradient id="portfolio-advisor-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#06b6d4" />
-            <stop offset="100%" stopColor="#2563eb" />
-          </linearGradient>
-        </defs>
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
@@ -113,10 +106,10 @@ function ProgressRing({ value }: { value: number }) {
 
 function RecommendationProgress({ label, value, tone }: { label: string; value: number; tone: "blue" | "emerald" | "amber" | "rose" }) {
   const toneClasses = {
-    blue: "bg-gradient-to-r from-blue-600 to-cyan-500 shadow-[0_0_10px_rgba(37,99,235,0.4)] dark:from-blue-500 dark:to-cyan-400",
-    emerald: "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]",
-    amber: "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.4)]",
-    rose: "bg-gradient-to-r from-rose-600 to-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.4)]",
+    blue: "bg-cyan-400",
+    emerald: "bg-emerald-400",
+    amber: "bg-amber-400",
+    rose: "bg-rose-400",
   };
 
   return (
@@ -125,7 +118,7 @@ function RecommendationProgress({ label, value, tone }: { label: string; value: 
         <span>{label}</span>
         <span>{value}%</span>
       </div>
-      <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800/80 overflow-hidden relative">
+      <div className="h-1.5 overflow-hidden rounded-full bg-[#2a2a2a]">
         <motion.div
           initial={{ width: 0 }}
           whileInView={{ width: `${value}%` }}
@@ -141,32 +134,19 @@ function RecommendationProgress({ label, value, tone }: { label: string; value: 
 function AIPortfolioAdvisorSection({ advisor }: Props) {
   const [activeModal, setActiveModal] = useState<"rebalance" | "report" | "optimize" | "risk" | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [scrollPosition, setScrollPosition] = useState<number>(0);
-
-  // AI Performance/Analysis integration state
-  const [analysisData, setAnalysisData] = useState<any>(null);
-  const [analysisLoading, setAnalysisLoading] = useState<boolean>(true);
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
-    const userId = storedUser.id;
-    const headers = userId ? { 'X-User-Id': userId } : undefined;
+    if (!activeModal) return;
 
-    fetch(`${API_BASE_URL}/api/portfolio/analysis`, { headers })
-      .then(res => res.json())
-      .then(d => {
-        setAnalysisData(d);
-        setAnalysisLoading(false);
-      })
-      .catch(err => {
-        console.error("AI Analysis load failed", err);
-        setAnalysisLoading(false);
-      });
-  }, []);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [activeModal]);
 
   const handleAction = (id: string) => {
-    setScrollPosition(window.scrollY);
     setActiveAction(id);
     setTimeout(() => {
       setActiveAction(null);
@@ -177,20 +157,11 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
       } else if (id === "risk-profile") {
         setActiveModal("risk");
       }
-      setTimeout(() => {
-        const el = document.getElementById("ai-advisor-section");
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 80);
     }, 600);
   };
 
   const handleCloseModal = () => {
     setActiveModal(null);
-    setTimeout(() => {
-      window.scrollTo({ top: scrollPosition, behavior: "smooth" });
-    }, 100);
   };
 
   const downloadCSV = () => {
@@ -225,11 +196,30 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
   const handlePrint = () => {
     const printContent = document.getElementById("detailed-report-print-area");
     if (!printContent) return;
-    const originalContent = document.body.innerHTML;
-    document.body.innerHTML = printContent.innerHTML;
-    window.print();
-    document.body.innerHTML = originalContent;
-    window.location.reload(); // Reload to restore React state cleanly
+    const printWindow = window.open("", "_blank", "width=1100,height=800");
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>FinPulse AI Portfolio Advisor Report</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { margin: 32px; color: #1f2937; font: 14px/1.6 Arial, sans-serif; }
+            h4, h5 { color: #111827; page-break-after: avoid; }
+            p, li { page-break-inside: avoid; }
+            .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+            @media print { body { margin: 20mm; } }
+          </style>
+        </head>
+        <body>${printContent.innerHTML}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
+    printWindow.print();
   };
 
   const formattedDate = useMemo(() => {
@@ -241,6 +231,11 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
       minute: "2-digit",
     });
   }, [advisor.generatedAt]);
+
+  const formatOpportunityPrice = (value: number) => {
+    const currency = advisor.bestOpportunity.currency || "USD";
+    return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 2 }).format(value);
+  };
 
   const displayPoints = useMemo(() => {
     const sList = (advisor.portfolioHealth.strengths || []).filter(s => s && s !== "None");
@@ -259,43 +254,40 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
   }, [advisor.portfolioHealth.strengths, advisor.portfolioHealth.weaknesses]);
 
   return (
-    <section id="ai-advisor-section" className="glass-panel p-6 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.04] via-transparent to-blue-500/[0.05] pointer-events-none" />
+    <section id="ai-advisor-section" className="relative overflow-hidden rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4 text-white shadow-xl sm:p-5 lg:p-6">
 
-      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      <div className="relative mb-5 flex flex-col justify-between gap-3 border-b border-[#2a2a2a] pb-4 sm:flex-row sm:items-center">
         <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.32em]">AI Portfolio Advisor</span>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">AI-powered recommendations to improve your portfolio.</h2>
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8d8d8d]">AI Portfolio Advisor</span>
+          <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">Portfolio intelligence and actionable risk guidance</h2>
         </div>
         {advisor.generatedAt && (
-          <div className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/[0.03] px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-white/5 self-start sm:self-center">
+          <div className="self-start rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-1.5 font-mono text-[10px] font-bold text-[#8d8d8d] sm:self-center">
             Updated: {formattedDate}
           </div>
         )}
       </div>
 
-      <div className="relative grid grid-cols-1 lg:grid-cols-[minmax(240px,320px)_1fr] gap-6 items-stretch mb-6">
-        <div className="rounded-3xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-6 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.65)] relative overflow-hidden group flex flex-col justify-center">
-          <div className="absolute -inset-px bg-gradient-to-br from-blue-500/10 via-transparent to-cyan-500/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative flex flex-col items-center text-center gap-4">
+      <div className="relative mb-5 grid grid-cols-1 items-stretch gap-3 lg:grid-cols-[minmax(220px,280px)_1fr]">
+        <div className="flex flex-col justify-center rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 sm:p-5">
+          <div className="flex flex-col items-center gap-3 text-center">
             <div className="relative">
-              <div className="absolute inset-0 bg-blue-500/10 dark:bg-cyan-500/10 blur-xl rounded-full pointer-events-none" />
               <ProgressRing value={advisor.healthScore} />
             </div>
 
             <div>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">{advisor.healthGrade}</p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Portfolio health index compiled from diversification, concentration, and risk parameters.</p>
+              <p className="text-lg font-bold text-white">{advisor.healthGrade}</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#8d8d8d]">Portfolio health index across diversification, concentration, and risk.</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {/* Card 1: Diversification */}
-          <motion.article whileHover={{ y: -3 }} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
+          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 transition-colors hover:border-[#3a3a3a] sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-cyan-400">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
                   <PieChart className="h-5 w-5" />
                 </div>
                 <div>
@@ -354,10 +346,10 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
           </motion.article>
 
           {/* Card 2: Risk */}
-          <motion.article whileHover={{ y: -3 }} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
+          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 transition-colors hover:border-[#3a3a3a] sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-455">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-400">
                   <ShieldAlert className="h-5 w-5" />
                 </div>
                 <div>
@@ -401,10 +393,10 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
 
           {/* Card 3: Best Opportunity */}
           {advisor.bestOpportunity.symbol !== "N/A" && (
-            <motion.article whileHover={{ y: -3 }} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
+            <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 transition-colors hover:border-[#3a3a3a] sm:p-5">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-455">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
                     <TrendingUp className="h-5 w-5" />
                   </div>
                   <div>
@@ -424,7 +416,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                 </div>
                 <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800/50 pb-2.5">
                   <span className="font-semibold text-slate-500 dark:text-slate-400">Target price</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">${advisor.bestOpportunity.targetPrice} (vs ${advisor.bestOpportunity.currentPrice})</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{formatOpportunityPrice(advisor.bestOpportunity.targetPrice)} (vs {formatOpportunityPrice(advisor.bestOpportunity.currentPrice)})</span>
                 </div>
                 <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800/50 pb-2.5">
                   <span className="font-semibold text-slate-500 dark:text-slate-400">Expected Upside</span>
@@ -439,10 +431,10 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
           )}
 
           {/* Card 4: Portfolio Health Summary */}
-          <motion.article whileHover={{ y: -3 }} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
+          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 transition-colors hover:border-[#3a3a3a] sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-cyan-400">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
                   <Layers3 className="h-5 w-5" />
                 </div>
                 <div>
@@ -474,9 +466,9 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
       </div>
 
       {/* Expandable Sections Accordion */}
-      <div className="relative mt-8 space-y-2.5">
-        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 flex items-center gap-1.5">
-          <Info className="h-3.5 w-3.5" />
+      <div className="relative mt-5 space-y-2">
+        <h3 className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d8d8d]">
+          <Info className="h-3.5 w-3.5 text-cyan-400" />
           Deep AI Portfolio Breakdown
         </h3>
 
@@ -492,14 +484,15 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
           const SecIcon = sec.icon;
 
           return (
-            <div key={sec.id} className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015] overflow-hidden transition-all duration-200">
+            <div key={sec.id} className="overflow-hidden rounded-lg border border-[#2a2a2a] bg-[#171717] transition-colors hover:border-[#3a3a3a]">
               <button
                 onClick={() => toggleSection(sec.id)}
                 type="button"
-                className="w-full flex items-center justify-between p-3 px-4 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-white/[0.01]"
+                aria-expanded={isExpanded}
+                className="flex w-full items-center justify-between px-3.5 py-3 text-left text-xs font-semibold text-[#d7d7d7] transition-colors hover:bg-[#1d1d1d] focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
               >
                 <div className="flex items-center gap-2">
-                  <span className={`h-1.5 w-1.5 rounded-full ${sec.color.replace('text-', 'bg-')} shrink-0`} />
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${sec.color.replace('text-', 'bg-')}`} />
                   <span>{sec.title}</span>
                 </div>
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -511,13 +504,13 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                     initial={{ height: 0 }}
                     animate={{ height: "auto" }}
                     exit={{ height: 0 }}
-                    className="overflow-hidden border-t border-slate-200/30 dark:border-white/5 bg-white/30 dark:bg-black/[0.1]"
+                    className="overflow-hidden border-t border-[#2a2a2a] bg-[#141414]"
                   >
-                    <div className="p-4 space-y-2">
+                    <div className="space-y-2 px-3.5 py-3">
                       {sec.data && sec.data.length > 0 ? (
                         sec.data.map((item, idx) => (
-                          <div key={idx} className="flex items-start gap-2.5 text-xs md:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
-                            <span className="text-cyan-500 font-extrabold select-none">•</span>
+                          <div key={idx} className="flex items-start gap-2.5 text-xs font-medium leading-relaxed text-[#bdbdbd] md:text-sm">
+                            <span className="select-none font-extrabold text-cyan-400">•</span>
                             <span>{item}</span>
                           </div>
                         ))
@@ -533,87 +526,13 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
         })}
       </div>
 
-
-      {/* Benchmark & Forecast Sections */}
-      {analysisLoading ? (
-        <div className="mt-8 flex items-center justify-center p-8 border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015] rounded-3xl min-h-[150px]">
-          <Activity className="h-6 w-6 animate-spin text-cyan-400" />
-          <span className="text-xs text-slate-400 font-mono ml-2">Loading performance coaching modules...</span>
-        </div>
-      ) : analysisData ? (
-        <div className="mt-8 space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Benchmark Analysis */}
-            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
-              <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                <TrendingUp className="h-4 w-4 text-emerald-500" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">Benchmark Analysis</span>
-              </div>
-
-              <div className="space-y-3">
-                {analysisData.benchmarkRows?.map((row: any) => (
-                  <div key={row.index} className="rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/[0.1] p-3.5 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-black text-slate-800 dark:text-white">{row.index}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Benchmark {row.benchmarkReturn.toFixed(2)}% | Portfolio {row.portfolioReturn.toFixed(2)}%</p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-xs font-black font-mono ${row.outperform ? "text-emerald-500" : "text-rose-500"}`}>{row.difference >= 0 ? "+" : ""}{row.difference.toFixed(2)}%</p>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${row.outperform ? "text-emerald-500" : "text-rose-500"}`}>
-                        {row.outperform ? "Outperform" : "Underperform"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* AI Action Center */}
+      <div className="mt-5 rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 sm:p-5">
+        <div className="mb-4 flex items-center gap-2 border-b border-[#2a2a2a] pb-3">
+          <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8d8d8d]">AI Action Center</span>
             </div>
 
-            {/* Forecast & AI Signals */}
-            <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
-              <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                <BrainCircuit className="h-4 w-4 text-purple-500 animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">Forecast & AI Signals</span>
-              </div>
-
-              <div className="space-y-3">
-                {analysisData.forecast?.map((item: any) => (
-                  <div key={item.horizon} className="rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/[0.1] p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-black text-slate-800 dark:text-white">{item.horizon}</p>
-                      <span className={`text-[10px] font-black uppercase tracking-wider ${item.expectedReturn >= 0 ? "text-emerald-500" : "text-rose-500"}`}>{item.expectedReturn >= 0 ? "+" : ""}{item.expectedReturn.toFixed(2)}%</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-1.5 text-[10px] text-slate-500">
-                      <span>{item.bias}</span>
-                      <span className="font-bold">Confidence {item.confidence}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] font-semibold">
-                <div className="rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/[0.1] p-3 text-slate-650 dark:text-slate-350">
-                  <p className="text-[10px] uppercase text-slate-400 font-extrabold tracking-wider">Top Contributors</p>
-                  <p className="mt-1.5 leading-relaxed">{analysisData.topContributors?.join("; ")}</p>
-                </div>
-                <div className="rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/[0.1] p-3 text-slate-650 dark:text-slate-350">
-                  <p className="text-[10px] uppercase text-slate-400 font-extrabold tracking-wider">Missed Opportunities</p>
-                  <p className="mt-1.5 leading-relaxed">{analysisData.missedOpportunities?.join("; ")}</p>
-                </div>
-                <div className="rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/[0.1] p-3 text-slate-650 dark:text-slate-350 sm:col-span-2">
-                  <p className="text-[10px] uppercase text-slate-400 font-extrabold tracking-wider">Weaknesses</p>
-                  <p className="mt-1.5 leading-relaxed">{analysisData.weaknesses?.join("; ")}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* AI Action Center */}
-          <div className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-white/[0.025] backdrop-blur-sm p-5 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)]">
-            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800/50 pb-3">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">AI Action Center</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
               {[
                 { id: "full-report", label: "Generate Full Report", icon: FileText },
                 { id: "optimize", label: "Optimize Portfolio", icon: BrainCircuit },
@@ -626,7 +545,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                     key={action.id}
                     type="button"
                     onClick={() => handleAction(action.id)}
-                    className="rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/[0.1] px-3 py-3.5 text-xs font-black uppercase tracking-wider text-slate-750 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 hover:bg-slate-100/50 dark:hover:bg-slate-900 transition-colors inline-flex items-center justify-center gap-1.5"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#d7d7d7] transition-colors hover:border-cyan-500/40 hover:bg-[#222] hover:text-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
                   >
                     {isActive && <RefreshCcw className="h-3.5 w-3.5 animate-spin text-cyan-400" />}
                     {action.label}
@@ -635,51 +554,50 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
               })}
             </div>
 
-            <div className="mt-4 flex justify-end gap-2">
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
               <button
                 onClick={handlePrint}
-                className="px-3.5 py-2.5 rounded-xl border border-slate-250 dark:border-slate-800 bg-slate-50/50 dark:bg-black/[0.1] text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#bdbdbd] transition-colors hover:bg-[#222] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
               >
                 <FileText className="h-3.5 w-3.5 text-blue-500" /> PDF
               </button>
               <button
                 onClick={downloadCSV}
-                className="px-3.5 py-2.5 rounded-xl border border-slate-250 dark:border-slate-800 bg-slate-50/50 dark:bg-black/[0.1] text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#bdbdbd] transition-colors hover:bg-[#222] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
               >
                 <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500" /> CSV
               </button>
               <button
                 onClick={downloadCSV}
-                className="px-3.5 py-2.5 rounded-xl border border-slate-250 dark:border-slate-800 bg-slate-50/50 dark:bg-black/[0.1] text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#bdbdbd] transition-colors hover:bg-[#222] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
               >
                 <Download className="h-3.5 w-3.5 text-purple-500" /> Excel
               </button>
             </div>
           </div>
-        </div>
-      ) : null}
 
       {/* Rebalance Modal */}
       <AnimatePresence>
         {activeModal === "rebalance" && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={handleCloseModal}>
+          <div role="dialog" aria-modal="true" aria-labelledby="rebalance-modal-title" className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center overflow-hidden bg-black/85 p-3 backdrop-blur-3xl backdrop-saturate-100 sm:p-4" onClick={handleCloseModal}>
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-[#333] bg-[#1d1d1d] p-4 text-[#d7d7d7] shadow-2xl custom-scrollbar sm:max-h-[calc(100dvh-2rem)] sm:p-5"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={handleCloseModal}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Close rebalancing plan"
+                className="absolute right-3 top-3 rounded-lg p-1.5 text-[#8d8d8d] transition-colors hover:bg-[#2a2a2a] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
               >
                 <X className="h-5 w-5" />
               </button>
 
               <div className="flex items-center gap-2.5 mb-5">
                 <RotateCcw className="h-5 w-5 text-cyan-500" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">AI Rebalancing Plan</h3>
+                <h3 id="rebalance-modal-title" className="text-base font-semibold text-white">AI Rebalancing Plan</h3>
               </div>
 
               <div className="space-y-4">
@@ -729,23 +647,24 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
       {/* Optimize Portfolio Modal */}
       <AnimatePresence>
         {activeModal === "optimize" && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={handleCloseModal}>
+          <div role="dialog" aria-modal="true" aria-labelledby="optimize-modal-title" className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center overflow-hidden bg-black/85 p-3 backdrop-blur-3xl backdrop-saturate-100 sm:p-4" onClick={handleCloseModal}>
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-[#333] bg-[#1d1d1d] p-4 text-[#d7d7d7] shadow-2xl custom-scrollbar sm:max-h-[calc(100dvh-2rem)] sm:p-5"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={handleCloseModal}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Close portfolio optimization"
+                className="absolute right-3 top-3 rounded-lg p-1.5 text-[#8d8d8d] transition-colors hover:bg-[#2a2a2a] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
               >
                 <X className="h-5 w-5" />
               </button>
 
               <div className="flex items-center gap-2.5 mb-5">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">AI Portfolio Optimization</h3>
+                <h3 id="optimize-modal-title" className="text-base font-semibold text-white">AI Portfolio Optimization</h3>
               </div>
 
               <div className="space-y-4 text-xs">
@@ -798,23 +717,24 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
       {/* Improve Risk Profile Modal */}
       <AnimatePresence>
         {activeModal === "risk" && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={handleCloseModal}>
+          <div role="dialog" aria-modal="true" aria-labelledby="risk-modal-title" className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center overflow-hidden bg-black/85 p-3 backdrop-blur-3xl backdrop-saturate-100 sm:p-4" onClick={handleCloseModal}>
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-[#333] bg-[#1d1d1d] p-4 text-[#d7d7d7] shadow-2xl custom-scrollbar sm:max-h-[calc(100dvh-2rem)] sm:p-5"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={handleCloseModal}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Close risk mitigation"
+                className="absolute right-3 top-3 rounded-lg p-1.5 text-[#8d8d8d] transition-colors hover:bg-[#2a2a2a] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
               >
                 <X className="h-5 w-5" />
               </button>
 
               <div className="flex items-center gap-2.5 mb-5">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">AI Risk Mitigation</h3>
+                <h3 id="risk-modal-title" className="text-base font-semibold text-white">AI Risk Mitigation</h3>
               </div>
 
               <div className="space-y-4 text-xs">
@@ -859,25 +779,26 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
       {/* Detailed Report Modal (Printable) */}
       <AnimatePresence>
         {activeModal === "report" && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto" onClick={handleCloseModal}>
+          <div role="dialog" aria-modal="true" aria-labelledby="report-modal-title" className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center overflow-hidden bg-black/90 p-3 backdrop-blur-3xl backdrop-saturate-100 sm:p-4" onClick={handleCloseModal}>
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
-              className="relative w-full max-w-4xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-5 pb-5 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl overflow-y-auto overscroll-contain rounded-xl border border-[#333] bg-[#1d1d1d] px-4 pb-4 text-[#d7d7d7] shadow-2xl custom-scrollbar sm:max-h-[calc(100dvh-2rem)] sm:px-6 sm:pb-6 md:px-8 md:pb-8"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={handleCloseModal}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-30"
+                aria-label="Close detailed portfolio audit"
+                className="absolute right-3 top-3 z-30 rounded-lg p-1.5 text-[#8d8d8d] transition-colors hover:bg-[#2a2a2a] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60 sm:right-4 sm:top-4"
               >
                 <X className="h-5 w-5" />
               </button>
 
               {/* Header Actions */}
-              <div className="sticky top-0 bg-white dark:bg-slate-950 z-20 rounded-t-3xl pt-5 sm:pt-6 md:pt-8 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-start sm:items-center justify-between gap-3 pr-10">
+              <div className="sticky top-0 z-20 mb-4 flex flex-col justify-between gap-3 border-b border-[#333] bg-[#1d1d1d] pb-4 pt-5 pr-10 sm:flex-row sm:items-center sm:pt-6 md:pt-8">
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Detailed AI Portfolio Audit</h3>
+                  <h3 id="report-modal-title" className="text-sm font-semibold text-white sm:text-base">Detailed AI Portfolio Audit</h3>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -1006,7 +927,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                         </div>
                         <div>
                           <span className="block text-[10px] text-slate-400 uppercase font-black tracking-wider mb-0.5">Target Valuation</span>
-                          <span className="text-lg font-black text-slate-900 dark:text-white">${advisor.bestOpportunity.targetPrice} <span className="text-xs text-slate-400 font-normal font-mono">(vs ${advisor.bestOpportunity.currentPrice})</span></span>
+                          <span className="text-lg font-black text-slate-900 dark:text-white">{formatOpportunityPrice(advisor.bestOpportunity.targetPrice)} <span className="text-xs text-slate-400 font-normal font-mono">(vs {formatOpportunityPrice(advisor.bestOpportunity.currentPrice)})</span></span>
                         </div>
                       </div>
                       <p className="border-t border-slate-200/50 dark:border-white/5 pt-3 text-slate-500 dark:text-slate-400"><strong>Rationale:</strong> {advisor.bestOpportunity.reason}</p>

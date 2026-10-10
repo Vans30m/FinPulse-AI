@@ -1044,9 +1044,15 @@ export default function PortfolioDashboard() {
       }, 0);
     }, 0);
 
-  const totalInvestedAmount = isSandboxMode
-    ? Math.max(totalHoldingsValue - totalGain, 0)
-    : Math.max(totalNetValue - totalGain, 0);
+  const totalInvestedAmount = currentSections
+    .filter(sec => activeMarket === 'all' || activeMarket === sec.id)
+    .reduce((sum, sec) => {
+      return sum + sec.holdings.reduce((sectionTotal, h) => {
+        const nativeCost = Math.abs(Number(h.shares) || 0) * (Number(h.avgCost) || 0);
+        const costUSD = sec.id === 'domestic' ? nativeCost / usdToInrRate : nativeCost;
+        return sectionTotal + (costUSD * currencyMultiplier);
+      }, 0);
+    }, 0);
 
   const totalBookedPL = useMemo(() => {
     return currentSections

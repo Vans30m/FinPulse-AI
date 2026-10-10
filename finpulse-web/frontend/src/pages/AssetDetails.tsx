@@ -156,7 +156,7 @@ function WatchlistToggleButton({ symbol }: { symbol: string }) {
     <button
       onClick={handleFollowToggle}
       disabled={isPending}
-      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${
+      className={`asset-watchlist-button inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${
         isFollowing
           ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 border border-emerald-500/30'
           : 'bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950 border border-transparent'
@@ -405,7 +405,7 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
             currency={meta.currency}
           />
         ) : (
-          <div className="text-slate-400 font-medium animate-pulse">Loading {resolvedType} details...</div>
+          <div className="text-slate-400 dark:text-slate-500 font-medium animate-pulse">Loading {resolvedType} details...</div>
         )}
       </div>
 
@@ -972,7 +972,7 @@ export default function AssetDetails() {
             currency={meta.currency}
           />
         ) : (
-          <div className="text-slate-400 font-medium animate-pulse">Loading stock details...</div>
+          <div className="text-slate-400 dark:text-slate-500 font-medium animate-pulse">Loading stock details...</div>
         )}
       </div>
 
@@ -1030,7 +1030,7 @@ export default function AssetDetails() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-slate-900 border border-slate-800 rounded-2xl" />
+              <div key={i} className="h-32 bg-slate-100 dark:bg-[#111111] border border-slate-200 dark:border-[#242424] rounded-2xl" />
             ))}
           </div>
         ) : error ? (
