@@ -75,10 +75,16 @@ function HeatmapCalendar({ weeks, monthLabels, onHover, onLeave, onSelectDay }: 
                     key={`${week.index}-${idx}-${point?.date ?? "empty"}`}
                     type="button"
                     onMouseEnter={(event) => {
-                      if (point) onHover(point, event.clientX, event.clientY);
+                      if (point) {
+                        const bounds = event.currentTarget.getBoundingClientRect();
+                        onHover(point, bounds.left + bounds.width / 2, bounds.top);
+                      }
                     }}
                     onMouseMove={(event) => {
-                      if (point) onHover(point, event.clientX, event.clientY);
+                      if (point) {
+                        const bounds = event.currentTarget.getBoundingClientRect();
+                        onHover(point, bounds.left + bounds.width / 2, bounds.top);
+                      }
                     }}
                     onMouseLeave={onLeave}
                     onClick={() => {

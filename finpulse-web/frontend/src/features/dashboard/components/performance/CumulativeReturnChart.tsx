@@ -66,17 +66,17 @@ export default function CumulativeReturnChart({
     const container = containerRef.current;
     if (!container || !data || data.length === 0) return;
 
-    const isDark = document.documentElement.classList.contains("dark");
-    const textColorVal = isDark ? "#94a3b8" : "#64748b";
-    const gridColorVal = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(30, 41, 59, 0.04)";
+    const isDark = true;
+    const textColorVal = "#9ca3af";
+    const gridColorVal = "rgba(255, 255, 255, 0.06)";
+    const chartBg = "#171717";
 
-    // Initialize Chart
     const chart = createChart(container, {
       layout: {
-        background: { type: ColorType.Solid, color: "rgba(15, 23, 42, 0.08)" },
+        background: { type: ColorType.Solid, color: chartBg },
         textColor: textColorVal,
         fontSize: 11,
-        fontFamily: "JetBrains Mono, Menlo, monospace",
+        fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
         attributionLogo: false,
       },
       width: container.clientWidth,
@@ -88,12 +88,12 @@ export default function CumulativeReturnChart({
       crosshair: {
         mode: CrosshairMode.Normal,
         vertLine: {
-          color: "rgba(148, 163, 184, 0.65)",
+          color: "rgba(148, 163, 184, 0.5)",
           width: 1,
           style: LineStyle.Dashed,
         },
         horzLine: {
-          color: "rgba(148, 163, 184, 0.5)",
+          color: "rgba(148, 163, 184, 0.35)",
           width: 1,
           style: LineStyle.Dashed,
         },
@@ -125,8 +125,8 @@ export default function CumulativeReturnChart({
     if (showPortfolio) {
       portSeries = chart.addAreaSeries({
         lineColor: "#60a5fa",
-        topColor: "rgba(96, 165, 250, 0.22)",
-        bottomColor: "rgba(96, 165, 250, 0.03)",
+        topColor: "rgba(96, 165, 250, 0.12)",
+        bottomColor: "rgba(96, 165, 250, 0.01)",
         lineWidth: 2,
         lineType: LineType.Curved,
         priceLineVisible: false,
@@ -144,7 +144,7 @@ export default function CumulativeReturnChart({
     let benchSeries: ISeriesApi<"Line"> | null = null;
     if (showBenchmark) {
       benchSeries = chart.addLineSeries({
-        color: "#fbbf24",
+        color: "#f5d372",
         lineWidth: 2,
         lineStyle: LineStyle.Dashed,
         lineType: LineType.Curved,
@@ -192,15 +192,13 @@ export default function CumulativeReturnChart({
   }, [data, height, showPortfolio, showBenchmark]);
 
   return (
-    <div className="space-y-4">
-      {/* Legend & Hover Tooltip Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-500/[0.02] dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl p-3 sm:p-4 overflow-x-auto scrollbar-none touch-pan-x">
-        {/* Dynamic Tooltip Data */}
-        <div className="flex flex-nowrap sm:flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 text-xs min-w-max">
+    <div className="space-y-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-[#2a2a2a] bg-[#171717] p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.12em] text-[#8d8d8d]">
           {activeDate && (
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-slate-400 dark:text-slate-500 uppercase">Date:</span>
-              <span className="font-black text-slate-800 dark:text-slate-200">
+              <span>Date:</span>
+              <span className="text-[#d7d7d7]">
                 {new Date(activeDate * 1000).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -212,27 +210,19 @@ export default function CumulativeReturnChart({
           {activePoint && (
             <>
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded bg-blue-500" />
-                <span className="font-extrabold text-slate-400 dark:text-slate-500 uppercase">Portfolio:</span>
-                <span className="font-mono font-black text-blue-500">
-                  {activePoint.portfolioReturn.toFixed(2)}%
-                </span>
+                <span className="h-2.5 w-2.5 rounded-full bg-[#5bb7ff]" />
+                <span>Portfolio:</span>
+                <span className="font-mono text-[#5bb7ff]">{activePoint.portfolioReturn.toFixed(2)}%</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded bg-[#f59e42]" />
-                <span className="font-extrabold text-slate-400 dark:text-slate-500 uppercase">
-                  {benchmarkName}:
-                </span>
-                <span className="font-mono font-black text-[#f59e42]">
-                  {activePoint.benchmarkReturn.toFixed(2)}%
-                </span>
+                <span className="h-2.5 w-2.5 rounded-full bg-[#f5d372]" />
+                <span>{benchmarkName}:</span>
+                <span className="font-mono text-[#f5d372]">{activePoint.benchmarkReturn.toFixed(2)}%</span>
               </div>
-              <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200 dark:border-white/10">
-                <span className="font-extrabold text-slate-400 dark:text-slate-500 uppercase">Difference:</span>
+              <div className="flex items-center gap-1.5">
+                <span>Difference:</span>
                 <span
-                  className={`font-mono font-black ${
-                    activePoint.difference >= 0 ? "text-emerald-400" : "text-rose-450"
-                  }`}
+                  className={`font-mono ${activePoint.difference >= 0 ? "text-[#70d7a2]" : "text-[#f08d8d]"}`}
                 >
                   {activePoint.difference >= 0 ? "+" : ""}
                   {activePoint.difference.toFixed(2)}%
@@ -242,31 +232,29 @@ export default function CumulativeReturnChart({
           )}
         </div>
 
-        {/* Legend Interactive Toggles */}
-        <div className="flex items-center gap-4 text-xs font-bold select-none">
-          <label className="flex items-center gap-2 cursor-pointer text-slate-650 dark:text-slate-350 hover:text-slate-900 dark:hover:text-white">
+        <div className="flex items-center gap-4 text-[10px] uppercase tracking-[0.12em] text-[#d7d7d7]">
+          <label className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={showPortfolio}
               onChange={(e) => setShowPortfolio(e.target.checked)}
-              className="rounded border-slate-300 dark:border-slate-800 text-blue-500 focus:ring-blue-500 h-3.5 w-3.5"
+              className="h-3.5 w-3.5 rounded border-[#3a3a3a] bg-[#1d1d1d] text-blue-500 focus:ring-blue-500"
             />
             <span>Portfolio</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-slate-650 dark:text-slate-350 hover:text-slate-900 dark:hover:text-white">
+          <label className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={showBenchmark}
               onChange={(e) => setShowBenchmark(e.target.checked)}
-              className="rounded border-slate-300 dark:border-slate-800 text-amber-500 focus:ring-amber-500 h-3.5 w-3.5"
+              className="h-3.5 w-3.5 rounded border-[#3a3a3a] bg-[#1d1d1d] text-blue-500 focus:ring-blue-500"
             />
             <span>{benchmarkName}</span>
           </label>
         </div>
       </div>
 
-      {/* Lightweight Chart Container */}
-      <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200/40 dark:border-white/5 bg-[#121a2a]/10">
+      <div className="relative w-full overflow-hidden rounded-xl border border-[#2a2a2a] bg-[#171717]">
         <div ref={containerRef} className="w-full cursor-crosshair" />
       </div>
     </div>

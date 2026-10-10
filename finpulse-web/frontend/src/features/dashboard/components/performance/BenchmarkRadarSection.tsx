@@ -95,8 +95,8 @@ export default function BenchmarkRadarSection() {
     
     const outperformed: string[] = [];
     const underperformed: string[] = [];
-    let bestMetric = benchmarkData.metrics[0];
-    let weakestMetric = benchmarkData.metrics[0];
+    let bestMetric: any = null;
+    let weakestMetric: any = null;
     let maxOutperformValue = -Infinity;
     let minUnderperformValue = Infinity;
 
@@ -132,6 +132,14 @@ export default function BenchmarkRadarSection() {
     };
   }, [benchmarkData]);
 
+  const bestMetricTone = comparisonDetails?.bestMetric
+    ? "text-emerald-600 dark:text-emerald-400"
+    : "text-slate-400 dark:text-slate-500";
+
+  const weakestMetricTone = comparisonDetails?.weakestMetric
+    ? "text-amber-600 dark:text-amber-450"
+    : "text-slate-400 dark:text-slate-500";
+
   // Radar chart data mapper
   const chartData = useMemo(() => {
     if (!benchmarkData) return [];
@@ -148,7 +156,7 @@ export default function BenchmarkRadarSection() {
   // EXPORTS
   const exportCSV = (isExcel: boolean = false) => {
     if (!benchmarkData) return;
-    const fileExt = isExcel ? "csv" : "csv";
+    const fileExt = isExcel ? "xls" : "csv";
     let csvContent = "\uFEFF"; // UTF-8 BOM
     csvContent += `FinPulse Benchmark Radar Report - Comparing with ${selectedBenchmark}\n`;
     csvContent += `Export Date,${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
@@ -163,7 +171,7 @@ export default function BenchmarkRadarSection() {
       csvContent += `"${m.name}","${m.portfolioDisplay}","${m.benchmarkDisplay}","${out ? "Portfolio Outperformed" : "Benchmark Outperformed"}"\n`;
     });
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], { type: isExcel ? "application/vnd.ms-excel" : "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -323,29 +331,28 @@ export default function BenchmarkRadarSection() {
   };
 
   return (
-    <section className="bg-white dark:bg-[#0d1424] border border-slate-200 dark:border-slate-805 rounded-3xl p-6 shadow-xl relative overflow-hidden mt-6">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-3xl pointer-events-none rounded-full" />
+    <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-[#263247] dark:bg-[#0d1424]">
       
       {/* 1. HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-5">
+      <div className="flex flex-col gap-4 border-b border-slate-200 px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between md:gap-6 dark:border-[#263247]">
         <div>
-          <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2">
-            <Award size={18} className="text-blue-500 dark:text-blue-400" />
+          <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-slate-900 dark:text-white sm:text-base">
+            <Award size={17} className="text-cyan-600 dark:text-cyan-400" />
             Benchmark Radar
           </h3>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">
+          <p className="mt-1 text-[11px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
             Compare portfolio efficiency metrics against major market benchmarks using normalized spider visualizations.
           </p>
         </div>
 
         {/* Dynamic Dropdown Select */}
         <div className="flex items-center gap-3">
-          <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400 hidden sm:inline">Select Benchmark:</span>
+          <span className="hidden text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 sm:inline">Benchmark</span>
           
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center justify-between gap-3 px-4 py-2 bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black uppercase text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors w-44 shadow-sm"
+              className="flex w-44 items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-slate-800 shadow-sm transition-colors hover:bg-slate-100 dark:border-[#263247] dark:bg-[#080d17] dark:text-white dark:hover:bg-[#111a2b]"
             >
               <span>{selectedBenchmark}</span>
               <ChevronDown size={14} className="text-slate-500 dark:text-slate-400 transition-transform" />
@@ -358,13 +365,13 @@ export default function BenchmarkRadarSection() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-44 bg-white dark:bg-[#090e1a] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xl z-50"
+                  className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl dark:border-[#263247] dark:bg-[#090e1a]"
                 >
                   {BENCHMARK_NAMES.map((name) => (
                     <button
                       key={name}
                       onClick={() => handleBenchmarkChange(name)}
-                      className={`w-full text-left px-4 py-2.5 text-xs font-extrabold uppercase transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 block ${
+                      className={`block w-full px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.06em] transition-colors hover:bg-slate-50 dark:hover:bg-[#111a2b] ${
                         selectedBenchmark === name ? "text-blue-500 dark:text-cyan-400 bg-slate-100 dark:bg-slate-800/50" : "text-slate-700 dark:text-slate-300"
                       }`}
                     >
@@ -400,12 +407,15 @@ export default function BenchmarkRadarSection() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-stretch">
+        <div className="grid grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5">
           
           {/* LEFT: RADAR CHART CONTAINER */}
-          <div className="bg-slate-50/50 dark:bg-[#050d1a] border border-slate-150 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Relative Alignment Spider</span>
+          <div className="flex min-h-[470px] flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#263247] dark:bg-[#080e19] sm:p-5">
+            <div className="mb-2 flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-[#263247]">
+              <div>
+                <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Relative Alignment</span>
+                <span className="mt-1 block text-[10px] font-medium text-slate-400 dark:text-slate-500">Normalized 0-100 efficiency scale</span>
+              </div>
               
               {/* Interactive Legend with toggle options */}
               <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -435,18 +445,18 @@ export default function BenchmarkRadarSection() {
             </div>
 
             {/* Recharts Radar Chart */}
-            <div id="radar-chart-container" className="h-[360px] w-full flex items-center justify-center">
+            <div id="radar-chart-container" className="h-[430px] w-full flex items-center justify-center sm:h-[460px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <RadarChart cx="50%" cy="50%" outerRadius={isMobile ? "55%" : "72%"} data={chartData}>
-                  <PolarGrid stroke={theme === "dark" ? "#1e293b" : "#cbd5e1"} strokeOpacity={0.8} />
+                <RadarChart cx="50%" cy="50%" outerRadius={isMobile ? "60%" : "78%"} data={chartData}>
+                  <PolarGrid stroke={theme === "dark" ? "#263247" : "#cbd5e1"} strokeOpacity={0.9} radialLines={true} />
                   <PolarAngleAxis
                     dataKey="subject"
-                    tick={{ fill: theme === "dark" ? "#94a3b8" : "#475569", fontSize: isMobile ? 8 : 10, fontWeight: 700 }}
+                    tick={{ fill: theme === "dark" ? "#b5c0d1" : "#475569", fontSize: isMobile ? 8 : 10, fontWeight: 700 }}
                   />
                   <PolarRadiusAxis
                     angle={30}
                     domain={[0, 100]}
-                    tick={{ fill: theme === "dark" ? "#475569" : "#94a3b8", fontSize: 8 }}
+                    tick={{ fill: theme === "dark" ? "#64748b" : "#94a3b8", fontSize: 8 }}
                     axisLine={false}
                   />
                   
@@ -477,20 +487,20 @@ export default function BenchmarkRadarSection() {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-white dark:bg-[#090e1a] border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-2xl space-y-1.5 text-left">
-                            <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 block border-b border-slate-100 dark:border-slate-800 pb-1">
+                          <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl dark:border-[#263247] dark:bg-[#080d17]">
+                            <span className="block border-b border-slate-200 pb-1.5 text-[10px] font-black uppercase tracking-[0.08em] text-slate-500 dark:border-[#263247] dark:text-slate-400">
                               {data.subject}
                             </span>
                             {showPortfolio && (
                               <div className="flex items-center justify-between gap-5 text-xs">
-                                <span className="text-indigo-500 dark:text-indigo-400 font-bold">Portfolio:</span>
-                                <span className="font-mono font-bold text-slate-900 dark:text-white">{data.portfolioDisplay}</span>
+                                <span className="font-bold text-indigo-600 dark:text-indigo-400">Portfolio</span>
+                                <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">{data.portfolioDisplay}</span>
                               </div>
                             )}
                             {showBenchmark && (
                               <div className="flex items-center justify-between gap-5 text-xs">
-                                <span className="text-sky-500 dark:text-sky-400 font-bold">{selectedBenchmark}:</span>
-                                <span className="font-mono font-bold text-slate-900 dark:text-white">{data.benchmarkDisplay}</span>
+                                <span className="font-bold text-sky-600 dark:text-sky-400">{selectedBenchmark}</span>
+                                <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">{data.benchmarkDisplay}</span>
                               </div>
                             )}
                           </div>
@@ -503,99 +513,113 @@ export default function BenchmarkRadarSection() {
               </ResponsiveContainer>
             </div>
             
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-2">
-              <Info size={12} className="text-blue-500 shrink-0" />
+            <div className="mt-2 flex items-start gap-1.5 text-[10px] font-medium leading-relaxed text-slate-500">
+              <Info size={12} className="mt-0.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
               <span>Chart values are normalized to a standard 0-100 scale for comparison. Tooltips reflect raw actual figures.</span>
             </div>
           </div>
 
           {/* RIGHT: COMPARISON STATS & SCORECARD */}
-          <div className="space-y-4 flex flex-col justify-between">
+          <div className="flex flex-col gap-4">
             
             {/* Benchmark Verdict Scorecard */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-slate-50/50 dark:bg-[#050d1a] shadow-sm">
-              <div className="text-left">
-                <span className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider block">Benchmark Verdict</span>
-                <span className="text-xl font-extrabold text-emerald-500 dark:text-emerald-400 uppercase mt-1 block">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 shadow-sm dark:border-[#263247] dark:bg-[#080e19]">
+              <div className="flex items-start justify-between gap-4">
+                <div className="text-left">
+                <span className="block text-[9px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Benchmark Verdict</span>
+                <span className="mt-1 block text-lg font-black uppercase tracking-tight text-emerald-600 dark:text-emerald-400">
                   {benchmarkData.rating}
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-455 font-semibold mt-0.5 block">vs {selectedBenchmark}</span>
-              </div>
-              <div className="text-left sm:text-right">
-                <span className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider block">Comparison Score</span>
-                <span className="text-2xl font-black font-mono text-cyan-600 dark:text-cyan-400 block mt-1">
+                <span className="mt-0.5 block text-[10px] font-medium text-slate-500 dark:text-slate-400">vs {selectedBenchmark}</span>
+                </div>
+                <div className="text-right">
+                <span className="block text-[9px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Comparison Score</span>
+                <span className="mt-1 block font-mono text-xl font-black text-cyan-600 dark:text-cyan-400">
                   {benchmarkData.overallScore}
                   <span className="text-sm text-slate-400 dark:text-slate-500 font-normal">/100</span>
                 </span>
+                </div>
               </div>
             </div>
 
             {/* Metrics outperformed/underperformed stats */}
             {comparisonDetails && (
-              <div className="bg-slate-50/50 dark:bg-[#050d1a] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block border-b border-slate-100 dark:border-slate-800 pb-2">Comparison Ledger</span>
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#263247] dark:bg-[#080e19]">
+                <span className="block border-b border-slate-200 pb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:border-[#263247] dark:text-slate-400">Comparison Ledger</span>
                 
-                <div className="grid grid-cols-2 gap-3 text-center">
-                  <div className="bg-slate-100/50 dark:bg-[#121a2a]/40 border border-slate-200 dark:border-slate-805 rounded-xl py-3 px-2">
-                    <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 block">Outperformed</span>
-                    <span className="text-xl font-black text-slate-900 dark:text-white font-mono mt-1 block">{comparisonDetails.outperformed.length}</span>
-                    <span className="text-[8px] text-slate-400 font-extrabold uppercase mt-0.5 block">Metrics</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] px-2 py-2.5 text-center">
+                    <span className="block text-[9px] font-black uppercase tracking-[0.08em] text-emerald-600 dark:text-emerald-400">Outperformed</span>
+                    <span className="mt-1 block font-mono text-xl font-black text-slate-900 dark:text-white">{comparisonDetails.outperformed.length}</span>
+                    <span className="mt-0.5 block text-[8px] font-bold uppercase text-slate-400">Metrics</span>
                   </div>
 
-                  <div className="bg-slate-100/50 dark:bg-[#121a2a]/40 border border-slate-200 dark:border-slate-805 rounded-xl py-3 px-2">
-                    <span className="text-[9px] font-black uppercase text-rose-500 dark:text-rose-450 block">Underperformed</span>
-                    <span className="text-xl font-black text-slate-900 dark:text-white font-mono mt-1 block">{comparisonDetails.underperformed.length}</span>
-                    <span className="text-[8px] text-slate-400 font-extrabold uppercase mt-0.5 block">Metrics</span>
+                  <div className="rounded-lg border border-rose-500/20 bg-rose-500/[0.04] px-2 py-2.5 text-center">
+                    <span className="block text-[9px] font-black uppercase tracking-[0.08em] text-rose-600 dark:text-rose-400">Underperformed</span>
+                    <span className="mt-1 block font-mono text-xl font-black text-slate-900 dark:text-white">{comparisonDetails.underperformed.length}</span>
+                    <span className="mt-0.5 block text-[8px] font-bold uppercase text-slate-400">Metrics</span>
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-1 text-xs">
                   {/* Pills styled matching theme-aware style with rounded border */}
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-center bg-white dark:bg-[#121a2a]/40 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-200 px-3.5 py-2.5 rounded-xl shadow-sm gap-1">
-                    <span className="text-slate-500 dark:text-slate-400 font-extrabold text-[10px] uppercase">Best Lead Margin:</span>
-                    <span className="font-extrabold text-emerald-650 dark:text-emerald-400 uppercase text-[10px] font-mono sm:text-right">
-                      {comparisonDetails.bestMetric.name} ({comparisonDetails.bestMetric.portfolioDisplay})
-                    </span>
+                  <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-[#263247] dark:bg-[#0c1422] sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Best Lead Margin</span>
+                    {comparisonDetails.bestMetric ? (
+                      <span className={`font-extrabold uppercase text-[10px] font-mono sm:text-right ${bestMetricTone}`}>
+                        {comparisonDetails.bestMetric.name} ({comparisonDetails.bestMetric.portfolioDisplay})
+                      </span>
+                    ) : (
+                      <span className="font-extrabold uppercase text-[10px] text-slate-400 dark:text-slate-500 font-mono sm:text-right">
+                        N/A
+                      </span>
+                    )}
                   </div>
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-center bg-white dark:bg-[#121a2a]/40 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-200 px-3.5 py-2.5 rounded-xl shadow-sm gap-1">
-                    <span className="text-slate-500 dark:text-slate-400 font-extrabold text-[10px] uppercase">Narrowest Gap:</span>
-                    <span className="font-extrabold text-amber-600 dark:text-amber-450 uppercase text-[10px] font-mono sm:text-right">
-                      {comparisonDetails.weakestMetric.name} ({comparisonDetails.weakestMetric.portfolioDisplay})
-                    </span>
+                  <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-[#263247] dark:bg-[#0c1422] sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Narrowest Gap</span>
+                    {comparisonDetails.weakestMetric ? (
+                      <span className={`font-extrabold uppercase text-[10px] font-mono sm:text-right ${weakestMetricTone}`}>
+                        {comparisonDetails.weakestMetric.name} ({comparisonDetails.weakestMetric.portfolioDisplay})
+                      </span>
+                    ) : (
+                      <span className="font-extrabold uppercase text-[10px] text-slate-400 dark:text-slate-500 font-mono sm:text-right">
+                        N/A
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
             {/* Export Engine Panel */}
-            <div className="bg-slate-50/50 dark:bg-[#050d1a] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block border-b border-slate-100 dark:border-slate-800 pb-2 mb-3">Export Comparison Report</span>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#263247] dark:bg-[#080e19]">
+              <span className="mb-3 block border-b border-slate-200 pb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:border-[#263247] dark:text-slate-400">Export Comparison Report</span>
               
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={exportPNG}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-white hover:bg-slate-50 dark:bg-[#121a2a]/60 dark:hover:bg-[#121a2a] border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-775 dark:text-slate-200 transition-colors shadow-sm active:scale-95"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 shadow-sm transition-colors hover:bg-slate-50 active:scale-[0.98] dark:border-[#263247] dark:bg-[#0c1422] dark:text-slate-200 dark:hover:bg-[#111a2b]"
                 >
                   <ImageIcon size={12} className="text-blue-500" />
                   PNG Chart
                 </button>
                 <button
                   onClick={exportPDF}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-white hover:bg-slate-50 dark:bg-[#121a2a]/60 dark:hover:bg-[#121a2a] border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-775 dark:text-slate-200 transition-colors shadow-sm active:scale-95"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 shadow-sm transition-colors hover:bg-slate-50 active:scale-[0.98] dark:border-[#263247] dark:bg-[#0c1422] dark:text-slate-200 dark:hover:bg-[#111a2b]"
                 >
                   <FileText size={12} className="text-indigo-500" />
                   PDF Report
                 </button>
                 <button
                   onClick={() => exportCSV(false)}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-white hover:bg-slate-50 dark:bg-[#121a2a]/60 dark:hover:bg-[#121a2a] border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-775 dark:text-slate-250 transition-colors shadow-sm active:scale-95"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 shadow-sm transition-colors hover:bg-slate-50 active:scale-[0.98] dark:border-[#263247] dark:bg-[#0c1422] dark:text-slate-200 dark:hover:bg-[#111a2b]"
                 >
                   <FileSpreadsheet size={12} className="text-emerald-500" />
                   CSV Data
                 </button>
                 <button
                   onClick={() => exportCSV(true)}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-white hover:bg-slate-50 dark:bg-[#121a2a]/60 dark:hover:bg-[#121a2a] border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-775 dark:text-slate-250 transition-colors shadow-sm active:scale-95"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 shadow-sm transition-colors hover:bg-slate-50 active:scale-[0.98] dark:border-[#263247] dark:bg-[#0c1422] dark:text-slate-200 dark:hover:bg-[#111a2b]"
                 >
                   <FileSpreadsheet size={12} className="text-emerald-500" />
                   Excel Data
@@ -607,61 +631,60 @@ export default function BenchmarkRadarSection() {
         </div>
       )}      {/* 2. AI BENCHMARK INSIGHTS SECTION */}
       {benchmarkData && !loading && (
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-200 dark:border-slate-800 pt-5">
+        <div className="grid grid-cols-1 gap-3 border-t border-slate-200 px-4 pb-4 pt-4 sm:px-5 md:grid-cols-3 dark:border-[#263247]">
           
           {/* Strengths */}
-          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+          <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#263247] dark:bg-[#080e19]">
             <div>
-              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-450 mb-2.5 border-b border-slate-150 dark:border-slate-800/60 pb-2">
-                <CheckCircle size={14} />
-                <span className="text-[10px] font-black uppercase tracking-wider">Outperformance Strengths</span>
+              <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2.5 text-emerald-600 dark:border-[#263247] dark:text-emerald-400">
+                <CheckCircle size={14} className="shrink-0" />
+                <span className="text-[10px] font-black uppercase tracking-[0.12em]">Outperformance Strengths</span>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {benchmarkData.aiInsights.strengths.map((str: any, idx: any) => (
-                  <li key={idx} className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed font-semibold">
+                  <li key={idx} className="border-l-2 border-emerald-500/30 pl-2.5 text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-300">
                     {str}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="text-[9px] text-slate-400 dark:text-slate-500 font-extrabold uppercase mt-4">Solvency Vector Gain</div>
+            <div className="mt-4 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">Strength Highlight</div>
           </div>
 
           {/* Weaknesses */}
-          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+          <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#263247] dark:bg-[#080e19]">
             <div>
-              <div className="flex items-center gap-1.5 text-rose-500 dark:text-rose-400 mb-2.5 border-b border-slate-150 dark:border-slate-800/60 pb-2">
-                <AlertTriangle size={14} />
-                <span className="text-[10px] font-black uppercase tracking-wider">Comparative Weaknesses</span>
+              <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2.5 text-rose-600 dark:border-[#263247] dark:text-rose-400">
+                <AlertTriangle size={14} className="shrink-0" />
+                <span className="text-[10px] font-black uppercase tracking-[0.12em]">Comparative Weaknesses</span>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {benchmarkData.aiInsights.weaknesses.map((weak: any, idx: any) => (
-                  <li key={idx} className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed font-semibold">
+                  <li key={idx} className="border-l-2 border-rose-500/30 pl-2.5 text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-300">
                     {weak}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="text-[9px] text-slate-400 dark:text-slate-500 font-extrabold uppercase mt-4">Risk Variance Warning</div>
+            <div className="mt-4 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">Risk Variance Warning</div>
           </div>
 
           {/* Recommendations */}
-          <div className="bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 blur-xl pointer-events-none rounded-full" />
+          <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#263247] dark:bg-[#080e19]">
             <div>
-              <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 mb-2.5 border-b border-slate-150 dark:border-slate-800/60 pb-2">
-                <Award size={14} />
-                <span className="text-[10px] font-black uppercase tracking-wider">Outperform Directives</span>
+              <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2.5 text-cyan-600 dark:border-[#263247] dark:text-cyan-400">
+                <Award size={14} className="shrink-0" />
+                <span className="text-[10px] font-black uppercase tracking-[0.12em]">Outperform Directives</span>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {benchmarkData.aiInsights.recommendations.map((rec: any, idx: any) => (
-                  <li key={idx} className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed font-semibold">
+                  <li key={idx} className="border-l-2 border-cyan-500/30 pl-2.5 text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-300">
                     {rec}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="text-[9px] text-slate-400 dark:text-slate-500 font-extrabold uppercase mt-4">AI Optimizer Plan</div>
+            <div className="mt-4 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">AI Optimizer Plan</div>
           </div>
 
         </div>
