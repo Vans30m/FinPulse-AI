@@ -78,7 +78,6 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Appearance & Privacy settings (derived from profileData.preferences)
-  const [accentColor, setAccentColor] = useState("indigo");
   const [compactMode, setCompactMode] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -202,7 +201,6 @@ export default function Profile() {
 
       if (data.preferences) {
         const prefs = data.preferences as any;
-        if (prefs.accentColor) setAccentColor(prefs.accentColor);
         if (prefs.compactMode !== undefined) setCompactMode(prefs.compactMode);
         if (prefs.animationsEnabled !== undefined) setAnimationsEnabled(prefs.animationsEnabled);
         if (prefs.sidebarCollapsed !== undefined) {
@@ -466,6 +464,8 @@ export default function Profile() {
     if (currencyString.includes('$') || currencyString.toUpperCase().includes('USD')) return '$';
     if (currencyString.includes('€') || currencyString.toUpperCase().includes('EUR')) return '€';
     if (currencyString.includes('£') || currencyString.toUpperCase().includes('GBP')) return '£';
+    if (currencyString.includes('¥') || currencyString.toUpperCase().includes('JPY')) return '¥';
+    if (currencyString.includes('₩') || currencyString.toUpperCase().includes('KRW')) return '₩';
     return '₹';
   };
   const cSymbol = getCurrencySymbol(user.currency || profileData?.currency);
@@ -525,8 +525,8 @@ export default function Profile() {
       />
 
       {/* SECTION 2 - Investment Statistics Grid */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Investment Summary Dashboard</h3>
+      <div className="profile-summary-section space-y-4">
+        <h3 className="flex items-center gap-2 text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider"><span className="h-1.5 w-6 rounded-full bg-blue-600 dark:bg-cyan-400" />Investment Summary Dashboard</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((stat, idx) => (
             <StatisticCard
@@ -549,10 +549,10 @@ export default function Profile() {
         <div className="space-y-8">
           
           {/* Watchlist Summary Section */}
-          <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-lg space-y-5">
+          <div className="profile-section-card profile-watchlist-section rounded-lg border border-slate-200/60 dark:border-[#242424] bg-white dark:bg-[#111111] p-6 shadow-lg space-y-5">
             <div>
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <Bookmark className="h-5 w-5 text-indigo-500" /> Watchlist Summary
+                <Bookmark className="h-5 w-5 text-blue-600 dark:text-cyan-400" /> Watchlist Summary
               </h3>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Real-time asset breakdowns currently saved to your watchlists.</p>
             </div>
@@ -560,15 +560,15 @@ export default function Profile() {
             <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
               <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Total Lists</span>
-                <p className="text-sm sm:text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{watchlistSummary?.totalWatchlists || 0}</p>
+                <p className="text-sm sm:text-lg font-black text-blue-600 dark:text-cyan-400 mt-1">{watchlistSummary?.totalWatchlists || 0}</p>
               </div>
               <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Total Assets</span>
-                <p className="text-sm sm:text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{watchlistSummary?.totalAssets || 0}</p>
+                <p className="text-sm sm:text-lg font-black text-blue-600 dark:text-cyan-400 mt-1">{watchlistSummary?.totalAssets || 0}</p>
               </div>
               <div className="p-2 sm:p-3 bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-2xl text-center">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Stocks / ETFs</span>
-                <p className="text-sm sm:text-lg font-black text-indigo-500 dark:text-cyan-400 mt-1">{(watchlistSummary?.stocks || 0) + (watchlistSummary?.etfs || 0)}</p>
+                <p className="text-sm sm:text-lg font-black text-blue-600 dark:text-cyan-400 mt-1">{(watchlistSummary?.stocks || 0) + (watchlistSummary?.etfs || 0)}</p>
               </div>
             </div>
           </div>
@@ -588,10 +588,10 @@ export default function Profile() {
         <div className="space-y-8">
           
           {/* Appearance Customizer Section */}
-          <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-lg space-y-6">
+          <div className="profile-section-card profile-appearance-section rounded-lg border border-slate-200/60 dark:border-[#242424] bg-white dark:bg-[#111111] p-6 shadow-lg space-y-6">
             <div>
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <Palette className="h-5 w-5 text-indigo-500" /> UI Appearance settings
+                <Palette className="h-5 w-5 text-blue-600 dark:text-cyan-400" /> UI Appearance settings
               </h3>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Configure layout densities, color options and rendering styles.</p>
             </div>
@@ -609,7 +609,7 @@ export default function Profile() {
                       }}
                       className={`py-2 rounded-xl text-xs font-black uppercase border capitalize transition-all ${
                         theme === t
-                          ? "bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-500/25"
+                          ? "profile-theme-active bg-blue-600 dark:bg-cyan-500 border-blue-600 dark:border-cyan-500 text-white dark:text-[#07110a] shadow-md shadow-blue-500/25"
                           : "border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                       }`}
                     >
@@ -636,7 +636,7 @@ export default function Profile() {
 
 
           {/* Data Export Options Section */}
-          <div className="rounded-3xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-night-900 p-6 shadow-lg space-y-5">
+          <div className="profile-section-card profile-export-section rounded-lg border border-slate-200/60 dark:border-[#242424] bg-white dark:bg-[#111111] p-6 shadow-lg space-y-5">
             <div>
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <FileDown className="h-5 w-5 text-indigo-500" /> Personal Data Export Hub
@@ -652,10 +652,10 @@ export default function Profile() {
               >
                 <div className="space-y-3.5 w-full">
                   <div className="flex justify-between items-start">
-                    <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-500 dark:text-indigo-400">
+                    <div className="p-2.5 rounded-md bg-blue-500/10 text-blue-600 dark:bg-cyan-500/10 dark:text-cyan-400">
                       <FileText className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 bg-indigo-500/10 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-cyan-400 bg-blue-500/10 dark:bg-cyan-500/10 px-2.5 py-0.5 rounded-full">
                       JSON
                     </span>
                   </div>
