@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { Calendar, ChevronLeft, ChevronRight, RefreshCcw } from "lucide-react";
+import { Calendar, ChevronLeft, RefreshCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { DailyPerformancePoint, HeatmapAssetFilter, HeatmapRange, HeatmapSummaryMetrics } from "./types";
 import HeatmapFilters from "./HeatmapFilters";
@@ -20,6 +20,8 @@ interface MonthLabel {
   name: string;
   index: number;
 }
+
+const MONTH_LABELS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
 function toKey(date: Date) {
   return date.toISOString().split("T")[0];
@@ -49,29 +51,31 @@ function buildCalendar(days: DailyPerformancePoint[]): { weeks: CalendarWeek[]; 
 
   for (let weekStart = new Date(first); weekStart <= last; weekStart.setUTCDate(weekStart.getUTCDate() + 7)) {
     const weekDays: (DailyPerformancePoint | null)[] = [];
-    let monthLabel: string | null = null;
 
     for (let i = 0; i < 7; i++) {
       const day = new Date(weekStart);
       day.setUTCDate(weekStart.getUTCDate() + i);
       const key = toKey(day);
       const point = map.get(key) ?? null;
-      if (point && point.day <= 7 && i < 6) {
-        monthLabel = day.toLocaleDateString(undefined, { month: "short" });
+      if (point) {
+        const monthKey = `${point.year}-${point.month}`;
+        const exists = monthLabels.find((label) => label.name === monthKey);
+        if (!exists) monthLabels.push({ name: monthKey, index: weekIndex });
       }
       weekDays.push(point);
-    }
-
-    if (monthLabel) {
-      const exists = monthLabels.find((label) => label.name === monthLabel);
-      if (!exists) monthLabels.push({ name: monthLabel, index: weekIndex });
     }
 
     weeks.push({ index: weekIndex, days: weekDays });
     weekIndex += 1;
   }
 
-  return { weeks, monthLabels };
+  return {
+    weeks,
+    monthLabels: monthLabels.map((label) => ({
+      name: MONTH_LABELS[Number(label.name.split("-")[1])] ?? label.name,
+      index: label.index,
+    })),
+  };
 }
 
 function computeSummary(days: DailyPerformancePoint[]): HeatmapSummaryMetrics {
@@ -93,6 +97,7 @@ function computeSummary(days: DailyPerformancePoint[]): HeatmapSummaryMetrics {
   const worstDay = [...tradingDays].sort((a, b) => a.portfolioReturn - b.portfolioReturn)[0];
   const positiveDays = tradingDays.filter((d) => d.portfolioReturn > 0).length;
   const negativeDays = tradingDays.filter((d) => d.portfolioReturn < 0).length;
+  const measuredDays = positiveDays + negativeDays;
   const avgDailyReturn = tradingDays.reduce((sum, d) => sum + d.portfolioReturn, 0) / tradingDays.length;
 
   let longestWinningStreak = 0;
@@ -121,7 +126,7 @@ function computeSummary(days: DailyPerformancePoint[]): HeatmapSummaryMetrics {
     avgDailyReturn,
     positiveDays,
     negativeDays,
-    winningPercentage: (positiveDays / tradingDays.length) * 100,
+    winningPercentage: measuredDays > 0 ? (positiveDays / measuredDays) * 100 : 0,
     longestWinningStreak,
     longestLosingStreak,
   };
@@ -304,14 +309,6 @@ export default function PerformanceHeatmap() {
             className="px-3 py-2 rounded-xl bg-blue-600/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-wider text-blue-400"
           >
             Current Year
-          </button>
-          <button
-            type="button"
-            onClick={() => changeYear(1)}
-            disabled={year >= currentYear + 1}
-            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#050711] border border-slate-200 dark:border-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next Year <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

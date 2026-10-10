@@ -41,7 +41,7 @@ export default function HeatmapTooltip({ point, x, y }: Props) {
   return (
     <div
       className="pointer-events-none fixed z-[9999] w-[255px] rounded-2xl border border-slate-800 bg-[#050711]/95 backdrop-blur-md p-3.5 shadow-2xl"
-      style={{ left: x, top: y, transform: "translate(-50%, calc(-100% - 12px))" }}
+      style={{ left: x, top: y - 8, transform: "translate(-50%, -100%)" }}
     >
       <p className="text-xs font-black text-white mb-2.5">{dateLabel}</p>
       <div className="space-y-1.5 text-[11px]">
@@ -50,7 +50,6 @@ export default function HeatmapTooltip({ point, x, y }: Props) {
         <div className="flex justify-between text-slate-300"><span>Portfolio Value:</span><span className="text-white font-bold">{formatMoney(point.portfolioValue, user?.currency)}</span></div>
         <div className="flex justify-between text-slate-300"><span>Benchmark:</span><span className={point.benchmarkReturn >= 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>{formatSigned(point.benchmarkReturn, "%")}</span></div>
         <div className="flex justify-between text-slate-300"><span>Difference:</span><span className={point.differenceVsBenchmark >= 0 ? "text-cyan-400 font-bold" : "text-rose-400 font-bold"}>{formatSigned(point.differenceVsBenchmark, "%")}</span></div>
-        <div className="flex justify-between text-slate-300"><span>Volume:</span><span className="text-slate-100 font-semibold">{point.tradingVolume.toLocaleString()}</span></div>
       </div>
     </div>
   );

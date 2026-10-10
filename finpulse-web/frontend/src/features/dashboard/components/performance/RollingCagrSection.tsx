@@ -109,9 +109,14 @@ export default function RollingCagrSection() {
     { label: "Worst Period", value: worstPeriod },
   ];
 
+  const outperformingBenchmarks = benchmarkComparison.filter((item) => item.outperform).map((item) => item.label);
+  const underperformingBenchmarks = benchmarkComparison.filter((item) => !item.outperform).map((item) => item.label);
+  const niftyComparison = benchmarkComparison.find((item) => item.label === "NIFTY 50");
   const insights = [
-    "Portfolio CAGR has remained consistently above broad-market indices across most windows.",
-    "Momentum accelerated during the latest periods, with alpha spread widening versus NIFTY 50.",
+    `Portfolio CAGR outpaced ${outperformingBenchmarks.join(", ") || "no selected benchmarks"}${underperformingBenchmarks.length > 0 ? `, but lagged ${underperformingBenchmarks.join(", ")}` : ""}.`,
+    niftyComparison
+      ? `Portfolio CAGR ${niftyComparison.outperform ? "outperformed" : "underperformed"} NIFTY 50 by ${niftyComparison.diff >= 0 ? "+" : "-"}${Math.abs(niftyComparison.diff).toFixed(2)}% in the latest rolling window.`
+      : "NIFTY 50 comparison is unavailable for the latest rolling window.",
     "Bitcoin remains the most volatile comparator; use it as a risk ceiling benchmark.",
     "Median CAGR staying close to average suggests relatively stable compounding quality.",
   ];
