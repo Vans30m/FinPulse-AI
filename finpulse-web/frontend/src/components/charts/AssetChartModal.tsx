@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import CandlestickChart from "./CandlestickChart";
 import { ChartHeader } from "./ChartHeader";
-import { getUnifiedAssetDetails, getTechnicals } from "../../services/marketService";
+import { getUnifiedAssetDetails, getTechnicals, getStockSentiment } from "../../services/marketService";
 import { syncVirtualState } from "../../services/portfolioService";
 import toast from "react-hot-toast";
 
@@ -55,6 +55,13 @@ const parseDateParts = (dateVal: any) => {
   return { day, month, year };
 };
 
+const truncateToFiveSentences = (text?: string) => {
+  if (!text) return "No description available.";
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length <= 5) return text;
+  return `${sentences.slice(0, 5).join(' ')}...`;
+};
+
 export default function AssetChartModal({ open, onClose, asset }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tabContentRef = useRef<HTMLDivElement>(null);
@@ -82,6 +89,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   const [data, setData] = useState<any>(null);
   const [technicals, setTechnicals] = useState<any>(null);
   const [meta, setMeta] = useState<any>(null);
+  const [marketSentiment, setMarketSentiment] = useState<any>(null);
   const [hasComparison, setHasComparison] = useState(false);
   const [timeframe, setTimeframe] = useState("1Y");
 
@@ -326,6 +334,24 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
   }, [open, symbol, activeTab]);
 
   useEffect(() => {
+    if (!open || !symbol || activeTab !== "sentiment") return;
+
+    let ignore = false;
+    const loadSentiment = async () => {
+      try {
+        const result = await getStockSentiment(symbol);
+        if (!ignore) setMarketSentiment(result);
+      } catch (err) {
+        console.error("Failed to load AI stock sentiment:", err);
+        if (!ignore) setMarketSentiment(null);
+      }
+    };
+
+    loadSentiment();
+    return () => { ignore = true; };
+  }, [open, symbol, activeTab]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) onClose();
     };
@@ -498,14 +524,25 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
   // Derive dynamic sentiment
   const sentiment = useMemo(() => {
-    if (!data) return { score: 50, label: "Neutral", reasons: ["No coverage available"] };
-    if (data.sentiment) {
+    const apiSentiment = marketSentiment || data?.sentiment;
+
+    if (apiSentiment) {
+      const score = Number(apiSentiment.score ?? apiSentiment.sentimentScore ?? apiSentiment.sentiment_score ?? 50);
+      const label = String(apiSentiment.label ?? apiSentiment.sentiment ?? apiSentiment.summary ?? "Neutral");
+      const reasons = Array.isArray(apiSentiment.reasons)
+        ? apiSentiment.reasons
+        : Array.isArray(apiSentiment.takeaways)
+          ? apiSentiment.takeaways
+          : [apiSentiment.summary || apiSentiment.description || "No coverage available"];
+
       return {
-        score: Number(data.sentiment.score ?? 50),
-        label: String(data.sentiment.label ?? "Neutral"),
-        reasons: Array.isArray(data.sentiment.reasons) ? data.sentiment.reasons : ["No coverage available"]
+        score: Math.min(Math.max(score, 0), 100),
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        reasons: reasons.filter(Boolean)
       };
     }
+
+    if (!data) return { score: 50, label: "Neutral", reasons: ["No coverage available"] };
     let score = 50;
     const reasons: string[] = [];
 
@@ -552,7 +589,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
 
     const label = score >= 65 ? "Bullish" : score <= 35 ? "Bearish" : "Neutral";
     return { score: Math.min(Math.max(score, 0), 100), label, reasons };
-  }, [data]);
+  }, [data, marketSentiment]);
 
   if (!open || !asset) return null;
 
@@ -833,7 +870,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                           </div>
                         </div>
                         <p className="text-xs text-slate-400 leading-relaxed mt-5 pt-5 text-justify">
-                          {data.profile.description}
+                          {truncateToFiveSentences(data.profile.description)}
                         </p>
                       </div>
 
@@ -857,24 +894,24 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                               <span className="text-slate-300 font-bold">{formatVal(data.statistics.sharesOutstanding)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
-                              <span className="text-slate-500">PE Ratio</span>
-                              <span className="text-slate-300 font-bold">{formatVal(data.statistics.pe)}</span>
+                              <span className="text-slate-500">Price to Book</span>
+                              <span className="text-slate-300 font-bold">{formatVal(data.statistics.priceToBook)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
                               <span className="text-slate-500">Forward PE</span>
                               <span className="text-slate-300 font-bold">{formatVal(data.statistics.forwardPe)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
-                              <span className="text-slate-500">PEG Ratio</span>
-                              <span className="text-slate-300 font-bold">{formatVal(data.statistics.peg)}</span>
+                              <span className="text-slate-500">Enterprise / EBITDA</span>
+                              <span className="text-slate-300 font-bold">{formatVal(data.statistics.enterpriseToEbitda)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
                               <span className="text-slate-500">Beta</span>
                               <span className="text-slate-300 font-bold">{formatVal(data.statistics.beta)}</span>
                             </div>
                             <div className="flex justify-between py-1 border-b border-slate-900/40">
-                              <span className="text-slate-500">Div. Yield</span>
-                              <span className="text-slate-300 font-bold">{formatVal(data.statistics.dividendYield * 100, false, true)}</span>
+                              <span className="text-slate-500">Price to Book</span>
+                              <span className="text-slate-300 font-bold">{formatVal(data.statistics.priceToBook)}</span>
                             </div>
                           </div>
                         </div>
@@ -1105,33 +1142,26 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       exit={{ opacity: 0, y: 10 }}
                       className="space-y-6"
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md flex flex-col items-center justify-center">
-                          <span className="text-xs font-black uppercase text-slate-500">Sentiment Score</span>
-                          <span className="text-5xl font-black text-white mt-4 font-mono">{sentiment.score}%</span>
-                          <span className={`text-sm font-black uppercase mt-3 tracking-wide ${sentiment.label === "Bullish" ? "text-emerald-400" : sentiment.label === "Bearish" ? "text-rose-400" : "text-amber-500"
-                            }`}>
+                      <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md">
+                        <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1 mb-4">Market Sentiment</h4>
+                        <div className="flex flex-wrap items-center gap-3 mb-4">
+                          <span className="text-3xl font-black text-white font-mono">{sentiment.score}%</span>
+                          <span className={`text-sm font-black uppercase tracking-wide ${sentiment.label === "Bullish" ? "text-emerald-400" : sentiment.label === "Bearish" ? "text-rose-400" : "text-amber-500"}`}>
                             {sentiment.label}
                           </span>
                         </div>
-
-                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md col-span-2 space-y-4">
-                          <h4 className="text-xs font-black uppercase text-slate-300 border-b border-slate-900 pb-2">
-                            Sentiment Analysis Parameters
-                          </h4>
-                          <ul className="space-y-3 text-xs text-slate-350">
-                            {sentiment.reasons && sentiment.reasons.length > 0 ? (
-                              sentiment.reasons.map((reason: string, i: number) => (
-                                <li key={i} className="flex items-start gap-2.5 leading-relaxed">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
-                                  <span>{reason}</span>
-                                </li>
-                              ))
-                            ) : (
-                              <li className="text-slate-500 italic py-2">No key sentiment drivers detected for this asset currently.</li>
-                            )}
-                          </ul>
-                        </div>
+                        <ul className="space-y-3 text-xs text-slate-350">
+                          {sentiment.reasons && sentiment.reasons.length > 0 ? (
+                            sentiment.reasons.map((reason: string, i: number) => (
+                              <li key={i} className="flex items-start gap-2.5 leading-relaxed">
+                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                                <span>{reason}</span>
+                              </li>
+                            ))
+                          ) : (
+                            <li className="text-slate-500 italic py-2">No key sentiment drivers detected for this asset currently.</li>
+                          )}
+                        </ul>
                       </div>
                     </motion.div>
                   )}
@@ -1719,72 +1749,48 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                       {(() => {
                         const newsItems = (data.news || []).slice(0, 10);
 
-                        const renderNewsTable = (items: any[]) => (
-                          <div className="overflow-x-auto rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md">
-                            <table className="w-full text-left border-collapse">
-                              <thead>
-                                <tr className="border-b border-slate-900 bg-[#0c1022]">
-                                  <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-20">Image</th>
-                                  <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
-                                  <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-16 text-center">Action</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-900/60">
-                                {items.map((item, idx) => (
-                                  <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
-                                    <td className="px-4 py-3 align-middle w-20">
-                                      {item.thumbnail?.resolutions?.[0]?.url ? (
-                                        <img
-                                          src={item.thumbnail.resolutions[0].url}
-                                          alt="News thumbnail"
-                                          className="w-16 h-11 rounded-lg object-cover border border-slate-900 shadow-sm shrink-0 bg-slate-950"
-                                        />
-                                      ) : (
-                                        <div className="w-16 h-11 rounded-lg border border-slate-900/60 shadow-sm shrink-0 bg-gradient-to-br from-[#0c1022] to-[#090d1a] flex items-center justify-center text-slate-500 hover:text-cyan-400 transition-colors">
-                                          <Newspaper className="h-5 w-5 opacity-60" />
-                                        </div>
-                                      )}
-                                    </td>
-                                    <td className="px-4 py-3.5 align-middle space-y-1">
-                                      <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block">
-                                        {item.publisher || "General News"}
-                                      </span>
-                                      <h4 className="text-xs font-bold text-slate-200 line-clamp-1 leading-snug">
-                                        {item.title}
-                                      </h4>
-                                      <p className="text-[10px] text-slate-400 line-clamp-1 font-normal leading-relaxed">
-                                        {item.summary || item.title}
-                                      </p>
-                                    </td>
-                                    <td className="px-4 py-3.5 align-middle text-center">
-                                      <a
-                                        href={item.link}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-all"
-                                        title="Read Article"
-                                      >
-                                        <ExternalLink size={12} className="stroke-[2.5]" />
-                                      </a>
-                                    </td>
-                                  </tr>
-                                ))}
-                                {items.length === 0 && (
-                                  <tr>
-                                    <td colSpan={3} className="px-4 py-8 text-center text-xs text-slate-500">
-                                      No articles found.
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
+                        const renderNewsList = (items: any[]) => (
+                          <div className="space-y-3 rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md p-3">
+                            {items.map((item, idx) => (
+                              <div key={idx} className="rounded-xl border border-slate-900 bg-[#0c1022] p-3 hover:border-slate-700 transition-colors">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0 flex-1">
+                                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block mb-1.5">
+                                      {item.publisher || "General News"}
+                                    </span>
+                                    <a
+                                      href={item.link}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-xs font-bold text-slate-200 hover:text-blue-400 transition-colors leading-snug block"
+                                    >
+                                      {item.title}
+                                    </a>
+                                  </div>
+                                  <a
+                                    href={item.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all shrink-0"
+                                    title="Read Article"
+                                  >
+                                    <ExternalLink size={12} className="stroke-[2.5]" />
+                                  </a>
+                                </div>
+                              </div>
+                            ))}
+                            {items.length === 0 && (
+                              <div className="px-4 py-8 text-center text-xs text-slate-500">
+                                No articles found.
+                              </div>
+                            )}
                           </div>
                         );
 
                         return (
                           <div className="w-full space-y-3">
                             <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-wider pl-1">Latest Coverage</h4>
-                            {renderNewsTable(newsItems)}
+                            {renderNewsList(newsItems)}
                           </div>
                         );
                       })()}

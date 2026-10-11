@@ -41,7 +41,7 @@ export default function MarketCompass() {
   ];
 
   return (
-    <div className="w-full h-full bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm flex flex-col gap-5">
+    <div className="hidden md:flex w-full h-full bg-white/70 dark:bg-white/[0.02] p-5 sm:p-6 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] shadow-sm flex-col gap-5">
 
       {/* Top Header Controls (Fear & Greed Style) */}
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">

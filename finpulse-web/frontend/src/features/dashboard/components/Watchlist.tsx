@@ -544,7 +544,7 @@ export default function Watchlist() {
                       </div>
 
                       {/* Middle Notes Indicator */}
-                      {item.notes && item.notes !== "Added to watchlist" && item.notes !== "Added from Details Page" && (
+                      {item.notes && !["Added to watchlist", "Added from Details Page", "Added from Charts", "Added from Screener"].includes(item.notes) && (
                         <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center gap-1.5 text-[10px] md:text-xs text-slate-400 dark:text-slate-500 italic font-medium">
                           <Info className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
                           <span className="truncate">{item.notes}</span>
