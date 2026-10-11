@@ -73,7 +73,7 @@ export default function Privacy() {
           <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-2xl">
             <Mail className="h-5 w-5 text-indigo-500 dark:text-cyan-400 shrink-0" />
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Reach out to our security desk at <a href="mailto:afinpulseai@gmail.com" className="font-bold text-blue-600 dark:text-cyan-400 hover:underline">afinpulseai@gmail.com</a> to execute deletion demands.
+              Reach out to our security desk at <a href="mailto:afinpulse@gmail.com" className="font-bold text-blue-600 dark:text-cyan-400 hover:underline">afinpulse@gmail.com</a> to execute deletion demands.
             </p>
           </div>
         </div>

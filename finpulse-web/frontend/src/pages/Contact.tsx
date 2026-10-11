@@ -27,7 +27,7 @@ export default function Contact() {
           <div className="space-y-2 pt-2">
             <p className="text-sm text-slate-500 dark:text-slate-400">
               General Support: <br />
-              <a href="mailto:afinpulseai@gmail.com" className="font-bold text-blue-600 dark:text-cyan-400 hover:underline">afinpulseai@gmail.com</a>
+              <a href="mailto:afinpulse@gmail.com" className="font-bold text-blue-600 dark:text-cyan-400 hover:underline">afinpulse@gmail.com</a>
             </p>
           </div>
         </div>
