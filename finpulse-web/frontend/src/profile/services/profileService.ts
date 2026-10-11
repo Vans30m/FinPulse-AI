@@ -199,7 +199,7 @@ export const profileService = {
     return res.json();
   },
 
-  async exportData(format: 'json' | 'csv'): Promise<Blob> {
+  async exportData(format: 'pdf' | 'docx'): Promise<Blob> {
     const res = await fetch(`${API_URL}/export?format=${format}`, {
       method: 'GET',
       headers: getHeaders()

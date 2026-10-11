@@ -412,11 +412,6 @@ export async function getAISentiment() {
   return response.json();
 }
 
-export async function getMarketExplanation() {
-  const response = await fetch(`${API_BASE_URL}/api/market-explanation`);
-  return response.json();
-}
-
 export async function getStockSentiment(symbol: string) {
   const response = await fetch(`${API_BASE_URL}/api/stock-sentiment/${symbol}`);
   return response.json();

@@ -21,10 +21,6 @@ export function processCumulativeData(series: ChartPoint[]): ProcessedChartPoint
   // Sort series chronologically to ensure normalization is correct
   const sorted = [...series].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Determine initial values to support front-end normalization if needed
-  const initialPort = sorted[0]?.portfolioReturn || 100;
-  const initialBench = sorted[0]?.benchmarkReturn || 100;
-
   const result: ProcessedChartPoint[] = [];
   let prevTime = 0;
 
@@ -36,9 +32,10 @@ export function processCumulativeData(series: ChartPoint[]): ProcessedChartPoint
       return;
     }
 
-    // Normalize to start at exactly 100 (in case backend is not perfectly normalized at the first element)
-    const normalizedPort = (item.portfolioReturn / initialPort) * 100;
-    const normalizedBench = (item.benchmarkReturn / initialBench) * 100;
+    // The API values are cumulative percentage returns, not index prices.
+    // Convert them to a 100-based display index without dividing by the first return.
+    const normalizedPort = 100 + item.portfolioReturn;
+    const normalizedBench = 100 + item.benchmarkReturn;
 
     result.push({
       time,

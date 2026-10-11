@@ -60,8 +60,10 @@ export function useAddWatchlistItem() {
   return useMutation({
     mutationFn: ({ listId, item }: { listId: string; item: any }) =>
       dashboardService.addWatchlistItem(listId, item),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['watchlists'] });
+      queryClient.invalidateQueries({ queryKey: ['watchlist-ai-rankings', variables.listId] });
+      queryClient.invalidateQueries({ queryKey: ['watchlist-ai-rankings'] });
       toast.success('Asset added to watchlist');
     }
   });
@@ -73,6 +75,7 @@ export function useRemoveWatchlistItem() {
     mutationFn: dashboardService.removeWatchlistItem,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['watchlists'] });
+      queryClient.invalidateQueries({ queryKey: ['watchlist-ai-rankings'] });
       toast.success('Asset removed from watchlist');
     }
   });
