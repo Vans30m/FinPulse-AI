@@ -440,7 +440,7 @@ export default function Profile() {
   };
 
   // Data Export Actions
-  const handleExportData = async (format: 'json' | 'csv') => {
+  const handleExportData = async (format: 'pdf' | 'docx') => {
     try {
       const blob = await profileService.exportData(format);
       const url = window.URL.createObjectURL(blob);
@@ -645,9 +645,9 @@ export default function Profile() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* JSON Card */}
+              {/* PDF Card */}
               <button
-                onClick={() => handleExportData('json')}
+                onClick={() => handleExportData('pdf')}
                 className="group flex flex-col justify-between p-5 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-indigo-500/30 dark:hover:border-indigo-500/20 bg-slate-50/50 dark:bg-white/[0.01] hover:bg-gradient-to-br hover:from-indigo-500/[0.03] hover:to-transparent text-left transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/[0.02] cursor-pointer"
               >
                 <div className="space-y-3.5 w-full">
@@ -656,27 +656,27 @@ export default function Profile() {
                       <FileText className="h-5 w-5" />
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-cyan-400 bg-blue-500/10 dark:bg-cyan-500/10 px-2.5 py-0.5 rounded-full">
-                      JSON
+                      PDF
                     </span>
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide">
-                      JSON Data Archive
+                      PDF Format
                     </h4>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                      Complete database backup including active watchlists, portfolio balances, active price alerts, and configuration preferences.
+                      A clean, readable export of your portfolio, alerts, and watchlist activity for sharing and archiving.
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-500 dark:text-indigo-400 mt-4 pt-3 border-t border-slate-250/20 dark:border-white/5 w-full group-hover:text-indigo-600 dark:group-hover:text-cyan-400 transition-colors">
-                  <span>Download Data</span>
+                  <span>Download PDF</span>
                   <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
 
-              {/* CSV Card */}
+              {/* DOCX Card */}
               <button
-                onClick={() => handleExportData('csv')}
+                onClick={() => handleExportData('docx')}
                 className="group flex flex-col justify-between p-5 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-emerald-500/30 dark:hover:border-emerald-500/20 bg-slate-50/50 dark:bg-white/[0.01] hover:bg-gradient-to-br hover:from-emerald-500/[0.03] hover:to-transparent text-left transition-all duration-300 hover:shadow-md hover:shadow-emerald-500/[0.02] cursor-pointer"
               >
                 <div className="space-y-3.5 w-full">
@@ -685,20 +685,20 @@ export default function Profile() {
                       <FileSpreadsheet className="h-5 w-5" />
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                      CSV
+                      DOCX
                     </span>
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide">
-                      CSV Spreadsheet
+                      DOCX File
                     </h4>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                      Formatted table summary optimized for direct importing into Microsoft Excel, Google Sheets, or custom charting apps.
+                      A Word-compatible document containing only your portfolio and watchlist data for review and sharing.
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 dark:text-emerald-400 mt-4 pt-3 border-t border-slate-250/20 dark:border-white/5 w-full group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  <span>Download Sheets</span>
+                  <span>Download DOCX</span>
                   <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>

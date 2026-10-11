@@ -51,6 +51,13 @@ type TabType =
   | "performance"
   | "news";
 
+const truncateToFiveSentences = (text?: string) => {
+  if (!text) return "No description available.";
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length <= 5) return text;
+  return `${sentences.slice(0, 5).join(' ')}...`;
+};
+
 function resolveExchangeLocation(symbol: string, assetType: string, stateExchange?: string): string {
   if (stateExchange) return stateExchange;
   if (assetType === "Crypto") return "BINANCE";
@@ -1101,7 +1108,7 @@ export default function AssetDetails() {
                   </div>
 
                   <p className="text-xs text-slate-400 leading-relaxed mt-6 pt-6">
-                    {data.profile.description}
+                    {truncateToFiveSentences(data.profile.description)}
                   </p>
                 </div>
 
@@ -1125,24 +1132,24 @@ export default function AssetDetails() {
                         <span className="text-slate-200 font-bold">{formatVal(data.statistics.sharesOutstanding)}</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-450" /> PE Ratio</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.pe)}</span>
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-450" /> Price to Book</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.priceToBook)}</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
                         <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-sky-400" /> Forward PE</span>
                         <span className="text-slate-200 font-bold">{formatVal(data.statistics.forwardPe)}</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-teal-400" /> PEG Ratio</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.peg)}</span>
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-teal-400" /> Enterprise / EBITDA</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.enterpriseToEbitda)}</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
                         <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-400" /> Beta</span>
                         <span className="text-slate-200 font-bold">{formatVal(data.statistics.beta)}</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-yellow-500" /> Div. Yield</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.dividendYield * 100, false, true)}</span>
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-yellow-500" /> Price to Book</span>
+                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.priceToBook)}</span>
                       </div>
                     </div>
                   </div>

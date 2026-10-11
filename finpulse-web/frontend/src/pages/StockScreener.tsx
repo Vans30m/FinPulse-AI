@@ -178,6 +178,19 @@ const getInsightsYears = () => {
   return years;
 };
 
+const truncateCompanyDescription = (description?: string) => {
+  if (!description) {
+    return 'Loading company description...';
+  }
+
+  const sentences = description.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length <= 5) {
+    return description;
+  }
+
+  return `${sentences.slice(0, 5).join(' ')}...`;
+};
+
 export default function StockScreener() {
   const isScrollingRef = useRef(false);
   const loadTimerRef = useRef<number | null>(null);
@@ -1603,7 +1616,7 @@ export default function StockScreener() {
                       {/* Left: Description & Website */}
                       <div className="md:col-span-2 space-y-4">
                         <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal">
-                          {assetDetails?.profile?.description || 'Loading company description...'}
+                          {truncateCompanyDescription(assetDetails?.profile?.description)}
                         </p>
                         {assetDetails?.profile?.website && (
                           <div>
@@ -1629,22 +1642,6 @@ export default function StockScreener() {
                             </div>
                             <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
                               Full Time Employees
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-xs font-mono font-black text-slate-900 dark:text-white">
-                              {assetDetails?.profile?.fiscalYearEnd ? (
-                                (() => {
-                                  const timestamp = assetDetails.profile.fiscalYearEnd;
-                                  const date = new Date(timestamp * 1000);
-                                  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                                  return `${months[date.getMonth()]} ${date.getDate()}`;
-                                })()
-                              ) : 'March 31'}
-                            </div>
-                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
-                              Fiscal Year Ends
                             </div>
                           </div>
 
@@ -1683,10 +1680,6 @@ export default function StockScreener() {
                             <span className="font-black text-blue-600 dark:text-cyan-400 capitalize">
                               {assetDetails?.analysts?.recommendationKey || 'N/A'} ({assetDetails?.analysts?.recommendationMean?.toFixed(2) || 'N/A'})
                             </span>
-                          </div>
-                          <div className="flex justify-between py-2 items-center">
-                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Total Analyst Ratings</span>
-                            <span className="font-bold text-slate-900 dark:text-slate-100">{assetDetails?.analysts?.numberOfAnalysts || 'N/A'}</span>
                           </div>
                           <div className="flex justify-between py-2 items-center">
                             <span className="font-sans font-bold text-slate-450 dark:text-slate-500">High Target Price</span>
@@ -1814,7 +1807,6 @@ export default function StockScreener() {
                         { label: '52-Week Low', value: assetDetails?.statistics?.fiftyTwoWeekLow ? `${currencySymbol}${assetDetails.statistics.fiftyTwoWeekLow.toFixed(2)}` : (selectedStock.low52w ? `${currencySymbol}${selectedStock.low52w.toFixed(2)}` : '-'), desc: '52-week bottom' },
                         { label: 'Shares Outstanding', value: assetDetails?.statistics?.sharesOutstanding ? (isIndian ? `${(assetDetails.statistics.sharesOutstanding / 10000000).toFixed(2)} Cr.` : `${(assetDetails.statistics.sharesOutstanding / 1000000).toFixed(2)}M`) : '-', desc: 'Total shares issued' },
                         { label: 'Beta (Volatility)', value: assetDetails?.statistics?.beta != null ? assetDetails.statistics.beta.toFixed(2) : '-', desc: 'Volatility relative to market' },
-                        { label: 'Dividend Yield', value: assetDetails?.statistics?.dividendYield != null ? `${(assetDetails.statistics.dividendYield * 100).toFixed(2)}%` : '-', desc: 'Annual dividend return rate' },
                       ].map((item) => (
                         <div key={item.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
                           <div className="flex flex-col min-w-0">

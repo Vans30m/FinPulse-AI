@@ -90,7 +90,7 @@ export default function Pulse() {
             <FearGreedIndex />
           </div>
           {/* Middle row: Market Compass full width */}
-          <div className="mt-8">
+          <div className="mt-8 hidden md:block">
             <MarketCompass />
           </div>
           {/* Bottom row: AI Pick of the Day full width */}
