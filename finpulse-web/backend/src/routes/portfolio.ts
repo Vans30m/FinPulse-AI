@@ -366,30 +366,82 @@ router.get('/portfolio/rolling-cagr', protect, async (req: AuthenticatedRequest,
 
     if (req.query.timeframe) {
       const timeframe = String(req.query.timeframe); // "1Y", "3Y", "5Y", "10Y", "MAX"
-      const series = [];
       const now = new Date();
       const count = timeframe === '1Y' ? 12 : timeframe === '3Y' ? 36 : timeframe === '5Y' ? 60 : 120;
-      
-      for (let i = count - 1; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthStr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()] + " '" + String(date.getFullYear()).slice(2);
-        
-        series.push({
-          period: monthStr,
-          portfolio: Math.round((Math.sin(i / 10) * 5 + 12 + Math.random() * 2) * 100) / 100,
-          nifty50: Math.round((Math.sin(i / 11) * 4 + 11 + Math.random() * 2) * 100) / 100,
-          sp500: Math.round((Math.sin(i / 12) * 4 + 10 + Math.random() * 2) * 100) / 100,
-          nasdaq: Math.round((Math.sin(i / 8) * 6 + 14 + Math.random() * 3) * 100) / 100,
-          gold: Math.round((Math.sin(i / 15) * 2 + 8 + Math.random() * 1) * 100) / 100,
-          bitcoin: Math.round((Math.sin(i / 5) * 15 + 25 + Math.random() * 8) * 100) / 100,
-        });
-      }
+      const period1 = new Date(now);
+      period1.setMonth(period1.getMonth() - count);
+      const historyRange = timeframe === 'MAX' ? '10y' : timeframe.toLowerCase();
+      const benchmarkSymbols = {
+        nifty50: '^NSEI',
+        sp500: '^GSPC',
+        nasdaq: '^IXIC',
+        gold: 'GC=F',
+        bitcoin: 'BTC-USD',
+      };
 
+      const [portfolioHistory, niftyHistory, sp500History, nasdaqHistory, goldHistory, bitcoinHistory] = await Promise.all([
+        getPortfolioHistory(userId, period1, now),
+        getHistoricalQuotes(benchmarkSymbols.nifty50, historyRange),
+        getHistoricalQuotes(benchmarkSymbols.sp500, historyRange),
+        getHistoricalQuotes(benchmarkSymbols.nasdaq, historyRange),
+        getHistoricalQuotes(benchmarkSymbols.gold, historyRange),
+        getHistoricalQuotes(benchmarkSymbols.bitcoin, historyRange),
+      ]);
+
+      const monthly = {
+        portfolio: toMonthlyValues(portfolioHistory),
+        nifty50: toMonthlyValues(niftyHistory),
+        sp500: toMonthlyValues(sp500History),
+        nasdaq: toMonthlyValues(nasdaqHistory),
+        gold: toMonthlyValues(goldHistory),
+        bitcoin: toMonthlyValues(bitcoinHistory),
+      };
+      const monthKeys = Array.from(new Set(Object.values(monthly).flatMap((values) => Array.from(values.keys()))))
+        .sort()
+        .slice(-count);
+
+      const carryForward = (values: Map<string, number>, key: string) => {
+        if (values.has(key)) return values.get(key) || 0;
+        const previous = Array.from(values.entries()).filter(([month]) => month <= key).pop();
+        return previous?.[1] || 0;
+      };
+
+      const buildCagrValues = (values: Map<string, number>) => {
+        const first = carryForward(values, monthKeys[0]);
+        return monthKeys.map((month, index) => {
+          const current = carryForward(values, month);
+          if (index === 0 || first <= 0 || current <= 0) return 0;
+          const years = Math.max(index / 12, 1 / 12);
+          return roundMetric((Math.pow(current / first, 1 / years) - 1) * 100);
+        });
+      };
+
+      const cagr = Object.fromEntries(Object.entries(monthly).map(([key, values]) => [key, buildCagrValues(values)]));
+      const monthLabel = (month: string) => {
+        const date = new Date(`${month}-01T00:00:00Z`);
+        return `${date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })} '${String(date.getUTCFullYear()).slice(2)}`;
+      };
+      const series = monthKeys.map((month, index) => ({
+        period: monthLabel(month),
+        portfolio: cagr.portfolio[index],
+        nifty50: cagr.nifty50[index],
+        sp500: cagr.sp500[index],
+        nasdaq: cagr.nasdaq[index],
+        gold: cagr.gold[index],
+        bitcoin: cagr.bitcoin[index],
+      }));
+      const makeKpi = (id: string, label: string, values: number[]) => ({
+        id,
+        label,
+        value: values.at(-1) || 0,
+        previous: values.at(-2) || 0,
+        sparkline: values.slice(-7),
+      });
       const kpis = [
-        { id: "portfolio", label: "Portfolio CAGR", value: 14.25, previous: 13.80, sparkline: [12.1, 12.5, 12.9, 13.2, 13.5, 13.8, 14.25] },
-        { id: "nifty50", label: "Nifty 50 CAGR", value: 12.40, previous: 12.10, sparkline: [11.5, 11.8, 11.9, 12.0, 12.2, 12.3, 12.4] },
-        { id: "sp500", label: "S&P 500 CAGR", value: 11.80, previous: 11.90, sparkline: [12.0, 12.2, 12.1, 11.9, 11.8, 11.7, 11.8] },
-        { id: "nasdaq", label: "NASDAQ CAGR", value: 16.50, previous: 15.80, sparkline: [14.5, 14.9, 15.2, 15.5, 15.9, 16.2, 16.5] },
+        makeKpi('portfolio', 'Portfolio CAGR', cagr.portfolio),
+        makeKpi('nifty50', 'Nifty 50 CAGR', cagr.nifty50),
+        makeKpi('sp500', 'S&P 500 CAGR', cagr.sp500),
+        makeKpi('nasdaq', 'NASDAQ CAGR', cagr.nasdaq),
       ];
 
       return res.json({ series, kpis });
@@ -601,12 +653,26 @@ async function getPortfolioHistory(userId: string, period1: Date, period2: Date)
       if (quote && quote.close > 0) {
         lastPrices[h.ticker] = quote.close;
       }
-      portfolioVal += h.shares * lastPrices[h.ticker];
+      portfolioVal += Math.abs(h.shares) * lastPrices[h.ticker];
     });
     return { date, value: portfolioVal };
   });
 
   return series;
+}
+
+function toMonthlyValues(values: { date: string; value?: number; close?: number }[]) {
+  const monthly = new Map<string, number>();
+  values.forEach((item) => {
+    const date = new Date(`${item.date}T00:00:00Z`);
+    const month = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    monthly.set(month, Number(item.value ?? item.close) || 0);
+  });
+  return monthly;
+}
+
+function roundMetric(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 // GET /api/portfolio/benchmark-comparison
@@ -653,7 +719,7 @@ router.get('/portfolio/benchmark-comparison', protect, async (req: Authenticated
           if (quoteOnDate && quoteOnDate.close > 0) {
             lastPrices[h.ticker] = quoteOnDate.close;
           }
-          portfolioVal += h.shares * lastPrices[h.ticker];
+          portfolioVal += Math.abs(h.shares) * lastPrices[h.ticker];
         });
         
         const benchmarkVal = benchmarkMap.get(date) || 0;
@@ -661,27 +727,10 @@ router.get('/portfolio/benchmark-comparison', protect, async (req: Authenticated
       }
     }
 
-    // Fallback simulation if Yahoo Finance fails or is blocked locally
+    // Do not present simulated returns as portfolio performance when history is unavailable.
     if (dateValues.length === 0) {
-      console.warn("Yahoo Finance query returned no data locally. Generating simulated fallback dataset.");
-      const now = new Date();
-      const months = timeframe === '3M' ? 3 : timeframe === '6M' ? 6 : 12;
-      const totalPortfolioCost = userHoldings.reduce((sum, h) => sum + (h.shares * h.avgCost), 0) || 10000;
-
-      for (let i = months * 30; i >= 0; i -= 2) {
-        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const dateStr = date.toISOString().slice(0, 10);
-        
-        const progress = (months * 30 - i) / (months * 30);
-        const portfolioVal = totalPortfolioCost * (1 + (0.12 * progress) + (Math.sin(progress * Math.PI * 2) * 0.03) + (Math.random() - 0.5) * 0.015);
-        const benchmarkVal = 5000 * (1 + (0.09 * progress) + (Math.sin(progress * Math.PI * 2) * 0.02) + (Math.random() - 0.5) * 0.01);
-        
-        dateValues.push({
-          date: dateStr,
-          portfolioVal,
-          benchmarkVal
-        });
-      }
+      console.warn("Yahoo Finance query returned no data for benchmark comparison.");
+      return res.json({ series: [], stats: {}, constituents: [] });
     }
 
     const startPortfolio = dateValues[0].portfolioVal || 1;
@@ -839,6 +888,23 @@ router.get('/portfolio/benchmarks', protect, async (req: AuthenticatedRequest, r
     ];
 
     benchmarksList.forEach(b => {
+      const outperformedMetrics = [
+        pReturn > b.return,
+        pVol < b.vol,
+        pSharpe > b.sharpe,
+        pDrawdown > b.drawdown,
+        pReturn - b.return > 0,
+      ];
+      const strengths = outperformedMetrics.some(Boolean)
+        ? [
+            ...(pReturn > b.return ? [`Annualized returns of ${pReturn.toFixed(2)}% compared to the ${b.name} benchmark of ${b.return.toFixed(2)}%.`] : []),
+            ...(pVol < b.vol ? [`Portfolio volatility of ${pVol.toFixed(2)}% is below the ${b.name} benchmark of ${b.vol.toFixed(2)}%.`] : []),
+            ...(pSharpe > b.sharpe ? [`Sharpe ratio of ${pSharpe.toFixed(2)} exceeds the ${b.name} benchmark of ${b.sharpe.toFixed(2)}.`] : []),
+            ...(pDrawdown > b.drawdown ? [`Maximum drawdown of ${pDrawdown.toFixed(2)}% is better than the ${b.name} benchmark of ${b.drawdown.toFixed(2)}%.`] : []),
+            ...(pReturn - b.return > 0 ? [`Positive alpha of ${(pReturn - b.return).toFixed(2)}% versus the ${b.name} benchmark.`] : []),
+          ]
+        : [`No outperforming metrics detected against ${b.name}.`];
+
       radarData[b.name] = {
         overallScore: Math.round((pReturn > b.return ? 75 : 55) + (pSharpe > b.sharpe ? 15 : 0)),
         rating: pReturn > b.return ? "Outperforming" : "Underperforming",
@@ -850,10 +916,7 @@ router.get('/portfolio/benchmarks', protect, async (req: AuthenticatedRequest, r
           { name: "Alpha", portfolioValue: pReturn - b.return, benchmarkValue: 0.0, higherIsBetter: true, portfolioNormalized: 88, benchmarkNormalized: 40, portfolioDisplay: `${(pReturn - b.return).toFixed(2)}%`, benchmarkDisplay: "0.00%" }
         ],
         aiInsights: {
-          strengths: [
-            `Annualized returns of ${pReturn.toFixed(2)}% compared to the ${b.name} benchmark of ${b.return.toFixed(2)}%.`,
-            `Sharpe ratio of ${pSharpe.toFixed(2)} indicates risk-adjusted performance quality.`
-          ],
+          strengths,
           weaknesses: [
             `Volatility metrics are at ${pVol.toFixed(2)}% against ${b.name}'s volatility profile.`,
             `Max drawdown profile reached ${pDrawdown.toFixed(2)}% during testing period.`

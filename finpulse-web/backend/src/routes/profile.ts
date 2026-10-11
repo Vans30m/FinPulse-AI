@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma.js';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } from 'docx';
+import PDFDocument from 'pdfkit';
 
 const profileRoutes = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'finpulse-secret-key-123456';
@@ -420,10 +422,17 @@ profileRoutes.get('/watchlist-summary', protect, async (req, res) => {
 profileRoutes.get('/export', protect, async (req, res) => {
   try {
     const user = await getOrCreateUser(req);
-    const format = String(req.query.format || 'json').toLowerCase();
+    const format = String(req.query.format || 'pdf').toLowerCase();
 
     const portfolios = await prisma.portfolio.findMany({
       where: { userId: user.id }
+    });
+
+    const holdings = await prisma.holding.findMany({
+      where: { 
+        userId: user.id,
+        shares: { gt: 0 }
+      }
     });
 
     const watchlists = await prisma.watchlist.findMany({
@@ -431,57 +440,351 @@ profileRoutes.get('/export', protect, async (req, res) => {
       include: { items: true }
     });
 
-    const alerts = await prisma.alert.findMany({
-      where: { userId: user.id }
-    });
+    const dateStr = new Date().toISOString().split('T')[0];
+    const fileNameBase = `finpulse_${user.username || 'user'}_${dateStr}`;
 
-    const aiSessions = await prisma.aiSession.findMany({
-      where: { userId: user.id }
-    });
+    const buildDocx = async () => {
+      // Group holdings by marketId for display
+      const holdingsByMarket = holdings.reduce((acc, h) => {
+        const market = h.marketId || 'other';
+        if (!acc[market]) acc[market] = [];
+        acc[market].push(h);
+        return acc;
+      }, {} as Record<string, typeof holdings>);
 
-    const data = {
-      profile: {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        phone: user.phone,
-        bio: user.bio,
-        occupation: user.occupation,
-        country: user.country,
-        timezone: user.timezone,
-        currency: user.currency,
-        createdAt: user.createdAt,
-        riskProfile: user.riskProfile,
-        investmentGoal: user.investmentGoal,
-        investmentHorizon: user.investmentHorizon,
-        experienceLevel: user.experienceLevel,
-        preferredExchange: user.preferredExchange,
-        baseCurrency: user.baseCurrency,
-        taxCountry: user.taxCountry
-      },
-      portfolios,
-      watchlists,
-      alerts,
-      aiReports: aiSessions
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: 'FinPulse Data Export', bold: true, size: 32, color: '2563EB' }),
+                ],
+              }),
+              new Paragraph({ text: '' }),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: 'Generated for: ', bold: true, size: 22 }),
+                  new TextRun({ text: `${user.name || user.username || 'User'} (${user.email})`, size: 22 }),
+                ],
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: 'Export Date: ', bold: true, size: 22 }),
+                  new TextRun({ text: new Date().toLocaleDateString(), size: 22 }),
+                ],
+              }),
+              new Paragraph({ text: '' }),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: 'PORTFOLIO HOLDINGS', bold: true, size: 26, color: '1E40AF' }),
+                ],
+              }),
+              new Paragraph({ text: '' }),
+              ...(holdings.length > 0
+                ? Object.entries(holdingsByMarket).flatMap(([market, items]) => [
+                    new Paragraph({
+                      children: [new TextRun({ text: `Market: ${market.toUpperCase()}`, bold: true, size: 24 })],
+                    }),
+                    new Paragraph({ text: '' }),
+                    new Table({
+                      width: { size: 100, type: WidthType.PERCENTAGE },
+                      rows: [
+                        new TableRow({
+                          children: [
+                            'Symbol', 'Name', 'Shares', 'Avg Cost', 'Market', 'Current Price', 'Market Value'
+                          ].map((header) =>
+                            new TableCell({
+                              children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 18 })] })],
+                              shading: { fill: '2563EB' },
+                            })
+                          ),
+                        }),
+                        ...items.map((item) => {
+                          const shares = Number(item.shares);
+                          const avgCost = Number(item.avgCost);
+                          const currentPrice = typeof (item as any).currentPrice === 'number' ? (item as any).currentPrice : avgCost;
+                          const marketValue = shares * currentPrice;
+                          return new TableRow({
+                            children: [
+                              item.ticker,
+                              item.name,
+                              shares.toString(),
+                              avgCost.toFixed(2),
+                              item.marketId,
+                              currentPrice.toFixed(2),
+                              marketValue.toFixed(2),
+                            ].map((cell) =>
+                              new TableCell({
+                                children: [new Paragraph({ children: [new TextRun({ text: cell, size: 16 })] })],
+                              })
+                            ),
+                          });
+                        }),
+                      ],
+                    }),
+                    new Paragraph({ text: '' }),
+                  ])
+                : [
+                    new Paragraph({
+                      children: [new TextRun({ text: 'No portfolio holdings found.', italics: true, size: 20 })],
+                    }),
+                    new Paragraph({ text: '' }),
+                  ]),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: 'WATCHLISTS', bold: true, size: 26, color: '1E40AF' }),
+                ],
+              }),
+              new Paragraph({ text: '' }),
+              ...(watchlists.length > 0
+                ? watchlists.flatMap((watchlist) => [
+                    new Paragraph({
+                      children: [new TextRun({ text: `Watchlist: ${watchlist.name}`, bold: true, size: 24 })],
+                    }),
+                    new Paragraph({ text: '' }),
+                    new Table({
+                      width: { size: 100, type: WidthType.PERCENTAGE },
+                      rows: [
+                        new TableRow({
+                          children: ['Symbol', 'Notes'].map((header) =>
+                            new TableCell({
+                              children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 18 })] })],
+                              shading: { fill: '2563EB' },
+                            })
+                          ),
+                        }),
+                        ...watchlist.items.map((item) =>
+                          new TableRow({
+                            children: [
+                              item.symbol,
+                              item.notes || '',
+                            ].map((cell) =>
+                              new TableCell({
+                                children: [new Paragraph({ children: [new TextRun({ text: cell, size: 16 })] })],
+                              })
+                            ),
+                          })
+                        ),
+                      ],
+                    }),
+                    new Paragraph({ text: '' }),
+                  ])
+                : [
+                    new Paragraph({
+                      children: [new TextRun({ text: 'No watchlists found.', italics: true, size: 20 })],
+                    }),
+                    new Paragraph({ text: '' }),
+                  ]),
+            ],
+          },
+        ],
+      });
+
+      return await Packer.toBuffer(doc);
     };
 
+    const buildPdf = () => {
+      // Group holdings by marketId for display
+      const holdingsByMarket = holdings.reduce((acc, h) => {
+        const market = h.marketId || 'other';
+        if (!acc[market]) acc[market] = [];
+        acc[market].push(h);
+        return acc;
+      }, {} as Record<string, typeof holdings>);
+
+      return new Promise<Buffer>((resolve, reject) => {
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        const chunks: Buffer[] = [];
+
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+
+        // Title
+        doc.fontSize(24).fillColor('#2563EB').text('FinPulse Data Export', { align: 'center' });
+        doc.moveDown();
+
+        // User info
+        doc.fontSize(12).fillColor('#333').text(`Generated for: ${user.name || user.username || 'User'} (${user.email})`);
+        doc.text(`Export Date: ${new Date().toLocaleDateString()}`);
+        doc.moveDown(2);
+
+        // Portfolio Holdings
+        doc.fontSize(16).fillColor('#1E40AF').text('PORTFOLIO HOLDINGS', { underline: true });
+        doc.moveDown();
+
+        if (holdings.length > 0) {
+          Object.entries(holdingsByMarket).forEach(([market, items]) => {
+            doc.font('Helvetica-Bold').fontSize(13).fillColor('#333').text(`Market: ${market.toUpperCase()}`);
+            doc.moveDown(0.5);
+
+            if (items.length > 0) {
+              // Table header
+              const colWidths = [70, 110, 50, 65, 65, 75, 85];
+              const headers = ['Symbol', 'Name', 'Shares', 'Avg Cost', 'Market', 'Curr Price', 'Mkt Value'];
+              let x = doc.page.margins.left;
+              const y = doc.y;
+
+              doc.font('Helvetica-Bold').fontSize(9).fillColor('white');
+              headers.forEach((header, i) => {
+                doc.rect(x, y, colWidths[i], 20).fill('#2563EB');
+                doc.fillColor('white').text(header, x + 2, y + 4, { width: colWidths[i] - 4, align: 'center' });
+                x += colWidths[i];
+              });
+              doc.y = y + 20;
+
+              items.forEach((item, rowIdx) => {
+                const shares = Number(item.shares);
+                const avgCost = Number(item.avgCost);
+                const currentPrice = typeof (item as any).currentPrice === 'number' ? (item as any).currentPrice : avgCost;
+                const marketValue = shares * currentPrice;
+
+                const cells = [
+                  item.ticker,
+                  item.name.substring(0, 25),
+                  shares.toString(),
+                  avgCost.toFixed(2),
+                  item.marketId,
+                  currentPrice.toFixed(2),
+                  marketValue.toFixed(2),
+                ];
+
+                x = doc.page.margins.left;
+                const rowY = doc.y;
+                const isEven = rowIdx % 2 === 0;
+
+                doc.font('Helvetica').fontSize(8).fillColor('#333');
+                if (isEven) {
+                  doc.rect(x, rowY, colWidths.reduce((a, b) => a + b, 0), 18).fill('#F3F4F6');
+                }
+
+                cells.forEach((cell, i) => {
+                  doc.fillColor('#333').text(cell, x + 2, rowY + 3, { width: colWidths[i] - 4, align: i === 0 ? 'left' : 'center' });
+                  x += colWidths[i];
+                });
+                doc.y = rowY + 18;
+
+                if (doc.y > doc.page.height - 80) {
+                  doc.addPage();
+                }
+              });
+            } else {
+              doc.font('Helvetica-Oblique').fontSize(11).fillColor('#666').text('No holdings in this market.');
+            }
+            doc.moveDown(1.5);
+          });
+        } else {
+          doc.font('Helvetica-Oblique').fontSize(11).fillColor('#666').text('No portfolio holdings found.');
+          doc.moveDown(1.5);
+        }
+
+        // Watchlists
+        doc.fontSize(16).fillColor('#1E40AF').text('WATCHLISTS', { underline: true });
+        doc.moveDown();
+
+        if (watchlists.length > 0) {
+          watchlists.forEach((watchlist) => {
+            doc.font('Helvetica-Bold').fontSize(13).fillColor('#333').text(`Watchlist: ${watchlist.name}`);
+            doc.moveDown(0.5);
+
+            if (watchlist.items.length > 0) {
+              const colWidths = [150, 350];
+              const headers = ['Symbol', 'Notes'];
+              let x = doc.page.margins.left;
+              const y = doc.y;
+
+              doc.font('Helvetica-Bold').fontSize(9).fillColor('white');
+              headers.forEach((header, i) => {
+                doc.rect(x, y, colWidths[i], 20).fill('#2563EB');
+                doc.fillColor('white').text(header, x + 2, y + 4, { width: colWidths[i] - 4, align: 'center' });
+                x += colWidths[i];
+              });
+              doc.y = y + 20;
+
+              watchlist.items.forEach((item, rowIdx) => {
+                const cells = [item.symbol, item.notes || ''];
+                x = doc.page.margins.left;
+                const rowY = doc.y;
+                const isEven = rowIdx % 2 === 0;
+
+                doc.font('Helvetica').fontSize(8).fillColor('#333');
+                if (isEven) {
+                  doc.rect(x, rowY, colWidths.reduce((a, b) => a + b, 0), 18).fill('#F3F4F6');
+                }
+
+                cells.forEach((cell, i) => {
+                  doc.fillColor('#333').text(cell, x + 2, rowY + 3, { width: colWidths[i] - 4, align: 'left' });
+                  x += colWidths[i];
+                });
+                doc.y = rowY + 18;
+
+                if (doc.y > doc.page.height - 80) {
+                  doc.addPage();
+                }
+              });
+            } else {
+              doc.font('Helvetica-Oblique').fontSize(11).fillColor('#666').text('No items in this watchlist.');
+            }
+            doc.moveDown(1.5);
+          });
+        } else {
+          doc.font('Helvetica-Oblique').fontSize(11).fillColor('#666').text('No watchlists found.');
+          doc.moveDown(1.5);
+        }
+
+        doc.end();
+      });
+    };
+
+    if (format === 'docx' || format === 'doc') {
+      const buffer = await buildDocx();
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileNameBase}.docx"`);
+      return res.send(buffer);
+    }
+
+    if (format === 'pdf') {
+      const buffer = await buildPdf();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileNameBase}.pdf"`);
+      return res.send(buffer);
+    }
+
     if (format === 'csv') {
-      let csvContent = "";
-      csvContent += "=== PROFILE DATA ===\n";
-      csvContent += "Field,Value\n";
-      Object.entries(data.profile).forEach(([key, val]) => {
-        csvContent += `"${key}","${String(val || '').replace(/"/g, '""')}"\n`;
+      let csvContent = '';
+      csvContent += '=== PORTFOLIO HOLDINGS ===\n';
+      csvContent += 'Market,Symbol,Name,Shares,Avg Cost,Market,Current Price,Market Value,Total Gain,Gain %\n';
+      holdings.forEach((item) => {
+        const shares = Number(item.shares);
+        const avgCost = Number(item.avgCost);
+        const currentPrice = typeof (item as any).currentPrice === 'number' ? (item as any).currentPrice : avgCost;
+        const marketValue = Math.abs(shares) * currentPrice;
+        const costBasis = Math.abs(shares) * avgCost;
+        const totalGain = shares < 0 ? costBasis - marketValue : marketValue - costBasis;
+        const gainPercent = costBasis > 0 ? (totalGain / costBasis) * 100 : 0;
+        csvContent += `"${item.marketId}","${item.ticker}","${item.name}",${shares},${avgCost.toFixed(2)},"${item.marketId}",${currentPrice.toFixed(2)},${marketValue.toFixed(2)},${totalGain.toFixed(2)},${gainPercent.toFixed(2)}%\n`;
+      });
+
+      csvContent += '\n=== WATCHLISTS ===\n';
+      csvContent += 'Watchlist,Symbol,Notes\n';
+      watchlists.forEach((watchlist) => {
+        watchlist.items.forEach((item) => {
+          csvContent += `"${watchlist.name}","${item.symbol}","${item.notes || ''}"\n`;
+        });
       });
 
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="finpulse_export_${user.username || 'user'}.csv"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${fileNameBase}.csv"`);
       return res.send(csvContent);
     }
 
+    // Default JSON
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="finpulse_export_${user.username || 'user'}.json"`);
-    res.json(data);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileNameBase}.json"`);
+    return res.json({ holdings, watchlists });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

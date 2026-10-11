@@ -348,6 +348,12 @@ export default function PortfolioDashboard() {
   const [isClosingPosition, setIsClosingPosition] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
+  // Holdings Filters
+  const [holdingSearch, setHoldingSearch] = useState('');
+  const [holdingFilterGain, setHoldingFilterGain] = useState<'all' | 'gainers' | 'losers'>('all');
+  const [holdingSortBy, setHoldingSortBy] = useState<'marketValue' | 'totalGain' | 'gainPercent' | 'dailyGain' | 'ticker'>('marketValue');
+  const [holdingSortOrder, setHoldingSortOrder] = useState<'asc' | 'desc'>('desc');
+
   // Debounced Search States
   const [assetSearch, setAssetSearch] = useState('');
   const [assetSuggestions, setAssetSuggestions] = useState<any[]>([]);
@@ -1232,17 +1238,62 @@ export default function PortfolioDashboard() {
       ? [...allocationData].sort((a, b) => b.value - a.value)[0]
       : null;
 
-  const filteredHoldings = currentSections
-    .filter((section) => activeMarket === 'all' || activeMarket === section.id)
-    .flatMap((section) =>
-      section.holdings
-        .filter(h => Math.abs(h.shares) > 0.0001)
-        .map(h => ({
-          ...h,
-          category: section.title,
-          sectionId: section.id,
-        }))
-    );
+  const filteredHoldings = useMemo(() => {
+    let holdings = currentSections
+      .filter((section) => activeMarket === 'all' || activeMarket === section.id)
+      .flatMap((section) =>
+        section.holdings
+          .filter(h => Math.abs(h.shares) > 0.0001)
+          .map(h => ({
+            ...h,
+            category: section.title,
+            sectionId: section.id,
+          }))
+      );
+
+    // Search filter
+    if (holdingSearch.trim()) {
+      const searchLower = holdingSearch.toLowerCase();
+      holdings = holdings.filter(h =>
+        h.ticker.toLowerCase().includes(searchLower) ||
+        h.name.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Gain/Loss filter
+    if (holdingFilterGain === 'gainers') {
+      holdings = holdings.filter(h => h.totalGain >= 0);
+    } else if (holdingFilterGain === 'losers') {
+      holdings = holdings.filter(h => h.totalGain < 0);
+    }
+
+    // Sort
+    holdings.sort((a, b) => {
+      let aVal: any = a[holdingSortBy];
+      let bVal: any = b[holdingSortBy];
+      
+      if (holdingSortBy === 'gainPercent') {
+        aVal = a.gainPercent;
+        bVal = b.gainPercent;
+      } else if (holdingSortBy === 'dailyGain') {
+        aVal = a.dailyGain || 0;
+        bVal = b.dailyGain || 0;
+      }
+
+      if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+      }
+
+      if (holdingSortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+
+    return holdings;
+  }, [currentSections, activeMarket, holdingSearch, holdingFilterGain, holdingSortBy, holdingSortOrder]);
 
   const exportPortfolioToCSV = (isExcel: boolean = false) => {
     const fileExt = isExcel ? "csv" : "csv";
@@ -1683,6 +1734,48 @@ export default function PortfolioDashboard() {
             <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-cyan-400">
               {filteredHoldings.length} Positions
             </span>
+          </div>
+        </div>
+
+        {/* Holdings Filter Bar */}
+        <div className="p-4 bg-slate-50/30 dark:bg-white/[0.01] border-b border-slate-100/50 dark:border-slate-800/40 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="flex-1 sm:w-64">
+            <input
+              type="text"
+              placeholder="Search by symbol or name..."
+              value={holdingSearch}
+              onChange={(e) => setHoldingSearch(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex items-center gap-2 sm:w-auto">
+            <select
+              value={holdingFilterGain}
+              onChange={(e) => setHoldingFilterGain(e.target.value as any)}
+              className="px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-blue-500"
+            >
+              <option value="all">All</option>
+              <option value="gainers">Gainers</option>
+              <option value="losers">Losers</option>
+            </select>
+            <select
+              value={holdingSortBy}
+              onChange={(e) => setHoldingSortBy(e.target.value as any)}
+              className="px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-blue-500 hidden sm:block"
+            >
+              <option value="marketValue">Market Value</option>
+              <option value="totalGain">Total Gain</option>
+              <option value="gainPercent">Gain %</option>
+              <option value="dailyGain">Day Change</option>
+              <option value="ticker">Symbol</option>
+            </select>
+            <button
+              onClick={() => setHoldingSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title={`Sort ${holdingSortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
+            >
+              <span className="text-[10px]">{holdingSortOrder === 'asc' ? '↑' : '↓'}</span>
+            </button>
           </div>
         </div>
 

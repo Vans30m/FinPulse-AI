@@ -1,8 +1,31 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
+import YahooFinance from 'yahoo-finance2';
 import { getAiCache, setAiCache } from '../utils/aiCache.js';
+import { prisma } from '../prisma.js';
+import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 
 const router = Router();
+const yahooFinance = new YahooFinance();
+
+async function fetchAdvisorQuotes(symbols: string[]) {
+  if (symbols.length === 0) return {} as Record<string, number>;
+
+  try {
+    const response = await yahooFinance.quote(symbols);
+    const quotes = Array.isArray(response) ? response : [response];
+    return quotes.reduce<Record<string, number>>((prices, quote: any) => {
+      const price = Number(quote.regularMarketPrice);
+      if (quote.symbol && Number.isFinite(price) && price > 0) {
+        prices[String(quote.symbol).toUpperCase()] = price;
+      }
+      return prices;
+    }, {});
+  } catch (error: any) {
+    console.warn('Advisor quote validation failed:', error.message);
+    return {} as Record<string, number>;
+  }
+}
 
 // Robustly extract the best JSON object/array from an LLM response.
 // Strategy: strip <think> blocks, collect ALL complete JSON structures via
@@ -144,6 +167,61 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
   );
   llmQueueChain = currentTask;
   return currentTask;
+}
+
+async function queryGroqLLM(prompt: string, fallbackData: any): Promise<any> {
+  const currentTask = llmQueueChain.then(
+    async () => {
+      await delay(2000);
+      return executeGroqQuery(prompt, fallbackData);
+    },
+    async () => {
+      await delay(2000);
+      return executeGroqQuery(prompt, fallbackData);
+    }
+  );
+  llmQueueChain = currentTask;
+  return currentTask;
+}
+
+async function executeGroqQuery(prompt: string, fallbackData: any): Promise<any> {
+  const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_API_KEY_SECONDARY;
+  if (!groqKey || !groqKey.trim()) return fallbackData;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const response = await axios.post(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          model: 'qwen/qwen3.8-27b',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a professional financial AI assistant. Output ONLY one valid raw JSON object with no markdown, no backticks, and no extra text.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.2,
+          max_tokens: 1400,
+        },
+        {
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
+          timeout: 15000,
+        }
+      );
+      const content = response.data?.choices?.[0]?.message?.content;
+      if (content) return safeParseJSON(content);
+    } catch (error: any) {
+      const is429 = error.response?.status === 429 || error.message?.includes('429');
+      if (is429 && attempt === 1) {
+        await delay(2500);
+        continue;
+      }
+      console.warn('Groq advisor query failed; using verified fallback:', error.message);
+      break;
+    }
+  }
+  return fallbackData;
 }
 
 async function executeLLMQuery(prompt: string, fallbackData: any): Promise<any> {
@@ -522,10 +600,44 @@ router.get('/pick-of-the-day', async (req: Request, res: Response) => {
 });
 
 // GET /api/ai/portfolio-advisor
-router.get('/portfolio-advisor', async (req: Request, res: Response) => {
-  const cacheKey = 'ai:portfolio-advisor';
+router.get('/portfolio-advisor', protect, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  const holdings = await prisma.holding.findMany({
+    where: { userId },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      ticker: true,
+      name: true,
+      shares: true,
+      avgCost: true,
+      marketId: true,
+      bookedPL: true,
+      updatedAt: true,
+    },
+  });
+  const account = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { currency: true, baseCurrency: true },
+  });
+  const accountCurrency = account?.currency || account?.baseCurrency || 'USD';
+  const holdingsVersion = holdings[0]?.updatedAt?.getTime() || 0;
+  const cacheKey = `ai:portfolio-advisor:${userId}:${accountCurrency}:${holdings.length}:${holdingsVersion}`;
   const cached = getAiCache(cacheKey);
   if (cached) return res.json(cached);
+
+  const livePrices = await fetchAdvisorQuotes(holdings.map((holding) => holding.ticker.toUpperCase()));
+  const portfolioSnapshot = holdings.map((holding) => ({
+    ticker: holding.ticker,
+    name: holding.name,
+    shares: Math.abs(Number(holding.shares) || 0),
+    averageCost: Number(holding.avgCost) || 0,
+    currentPrice: livePrices[holding.ticker.toUpperCase()] || null,
+    quoteCurrency: holding.marketId === 'domestic' ? 'INR' : 'USD',
+    market: holding.marketId,
+    bookedProfitLoss: Number(holding.bookedPL) || 0,
+  }));
 
   const fallback = {
     healthScore: 78,
@@ -546,14 +658,14 @@ router.get('/portfolio-advisor', async (req: Request, res: Response) => {
       reason: "Overall beta is close to 1.1. Market volatility may impact short-term returns."
     },
     bestOpportunity: {
-      symbol: "NVDA",
-      company: "NVIDIA Corporation",
-      recommendation: "BUY",
-      currentPrice: 120.50,
-      targetPrice: 145.00,
-      expectedUpside: 20.3,
-      confidence: 75,
-      reason: "Strong demand for next-generation AI chips and cloud infrastructure spending."
+      symbol: "N/A",
+      company: "No verified opportunity",
+      recommendation: "HOLD",
+      currentPrice: 0,
+      targetPrice: 0,
+      expectedUpside: 0,
+      confidence: 0,
+      reason: "No opportunity with a verified live quote is available."
     },
     portfolioHealth: {
       outlook: "Bullish",
@@ -622,12 +734,32 @@ router.get('/portfolio-advisor', async (req: Request, res: Response) => {
     "rebalanceSuggestions": [
       { "action": "BUY" | "SELL" | "HOLD", "asset": string, "reason": string }
     ],
-    "generatedAt": string (ISO timestamp)
+    "generatedAt": string (ISO timestamp),
+    "currency": string
   }
-  Reflect professional and realistic asset management suggestions.`;
+  Reflect professional and realistic asset management suggestions. Choose the best opportunity only from the supplied portfolio snapshot tickers. Use the supplied currentPrice for any opportunity price, never invent a current price or currency. Set targetPrice in the same quote currency as currentPrice and return the opportunity currency in the currency field. Do not invent holdings, sector weights, prices, transactions, or performance figures. If the snapshot does not contain enough information for a claim, state that limitation in the reason or recommendation.
 
-  const result = await queryLLM(prompt, fallback);
+  Account display currency: ${accountCurrency}
+
+  Portfolio snapshot for the authenticated user:
+  ${JSON.stringify(portfolioSnapshot)}`;
+
+  const result = await queryGroqLLM(prompt, fallback);
   result.generatedAt = new Date().toISOString();
+  result.personalized = holdings.length > 0;
+  result.aiSource = result === fallback ? 'fallback' : 'llm';
+
+  const opportunity = result.bestOpportunity;
+  const opportunitySymbol = String(opportunity?.symbol || '').trim().toUpperCase();
+  const verifiedCurrentPrice = livePrices[opportunitySymbol];
+  const targetPrice = Number(opportunity?.targetPrice);
+  if (!opportunity || !verifiedCurrentPrice || !Number.isFinite(targetPrice) || targetPrice <= 0) {
+    result.bestOpportunity = fallback.bestOpportunity;
+  } else {
+    result.bestOpportunity.currentPrice = verifiedCurrentPrice;
+    result.bestOpportunity.currency = portfolioSnapshot.find((holding) => holding.ticker.toUpperCase() === opportunitySymbol)?.quoteCurrency || 'USD';
+    result.bestOpportunity.expectedUpside = Number((((targetPrice - verifiedCurrentPrice) / verifiedCurrentPrice) * 100).toFixed(2));
+  }
 
   // Set cache for future requests
   setAiCache(cacheKey, result);
