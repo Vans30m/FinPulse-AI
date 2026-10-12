@@ -300,7 +300,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
     const allTabs = [
       { id: "overview", label: "Overview", icon: Layers },
       { id: "analysts", label: "Analyst Targets", icon: Compass },
-      { id: "sentiment", label: "Stock Sentiment", icon: Brain },
+      { id: "sentiment", label: "Sentiment", icon: Brain },
       { id: "ownership", label: "Ownership", icon: Users },
       { id: "events", label: "Calendar Events", icon: Calendar },
       { id: "technicals", label: "Structural Levels", icon: Activity },
@@ -376,7 +376,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
         const result = await getStockSentiment(symbol);
         if (!ignore) setMarketSentiment(result);
       } catch (err) {
-        console.error("Failed to load AI stock sentiment:", err);
+        console.error("Failed to load AI sentiment:", err);
         if (!ignore) setMarketSentiment(null);
       }
     };
@@ -737,22 +737,22 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
               const currentPrice = meta?.price || data?.statistics?.price || activePosition.avgCost || 0;
               const isShort = activePosition.shares < 0;
               const qty = Math.abs(activePosition.shares);
-              
+
               // Determine dynamic currency symbol based on asset properties
               const currencyCode = meta?.currency || data?.quote?.currency || (symbol.toUpperCase().endsWith('.NS') || symbol.toUpperCase().endsWith('.BO') ? 'INR' : 'USD');
               const curSym = currencyCode.toUpperCase() === 'INR' ? '₹' : '$';
-              
+
               // Calculate Unrealized P&L
-              const pnl = isShort 
+              const pnl = isShort
                 ? (activePosition.avgCost - currentPrice) * qty
                 : (currentPrice - activePosition.avgCost) * qty;
-                
-              const pnlPercent = activePosition.avgCost > 0 
+
+              const pnlPercent = activePosition.avgCost > 0
                 ? (isShort
-                    ? ((activePosition.avgCost - currentPrice) / activePosition.avgCost) * 100
-                    : ((currentPrice - activePosition.avgCost) / activePosition.avgCost) * 100)
+                  ? ((activePosition.avgCost - currentPrice) / activePosition.avgCost) * 100
+                  : ((currentPrice - activePosition.avgCost) / activePosition.avgCost) * 100)
                 : 0;
-                
+
               const isProfit = pnl >= 0;
               const pnlColorClass = isProfit ? "text-emerald-400" : "text-rose-400";
               const pnlBgClass = isProfit ? "bg-emerald-500/10 border-emerald-500/20" : "bg-rose-500/10 border-rose-500/20";
@@ -761,7 +761,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
               return (
                 <div className="bg-gradient-to-br from-[#0e122b]/95 via-[#0b0e24]/98 to-[#090d1f]/99 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-md hover:border-slate-700/50 transition-all duration-300">
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_2.5fr_2.5fr_1.3fr] gap-6 items-center">
-                    
+
                     {/* Section 1: Header */}
                     <div className="flex flex-col justify-center md:border-r border-slate-800/60 md:pr-4 h-full">
                       <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Active Position</span>
@@ -1125,39 +1125,39 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                 />
 
                                 {Math.abs(high - low) < 0.01 * (median || 1) ? (
-                                   <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
-                                     <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Consensus Target</span>
-                                     <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median || low, true)}</span>
-                                     <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
-                                     <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
-                                   </div>
-                                 ) : (
-                                   <>
-                                     {/* Low Marker Anchor & Label */}
-                                     <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${lowPct}%` }}>
-                                       <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Low</span>
-                                       <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(low, true)}</span>
-                                       <div className="w-0.5 h-3.5 bg-blue-500/40 my-0.5" />
-                                       <div className="w-3.5 h-3.5 bg-blue-500 border-2 border-slate-900 rounded-full shadow-md shadow-blue-500/30" />
-                                     </div>
+                                  <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
+                                    <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Consensus Target</span>
+                                    <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median || low, true)}</span>
+                                    <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
+                                    <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
+                                  </div>
+                                ) : (
+                                  <>
+                                    {/* Low Marker Anchor & Label */}
+                                    <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${lowPct}%` }}>
+                                      <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Low</span>
+                                      <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(low, true)}</span>
+                                      <div className="w-0.5 h-3.5 bg-blue-500/40 my-0.5" />
+                                      <div className="w-3.5 h-3.5 bg-blue-500 border-2 border-slate-900 rounded-full shadow-md shadow-blue-500/30" />
+                                    </div>
 
-                                     {/* Median Marker Anchor & Label */}
-                                     <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
-                                       <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Median</span>
-                                       <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median, true)}</span>
-                                       <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
-                                       <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
-                                     </div>
+                                    {/* Median Marker Anchor & Label */}
+                                    <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
+                                      <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Median</span>
+                                      <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median, true)}</span>
+                                      <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
+                                      <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
+                                    </div>
 
-                                     {/* High Marker Anchor & Label */}
-                                     <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${highPct}%` }}>
-                                       <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">High</span>
-                                       <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(high, true)}</span>
-                                       <div className="w-0.5 h-3.5 bg-emerald-500/40 my-0.5" />
-                                       <div className="w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-md shadow-emerald-500/30" />
-                                     </div>
-                                   </>
-                                 )}
+                                    {/* High Marker Anchor & Label */}
+                                    <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${highPct}%` }}>
+                                      <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">High</span>
+                                      <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(high, true)}</span>
+                                      <div className="w-0.5 h-3.5 bg-emerald-500/40 my-0.5" />
+                                      <div className="w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-md shadow-emerald-500/30" />
+                                    </div>
+                                  </>
+                                )}
 
                                 {/* Current Price Pointer */}
                                 <div className="absolute top-12 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${currentPct}%` }}>

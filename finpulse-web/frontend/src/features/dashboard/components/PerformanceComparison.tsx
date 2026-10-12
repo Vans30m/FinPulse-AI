@@ -430,108 +430,118 @@ export default function PerformanceComparison() {
           portfolioStats.totalValuation;
 
   return (
-    <div className="space-y-6 text-white font-sans selection:bg-blue-500/25 selection:text-white bg-[#141414]">
-      {/* HEADER SECTION WITH REFRESH TRIGGER */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#2a2a2a] bg-[#171717] px-4 py-3 md:flex-row md:items-center md:justify-between md:px-5">
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold uppercase tracking-[0.14em] text-white md:text-xl">Performance Analytics Center</h2>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#8d8d8d]">Portfolio return analytics, risk attribution, and benchmark tracking.</p>
-        </div>
+    <div className="space-y-8 w-full max-w-7xl mx-auto px-1 relative animate-fadeIn">
+      {/* Ambient background glows */}
+      <div className="absolute top-10 left-1/4 w-72 h-72 bg-blue-400/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-400/10 dark:bg-purple-600/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex items-center gap-2 self-start md:self-center">
-          <div className="flex items-center gap-1 rounded-xl border border-[#2a2a2a] bg-[#1d1d1d] p-1">
-            {[
-              { code: 'USD', symbol: '$' },
-              { code: 'INR', symbol: '₹' },
-              { code: 'EUR', symbol: '€' },
-              { code: 'GBP', symbol: '£' }
-            ].map((cur) => (
-              <button
-                key={cur.code}
-                onClick={() => handleCurrencyChange(cur.code as 'USD' | 'INR' | 'EUR' | 'GBP')}
-                aria-pressed={portfolioCurrency === cur.code}
-                className={`min-w-[52px] rounded-lg px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500/60 ${portfolioCurrency === cur.code
-                  ? 'bg-[#2b3d54] text-white'
-                  : 'text-[#b2b2b2] hover:bg-[#222222] hover:text-white'
-                  }`}
-              >
-                {cur.code} ({cur.symbol})
-              </button>
-            ))}
+      {/* HEADER SECTION WITH REFRESH TRIGGER */}
+      <div className="flex flex-col gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-2 sm:gap-3 flex-nowrap">
+              <h1 className="text-xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent whitespace-nowrap">
+                Performance Analytics
+              </h1>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:bg-cyan-500/15 dark:text-cyan-400 border border-blue-500/20 dark:border-cyan-400/25">
+                Benchmark Radar
+              </span>
+            </div>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+              Institutional-grade return analytics, risk attribution & alpha benchmarking.
+            </p>
           </div>
 
-          <button
-            onClick={handleRefresh}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#2a5fa8] bg-[#1f3b60] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-[#274d7e] focus:outline-none focus:ring-1 focus:ring-blue-500/60"
-          >
-            <Activity className="h-3.5 w-3.5" />
-            Recalculate Metrics
-          </button>
-        </div>
-      </div>
+          <div className="flex items-center gap-2.5 flex-wrap self-start md:self-center">
+            {/* Currency Pill Selector */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/[0.04] p-1 rounded-2xl border border-slate-200/60 dark:border-white/5">
+              {[
+                { code: 'USD', symbol: '$' },
+                { code: 'INR', symbol: '₹' },
+                { code: 'EUR', symbol: '€' },
+                { code: 'GBP', symbol: '£' }
+              ].map((cur) => (
+                <button
+                  key={cur.code}
+                  onClick={() => handleCurrencyChange(cur.code as 'USD' | 'INR' | 'EUR' | 'GBP')}
+                  aria-pressed={portfolioCurrency === cur.code}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all ${portfolioCurrency === cur.code
+                    ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                >
+                  {cur.code} ({cur.symbol})
+                </button>
+              ))}
+            </div>
 
-      {/* TABS CONTROLLER */}
-      <div className="flex flex-wrap gap-2 border-b border-[#2a2a2a] pb-2">
-        {[
-          { id: "overview", label: "Overview & Returns" },
-          { id: "metrics", label: "Advanced Metrics" },
-          { id: "ai", label: "AI Advisor Coach" }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`rounded-t-xl border-b-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500/60 ${activeTab === tab.id
-                ? "border-blue-500 bg-[#1d2430] text-white"
-                : "border-transparent text-[#8d8d8d] hover:border-[#3a3a3a] hover:text-white"
-              }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+            <button
+              onClick={handleRefresh}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-white/10 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <Activity className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400" />
+              <span>Recalculate</span>
+            </button>
+          </div>
+        </div>
+
+        {/* TABS CONTROLLER */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pt-2">
+          {[
+            { id: "overview", label: "Overview & Returns", icon: LineChartIcon },
+            { id: "metrics", label: "Advanced Metrics", icon: Layers },
+            { id: "ai", label: "AI Advisor Coach", icon: TrendingUp }
+          ].map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-200 whitespace-nowrap border ${isActive
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500/20 dark:to-blue-500/20 text-white dark:text-cyan-300 border-blue-500 dark:border-cyan-400/40 shadow-sm"
+                  : "bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border-transparent hover:bg-slate-100 dark:hover:bg-white/5"
+                  }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* HERO PERFORMANCE SUMMARY */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {[
-            { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Total Return", accent: "text-[#5bb7ff]", icon: <TrendingUp className="h-4 w-4" />, gradient: "from-blue-500/20 to-cyan-500/10", borderColor: "border-blue-500/30", glowColor: "shadow-[0_0_20px_rgba(91,183,255,0.15)]" },
-            { label: "Total Profit / Loss", val: formatSignedCurrency(displayGain), desc: "Unrealized P&L", accent: "text-[#6ad7a8]", icon: <Activity className="h-4 w-4" />, gradient: "from-emerald-500/20 to-teal-500/10", borderColor: "border-emerald-500/30", glowColor: "shadow-[0_0_20px_rgba(106,215,168,0.15)]" },
-            { label: "Capital Valuation Ledger", val: formatCurrency(displayValuation), desc: "Total Value", accent: "text-[#7da7ff]", icon: <Layers className="h-4 w-4" />, gradient: "from-indigo-500/20 to-blue-500/10", borderColor: "border-indigo-500/30", glowColor: "shadow-[0_0_20px_rgba(125,167,255,0.15)]" },
-            { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Open Positions", accent: "text-[#d4b7ff]", icon: <Layers className="h-4 w-4" />, gradient: "from-purple-500/20 to-pink-500/10", borderColor: "border-purple-500/30", glowColor: "shadow-[0_0_20px_rgba(212,183,255,0.15)]" }
+            { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Total Return", accent: "text-cyan-500 dark:text-cyan-400", icon: <TrendingUp className="h-5 w-5 text-cyan-500" />, iconBg: "bg-cyan-500/10 border-cyan-500/20" },
+            { label: "Total Profit / Loss", val: formatSignedCurrency(displayGain), desc: "Unrealized P&L", accent: displayGain >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400", icon: <Activity className="h-5 w-5 text-emerald-500" />, iconBg: "bg-emerald-500/10 border-emerald-500/20" },
+            { label: "Capital Valuation Ledger", val: formatCurrency(displayValuation), desc: "Total Portfolio Value", accent: "text-blue-600 dark:text-blue-400", icon: <Layers className="h-5 w-5 text-blue-600" />, iconBg: "bg-blue-500/10 border-blue-500/20" },
+            { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active Holdings", accent: "text-purple-600 dark:text-purple-400", icon: <PieIcon className="h-5 w-5 text-purple-600" />, iconBg: "bg-purple-500/10 border-purple-500/20" }
           ].map((card, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="relative flex min-h-[140px] flex-col justify-between rounded-2xl border p-5 transition-all duration-300 hover:scale-[1.01] hover:-translate-y-1"
-              style={{
-                background: `linear-gradient(135deg, ${card.gradient.split(' ')[1]}, ${card.gradient.split(' ')[3]})`,
-                boxShadow: card.glowColor.replace('shadow-', '')
-              }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className="glass-panel p-5 flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.02] backdrop-blur-xl shadow-lg hover:border-slate-300 dark:hover:border-cyan-500/30 transition-all duration-300"
             >
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 via-transparent to-transparent" />
-              <div className="absolute inset-0 rounded-2xl border opacity-50" style={{ borderColor: card.borderColor.replace('border-', '') }} />
-              <div className="relative flex items-start justify-between gap-2">
-                <span className="max-w-[70%] text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8d8d8d]">{card.label}</span>
-                <div className="relative rounded-lg border border-[#2a2a2a] bg-[#1d1d1d]/80 p-1.5 backdrop-blur-sm">
-                  <span className="block" style={{ color: card.accent.replace('text-', '') }}>{card.icon}</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{card.label}</span>
+                <div className={`p-2 rounded-xl border ${card.iconBg}`}>
+                  {card.icon}
                 </div>
               </div>
 
-              <div className="relative">
-                <h3 className={`mt-4 text-2xl sm:text-3xl font-semibold tracking-tight ${card.accent}`}>{card.val}</h3>
-                <span className="mt-2 block text-[10px] uppercase tracking-[0.1em] text-[#7e7e7e]">{card.desc}</span>
-              </div>
-              
-              <div className="absolute bottom-4 right-4 opacity-20">
-                <div className="w-16 h-16 rounded-full" style={{ background: `radial-gradient(circle, ${card.accent.replace('text-', '')} 0%, transparent 70%)` }} />
+              <div className="mt-3">
+                <h3 className={`text-2xl sm:text-3xl font-black tracking-tight ${card.accent}`}>{card.val}</h3>
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1 block">{card.desc}</span>
               </div>
             </motion.div>
           ))}
         </div>
       )}
-
       {/* TAB CONTENT RENDERING */}
       {activeTab === "overview" && (
         <div className="space-y-6 animate-fadeIn">
@@ -555,13 +565,13 @@ export default function PerformanceComparison() {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Chart Block */}
-                <div className="lg:col-span-2 rounded-2xl border border-white/[0.08] bg-[#141416]/90 p-4 sm:p-5 shadow-xl">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3.5">
+                <div className="lg:col-span-2 glass-panel rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.02] p-4 sm:p-5 shadow-xl backdrop-blur-xl">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 dark:border-white/10 pb-3.5">
                     <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20">
-                        <LineChartIcon size={16} className="text-sky-400" />
+                      <div className="p-2 rounded-xl bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/20 dark:border-cyan-400/20">
+                        <LineChartIcon size={16} />
                       </div>
-                      <span className="text-xs font-bold tracking-wider uppercase text-zinc-200">
+                      <span className="text-xs font-black tracking-wider uppercase text-slate-900 dark:text-white">
                         Cumulative Return Comparison
                       </span>
                     </div>
@@ -569,10 +579,10 @@ export default function PerformanceComparison() {
                     <div className="flex flex-wrap items-center gap-2">
                       {comparisonData?.stats && (
                         <div
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
                             comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
-                              ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
-                              : "border-rose-500/30 bg-rose-950/40 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              : "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400"
                           }`}
                         >
                           {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
@@ -581,33 +591,33 @@ export default function PerformanceComparison() {
                             <AlertCircle className="h-3.5 w-3.5" />
                           )}
                           {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
-                            ? `Outperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by +${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
-                            : `Underperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by ${Math.abs(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
+                            ? `Outperformed by +${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
+                            : `Underperformed by ${Math.abs(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
                           }
                         </div>
                       )}
 
-                      <div className="relative inline-flex items-center rounded-xl border border-white/[0.08] bg-[#1a1a1e] px-2.5 py-1.5 text-[10px] font-semibold text-zinc-300">
-                        <span className="text-zinc-500 mr-1.5 uppercase text-[9px] font-bold">Benchmark:</span>
+                      <div className="relative inline-flex items-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                        <span className="text-slate-400 dark:text-slate-500 mr-1.5 uppercase text-[9px] font-bold">Benchmark:</span>
                         <select
                           value={benchmarkTicker}
                           onChange={(e) => setBenchmarkTicker(e.target.value)}
-                          className="appearance-none bg-transparent pr-5 text-[10px] font-bold text-white focus:outline-none cursor-pointer"
+                          className="appearance-none bg-transparent pr-5 text-[10px] font-bold text-slate-900 dark:text-white focus:outline-none cursor-pointer"
                         >
                           {BENCHMARK_OPTIONS.map((bench) => (
-                            <option key={bench.symbol} value={bench.symbol} className="bg-[#1a1a1e] text-white">
+                            <option key={bench.symbol} value={bench.symbol} className="bg-white dark:bg-[#0c1222] text-slate-900 dark:text-white">
                               {bench.name}
                             </option>
                           ))}
                         </select>
-                        <span className="pointer-events-none absolute right-2.5 text-[9px] text-zinc-400">▼</span>
+                        <span className="pointer-events-none absolute right-2.5 text-[9px] text-slate-400">▼</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="w-full pt-15">
+                  <div className="w-full pt-4">
                     {(!comparisonData || processedSeries.length === 0) ? (
-                      <div className="h-[300px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-900 rounded-3xl">
+                      <div className="h-[300px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-slate-50 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl">
                         Not enough historical data available.
                       </div>
                     ) : (
@@ -621,33 +631,33 @@ export default function PerformanceComparison() {
                 </div>
 
                 {/* Statistics Panel */}
-                <div className="rounded-2xl border border-[#2a2a2a] bg-[#171717] p-4 sm:p-5">
+                <div className="glass-panel rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.02] p-4 sm:p-5 shadow-xl backdrop-blur-xl flex flex-col justify-between">
                   <div>
-                    <div className="mb-4 flex items-center justify-between border-b border-[#2a2a2a] pb-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8d8d8d]">Benchmark Comparison Stats</span>
-                      <div className="rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#d7d7d7]">
-                        Active: <span className="text-white">{BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name}</span>
+                    <div className="mb-4 flex items-center justify-between border-b border-slate-200/60 dark:border-white/10 pb-3">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Benchmark Comparison Stats</span>
+                      <div className="rounded-lg border border-slate-200/60 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        Active: <span className="text-blue-600 dark:text-cyan-400 font-black">{BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name}</span>
                       </div>
                     </div>
 
                     {comparisonData?.stats && (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-2.5">
-                          <div className="rounded-xl border border-[#2a2a2a] bg-[#1d1d1d] p-3">
-                            <span className="block text-[9px] font-semibold uppercase tracking-[0.12em] text-[#8d8d8d]">Portfolio Return</span>
-                            <span className={`mt-1 block font-mono text-base font-semibold ${comparisonData.stats.portfolioReturn >= 0 ? "text-[#70d7a2]" : "text-[#f08d8d]"}`}>
+                          <div className="rounded-xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] p-3">
+                            <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Portfolio Return</span>
+                            <span className={`mt-1 block font-mono text-base font-black ${comparisonData.stats.portfolioReturn >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                               {comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%
                             </span>
                           </div>
-                          <div className="rounded-xl border border-[#2a2a2a] bg-[#1d1d1d] p-3">
-                            <span className="block text-[9px] font-semibold uppercase tracking-[0.12em] text-[#8d8d8d]">Benchmark Return</span>
-                            <span className={`mt-1 block font-mono text-base font-semibold ${comparisonData.stats.benchmarkReturn >= 0 ? "text-[#d7d7d7]" : "text-[#f08d8d]"}`}>
+                          <div className="rounded-xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] p-3">
+                            <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Benchmark Return</span>
+                            <span className={`mt-1 block font-mono text-base font-black ${comparisonData.stats.benchmarkReturn >= 0 ? "text-slate-900 dark:text-white" : "text-rose-500"}`}>
                               {comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%
                             </span>
                           </div>
                         </div>
 
-                        <div className="space-y-1 border-t border-[#2a2a2a] pt-3">
+                        <div className="space-y-1 border-t border-slate-200/60 dark:border-white/10 pt-3">
                           {[
                             { label: "Alpha (Jensen's Alpha)", value: `${comparisonData.stats.alpha >= 0 ? "+" : ""}${comparisonData.stats.alpha.toFixed(2)}` },
                             { label: "Beta (Systematic Risk)", value: comparisonData.stats.beta.toFixed(2) },
@@ -658,9 +668,9 @@ export default function PerformanceComparison() {
                             { label: "Max Drawdown", value: `${comparisonData.stats.maxDrawdown.toFixed(2)}%` },
                             { label: "Portfolio Volatility", value: `${comparisonData.stats.volatility.toFixed(2)}%` }
                           ].map((stat, idx) => (
-                            <div key={idx} className="flex items-center justify-between gap-3 border-b border-[#2a2a2a] py-2.5 text-xs">
-                              <span className="text-[#9a9a9a]">{stat.label}</span>
-                              <span className="font-mono font-semibold text-white">{stat.value}</span>
+                            <div key={idx} className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 py-2 text-xs">
+                              <span className="text-slate-500 dark:text-slate-400 font-medium">{stat.label}</span>
+                              <span className="font-mono font-bold text-slate-900 dark:text-white">{stat.value}</span>
                             </div>
                           ))}
                         </div>
@@ -669,12 +679,12 @@ export default function PerformanceComparison() {
                   </div>
 
                   {comparisonData?.stats && (
-                    <div className="mt-4 rounded-xl border border-[#2a2a2a] bg-[#1d1d1d] p-3">
-                      <div className="mb-2 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9ec9ff]">
+                    <div className="mt-4 rounded-xl border border-blue-500/20 dark:border-cyan-400/20 bg-blue-500/5 dark:bg-cyan-500/5 p-3">
+                      <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-cyan-400">
                         <Activity className="h-3.5 w-3.5" />
                         AI Performance Insights
                       </div>
-                      <p className="text-[11px] leading-relaxed text-[#d1d1d1]">
+                      <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 font-medium">
                         {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
                           `Your portfolio has outperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name || 'index'} by ${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%. Active alpha remains positive with disciplined risk-adjusted returns.`
                         ) : (
@@ -688,27 +698,27 @@ export default function PerformanceComparison() {
 
               {/* Alpha & Beta Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md">
-                  <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
-                    <TrendingUp size={15} className="text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">Top Alpha Contributors</span>
+                <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-5 shadow-lg backdrop-blur-xl">
+                  <div className="flex items-center gap-2 border-b border-slate-200/60 dark:border-white/10 pb-3 mb-4">
+                    <TrendingUp size={16} className="text-emerald-500" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">Top Alpha Contributors</span>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {contributors.length === 0 ? (
-                      <div className="text-slate-500 text-xs py-4 font-bold text-center">No profitable assets currently.</div>
+                      <div className="text-slate-400 text-xs py-4 font-bold text-center">No profitable assets currently.</div>
                     ) : (
                       contributors.map((c, i) => {
                         const displayVal = normalizeHoldingValueForDisplay(c.profit, c.marketId);
                         return (
-                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl">
+                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-xl hover:border-emerald-500/30 transition-all">
                             <div>
-                              <span className="text-xs font-black text-white">{c.symbol}</span>
-                              <span className="text-[10px] text-slate-500 block">{c.name}</span>
+                              <span className="text-xs font-black text-slate-900 dark:text-white">{c.symbol}</span>
+                              <span className="text-[10px] text-slate-400 block font-medium">{c.name}</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{c.return}</span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
+                              <span className="text-xs font-black text-emerald-500 font-mono">{c.return}</span>
+                              <span className="text-[10px] text-slate-400 block font-mono font-medium">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
                             </div>
                           </div>
                         );
@@ -717,27 +727,27 @@ export default function PerformanceComparison() {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-5 shadow-md">
-                  <div className="flex items-center gap-2 border-b border-slate-900 pb-3 mb-4">
-                    <TrendingDown size={15} className="text-rose-500 dark:text-rose-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">Biggest Beta Underperformers</span>
+                <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-5 shadow-lg backdrop-blur-xl">
+                  <div className="flex items-center gap-2 border-b border-slate-200/60 dark:border-white/10 pb-3 mb-4">
+                    <TrendingDown size={16} className="text-rose-500" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">Biggest Beta Underperformers</span>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {losses.length === 0 ? (
-                      <div className="text-slate-500 text-xs py-4 font-bold text-center">No negative assets currently.</div>
+                      <div className="text-slate-400 text-xs py-4 font-bold text-center">No negative assets currently.</div>
                     ) : (
                       losses.map((l, i) => {
                         const displayVal = normalizeHoldingValueForDisplay(Math.abs(l.loss), l.marketId);
                         return (
-                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-[#050711]/60 border border-slate-200 dark:border-slate-900 rounded-2xl">
+                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-xl hover:border-rose-500/30 transition-all">
                             <div>
-                              <span className="text-xs font-black text-white">{l.symbol}</span>
-                              <span className="text-[10px] text-slate-500 block">{l.name}</span>
+                              <span className="text-xs font-black text-slate-900 dark:text-white">{l.symbol}</span>
+                              <span className="text-[10px] text-slate-400 block font-medium">{l.name}</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-black text-rose-500 dark:text-rose-400 font-mono">{l.return}</span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
+                              <span className="text-xs font-black text-rose-500 font-mono">{l.return}</span>
+                              <span className="text-[10px] text-slate-400 block font-mono font-medium">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
                             </div>
                           </div>
                         );
@@ -753,12 +763,14 @@ export default function PerformanceComparison() {
       {activeTab === "metrics" && (
         <div className="space-y-6 animate-fadeIn">
           {/* Card 1: Benchmark Radar */}
-          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+          <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl backdrop-blur-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
-              <Layers className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+            <div className="flex items-center gap-2.5 border-b border-slate-200/60 dark:border-white/10 pb-3 mb-4">
+              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                <Layers className="h-5 w-5 shrink-0" />
+              </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Portfolio Allocation Benchmark Radar</h3>
+                <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Portfolio Allocation Benchmark Radar</h3>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Visual comparison of sector distributions and risks against selected benchmarks.</p>
               </div>
             </div>
@@ -766,12 +778,14 @@ export default function PerformanceComparison() {
           </div>
 
           {/* Card 2: Rolling CAGR */}
-          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+          <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl backdrop-blur-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
-              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0" />
+            <div className="flex items-center gap-2.5 border-b border-slate-200/60 dark:border-white/10 pb-3 mb-4">
+              <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                <TrendingUp className="h-5 w-5 shrink-0" />
+              </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Rolling CAGR Charts</h3>
+                <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Rolling CAGR Charts</h3>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Compounded Annual Growth Rates measured over dynamic holding timeframes.</p>
               </div>
             </div>
@@ -784,14 +798,14 @@ export default function PerformanceComparison() {
         <div className="space-y-6 animate-fadeIn">
           {/* AI Portfolio Advisor */}
           {advisorLoading ? (
-            <div className="glass-panel p-8 flex flex-col items-center justify-center min-h-[200px] border border-slate-900 bg-[#121a2a]/45 rounded-3xl">
+            <div className="glass-panel p-8 flex flex-col items-center justify-center min-h-[200px] border border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.02] rounded-2xl">
               <Activity className="w-8 h-8 animate-spin text-blue-600 dark:text-cyan-400" />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-mono">Synchronizing advisor insights...</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-mono font-medium">Synchronizing advisor insights...</p>
             </div>
           ) : advisorData ? (
             <AIPortfolioAdvisorSection advisor={advisorData} />
           ) : (
-            <div className="p-8 text-center text-slate-400 bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl text-xs font-black uppercase tracking-widest">
+            <div className="glass-panel p-8 text-center text-slate-400 bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest">
               AI Advisor Coach has no insights for the current holdings.
             </div>
           )}
@@ -799,45 +813,45 @@ export default function PerformanceComparison() {
       )}
 
       {/* COMMON COMPLIANCE & GLOSSARY FOOTER */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-200/60 dark:border-white/5 mt-8">
         {/* Metric Glossary */}
-        <div className="bg-gradient-to-br from-[#121a2a]/40 to-[#0a0f1d]/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-4 relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-500">
-          <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-2 pl-2">
+        <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-6 space-y-4 relative overflow-hidden backdrop-blur-xl before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-500">
+          <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2 pl-2">
             <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             Performance Metrics Glossary
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px] pl-2">
             <div className="space-y-1">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Alpha (Jensen's Alpha)</span>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Measures the portfolio's active return against a benchmark. A positive alpha indicates outperforming the index.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Measures the portfolio's active return against a benchmark. A positive alpha indicates outperforming the index.</p>
             </div>
             <div className="space-y-1">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Beta (Systematic Risk)</span>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Indicates sensitivity to market movements. A Beta of 1.0 matches the benchmark; &gt;1.0 implies higher sensitivity and market-relative volatility.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Indicates sensitivity to market movements. A Beta of 1.0 matches the benchmark; &gt;1.0 implies higher sensitivity and market-relative volatility.</p>
             </div>
             <div className="space-y-1">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Sharpe Ratio</span>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Quantifies risk-adjusted return. Higher values (&gt;1.5) indicate efficient returns per unit of volatility risk.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Quantifies risk-adjusted return. Higher values (&gt;1.5) indicate efficient returns per unit of volatility risk.</p>
             </div>
             <div className="space-y-1">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Max Drawdown</span>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Represents the maximum observed peak-to-trough drop in value, signaling worst-case historical risk exposure.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Represents the maximum observed peak-to-trough drop in value, signaling worst-case historical risk exposure.</p>
             </div>
           </div>
         </div>
 
         {/* Compliance Card */}
-        <div className="bg-gradient-to-br from-[#121a2a]/40 to-[#0a0f1d]/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-4 flex flex-col justify-between relative overflow-hidden before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500">
+        <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-6 space-y-4 flex flex-col justify-between relative overflow-hidden backdrop-blur-xl before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500">
           <div className="space-y-2 pl-2">
-            <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-400" />
+            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
               Regulatory Compliance & Disclosures
             </h4>
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
               All performance metrics, mock calculations, and simulated returns generated on this analytics dashboard are purely illustrative. FinPulse AI does not act as a SEBI or SEC registered investment advisor. Backtested results do not guarantee future asset performance.
             </p>
           </div>
-          <div className="flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wider pt-3 border-t border-white/5 pl-2 mt-4">
+          <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider pt-3 border-t border-slate-200/60 dark:border-white/5 pl-2 mt-4">
             <span>Version 1.0.0 (Beta)</span>
           </div>
         </div>
