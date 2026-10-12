@@ -445,7 +445,7 @@ export async function getNewsSentiment(symbol: string) {
 }
 
 export async function getAIScore(symbol: string) {
-  const response = await fetch(`${API_BASE_URL}/api/ai-score/${symbol}`);
+  const response = await fetch(`${API_BASE_URL}/api/ai/score/${symbol}`);
   if (!response.ok) throw new Error("Failed to fetch AI score");
   return response.json();
 }

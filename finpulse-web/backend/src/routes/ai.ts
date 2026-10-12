@@ -545,6 +545,56 @@ Replace ALL example values with real, current data. Return only the JSON object.
   res.json(result);
 });
 
+// GET /api/ai/score/:symbol
+router.get('/score/:symbol', async (req: Request, res: Response) => {
+  const symbolParam = req.params.symbol;
+  const symbol = Array.isArray(symbolParam) ? symbolParam[0] : symbolParam;
+  const upperSymbol = symbol.toUpperCase();
+  const cacheKey = `ai:score:${upperSymbol}`;
+  const refresh = req.query.refresh === 'true' || req.query.force === 'true';
+  const cached = refresh ? null : getAiCache(cacheKey);
+  if (cached) return res.json(cached);
+
+  const fallback = {
+    symbol: upperSymbol,
+    recommendation: "HOLD",
+    confidence: 65,
+    aiScore: 65,
+    trend: "Neutral",
+    momentum: "Neutral Momentum",
+    risk: "Medium",
+    volatility: "Medium",
+    support: null,
+    resistance: null,
+    summary: `AI analysis for ${upperSymbol} is currently unavailable. Showing default neutral assessment.`,
+    keyPoints: ["Waiting for sufficient data to generate AI insights."],
+    generatedAt: new Date().toISOString()
+  };
+
+  const prompt = `You are a financial AI analyst. Analyze ${upperSymbol} and return a single valid JSON object (no extra text, no markdown) with exactly these keys:
+{
+  "symbol": "${upperSymbol}",
+  "recommendation": "BUY" | "HOLD" | "SELL" | "STRONG BUY" | "STRONG SELL",
+  "confidence": number (0-100),
+  "aiScore": number (0-100),
+  "trend": "Bullish" | "Bearish" | "Neutral",
+  "momentum": "Strong Momentum" | "Weak Momentum" | "Neutral Momentum",
+  "risk": "Low" | "Medium" | "High",
+  "volatility": "Low" | "Medium" | "High",
+  "support": number | null,
+  "resistance": number | null,
+  "summary": "string (2-3 sentences)",
+  "keyPoints": ["string", "string", "string"],
+  "generatedAt": "ISO timestamp"
+}
+Use current market context. Return ONLY valid JSON.`;
+
+  const result = await queryLLM(prompt, fallback);
+  result.generatedAt = new Date().toISOString();
+  setAiCache(cacheKey, result);
+  res.json(result);
+});
+
 // GET /api/ai/pick-of-the-day
 router.get('/pick-of-the-day', async (req: Request, res: Response) => {
   const cacheKey = 'ai:pick-of-the-day';
