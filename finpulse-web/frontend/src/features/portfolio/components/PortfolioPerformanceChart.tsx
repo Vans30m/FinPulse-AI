@@ -31,6 +31,7 @@ export default function PortfolioPerformanceChart({
 
   // Keep the API's month labels aligned with the chart's real calendar dates.
   const mappedChartData = useMemo(() => {
+    if (!initialData || initialData.length === 0) return [];
     return initialData.map((d, index) => {
       const match = d.month.match(/^([A-Z][a-z]{2}) '(\d{2})$/);
       const monthIndex = match ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(match[1]) : -1;
@@ -45,6 +46,11 @@ export default function PortfolioPerformanceChart({
       };
     });
   }, [initialData]);
+
+  const seriesKeys = useMemo(() => [
+    { key: "invested", color: "#3b82f6" }, // Blue line for how much is invested
+    { key: "value", color: "#10b981" }      // Green line for how much is made (current value)
+  ], []);
 
   if (hasNoData) {
     return (
@@ -67,12 +73,6 @@ export default function PortfolioPerformanceChart({
   const totalProfit = lastPoint?.profit ?? (currentValue - totalInvested);
   const profitPercentage = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
   const isProfit = totalProfit >= 0;
-
-
-  const seriesKeys = useMemo(() => [
-    { key: "invested", color: "#3b82f6" }, // Blue line for how much is invested
-    { key: "value", color: "#10b981" }      // Green line for how much is made (current value)
-  ], []);
 
   return (
     <div className="glass-panel p-6">

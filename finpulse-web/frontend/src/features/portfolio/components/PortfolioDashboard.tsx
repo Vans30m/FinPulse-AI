@@ -547,14 +547,20 @@ export default function PortfolioDashboard() {
     const initialize = async () => {
       const cached = sessionStorage.getItem("portfolioSections");
       if (cached) {
+        setLoading(false);
         loadPortfolioData(true);
-        timerId = setTimeout(() => {
-          setLoading(false);
-        }, 2000);
       } else {
         setLoading(true);
-        await loadPortfolioData(false);
-        setLoading(false);
+        // Ensure loader never hangs permanently even if backend is waking up from cold boot
+        timerId = setTimeout(() => {
+          setLoading(false);
+        }, 3500);
+        try {
+          await loadPortfolioData(false);
+        } finally {
+          setLoading(false);
+          if (timerId) clearTimeout(timerId);
+        }
       }
     };
 
@@ -568,7 +574,7 @@ export default function PortfolioDashboard() {
       clearInterval(interval);
       if (timerId) clearTimeout(timerId);
     };
-  }, [virtualHoldings, isSandboxMode]);
+  }, [isSandboxMode]);
 
   const handleAddAsset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1214,29 +1220,27 @@ export default function PortfolioDashboard() {
       : point);
   }, [performanceData, currencyMultiplier, isSandboxMode, virtualHoldings, liveQuotes, usdToInrRate, totalNetValue, totalHoldingsValue, totalInvestedAmount]);
 
-  if (loading) {
-    return <PageLoader title="Loading Portfolio" message="Syncing asset allocations and latest transaction valuations..." />;
-  }
+  const allocationData = useMemo(() => {
+    return currentSections
+      .map((section) => ({
+        name: section.title,
+        value: section.holdings.reduce((sum, h) => {
+          const valUSD = section.id === 'domestic' ? h.marketValue / usdToInrRate : h.marketValue;
+          return sum + (valUSD * currencyMultiplier);
+        }, 0),
+      }))
+      .filter((x) => x.value > 0);
+  }, [currentSections, usdToInrRate, currencyMultiplier]);
 
-  const allocationData = currentSections
-    .map((section) => ({
-      name: section.title,
-      value: section.holdings.reduce((sum, h) => {
-        const valUSD = section.id === 'domestic' ? h.marketValue / usdToInrRate : h.marketValue;
-        return sum + (valUSD * currencyMultiplier);
-      }, 0),
-    }))
-    .filter((x) => x.value > 0);
+  const allocationTotal = useMemo(() => {
+    return allocationData.reduce((sum, item) => sum + item.value, 0);
+  }, [allocationData]);
 
-  const allocationTotal = allocationData.reduce(
-    (sum, item) => sum + item.value,
-    0
-  );
-
-  const dominantAllocation =
-    allocationData.length > 0
+  const dominantAllocation = useMemo(() => {
+    return allocationData.length > 0
       ? [...allocationData].sort((a, b) => b.value - a.value)[0]
       : null;
+  }, [allocationData]);
 
   const filteredHoldings = useMemo(() => {
     let holdings = currentSections
@@ -1294,6 +1298,10 @@ export default function PortfolioDashboard() {
 
     return holdings;
   }, [currentSections, activeMarket, holdingSearch, holdingFilterGain, holdingSortBy, holdingSortOrder]);
+
+  if (loading) {
+    return <PageLoader title="Loading Portfolio" message="Syncing asset allocations and latest transaction valuations..." />;
+  }
 
   const exportPortfolioToCSV = (isExcel: boolean = false) => {
     const fileExt = isExcel ? "csv" : "csv";
