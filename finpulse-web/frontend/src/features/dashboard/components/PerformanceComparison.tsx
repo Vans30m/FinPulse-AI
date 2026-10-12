@@ -605,7 +605,7 @@ export default function PerformanceComparison() {
                     </div>
                   </div>
 
-                  <div className="w-full pt-1 pb-5">
+                  <div className="w-full pt-15">
                     {(!comparisonData || processedSeries.length === 0) ? (
                       <div className="h-[300px] flex items-center justify-center text-slate-500 text-xs font-extrabold uppercase tracking-widest bg-slate-50/50 dark:bg-[#050711]/45 border border-slate-200 dark:border-slate-900 rounded-3xl">
                         Not enough historical data available.
@@ -614,7 +614,7 @@ export default function PerformanceComparison() {
                       <CumulativeReturnChart
                         data={processedSeries}
                         benchmarkName={activeBenchmarkName}
-                        height={320}
+                        height={450}
                       />
                     )}
                   </div>

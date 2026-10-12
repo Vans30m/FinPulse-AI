@@ -55,11 +55,45 @@ const parseDateParts = (dateVal: any) => {
   return { day, month, year };
 };
 
-const truncateToFiveSentences = (text?: string) => {
-  if (!text) return "No description available.";
-  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
-  if (sentences.length <= 5) return text;
-  return `${sentences.slice(0, 5).join(' ')}... <span className="text-blue-400 font-medium">Read more →</span>`;
+const ExpandableDescription = ({
+  description,
+  maxSentences = 5,
+  className = "text-xs text-slate-400 leading-relaxed text-justify",
+  emptyText = "No description available."
+}: {
+  description?: string;
+  maxSentences?: number;
+  className?: string;
+  emptyText?: string;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!description) {
+    return <p className={className}>{emptyText}</p>;
+  }
+
+  const sentences = description.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length <= maxSentences) {
+    return <p className={className}>{description}</p>;
+  }
+
+  const truncatedText = sentences.slice(0, maxSentences).join(' ');
+
+  return (
+    <p className={className}>
+      {isExpanded ? description : `${truncatedText}... `}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
+        className="inline-flex items-center gap-1 font-semibold text-blue-400 hover:underline hover:opacity-80 transition-all cursor-pointer ml-1 select-none focus:outline-none"
+      >
+        {isExpanded ? 'Show less ↑' : 'Read more →'}
+      </button>
+    </p>
+  );
 };
 
 export default function AssetChartModal({ open, onClose, asset }: Props) {
@@ -869,7 +903,15 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed mt-5 pt-5 text-justify" dangerouslySetInnerHTML={{ __html: truncateToFiveSentences(data.profile.description) }} />
+
+                        <div className="mt-5 pt-5 border-t border-slate-900">
+                          <ExpandableDescription
+                            description={data.profile.description}
+                            maxSentences={5}
+                            className="text-xs text-slate-400 leading-relaxed text-justify"
+                            emptyText="No description available."
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

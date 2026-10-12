@@ -280,8 +280,8 @@ export default function CumulativeReturnChart({
       </div>
 
       {/* Chart Canvas Card */}
-      <div className="relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-[#121212] p-2 shadow-inner">
-        <div ref={containerRef} className="w-full cursor-crosshair min-h-[300px]" />
+      <div className="relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-[#121212] shadow-inner">
+        <div ref={containerRef} className="w-full cursor-crosshair" />
       </div>
     </div>
   );
