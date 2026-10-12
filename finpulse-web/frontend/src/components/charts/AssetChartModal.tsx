@@ -59,7 +59,7 @@ const truncateToFiveSentences = (text?: string) => {
   if (!text) return "No description available.";
   const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
   if (sentences.length <= 5) return text;
-  return `${sentences.slice(0, 5).join(' ')}...`;
+  return `${sentences.slice(0, 5).join(' ')}... <span className="text-blue-400 font-medium">Read more →</span>`;
 };
 
 export default function AssetChartModal({ open, onClose, asset }: Props) {
@@ -869,9 +869,7 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed mt-5 pt-5 text-justify">
-                          {truncateToFiveSentences(data.profile.description)}
-                        </p>
+                        <p className="text-xs text-slate-400 leading-relaxed mt-5 pt-5 text-justify" dangerouslySetInnerHTML={{ __html: truncateToFiveSentences(data.profile.description) }} />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -188,7 +188,7 @@ const truncateCompanyDescription = (description?: string) => {
     return description;
   }
 
-  return `${sentences.slice(0, 5).join(' ')}...`;
+  return `${sentences.slice(0, 5).join(' ')}... <span className="text-blue-600 dark:text-cyan-400 font-medium">Read more →</span>`;
 };
 
 export default function StockScreener() {
@@ -1615,9 +1615,7 @@ export default function StockScreener() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {/* Left: Description & Website */}
                       <div className="md:col-span-2 space-y-4">
-                        <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal">
-                          {truncateCompanyDescription(assetDetails?.profile?.description)}
-                        </p>
+                        <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal" dangerouslySetInnerHTML={{ __html: truncateCompanyDescription(assetDetails?.profile?.description) }} />
                         {assetDetails?.profile?.website && (
                           <div>
                             <a
