@@ -73,48 +73,51 @@ export default function CumulativeReturnChart({
 
     const chart = createChart(container, {
       layout: {
-        background: { type: ColorType.Solid, color: chartBg },
-        textColor: textColorVal,
+        background: { type: ColorType.Solid, color: "#121212" },
+        textColor: "#a1a1aa",
         fontSize: 11,
-        fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         attributionLogo: false,
       },
       width: container.clientWidth,
       height,
       grid: {
-        vertLines: { color: gridColorVal, style: LineStyle.Solid },
-        horzLines: { color: gridColorVal, style: LineStyle.Solid },
+        vertLines: { color: "rgba(255, 255, 255, 0.04)", style: LineStyle.Solid },
+        horzLines: { color: "rgba(255, 255, 255, 0.04)", style: LineStyle.Solid },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
         vertLine: {
-          color: "rgba(148, 163, 184, 0.5)",
+          color: "rgba(255, 255, 255, 0.25)",
           width: 1,
           style: LineStyle.Dashed,
+          labelBackgroundColor: "#27272a",
         },
         horzLine: {
-          color: "rgba(148, 163, 184, 0.35)",
+          color: "rgba(255, 255, 255, 0.25)",
           width: 1,
           style: LineStyle.Dashed,
+          labelBackgroundColor: "#27272a",
         },
       },
       rightPriceScale: {
         borderVisible: false,
         autoScale: true,
-        scaleMargins: { top: 0.12, bottom: 0.18 },
+        scaleMargins: { top: 0.1, bottom: 0.12 },
       },
       timeScale: {
         borderVisible: false,
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 10,
-        barSpacing: 12,
+        rightOffset: 12,
+        barSpacing: 14,
         minBarSpacing: 6,
         fixLeftEdge: false,
         tickMarkFormatter: (time: any) => formatAxisTick(time),
       },
       localization: {
         locale: "en-US",
+        priceFormatter: (val: number) => `${val.toFixed(2)}%`,
       },
     });
 
@@ -124,13 +127,17 @@ export default function CumulativeReturnChart({
     let portSeries: ISeriesApi<"Area"> | null = null;
     if (showPortfolio) {
       portSeries = chart.addAreaSeries({
-        lineColor: "#60a5fa",
-        topColor: "rgba(96, 165, 250, 0.12)",
-        bottomColor: "rgba(96, 165, 250, 0.01)",
+        lineColor: "#38bdf8",
+        topColor: "rgba(56, 189, 248, 0.22)",
+        bottomColor: "rgba(56, 189, 248, 0.01)",
         lineWidth: 2,
         lineType: LineType.Curved,
         priceLineVisible: false,
         lastValueVisible: true,
+        priceFormat: {
+          type: 'custom',
+          formatter: (price: number) => `${price.toFixed(2)}%`,
+        },
       });
       const portData = data.map((d) => ({
         time: d.time,
@@ -144,12 +151,16 @@ export default function CumulativeReturnChart({
     let benchSeries: ISeriesApi<"Line"> | null = null;
     if (showBenchmark) {
       benchSeries = chart.addLineSeries({
-        color: "#f5d372",
+        color: "#fbbf24",
         lineWidth: 2,
         lineStyle: LineStyle.Dashed,
         lineType: LineType.Curved,
         priceLineVisible: false,
         lastValueVisible: true,
+        priceFormat: {
+          type: 'custom',
+          formatter: (price: number) => `${price.toFixed(2)}%`,
+        },
       });
       const benchData = data.map((d) => ({
         time: d.time,
@@ -192,13 +203,14 @@ export default function CumulativeReturnChart({
   }, [data, height, showPortfolio, showBenchmark]);
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-3 rounded-xl border border-[#2a2a2a] bg-[#171717] p-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.12em] text-[#8d8d8d]">
+    <div className="space-y-3 w-full">
+      {/* Subheader Toolbar & Point Inspector */}
+      <div className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-[#141416]/90 backdrop-blur-md px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between shadow-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px]">
           {activeDate && (
-            <div className="flex items-center gap-1.5">
-              <span>Date:</span>
-              <span className="text-[#d7d7d7]">
+            <div className="flex items-center gap-1.5 text-zinc-400 font-medium">
+              <span className="text-zinc-500 uppercase tracking-wider text-[10px]">Date</span>
+              <span className="text-zinc-200 font-mono">
                 {new Date(activeDate * 1000).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -207,22 +219,27 @@ export default function CumulativeReturnChart({
               </span>
             </div>
           )}
+
           {activePoint && (
             <>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#5bb7ff]" />
-                <span>Portfolio:</span>
-                <span className="font-mono text-[#5bb7ff]">{activePoint.portfolioReturn.toFixed(2)}%</span>
+              <div className="flex items-center gap-1.5 bg-sky-950/40 border border-sky-500/20 px-2 py-0.5 rounded-md">
+                <span className="h-2 w-2 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.6)]" />
+                <span className="text-zinc-400 text-[10px] uppercase font-semibold">Portfolio:</span>
+                <span className="font-mono font-bold text-sky-400">{activePoint.portfolioReturn.toFixed(2)}%</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#f5d372]" />
-                <span>{benchmarkName}:</span>
-                <span className="font-mono text-[#f5d372]">{activePoint.benchmarkReturn.toFixed(2)}%</span>
+
+              <div className="flex items-center gap-1.5 bg-amber-950/30 border border-amber-500/20 px-2 py-0.5 rounded-md">
+                <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                <span className="text-zinc-400 text-[10px] uppercase font-semibold">{benchmarkName}:</span>
+                <span className="font-mono font-bold text-amber-400">{activePoint.benchmarkReturn.toFixed(2)}%</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span>Difference:</span>
+
+              <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-md">
+                <span className="text-zinc-500 text-[10px] uppercase font-semibold">Diff:</span>
                 <span
-                  className={`font-mono ${activePoint.difference >= 0 ? "text-[#70d7a2]" : "text-[#f08d8d]"}`}
+                  className={`font-mono font-bold ${
+                    activePoint.difference >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}
                 >
                   {activePoint.difference >= 0 ? "+" : ""}
                   {activePoint.difference.toFixed(2)}%
@@ -232,30 +249,39 @@ export default function CumulativeReturnChart({
           )}
         </div>
 
-        <div className="flex items-center gap-4 text-[10px] uppercase tracking-[0.12em] text-[#d7d7d7]">
-          <label className="flex items-center gap-2">
+        {/* Visibility Toggles */}
+        <div className="flex items-center gap-3 sm:gap-4 text-[11px] font-semibold text-zinc-300">
+          <label className="flex items-center gap-2 cursor-pointer select-none hover:text-white transition-colors">
             <input
               type="checkbox"
               checked={showPortfolio}
               onChange={(e) => setShowPortfolio(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-[#3a3a3a] bg-[#1d1d1d] text-blue-500 focus:ring-blue-500"
+              className="h-3.5 w-3.5 rounded border-zinc-700 bg-zinc-800 text-sky-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-sky-500"
             />
-            <span>Portfolio</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-0.5 bg-sky-400 rounded-full inline-block" />
+              Portfolio
+            </span>
           </label>
-          <label className="flex items-center gap-2">
+
+          <label className="flex items-center gap-2 cursor-pointer select-none hover:text-white transition-colors">
             <input
               type="checkbox"
               checked={showBenchmark}
               onChange={(e) => setShowBenchmark(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-[#3a3a3a] bg-[#1d1d1d] text-blue-500 focus:ring-blue-500"
+              className="h-3.5 w-3.5 rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-amber-500"
             />
-            <span>{benchmarkName}</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-0.5 bg-amber-400 rounded-full inline-block border-b border-dashed border-amber-400" />
+              {benchmarkName}
+            </span>
           </label>
         </div>
       </div>
 
-      <div className="relative w-full overflow-hidden rounded-xl border border-[#2a2a2a] bg-[#171717]">
-        <div ref={containerRef} className="w-full cursor-crosshair" />
+      {/* Chart Canvas Card */}
+      <div className="relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-[#121212] p-2 shadow-inner">
+        <div ref={containerRef} className="w-full cursor-crosshair min-h-[300px]" />
       </div>
     </div>
   );

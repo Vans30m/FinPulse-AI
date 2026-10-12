@@ -1511,20 +1511,22 @@ export default function PortfolioDashboard() {
             </p>
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3">
             {isSandboxMode ? (
               <button
                 onClick={() => setIsSandboxOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-500 dark:to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 min-h-[44px]"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-500 dark:to-indigo-600 px-4 sm:px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 min-h-[44px]"
               >
-                <Plus className="h-3.5 w-3.5 stroke-[3]" /> Place Paper Trade
+                <Plus className="h-4 w-4 stroke-[3]" />
+                <span>Place Paper Trade</span>
               </button>
             ) : (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500 dark:to-blue-600 px-5 py-2.5 text-xs font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 transition-all duration-300 min-h-[44px]"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500 dark:to-blue-600 px-4 sm:px-5 py-2.5 text-xs font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 transition-all duration-300 min-h-[44px]"
               >
-                <Plus className="h-3.5 w-3.5 stroke-[3]" /> Add Asset Position
+                <Plus className="h-4 w-4 stroke-[3]" />
+                <span>Add Asset Position</span>
               </button>
             )}
           </div>
@@ -1738,10 +1740,28 @@ export default function PortfolioDashboard() {
             <p className="text-xs text-slate-400 dark:text-slate-500">Live holdings index list across active categories.</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span className="rounded-full bg-blue-500/10 dark:bg-cyan-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-cyan-400">
               {filteredHoldings.length} Positions
             </span>
+
+            {isSandboxMode ? (
+              <button
+                onClick={() => setIsSandboxOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                <span>Place Trade</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-slate-950 text-xs font-bold transition-all shadow-sm"
+              >
+                <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                <span>Add Position</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1978,8 +1998,21 @@ export default function PortfolioDashboard() {
               );
             })}
             {filteredHoldings.length === 0 && (
-              <div className="py-8 text-center text-xs text-slate-400">
-                No active holdings found in this category.
+              <div className="py-12 flex flex-col items-center justify-center text-center px-4">
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                  No active holdings found in this category.
+                </p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm">
+                  Add your first stock, ETF, crypto, or metal asset to start tracking real-time performance.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => isSandboxMode ? setIsSandboxOpen(true) : setIsModalOpen(true)}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500 dark:to-blue-600 px-4 py-2 text-xs font-bold text-white dark:text-slate-950 shadow-md hover:shadow-lg transition-all"
+                >
+                  <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                  <span>{isSandboxMode ? "Place First Paper Trade" : "Add Asset Position"}</span>
+                </button>
               </div>
             )}
           </div>

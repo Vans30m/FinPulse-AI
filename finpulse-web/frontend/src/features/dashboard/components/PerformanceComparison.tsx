@@ -13,7 +13,6 @@ import {
   CheckCircle as CheckCircle2
 } from "lucide-react";
 import { motion } from "framer-motion";
-import PerformanceHeatmap from "./performance/PerformanceHeatmap";
 import RollingCagrSection from "./performance/RollingCagrSection";
 import AiPerformanceCoachSection from "./performance/AiPerformanceCoachSection";
 import BenchmarkRadarSection from "./performance/BenchmarkRadarSection";
@@ -556,23 +555,30 @@ export default function PerformanceComparison() {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Chart Block */}
-                <div className="lg:col-span-2 rounded-2xl border border-[#2a2a2a] bg-[#171717] p-3 sm:p-4 lg:p-5">
-                  <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#2a2a2a] pb-2.5">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <LineChartIcon size={15} className="text-[#9ec9ff]" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#cfcfcf]">Cumulative Return Comparison</span>
+                <div className="lg:col-span-2 rounded-2xl border border-white/[0.08] bg-[#141416]/90 p-4 sm:p-5 shadow-xl">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20">
+                        <LineChartIcon size={16} className="text-sky-400" />
+                      </div>
+                      <span className="text-xs font-bold tracking-wider uppercase text-zinc-200">
+                        Cumulative Return Comparison
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {comparisonData?.stats && (
-                        <div className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] ${comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
-                            ? "border-[#2a5b3d] bg-[#1d2b23] text-[#82dca6]"
-                            : "border-[#5a2a2a] bg-[#2a1c1c] text-[#f08d8d]"
-                          }`}>
+                        <div
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                            comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
+                              ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                              : "border-rose-500/30 bg-rose-950/40 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+                          }`}
+                        >
                           {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
-                            <CheckCircle2 className="h-3 w-3" />
+                            <CheckCircle2 className="h-3.5 w-3.5" />
                           ) : (
-                            <AlertCircle className="h-3 w-3" />
+                            <AlertCircle className="h-3.5 w-3.5" />
                           )}
                           {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
                             ? `Outperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name} by +${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%`
@@ -581,19 +587,21 @@ export default function PerformanceComparison() {
                         </div>
                       )}
 
-                      <label className="relative inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#d7d7d7]">
-                        <span>Benchmark</span>
+                      <div className="relative inline-flex items-center rounded-xl border border-white/[0.08] bg-[#1a1a1e] px-2.5 py-1.5 text-[10px] font-semibold text-zinc-300">
+                        <span className="text-zinc-500 mr-1.5 uppercase text-[9px] font-bold">Benchmark:</span>
                         <select
                           value={benchmarkTicker}
                           onChange={(e) => setBenchmarkTicker(e.target.value)}
-                          className="appearance-none bg-transparent pr-4 text-[9px] font-semibold uppercase tracking-[0.12em] text-white focus:outline-none"
+                          className="appearance-none bg-transparent pr-5 text-[10px] font-bold text-white focus:outline-none cursor-pointer"
                         >
                           {BENCHMARK_OPTIONS.map((bench) => (
-                            <option key={bench.symbol} value={bench.symbol}>{bench.name}</option>
+                            <option key={bench.symbol} value={bench.symbol} className="bg-[#1a1a1e] text-white">
+                              {bench.name}
+                            </option>
                           ))}
                         </select>
-                        <span className="pointer-events-none absolute right-2 text-[8px] text-[#8d8d8d]">▼</span>
-                      </label>
+                        <span className="pointer-events-none absolute right-2.5 text-[9px] text-zinc-400">▼</span>
+                      </div>
                     </div>
                   </div>
 
@@ -756,21 +764,8 @@ export default function PerformanceComparison() {
             </div>
             <BenchmarkRadarSection />
           </div>
- 
-          {/* Card 2: Performance Heatmap */}
-          <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
-              <Activity className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <div>
-                <h3 className="text-xs sm:text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">Performance Calendar Heatmap</h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Historical ledger return heatmaps categorized by day, week, or month.</p>
-              </div>
-            </div>
-            <PerformanceHeatmap />
-          </div>
- 
-          {/* Card 3: Rolling CAGR */}
+
+          {/* Card 2: Rolling CAGR */}
           <div className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
             <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-900 pb-3 mb-4">
