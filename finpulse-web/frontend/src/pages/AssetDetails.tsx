@@ -689,7 +689,7 @@ export default function AssetDetails() {
     const allTabs = [
       { id: "overview", label: "Overview", icon: Layers },
       { id: "analysts", label: "Analyst Targets", icon: Compass },
-      { id: "sentiment", label: "Stock Sentiment", icon: Brain },
+      { id: "sentiment", label: "Sentiment", icon: Brain },
       { id: "ownership", label: "Ownership", icon: Users },
       { id: "events", label: "Calendar Events", icon: Calendar },
       { id: "technicals", label: "Structural Levels", icon: Activity },

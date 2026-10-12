@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Globe, ArrowLeft, Download, Bookmark, Plus, TrendingUp, FileText, Check, ChevronDown, MessageSquare, X,
-  Presentation, FileCheck, Leaf, Award, Search, BookOpen, HeartPulse, Calendar, Newspaper, ExternalLink, Activity
+  Presentation, FileCheck, Leaf, Award, Search, BookOpen, HeartPulse, Calendar, Newspaper, ExternalLink, Activity,
+  Sparkles, BarChart2, PieChart, ShieldCheck, Loader2
 } from 'lucide-react';
 import StockSearch from '../components/ui/StockSearch';
 import { getUnifiedAssetDetails, getFundamentalsTimeseries } from '../services/marketService';
 import toast from 'react-hot-toast';
 import { useWatchlists, useAddWatchlistItem, useRemoveWatchlistItem, useCreateWatchlist } from '../hooks/useDashboard';
+import { useTheme } from '../context/ThemeContext';
 
 interface StockDetails {
   symbol: string;
@@ -178,17 +180,109 @@ const getInsightsYears = () => {
   return years;
 };
 
-const truncateCompanyDescription = (description?: string) => {
+const ExpandableDescription = ({
+  description,
+  maxSentences = 5,
+  className = 'text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal',
+  emptyText = 'Loading company description...'
+}: {
+  description?: string;
+  maxSentences?: number;
+  className?: string;
+  emptyText?: string;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (!description) {
-    return 'Loading company description...';
+    return <p className={className}>{emptyText}</p>;
   }
 
   const sentences = description.split(/(?<=[.!?])\s+/).filter(Boolean);
-  if (sentences.length <= 5) {
-    return description;
+  if (sentences.length <= maxSentences) {
+    return <p className={className}>{description}</p>;
   }
 
-  return `${sentences.slice(0, 5).join(' ')}... <span className="text-blue-600 dark:text-cyan-400 font-medium">Read more →</span>`;
+  const truncatedText = sentences.slice(0, maxSentences).join(' ');
+
+  return (
+    <p className={className}>
+      {isExpanded ? description : `${truncatedText}... `}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
+        className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-cyan-400 hover:underline hover:opacity-80 transition-all cursor-pointer ml-1 select-none focus:outline-none"
+      >
+        {isExpanded ? 'Show less ↑' : 'Read more →'}
+      </button>
+    </p>
+  );
+};
+
+const TrendlyneWidget = ({
+  widgetType,
+  symbol,
+  theme = 'light'
+}: {
+  widgetType: 'technical-widget' | 'checklist-widget';
+  symbol: string;
+  theme?: 'light' | 'dark';
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Extract clean ticker: e.g. "RELIANCE.NS" -> "RELIANCE", "AAPL" -> "AAPL"
+  const cleanTicker = useMemo(() => {
+    if (!symbol) return 'RELIANCE';
+    return symbol.split('.')[0].toUpperCase();
+  }, [symbol]);
+
+  // Pass theme directly in query params and via data-theme attribute
+  const widgetUrl = `https://trendlyne.com/web-widget/${widgetType}/Poppins/${cleanTicker}/?posCol=00A25B&primaryCol=006AFF&negCol=EB3B00&neuCol=F7941E&theme=${theme}`;
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Clear previous widget
+    containerRef.current.innerHTML = '';
+
+    // Create blockquote
+    const bq = document.createElement('blockquote');
+    bq.className = 'trendlyne-widgets';
+    bq.setAttribute('data-get-url', widgetUrl);
+    bq.setAttribute('data-theme', theme);
+    containerRef.current.appendChild(bq);
+
+    // Create script tag to dynamically load / reload the widget
+    const script = document.createElement('script');
+    script.src = 'https://cdn-static.trendlyne.com/static/js/webwidgets/tl-widgets.js';
+    script.charset = 'utf-8';
+    script.async = true;
+    containerRef.current.appendChild(script);
+
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, [widgetUrl, theme, cleanTicker]);
+
+  return (
+    <div
+      className={`w-full flex justify-center items-center py-2 overflow-x-auto min-h-[360px] rounded-2xl transition-all duration-300 ${theme === 'dark' ? 'trendlyne-dark-container' : 'bg-white/90'
+        }`}
+    >
+      <style>{`
+        .trendlyne-dark-container iframe {
+          filter: invert(0.92) hue-rotate(180deg) contrast(1.1) brightness(0.92);
+          border-radius: 16px;
+          mix-blend-mode: normal;
+        }
+      `}</style>
+      <div ref={containerRef} className="w-full flex justify-center" />
+    </div>
+  );
 };
 
 export default function StockScreener() {
@@ -196,9 +290,12 @@ export default function StockScreener() {
   const loadTimerRef = useRef<number | null>(null);
   const fundamentalsScrollRef = useRef<HTMLDivElement>(null);
 
+  const { theme: currentTheme } = useTheme();
+  const effectiveTheme = currentTheme === 'dark' ? 'dark' : (currentTheme === 'light' ? 'light' : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
   const [selectedStock, setSelectedStock] = useState<StockDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'market-data' | 'valuation' | 'fundamentals' | 'shareholding' | 'analysis'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'market-data' | 'valuation' | 'fundamentals' | 'shareholding' | 'analysis' | 'trendlyne'>('overview');
 
   const handleTabClick = (tabId: string, tabVal: any) => {
     isScrollingRef.current = true;
@@ -219,6 +316,8 @@ export default function StockScreener() {
     } else if (tabVal === 'shareholding') {
       setIsShareholdingOpen(true);
       if (selectedStock) loadAssetDetailsOnDemand(selectedStock.symbol);
+    } else if (tabVal === 'trendlyne') {
+      setIsTrendlyneOpen(true);
     }
 
     const el = document.getElementById(tabId);
@@ -246,6 +345,8 @@ export default function StockScreener() {
   const [isMarketDataOpen, setIsMarketDataOpen] = useState(false);
   const [isValuationOpen, setIsValuationOpen] = useState(false);
   const [isFundamentalsOpen, setIsFundamentalsOpen] = useState(false);
+  const [isTrendlyneOpen, setIsTrendlyneOpen] = useState(false);
+  const [trendlyneActiveWidget, setTrendlyneActiveWidget] = useState<'both' | 'technical' | 'checklist'>('both');
 
   useEffect(() => {
     if (fundamentalsScrollRef.current) {
@@ -269,17 +370,17 @@ export default function StockScreener() {
           setIsMarketDataLoading(false);
           return;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     try {
       const data = await getUnifiedAssetDetails(symbol);
       setAssetDetails(data);
       setSelectedStock(prev => prev && prev.symbol.toUpperCase() === symbol.toUpperCase()
         ? {
-            ...prev,
-            price: data?.statistics?.price ?? prev.price,
-            changePercent: data?.statistics?.changePercent ?? prev.changePercent,
-          }
+          ...prev,
+          price: data?.statistics?.price ?? prev.price,
+          changePercent: data?.statistics?.changePercent ?? prev.changePercent,
+        }
         : prev);
       localStorage.setItem(`screener-asset-details-v2-${symbol}`, JSON.stringify({
         timestamp: Date.now(),
@@ -343,6 +444,14 @@ export default function StockScreener() {
     }
   };
 
+  const handleToggleTrendlyne = () => {
+    const nextState = !isTrendlyneOpen;
+    setIsTrendlyneOpen(nextState);
+    if (nextState) {
+      scrollToSection('screener-trendlyne');
+    }
+  };
+
   useEffect(() => {
     if (selectedStock?.symbol) {
       setTimeseriesData({});
@@ -352,6 +461,7 @@ export default function StockScreener() {
       setIsValuationOpen(false);
       setIsFundamentalsOpen(false);
       setIsShareholdingOpen(false);
+      setIsTrendlyneOpen(false);
     }
   }, [selectedStock?.symbol]);
 
@@ -366,7 +476,7 @@ export default function StockScreener() {
         if (Date.now() - parsed.timestamp < 4 * 60 * 60 * 1000) {
           cachedTS = parsed.data;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (cachedTS) {
@@ -422,11 +532,23 @@ export default function StockScreener() {
   }, [watchlists, selectedStock]);
 
   const isFollowing = !!watchlistItem;
+  const isFollowPending =
+    addWatchlistItemMutation.isPending ||
+    removeWatchlistItemMutation.isPending ||
+    createWatchlistMutation.isPending;
 
   const handleFollowToggle = async () => {
+    const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token') || '';
+    const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
+    if (!token && !storedUser.id) {
+      toast.error('Please log in to add stocks to your watchlist');
+      window.dispatchEvent(new CustomEvent('finpulse:force-login'));
+      return;
+    }
+
     if (!selectedStock) return;
 
-    if (isFollowing) {
+    if (isFollowing && watchlistItem) {
       removeWatchlistItemMutation.mutate(watchlistItem.id, {
         onSuccess: () => {
           toast.success(`Removed ${selectedStock.symbol} from watchlist`);
@@ -436,22 +558,22 @@ export default function StockScreener() {
         }
       });
     } else {
-      const storedUser = JSON.parse(localStorage.getItem('finpulse-user') || '{}');
       const userName = storedUser.name || storedUser.username || 'User';
       const targetListName = `${userName}'s Watchlist`;
 
-      const existingList = watchlists.find(
+      // Use existing target list, or first available watchlist if user already has one
+      const targetList = watchlists.find(
         (list: any) => list.name.toLowerCase() === targetListName.toLowerCase()
-      );
+      ) || watchlists[0];
 
-      if (!existingList) {
+      if (!targetList) {
         createWatchlistMutation.mutate({ name: targetListName }, {
           onSuccess: (newList) => {
             addWatchlistItemMutation.mutate({
               listId: newList.id,
               item: { symbol: selectedStock.symbol, notes: "Added from Screener" }
             });
-            toast.success(`Created watchlist "${targetListName}" and added ${selectedStock.symbol}`);
+            toast.success(`Added ${selectedStock.symbol} to watchlist`);
           },
           onError: (err: any) => {
             toast.error(`Failed to create watchlist: ${err.message || err}`);
@@ -459,11 +581,11 @@ export default function StockScreener() {
         });
       } else {
         addWatchlistItemMutation.mutate({
-          listId: existingList.id,
+          listId: targetList.id,
           item: { symbol: selectedStock.symbol, notes: "Added from Screener" }
         }, {
           onSuccess: () => {
-            toast.success(`Added ${selectedStock.symbol} to "${targetListName}"`);
+            toast.success(`Added ${selectedStock.symbol} to ${targetList.name}`);
           },
           onError: (err: any) => {
             toast.error(`Failed to add item: ${err.message || err}`);
@@ -570,6 +692,290 @@ export default function StockScreener() {
     const trend = rsi > 60 ? 'Strong Bullish' : rsi < 40 ? 'Bearish' : 'Neutral Consolidation';
     return { rsi, beta, macd, trend };
   }, [selectedStock]);
+
+  const exportStockReportPDF = () => {
+    if (!selectedStock) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Please allow popups to export the PDF report');
+      return;
+    }
+
+    const price = (assetDetails?.statistics?.price ?? selectedStock.price).toFixed(2);
+    const change = (assetDetails?.statistics?.changePercent ?? selectedStock.changePercent).toFixed(2);
+    const isPositive = Number(change) >= 0;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>${selectedStock.symbol} - FinPulse AI Research Report</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 16mm 18mm;
+            }
+            * {
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              color: #0f172a;
+              background-color: #ffffff;
+              margin: 0;
+              padding: 0;
+              font-size: 11px;
+              line-height: 1.5;
+            }
+            .header {
+              border-bottom: 2px solid #0284c7;
+              padding-bottom: 16px;
+              margin-bottom: 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+            }
+            .brand {
+              font-size: 18px;
+              font-weight: 900;
+              color: #0369a1;
+              letter-spacing: -0.5px;
+            }
+            .brand span {
+              color: #0ea5e9;
+            }
+            .badge {
+              display: inline-block;
+              font-size: 9px;
+              font-weight: 800;
+              text-transform: uppercase;
+              padding: 3px 8px;
+              border-radius: 6px;
+              background: #f0fdf4;
+              color: #166534;
+              border: 1px solid #bbf7d0;
+              margin-top: 4px;
+            }
+            .title-section h1 {
+              font-size: 24px;
+              font-weight: 900;
+              margin: 0 0 4px 0;
+              color: #0f172a;
+            }
+            .title-section .symbol {
+              font-family: monospace;
+              color: #0284c7;
+              font-weight: 800;
+              font-size: 13px;
+            }
+            .price-pill {
+              text-align: right;
+            }
+            .price {
+              font-size: 26px;
+              font-weight: 900;
+              font-family: monospace;
+              color: #0f172a;
+            }
+            .change {
+              font-size: 12px;
+              font-weight: 700;
+              color: ${isPositive ? '#16a34a' : '#dc2626'};
+            }
+            .section-title {
+              font-size: 12px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              color: #334155;
+              border-left: 3px solid #0284c7;
+              padding-left: 8px;
+              margin: 18px 0 10px 0;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 8px;
+              margin-bottom: 16px;
+            }
+            .card {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 8px 10px;
+            }
+            .card .label {
+              font-size: 9px;
+              font-weight: 700;
+              color: #64748b;
+              text-transform: uppercase;
+            }
+            .card .val {
+              font-size: 13px;
+              font-weight: 800;
+              color: #0f172a;
+              font-family: monospace;
+              margin-top: 3px;
+            }
+            .profile {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 12px;
+              font-size: 11px;
+              color: #334155;
+              line-height: 1.6;
+              margin-bottom: 16px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 8px;
+              margin-bottom: 16px;
+            }
+            th {
+              background: #f1f5f9;
+              font-size: 9px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #475569;
+              padding: 8px 10px;
+              border: 1px solid #cbd5e1;
+              text-align: left;
+            }
+            td {
+              padding: 7px 10px;
+              font-size: 10px;
+              border: 1px solid #e2e8f0;
+            }
+            tr:nth-child(even) {
+              background: #f8fafc;
+            }
+            .footer {
+              margin-top: 24px;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 10px;
+              display: flex;
+              justify-content: space-between;
+              font-size: 9px;
+              color: #94a3b8;
+            }
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="brand">FinPulse<span>.AI</span></div>
+              <div class="badge">Comprehensive Asset Research Report</div>
+            </div>
+            <div class="price-pill">
+              <div class="price">${currencySymbol}${price}</div>
+              <div class="change">${isPositive ? '+' : ''}${change}% Today</div>
+            </div>
+          </div>
+
+          <div class="title-section" style="margin-bottom: 14px;">
+            <h1>${selectedStock.name}</h1>
+            <div class="symbol">Ticker: ${selectedStock.symbol} &nbsp;|&nbsp; Sector: ${assetDetails?.profile?.sector || 'Diversified'} &nbsp;|&nbsp; Health Score: ${healthScore}/100</div>
+          </div>
+
+          <div class="section-title">Key Financial Highlights</div>
+          <div class="grid">
+            <div class="card">
+              <div class="label">Market Cap</div>
+              <div class="val">${currencySymbol}${(selectedStock.marketCap ? (isIndian ? (selectedStock.marketCap / 10000).toFixed(2) + ' Cr' : (selectedStock.marketCap / 1000).toFixed(2) + 'B') : '-')}</div>
+            </div>
+            <div class="card">
+              <div class="label">P/E Ratio</div>
+              <div class="val">${selectedStock.peRatio?.toFixed(1) || '-'}</div>
+            </div>
+            <div class="card">
+              <div class="label">ROCE</div>
+              <div class="val">${selectedStock.roce ? selectedStock.roce.toFixed(1) + '%' : '-'}</div>
+            </div>
+            <div class="card">
+              <div class="label">ROE</div>
+              <div class="val">${selectedStock.roe ? selectedStock.roe.toFixed(1) + '%' : '-'}</div>
+            </div>
+            <div class="card">
+              <div class="label">52W High</div>
+              <div class="val">${currencySymbol}${(assetDetails?.statistics?.fiftyTwoWeekHigh ?? selectedStock.high52w).toFixed(2)}</div>
+            </div>
+            <div class="card">
+              <div class="label">52W Low</div>
+              <div class="val">${currencySymbol}${(assetDetails?.statistics?.fiftyTwoWeekLow ?? selectedStock.low52w).toFixed(2)}</div>
+            </div>
+            <div class="card">
+              <div class="label">Book Value</div>
+              <div class="val">${currencySymbol}${selectedStock.bookValue?.toFixed(2) || '-'}</div>
+            </div>
+            <div class="card">
+              <div class="label">Div Yield</div>
+              <div class="val">${selectedStock.dividendYield ? selectedStock.dividendYield.toFixed(2) + '%' : '-'}</div>
+            </div>
+          </div>
+
+          <div class="section-title">Business Overview</div>
+          <div class="profile">
+            ${selectedStock.about || assetDetails?.profile?.longBusinessSummary || 'Company profile and operations details.'}
+          </div>
+
+          <div class="section-title">Technical & Valuation Indicators</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Indicator / Metric</th>
+                <th>Value</th>
+                <th>Benchmark / Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>RSI (14-Day)</strong></td>
+                <td>${technicals?.rsi || 50}</td>
+                <td>${technicals?.trend || 'Neutral'}</td>
+              </tr>
+              <tr>
+                <td><strong>Beta (Volatility)</strong></td>
+                <td>${assetDetails?.statistics?.beta != null ? assetDetails.statistics.beta.toFixed(2) : (technicals?.beta?.toFixed(2) || '1.00')}</td>
+                <td>Market Relative Movement</td>
+              </tr>
+              <tr>
+                <td><strong>MACD Signal</strong></td>
+                <td>${technicals?.macd || 'Neutral'}</td>
+                <td>Momentum Direction</td>
+              </tr>
+              <tr>
+                <td><strong>Institutional Holdings</strong></td>
+                <td>${((assetDetails?.ownership?.institutionOwnership || 0) * 100).toFixed(2)}%</td>
+                <td>Funds & Institutional Float</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <span>Generated by FinPulse-AI Screener | Export Date: ${new Date().toLocaleDateString()}</span>
+            <span>Page 1 of 1 &nbsp;|&nbsp; Confidential Research</span>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   const downloadQuarterlyReport = (quarter: string, index: number) => {
     if (!selectedStock) return;
@@ -756,16 +1162,16 @@ export default function StockScreener() {
       const rawTotalRevenue = getYahooValue('quarterlyTotalRevenue');
       const rawCostOfRevenue = getYahooValue('quarterlyCostOfRevenue');
       const rawOperatingRevenue = getYahooValue('quarterlyOperatingRevenue') ?? rawTotalRevenue;
-      const rawGrossProfit = getYahooValue('quarterlyGrossProfit') ?? 
+      const rawGrossProfit = getYahooValue('quarterlyGrossProfit') ??
         ((rawTotalRevenue !== null && rawCostOfRevenue !== null) ? (rawTotalRevenue - rawCostOfRevenue) : null);
       const rawOperatingExpense = getYahooValue('quarterlyOperatingExpense');
-      const rawOperatingIncome = getYahooValue('quarterlyOperatingIncome') ?? 
+      const rawOperatingIncome = getYahooValue('quarterlyOperatingIncome') ??
         ((rawGrossProfit !== null && rawOperatingExpense !== null) ? (rawGrossProfit - rawOperatingExpense) : null);
       const rawEbitda = getYahooValue('quarterlyEBITDA');
       const rawEbit = getYahooValue('quarterlyEBIT') ?? rawOperatingIncome;
       const rawPretaxIncome = getYahooValue('quarterlyPretaxIncome');
       const rawTaxProvision = getYahooValue('quarterlyTaxProvision');
-      const rawNetIncome = getYahooValue('quarterlyNetIncome') ?? 
+      const rawNetIncome = getYahooValue('quarterlyNetIncome') ??
         ((rawPretaxIncome !== null && rawTaxProvision !== null) ? (rawPretaxIncome - rawTaxProvision) : null);
       const rawNetIncomeCommonStockholders = getYahooValue('quarterlyNetIncomeCommonStockholders') ?? rawNetIncome;
       const rawNetIncomeContinuousOperations = getYahooValue('quarterlyNetIncomeContinuousOperations') ?? rawNetIncome;
@@ -1396,11 +1802,13 @@ export default function StockScreener() {
     };
 
     setSelectedStock(details);
+    setIsOverviewOpen(true);
+    loadAssetDetailsOnDemand(normalizedSymbol);
 
     loadTimerRef.current = window.setTimeout(() => {
       setIsLoading(false);
       loadTimerRef.current = null;
-    }, 2000);
+    }, 1200);
   };
 
   // Scroll Spy state and listener removed (activeTab updates only on clicking tabs)
@@ -1420,38 +1828,44 @@ export default function StockScreener() {
 
       {/* 1. LANDING SEARCH VIEW */}
       {!selectedStock ? (
-        <div className="min-h-[70vh] flex flex-col justify-center items-center max-w-2xl mx-auto text-center space-y-8 py-12 px-4 sm:px-6 mt-8">
+        <div className="min-h-[72vh] flex flex-col justify-center items-center max-w-3xl mx-auto text-center space-y-8 py-12 px-4 sm:px-6 relative">
+          {/* Subtle ambient lighting effects */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+
           {/* Logo & Subtitle */}
-          <div className="space-y-4">
+          <div className="space-y-4 relative z-10">
             <div className="flex items-center justify-center gap-2">
-              <h1 className="text-slate-800 dark:text-white font-black text-5xl tracking-tight font-display">
+              <h1 className="text-slate-900 dark:text-slate-200 bg-clip-text bg-gradient-to-r from-slate-900 via-blue-600 to-indigo-600 dark:from-white dark:via-cyan-200 dark:to-cyan-400 font-black text-5xl sm:text-6xl tracking-tight font-display">
                 screener
               </h1>
             </div>
-            <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-medium">
-              Stock analysis and screening tool for investors in India & global markets.
+            <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+              Institutional-grade fundamental analysis, quarterly balance sheets, valuation metrics & shareholding insights.
             </p>
           </div>
 
           {/* Search bar wrapper */}
-          <div className="w-full">
-            <StockSearch
-              placeholder="Search for a company"
-              onSelect={(asset) => handleSelectStock(asset.symbol)}
-              simple={true}
-              onlyTypes={['Stocks']}
-            />
+          <div className="w-full relative z-10">
+            <div className="p-1 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 shadow-xl">
+              <StockSearch
+                placeholder="Search by company name or ticker"
+                onSelect={(asset) => handleSelectStock(asset.symbol)}
+                simple={true}
+                onlyTypes={['Stocks']}
+              />
+            </div>
           </div>
 
           {/* Quick links */}
-          <div className="space-y-3">
+          <div className="space-y-3 relative z-10">
             <div className="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
-              <span className="text-slate-500 dark:text-slate-400 font-semibold">Or analyse:</span>
+              <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[11px]">Popular Tickers:</span>
               {SUGGESTED_COMPANIES.map((company) => (
                 <button
                   key={company.symbol}
                   onClick={() => handleSelectStock(company.symbol)}
-                  className="px-3.5 py-1.5 bg-white hover:bg-blue-50 dark:bg-white/5 dark:hover:bg-cyan-500/10 text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-cyan-400 rounded-xl border border-slate-200/60 dark:border-white/5 shadow-sm font-medium transition-all"
+                  className="px-3.5 py-1.5 bg-slate-900/40 hover:bg-cyan-500/15 text-slate-300 hover:text-cyan-400 rounded-xl border border-white/10 hover:border-cyan-400/30 shadow-sm font-semibold transition-all hover:scale-105 active:scale-95"
                 >
                   {company.name}
                 </button>
@@ -1468,72 +1882,94 @@ export default function StockScreener() {
           <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-400/10 dark:bg-purple-650/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-20 left-1/3 w-96 h-96 bg-blue-300/5 dark:bg-blue-900/5 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Streamlined Combined Company Header Row */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/5 pb-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => {
-                  if (loadTimerRef.current) {
-                    window.clearTimeout(loadTimerRef.current);
-                    loadTimerRef.current = null;
-                  }
-                  setIsLoading(false);
-                  setSelectedStock(null);
-                }}
-                className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white font-bold text-xs transition-colors shrink-0"
-              >
-                <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Search</span>
-              </button>
+          {/* Streamlined Combined Company Header Row with Premium Glassmorphism */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-950/90 dark:from-[#0d1326]/90 dark:via-[#090d1a]/80 dark:to-[#050811]/95 border border-slate-750/50 dark:border-cyan-500/15 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl">
+            {/* Ambient subtle glow */}
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-1/4 -mb-16 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
-              <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 hidden sm:block shrink-0" />
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+              {/* Left Column: Return button + Company Title + Badges */}
+              <div className="flex flex-wrap items-center gap-3.5">
+                <button
+                  onClick={() => {
+                    if (loadTimerRef.current) {
+                      window.clearTimeout(loadTimerRef.current);
+                      loadTimerRef.current = null;
+                    }
+                    setIsLoading(false);
+                    setSelectedStock(null);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 font-bold text-xs transition-all shadow-sm group shrink-0"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                  <span>Search</span>
+                </button>
 
-              <div className="flex items-center gap-2.5 min-w-0">
-                <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight truncate leading-none">
-                  {selectedStock.name}
-                </h1>
-                <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-cyan-500/10 text-blue-700 dark:text-cyan-400 text-[9px] font-black uppercase rounded tracking-wider shrink-0 leading-none">
-                  {selectedStock.symbol}
-                </span>
+                <div className="h-5 w-[1px] bg-white/10 hidden sm:block shrink-0" />
+
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate leading-none">
+                    {selectedStock.name}
+                  </h1>
+                  <span className="px-2 py-0.5 bg-cyan-400/10 text-cyan-400 border border-cyan-400/20 text-[10px] font-black uppercase rounded-lg tracking-wider shrink-0 leading-none">
+                    {selectedStock.symbol}
+                  </span>
+                  {assetDetails?.profile?.sector && (
+                    <span className="hidden md:inline-flex px-2 py-0.5 bg-slate-800/80 text-slate-400 border border-white/5 text-[10px] font-bold rounded-lg tracking-wider shrink-0">
+                      {assetDetails.profile.sector}
+                    </span>
+                  )}
+                </div>
+
+                {/* Price Display Pill */}
+                {((assetDetails?.statistics?.price != null && assetDetails.statistics.price > 0) || selectedStock.price > 0) ? (
+                  <div className="flex items-center gap-2 bg-slate-950/60 border border-white/10 px-3 py-1.5 rounded-xl shrink-0">
+                    <span className="font-mono text-base font-black text-white leading-none">
+                      {currencySymbol}{(assetDetails?.statistics?.price ?? selectedStock.price).toFixed(2)}
+                    </span>
+                    <span className={`font-mono text-xs font-black px-1.5 py-0.5 rounded-md leading-none ${(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-rose-500/15 text-rose-400 border border-rose-500/25'}`}>
+                      {(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? '+' : ''}{(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent).toFixed(2)}%
+                    </span>
+                  </div>
+                ):("")}
               </div>
 
-              <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 shrink-0" />
-
-              {(assetDetails?.statistics?.price != null && assetDetails.statistics.price > 0) || selectedStock.price > 0 ? (
-                <div className="flex items-baseline gap-2 shrink-0">
-                  <span className="font-mono text-sm font-black text-slate-900 dark:text-white leading-none">
-                    {currencySymbol}{(assetDetails?.statistics?.price ?? selectedStock.price).toFixed(2)}
-                  </span>
-                  <span className={`font-mono text-[10px] font-black leading-none ${(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    {(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? '+' : ''}{(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent).toFixed(2)}%
-                  </span>
-                </div>
-              ) : (
-                <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                  Details will load when a section is opened
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
-              <div className="flex items-center gap-2 shrink-0">
-                <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all shadow-sm whitespace-nowrap">
-                  <Download className="h-3.5 w-3.5" /> Export Excel
+              {/* Right Column: Actions */}
+              <div className="flex items-center gap-2.5 shrink-0 self-end lg:self-auto">
+                <button
+                  onClick={exportStockReportPDF}
+                  className="flex items-center gap-1.5 px-3.5 py-2 border border-white/10 hover:border-cyan-400/40 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition-all shadow-sm active:scale-95 cursor-pointer"
+                  title="Export complete stock report as PDF"
+                >
+                  <Download className="h-3.5 w-3.5 text-cyan-400" />
+                  <span>Export PDF</span>
                 </button>
                 <button
                   onClick={handleFollowToggle}
-                  disabled={addWatchlistItemMutation.isPending || removeWatchlistItemMutation.isPending || createWatchlistMutation.isPending}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm whitespace-nowrap ${isFollowing
-                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 border border-emerald-500/30'
-                    : 'bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950'
+                  disabled={isFollowPending}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-lg whitespace-nowrap active:scale-95 cursor-pointer border ${isFollowPending
+                      ? 'opacity-70 cursor-not-allowed bg-slate-800 text-slate-400 border-white/10'
+                      : isFollowing
+                        ? 'screener-follow-btn-following bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-400 shadow-emerald-500/20'
+                        : 'screener-follow-btn-unfollowed bg-cyan-400 hover:bg-cyan-300 text-slate-950 border-cyan-300 shadow-cyan-400/30 font-black'
                     }`}
+                  title={isFollowing ? 'Remove from Watchlist' : 'Add to Watchlist'}
                 >
-                  {isFollowing ? (
+                  {isFollowPending ? (
                     <>
-                      <Check className="h-3.5 w-3.5" /> Following
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-900" />
+                      <span className="text-slate-900 font-black">Updating...</span>
+                    </>
+                  ) : isFollowing ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 stroke-[3] text-slate-950" />
+                      <span className="text-slate-950 font-black tracking-wide">Following</span>
                     </>
                   ) : (
                     <>
-                      <Plus className="h-3.5 w-3.5" /> Follow
+                      <Plus className="h-3.5 w-3.5 stroke-[3] text-slate-950" />
+                      <span className="text-slate-950 font-black tracking-wide">Follow</span>
                     </>
                   )}
                 </button>
@@ -1544,27 +1980,35 @@ export default function StockScreener() {
           {/* Main content wrapper with sticky left sidebar */}
           <div className="flex flex-col lg:flex-row gap-6 items-start w-full relative mt-4">
             {/* Sticky Left Sidebar Navbar */}
-            <div className="hidden lg:flex lg:flex-col gap-1.5 w-52 shrink-0 sticky top-24 self-start bg-transparent p-0 z-20">
-              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">Sections</div>
+            <div className="hidden lg:flex lg:flex-col gap-2 w-60 shrink-0 sticky top-24 self-start bg-slate-900/40 dark:bg-slate-950/40 backdrop-blur-md border border-white/5 p-3 rounded-2xl shadow-xl z-20">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black text-cyan-400 uppercase tracking-widest border-b border-white/5 mb-1">
+                <span>Sections</span>
+              </div>
               {[
-                { id: 'screener-overview', label: 'Overview', tab: 'overview' },
-                { id: 'screener-market-data', label: 'Market Data', tab: 'market-data' },
-                { id: 'screener-valuation', label: 'Valuation', tab: 'valuation' },
-                { id: 'screener-fundamentals', label: 'Fundamentals', tab: 'fundamentals' },
-                { id: 'screener-shareholding', label: 'Shareholding Pattern', tab: 'shareholding' },
-              ].map((tab) => (
-                <button
-                  key={tab.tab}
-                  onClick={() => handleTabClick(tab.id, tab.tab)}
-                  className={`px-3 py-2 text-[10px] font-black uppercase tracking-wider transition-all duration-200 text-left w-full ${activeTab === tab.tab
-                    ? 'border-l-2 border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-400 pl-4 font-black bg-slate-50/50 dark:bg-white/[0.01]'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white border-l border-transparent pl-3 hover:bg-slate-50/30 dark:hover:bg-white/[0.005]'
-                    }`}
-                  title={tab.label}
-                >
-                  {tab.label}
-                </button>
-              ))}
+                { id: 'screener-overview', label: 'Overview', tab: 'overview', icon: BookOpen },
+                { id: 'screener-market-data', label: 'Market Data', tab: 'market-data', icon: Globe },
+                { id: 'screener-valuation', label: 'Valuation', tab: 'valuation', icon: Bookmark },
+                { id: 'screener-fundamentals', label: 'Fundamentals', tab: 'fundamentals', icon: FileText },
+                { id: 'screener-shareholding', label: 'Shareholding', tab: 'shareholding', icon: PieChart },
+                { id: 'screener-trendlyne', label: 'Technicals', tab: 'trendlyne', icon: Activity },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.tab;
+                return (
+                  <button
+                    key={tab.tab}
+                    onClick={() => handleTabClick(tab.id, tab.tab)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 text-left w-full group ${isActive
+                      ? 'bg-gradient-to-r from-cyan-500/15 to-blue-500/15 text-cyan-400 border border-cyan-400/30 shadow-lg shadow-cyan-500/10'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                    title={tab.label}
+                  >
+                    <Icon className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                    <span className="truncate">{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Right main content container */}
@@ -1578,6 +2022,7 @@ export default function StockScreener() {
                     { id: 'screener-valuation', label: 'Valuation', tab: 'valuation' },
                     { id: 'screener-fundamentals', label: 'Fundamentals', tab: 'fundamentals' },
                     { id: 'screener-shareholding', label: 'Shareholding Pattern', tab: 'shareholding' },
+                    { id: 'screener-trendlyne', label: 'Technicals', tab: 'trendlyne' },
                   ].map((tab) => (
                     <button
                       key={tab.tab}
@@ -1592,30 +2037,47 @@ export default function StockScreener() {
                     </button>
                   ))}
                 </div>
-               </div>
+              </div>
 
-               {/* 0. Overview Section */}
-              <div id="screener-overview" className="scroll-mt-28 border-b border-slate-200/60 dark:border-white/10 pb-4 mt-2">
+              {/* 0. Overview Section */}
+              <div id="screener-overview" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-violet-500/30">
                 <button
                   onClick={handleToggleOverview}
-                  className="w-full flex items-center justify-between text-left focus:outline-none"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group"
                 >
-                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/10">
-                      <BookOpen className="h-4.5 w-4.5" />
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-xl bg-violet-500/15 text-violet-400 border border-violet-500/25 group-hover:scale-110 transition-transform">
+                      <BookOpen className="h-5 w-5" />
                     </span>
-                    {selectedStock?.name || 'Company'} Overview
-                  </h3>
-                  <ChevronDown className={`h-4.5 w-4.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${isOverviewOpen ? 'transform rotate-180' : ''}`} />
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight group-hover:text-violet-300 transition-colors">
+                        {selectedStock?.name || 'Company'} Overview
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Business profile, executive information, and latest company news</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                      {isOverviewOpen ? 'Collapse' : 'Expand'}
+                    </span>
+                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isOverviewOpen ? 'transform rotate-180 text-violet-400' : ''}`} />
+                    </div>
+                  </div>
                 </button>
 
                 {isOverviewOpen && (
-                  <div className="space-y-6 mt-4 animate-fadeIn">
+                  <div className="space-y-6 mt-5 pt-5 border-t border-white/10 animate-fadeIn">
                     {/* Top: Description & Profile Info */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {/* Left: Description & Website */}
                       <div className="md:col-span-2 space-y-4">
-                        <p className="text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal" dangerouslySetInnerHTML={{ __html: truncateCompanyDescription(assetDetails?.profile?.description) }} />
+                        <ExpandableDescription
+                          description={assetDetails?.profile?.description}
+                          maxSentences={5}
+                          className="text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal"
+                          emptyText="Loading company description..."
+                        />
                         {assetDetails?.profile?.website && (
                           <div>
                             <a
@@ -1717,8 +2179,8 @@ export default function StockScreener() {
                           <div>
                             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Ex-Dividend Date</span>
                             <span className="font-mono font-bold text-slate-900 dark:text-slate-100 mt-1 block">
-                              {assetDetails?.events?.exDividendDate 
-                                ? new Date(assetDetails.events.exDividendDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) 
+                              {assetDetails?.events?.exDividendDate
+                                ? new Date(assetDetails.events.exDividendDate).toLocaleDateString(undefined, { dateStyle: 'medium' })
                                 : 'N/A'}
                             </span>
                           </div>
@@ -1772,70 +2234,96 @@ export default function StockScreener() {
               </div>
 
               {/* 1. Market Data Section */}
-              <div id="screener-market-data" className="scroll-mt-28 border-b border-slate-200/60 dark:border-white/10 pb-4 mt-6">
+              <div id="screener-market-data" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-cyan-500/30 mt-6">
                 <button
                   onClick={handleToggleMarketData}
-                  className="w-full flex items-center justify-between text-left focus:outline-none"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group"
                 >
-                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/10">
-                      <Globe className="h-4.5 w-4.5" />
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 group-hover:scale-110 transition-transform">
+                      <Globe className="h-5 w-5" />
                     </span>
-                    Market Data
-                  </h3>
-                  <ChevronDown className={`h-4.5 w-4.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${isMarketDataOpen ? 'transform rotate-180' : ''}`} />
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                        Market Data & Price Statistics
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Highs, lows, beta volatility, shares outstanding & volume statistics</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                      {isMarketDataOpen ? 'Collapse' : 'Expand'}
+                    </span>
+                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isMarketDataOpen ? 'transform rotate-180 text-cyan-400' : ''}`} />
+                    </div>
+                  </div>
                 </button>
 
                 {isMarketDataOpen && (
-                  isMarketDataLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <span className="text-sm text-slate-500 dark:text-slate-400">Loading market data...</span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 animate-fadeIn">
-                      {[
-                        { label: 'Current Price', value: assetDetails?.statistics?.price ? `${currencySymbol}${assetDetails.statistics.price.toFixed(2)}` : `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price' },
-                        { label: 'Price Change', value: assetDetails?.statistics?.change ? `${currencySymbol}${assetDetails.statistics.change.toFixed(2)}` : '-', desc: 'Absolute price movement' },
-                        { label: 'Change %', value: assetDetails?.statistics?.changePercent ? `${assetDetails.statistics.changePercent.toFixed(2)}%` : '-', desc: 'Percentage price movement' },
-                        { label: 'Open', value: assetDetails?.statistics?.open ? `${currencySymbol}${assetDetails.statistics.open.toFixed(2)}` : '-', desc: "Today's opening price" },
-                        { label: 'High', value: assetDetails?.statistics?.dayHigh ? `${currencySymbol}${assetDetails.statistics.dayHigh.toFixed(2)}` : '-', desc: "Today's highest price" },
-                        { label: 'Low', value: assetDetails?.statistics?.dayLow ? `${currencySymbol}${assetDetails.statistics.dayLow.toFixed(2)}` : '-', desc: "Today's lowest price" },
-                        { label: 'Previous Close', value: assetDetails?.statistics?.previousClose ? `${currencySymbol}${assetDetails.statistics.previousClose.toFixed(2)}` : '-', desc: "Yesterday's closing price" },
-                        { label: '52-Week High', value: assetDetails?.statistics?.fiftyTwoWeekHigh ? `${currencySymbol}${assetDetails.statistics.fiftyTwoWeekHigh.toFixed(2)}` : (selectedStock.high52w ? `${currencySymbol}${selectedStock.high52w.toFixed(2)}` : '-'), desc: '52-week peak' },
-                        { label: '52-Week Low', value: assetDetails?.statistics?.fiftyTwoWeekLow ? `${currencySymbol}${assetDetails.statistics.fiftyTwoWeekLow.toFixed(2)}` : (selectedStock.low52w ? `${currencySymbol}${selectedStock.low52w.toFixed(2)}` : '-'), desc: '52-week bottom' },
-                        { label: 'Shares Outstanding', value: assetDetails?.statistics?.sharesOutstanding ? (isIndian ? `${(assetDetails.statistics.sharesOutstanding / 10000000).toFixed(2)} Cr.` : `${(assetDetails.statistics.sharesOutstanding / 1000000).toFixed(2)}M`) : '-', desc: 'Total shares issued' },
-                        { label: 'Beta (Volatility)', value: assetDetails?.statistics?.beta != null ? assetDetails.statistics.beta.toFixed(2) : '-', desc: 'Volatility relative to market' },
-                      ].map((item) => (
-                        <div key={item.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{item.label}</span>
-                            <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{item.value}</span>
-                            <span className="text-[8px] text-slate-400 mt-1 font-semibold leading-tight">{item.desc}</span>
+                  <div className="mt-5 pt-5 border-t border-white/10">
+                    {isMarketDataLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Loading market data...</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 animate-fadeIn">
+                        {[
+                          { label: 'Current Price', value: assetDetails?.statistics?.price ? `${currencySymbol}${assetDetails.statistics.price.toFixed(2)}` : `${currencySymbol}${selectedStock.price.toFixed(2)}`, desc: 'Latest trading price' },
+                          { label: 'Price Change', value: assetDetails?.statistics?.change ? `${currencySymbol}${assetDetails.statistics.change.toFixed(2)}` : '-', desc: 'Absolute price movement' },
+                          { label: 'Change %', value: assetDetails?.statistics?.changePercent ? `${assetDetails.statistics.changePercent.toFixed(2)}%` : '-', desc: 'Percentage price movement' },
+                          { label: 'Open', value: assetDetails?.statistics?.open ? `${currencySymbol}${assetDetails.statistics.open.toFixed(2)}` : '-', desc: "Today's opening price" },
+                          { label: 'High', value: assetDetails?.statistics?.dayHigh ? `${currencySymbol}${assetDetails.statistics.dayHigh.toFixed(2)}` : '-', desc: "Today's highest price" },
+                          { label: 'Low', value: assetDetails?.statistics?.dayLow ? `${currencySymbol}${assetDetails.statistics.dayLow.toFixed(2)}` : '-', desc: "Today's lowest price" },
+                          { label: 'Previous Close', value: assetDetails?.statistics?.previousClose ? `${currencySymbol}${assetDetails.statistics.previousClose.toFixed(2)}` : '-', desc: "Yesterday's closing price" },
+                          { label: '52-Week High', value: assetDetails?.statistics?.fiftyTwoWeekHigh ? `${currencySymbol}${assetDetails.statistics.fiftyTwoWeekHigh.toFixed(2)}` : (selectedStock.high52w ? `${currencySymbol}${selectedStock.high52w.toFixed(2)}` : '-'), desc: '52-week peak' },
+                          { label: '52-Week Low', value: assetDetails?.statistics?.fiftyTwoWeekLow ? `${currencySymbol}${assetDetails.statistics.fiftyTwoWeekLow.toFixed(2)}` : (selectedStock.low52w ? `${currencySymbol}${selectedStock.low52w.toFixed(2)}` : '-'), desc: '52-week bottom' },
+                          { label: 'Shares Outstanding', value: assetDetails?.statistics?.sharesOutstanding ? (isIndian ? `${(assetDetails.statistics.sharesOutstanding / 10000000).toFixed(2)} Cr.` : `${(assetDetails.statistics.sharesOutstanding / 1000000).toFixed(2)}M`) : '-', desc: 'Total shares issued' },
+                          { label: 'Beta (Volatility)', value: assetDetails?.statistics?.beta != null ? assetDetails.statistics.beta.toFixed(2) : '-', desc: 'Volatility relative to market' },
+                        ].map((item) => (
+                          <div key={item.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{item.label}</span>
+                              <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{item.value}</span>
+                              <span className="text-[8px] text-slate-400 mt-1 font-semibold leading-tight">{item.desc}</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
               {/* 2. Valuation Section */}
-              <div id="screener-valuation" className="scroll-mt-28 border-b border-slate-200/60 dark:border-white/10 pb-4 mt-6">
+              <div id="screener-valuation" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-indigo-500/30 mt-6">
                 <button
                   onClick={handleToggleValuation}
-                  className="w-full flex items-center justify-between text-left focus:outline-none"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group"
                 >
-                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-cyan-400 border border-indigo-500/10">
-                      <Bookmark className="h-4.5 w-4.5" />
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 group-hover:scale-110 transition-transform">
+                      <Bookmark className="h-5 w-5" />
                     </span>
-                    Valuation
-                  </h3>
-                  <ChevronDown className={`h-4.5 w-4.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${isValuationOpen ? 'transform rotate-180' : ''}`} />
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                        Valuation Multiples
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Historical quarterly P/E, Price to Book, EV/EBITDA, and valuation tracks</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                      {isValuationOpen ? 'Collapse' : 'Expand'}
+                    </span>
+                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isValuationOpen ? 'transform rotate-180 text-indigo-400' : ''}`} />
+                    </div>
+                  </div>
                 </button>
 
                 {isValuationOpen && valuationTableData && (
-                  <div className="mt-4 animate-fadeIn">
+                  <div className="mt-5 pt-5 border-t border-white/10 animate-fadeIn">
                     <div className="overflow-x-auto rounded-2xl border border-slate-150/40 dark:border-white/[0.03] bg-white/50 dark:bg-slate-900/50 backdrop-blur-md">
                       <table className="w-full text-left border-collapse min-w-[750px]">
                         <thead>
@@ -1849,7 +2337,7 @@ export default function StockScreener() {
                         <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                           {valuationTableData.map((row, rIdx) => (
                             <tr key={row.label} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
-                              <td 
+                              <td
                                 className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === valuationTableData.length - 1 ? 'rounded-bl-2xl' : ''}`}
                                 title={row.label}
                               >
@@ -1868,22 +2356,34 @@ export default function StockScreener() {
               </div>
 
               {/* 3. Fundamentals Section */}
-              <div id="screener-fundamentals" className="scroll-mt-28 border-b border-slate-200/60 dark:border-white/10 pb-4 mt-6">
+              <div id="screener-fundamentals" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-emerald-500/30 mt-6">
                 <button
                   onClick={handleToggleFundamentals}
-                  className="w-full flex items-center justify-between text-left focus:outline-none"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group"
                 >
-                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10">
-                      <FileText className="h-4.5 w-4.5" />
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 group-hover:scale-110 transition-transform">
+                      <FileText className="h-5 w-5" />
                     </span>
-                    Fundamentals
-                  </h3>
-                  <ChevronDown className={`h-4.5 w-4.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${isFundamentalsOpen ? 'transform rotate-180' : ''}`} />
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                        Financial Statements & Fundamentals
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Quarterly Income Statement, Balance Sheet, and Free Cash Flow</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                      {isFundamentalsOpen ? 'Collapse' : 'Expand'}
+                    </span>
+                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isFundamentalsOpen ? 'transform rotate-180 text-emerald-400' : ''}`} />
+                    </div>
+                  </div>
                 </button>
 
                 {isFundamentalsOpen && (
-                  <div className="mt-4 animate-fadeIn">
+                  <div className="mt-5 pt-5 border-t border-white/10 animate-fadeIn">
                     {/* Sub-tabs Navigation */}
                     <div className="flex gap-1.5 mb-6 overflow-x-auto pb-1.5 hide-scrollbar border-b border-slate-100 dark:border-white/5">
                       {[
@@ -1917,106 +2417,120 @@ export default function StockScreener() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                        {isTimeseriesLoading[fundamentalsTab] ? (
-                          <tr>
-                            <td colSpan={5} className="py-12 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
-                              <div className="flex flex-col items-center gap-3">
-                                <div className="h-6 w-6 border-2 border-blue-600 dark:border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                                <span>Loading real-time financial statements...</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : (() => {
-                          let metricsList: string[] = [];
-                          if (fundamentalsTab === 'income') {
-                            metricsList = [
-                              'Total Revenue',
-                              'Operating Revenue',
-                              'Cost of Revenue',
-                              'Gross Profit',
-                              'Operating Expense',
-                              'Operating Income',
-                              'EBITDA',
-                              'EBIT',
-                              'Pretax Income',
-                              'Tax Provision',
-                              'Net Income',
-                              'Net Income Common Stockholders',
-                              'Net Income Continuous Operations',
-                              'Interest Expense',
-                              'Basic EPS',
-                              'Diluted EPS'
-                            ];
-                          } else if (fundamentalsTab === 'balance') {
-                            metricsList = [
-                              'Cash Cash Equivalents & Short-Term Investments',
-                              'Total Current Assets',
-                              'Total Assets',
-                              'Total Current Liabilities',
-                              'Total Liabilities',
-                              'Total Debt',
-                              'Net Debt',
-                              "Stockholders' Equity",
-                              'Common Stock Equity',
-                              'Retained Earnings',
-                              'Working Capital',
-                              'Invested Capital'
-                            ];
-                          } else if (fundamentalsTab === 'cash') {
-                            metricsList = [
-                              'Operating Cash Flow',
-                              'Investing Cash Flow',
-                              'Financing Cash Flow',
-                              'Capital Expenditure',
-                              'Free Cash Flow'
-                            ];
-                          }
-
-                          return metricsList.map((metric, rIdx) => (
-                            <tr key={metric} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
-                              <td 
-                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === metricsList.length - 1 ? 'rounded-bl-2xl' : ''}`}
-                                title={metric}
-                              >
-                                {metric === 'Cash Cash Equivalents & Short-Term Investments' 
-                                  ? 'Cash & ST Investments' 
-                                  : metric === 'Net Income Common Stockholders' 
-                                  ? 'Net Income (Common)' 
-                                  : metric === 'Net Income Continuous Operations' 
-                                  ? 'Net Income (Cont. Ops)' 
-                                  : metric}
-                              </td>
-                              {fundamentalsData.quarters.map((q, idx) => (
-                                <td key={q} className="p-3 text-xs font-mono font-bold text-slate-900 dark:text-white text-right">
-                                  {(fundamentalsData.qData[idx] as any)[metric] || '-'}
+                            {isTimeseriesLoading[fundamentalsTab] ? (
+                              <tr>
+                                <td colSpan={5} className="py-12 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  <div className="flex flex-col items-center gap-3">
+                                    <div className="h-6 w-6 border-2 border-blue-600 dark:border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                                    <span>Loading real-time financial statements...</span>
+                                  </div>
                                 </td>
-                              ))}
-                            </tr>
-                          ));
-                        })()}
-                      </tbody>
+                              </tr>
+                            ) : (() => {
+                              let metricsList: string[] = [];
+                              if (fundamentalsTab === 'income') {
+                                metricsList = [
+                                  'Total Revenue',
+                                  'Operating Revenue',
+                                  'Cost of Revenue',
+                                  'Gross Profit',
+                                  'Operating Expense',
+                                  'Operating Income',
+                                  'EBITDA',
+                                  'EBIT',
+                                  'Pretax Income',
+                                  'Tax Provision',
+                                  'Net Income',
+                                  'Net Income Common Stockholders',
+                                  'Net Income Continuous Operations',
+                                  'Interest Expense',
+                                  'Basic EPS',
+                                  'Diluted EPS'
+                                ];
+                              } else if (fundamentalsTab === 'balance') {
+                                metricsList = [
+                                  'Cash Cash Equivalents & Short-Term Investments',
+                                  'Total Current Assets',
+                                  'Total Assets',
+                                  'Total Current Liabilities',
+                                  'Total Liabilities',
+                                  'Total Debt',
+                                  'Net Debt',
+                                  "Stockholders' Equity",
+                                  'Common Stock Equity',
+                                  'Retained Earnings',
+                                  'Working Capital',
+                                  'Invested Capital'
+                                ];
+                              } else if (fundamentalsTab === 'cash') {
+                                metricsList = [
+                                  'Operating Cash Flow',
+                                  'Investing Cash Flow',
+                                  'Financing Cash Flow',
+                                  'Capital Expenditure',
+                                  'Free Cash Flow'
+                                ];
+                              }
+
+                              return metricsList.map((metric, rIdx) => (
+                                <tr key={metric} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
+                                  <td
+                                    className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === metricsList.length - 1 ? 'rounded-bl-2xl' : ''}`}
+                                    title={metric}
+                                  >
+                                    {metric === 'Cash Cash Equivalents & Short-Term Investments'
+                                      ? 'Cash & ST Investments'
+                                      : metric === 'Net Income Common Stockholders'
+                                        ? 'Net Income (Common)'
+                                        : metric === 'Net Income Continuous Operations'
+                                          ? 'Net Income (Cont. Ops)'
+                                          : metric}
+                                  </td>
+                                  {fundamentalsData.quarters.map((q, idx) => (
+                                    <td key={q} className="p-3 text-xs font-mono font-bold text-slate-900 dark:text-white text-right">
+                                      {(fundamentalsData.qData[idx] as any)[metric] || '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ));
+                            })()}
+                          </tbody>
                         </table>
                       </div>
                     )}
                   </div>
                 )}
+              </div>
+
               {/* 4. Shareholding Pattern Section */}
-              <div id="screener-shareholding" className="scroll-mt-28 border-t border-b border-slate-200/60 dark:border-white/10 py-6 mt-6">
+              <div id="screener-shareholding" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-pink-500/30 mt-6">
                 <button
                   onClick={handleToggleShareholding}
-                  className="w-full flex items-center justify-between text-left focus:outline-none"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group"
                 >
-                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10">
-                      <TrendingUp className="h-4.5 w-4.5" />
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-xl bg-pink-500/15 text-pink-400 border border-pink-500/25 group-hover:scale-110 transition-transform">
+                      <PieChart className="h-5 w-5" />
                     </span>
-                    Shareholding Pattern
-                  </h3>
-                  <ChevronDown className={`h-4.5 w-4.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${isShareholdingOpen ? 'transform rotate-180' : ''}`} />
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                        Shareholding & Institutional Ownership
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Insiders, institutional funds float concentration & stakeholder counts</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                      {isShareholdingOpen ? 'Collapse' : 'Expand'}
+                    </span>
+                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isShareholdingOpen ? 'transform rotate-180 text-pink-400' : ''}`} />
+                    </div>
+                  </div>
                 </button>
 
                 {isShareholdingOpen && (
-                  <div className="mt-6 animate-fadeIn">
+                  <div className="mt-5 pt-5 border-t border-white/10 animate-fadeIn">
                     <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-3xl p-5 sm:p-7 w-full shadow-xl backdrop-blur-md">
                       <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-4 mb-5">
                         <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Breakdown</h4>
@@ -2029,26 +2543,26 @@ export default function StockScreener() {
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {[
-                            { 
-                              value: `${((assetDetails.ownership?.insiderOwnership || 0) * 100).toFixed(2)}%`, 
+                            {
+                              value: `${((assetDetails.ownership?.insiderOwnership || 0) * 100).toFixed(2)}%`,
                               label: '% of Shares Held by All Insider',
                               desc: 'Held by officers, directors & key promoters',
                               icon: <Presentation className="h-4 w-4 text-blue-500" />
                             },
-                            { 
-                              value: `${((assetDetails.ownership?.institutionOwnership || 0) * 100).toFixed(2)}%`, 
+                            {
+                              value: `${((assetDetails.ownership?.institutionOwnership || 0) * 100).toFixed(2)}%`,
                               label: '% of Shares Held by Institutions',
                               desc: 'Held by mutual funds, FIIs & banks',
                               icon: <Award className="h-4 w-4 text-emerald-500" />
                             },
-                            { 
-                              value: `${((assetDetails.ownership?.institutionsFloatPercentHeld || 0) * 100).toFixed(2)}%`, 
+                            {
+                              value: `${((assetDetails.ownership?.institutionsFloatPercentHeld || 0) * 100).toFixed(2)}%`,
                               label: '% of Float Held by Institutions',
                               desc: 'Percentage of public float held by funds',
                               icon: <TrendingUp className="h-4 w-4 text-amber-500" />
                             },
-                            { 
-                              value: assetDetails.ownership?.institutionsCount?.toLocaleString() || '-', 
+                            {
+                              value: assetDetails.ownership?.institutionsCount?.toLocaleString() || '-',
                               label: 'Number of Institutions',
                               desc: 'Total institutional investors holding shares',
                               icon: <Globe className="h-4 w-4 text-indigo-500" />
@@ -2070,10 +2584,121 @@ export default function StockScreener() {
                     </div>
                   </div>
                 )}
-              </div>        </div>
+              </div>
+
+              {/* 5. Technical & Health Analytics Widgets Section */}
+              <div id="screener-trendlyne" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-cyan-500/30 mt-6">
+                <button
+                  onClick={handleToggleTrendlyne}
+                  className="w-full flex items-center justify-between text-left focus:outline-none group"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 group-hover:scale-110 transition-transform">
+                      <Activity className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                          Technical Signals & Health Checklist
+                        </h3>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Real-time momentum oscillators, moving averages, and fundamental checklist ratings
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                      {isTrendlyneOpen ? 'Collapse' : 'Expand'}
+                    </span>
+                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isTrendlyneOpen ? 'transform rotate-180 text-cyan-400' : ''}`} />
+                    </div>
+                  </div>
+                </button>
+
+                {isTrendlyneOpen && (
+                  <div className="mt-5 pt-5 border-t border-white/10 animate-fadeIn space-y-5">
+                    {/* Filter sub-buttons */}
+                    <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-100 dark:border-white/5">
+                      <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
+                        {[
+                          { id: 'technical', label: 'Technical Analysis' },
+                          { id: 'checklist', label: 'Health Checklist' },
+                        ].map((btn) => (
+                          <button
+                            key={btn.id}
+                            onClick={() => setTrendlyneActiveWidget(btn.id as any)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${trendlyneActiveWidget === btn.id
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white dark:from-cyan-500 dark:to-blue-600 dark:text-slate-950 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                              }`}
+                          >
+                            {btn.label}
+                          </button>
+                        ))}
+                      </div>
 
 
+                    </div>
 
+                    {/* Widgets Grid */}
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                      {/* 1. Technical Widget */}
+                      {(trendlyneActiveWidget === 'both' || trendlyneActiveWidget === 'technical') && (
+                        <div className={`bg-slate-50 dark:bg-white/[0.015] border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md flex flex-col ${trendlyneActiveWidget === 'technical' ? 'xl:col-span-2' : ''
+                          }`}>
+                          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/50 dark:border-white/5">
+                            <div className="flex items-center gap-2">
+
+                              <div>
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">
+                                  Technical Indicators & Scores
+                                </h4>
+                                <span className="text-[10px] text-slate-400">Moving averages, oscillators & trend strength</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="w-full overflow-hidden flex justify-center">
+                            <TrendlyneWidget
+                              widgetType="technical-widget"
+                              symbol={selectedStock?.symbol || 'RELIANCE'}
+                              theme={effectiveTheme}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 2. Checklist Widget */}
+                      {(trendlyneActiveWidget === 'both' || trendlyneActiveWidget === 'checklist') && (
+                        <div className={`bg-slate-50 dark:bg-white/[0.015] border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md flex flex-col ${trendlyneActiveWidget === 'checklist' ? 'xl:col-span-2' : ''
+                          }`}>
+                          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/50 dark:border-white/5">
+                            <div className="flex items-center gap-2">
+
+                              <div>
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">
+                                  Checklist & Health Score
+                                </h4>
+                                <span className="text-[10px] text-slate-400">Durability, Valuation & Momentum (DVM)</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="w-full overflow-hidden flex justify-center">
+                            <TrendlyneWidget
+                              widgetType="checklist-widget"
+                              symbol={selectedStock?.symbol || 'RELIANCE'}
+                              theme={effectiveTheme}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div> {/* Closes Right main content container */}
           </div> {/* Closes Main content wrapper with sticky left sidebar */}
         </div>
@@ -2081,3 +2706,4 @@ export default function StockScreener() {
     </div>
   );
 }
+    

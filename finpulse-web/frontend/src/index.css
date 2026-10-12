@@ -775,3 +775,81 @@ html:not(.dark) .secondary-page [class*="from-\[#090d1a\]"] {
 .dark .secondary-page .asset-watchlist-button:hover {
   background-color: #67e8f9 !important;
 }
+
+/* Screener Page Follow Button overrides against dark secondary-page resets */
+.screener-follow-btn-unfollowed {
+  background: #22d3ee !important;
+  background-color: #22d3ee !important;
+  border-color: #38bdf8 !important;
+  color: #050811 !important;
+  box-shadow: 0 4px 14px rgba(34, 211, 238, 0.35) !important;
+}
+
+.screener-follow-btn-unfollowed:hover {
+  background: #67e8f9 !important;
+  background-color: #67e8f9 !important;
+  color: #000000 !important;
+}
+
+.screener-follow-btn-unfollowed * {
+  color: #050811 !important;
+}
+
+.screener-follow-btn-following {
+  background: #10b981 !important;
+  background-color: #10b981 !important;
+  border-color: #34d399 !important;
+  color: #022c22 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+}
+
+.screener-follow-btn-following:hover {
+  background: #34d399 !important;
+  background-color: #34d399 !important;
+  color: #022c22 !important;
+}
+
+.screener-follow-btn-following * {
+  color: #022c22 !important;
+}
+
+/* Portfolio Page Add Action Button overrides against dark secondary-page resets */
+.portfolio-action-btn {
+  background: #22d3ee !important;
+  background-color: #22d3ee !important;
+  border: 1px solid #38bdf8 !important;
+  color: #050811 !important;
+  box-shadow: 0 4px 16px rgba(34, 211, 238, 0.4) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.portfolio-action-btn:hover {
+  background: #67e8f9 !important;
+  background-color: #67e8f9 !important;
+  color: #000000 !important;
+}
+
+.portfolio-action-btn * {
+  color: #050811 !important;
+}
+
+.portfolio-action-btn-sandbox {
+  background: #a855f7 !important;
+  background-color: #a855f7 !important;
+  border: 1px solid #c084fc !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.portfolio-action-btn-sandbox:hover {
+  background: #c084fc !important;
+  background-color: #c084fc !important;
+  color: #ffffff !important;
+}
+
+.portfolio-action-btn-sandbox * {
+  color: #ffffff !important;
+}

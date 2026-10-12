@@ -1515,7 +1515,7 @@ export default function PortfolioDashboard() {
             {isSandboxMode ? (
               <button
                 onClick={() => setIsSandboxOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-500 dark:to-indigo-600 px-4 sm:px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 min-h-[44px]"
+                className="portfolio-action-btn-sandbox flex items-center justify-center gap-2 rounded-2xl bg-purple-600 px-4 sm:px-5 py-2.5 text-xs font-black text-white shadow-lg transition-all duration-300 min-h-[44px]"
               >
                 <Plus className="h-4 w-4 stroke-[3]" />
                 <span>Place Paper Trade</span>
@@ -1523,7 +1523,7 @@ export default function PortfolioDashboard() {
             ) : (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500 dark:to-blue-600 px-4 sm:px-5 py-2.5 text-xs font-bold text-white dark:text-night-950 shadow-lg hover:shadow-blue-500/25 transition-all duration-300 min-h-[44px]"
+                className="portfolio-action-btn flex items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-4 sm:px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg transition-all duration-300 min-h-[44px]"
               >
                 <Plus className="h-4 w-4 stroke-[3]" />
                 <span>Add Asset Position</span>
@@ -1748,7 +1748,7 @@ export default function PortfolioDashboard() {
             {isSandboxMode ? (
               <button
                 onClick={() => setIsSandboxOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-sm"
+                className="portfolio-action-btn-sandbox inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-black transition-all shadow-sm"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[3]" />
                 <span>Place Trade</span>
@@ -1756,7 +1756,7 @@ export default function PortfolioDashboard() {
             ) : (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-slate-950 text-xs font-bold transition-all shadow-sm"
+                className="portfolio-action-btn inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-cyan-400 text-slate-950 text-xs font-black transition-all shadow-sm"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[3]" />
                 <span>Add Position</span>
