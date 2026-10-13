@@ -182,11 +182,13 @@ const getInsightsYears = () => {
 
 const ExpandableDescription = ({
   description,
-  maxSentences = 5,
+  maxLines = 5,
+  maxSentences,
   className = 'text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal',
   emptyText = 'Loading company description...'
 }: {
   description?: string;
+  maxLines?: number;
   maxSentences?: number;
   className?: string;
   emptyText?: string;
@@ -197,27 +199,22 @@ const ExpandableDescription = ({
     return <p className={className}>{emptyText}</p>;
   }
 
-  const sentences = description.split(/(?<=[.!?])\s+/).filter(Boolean);
-  if (sentences.length <= maxSentences) {
-    return <p className={className}>{description}</p>;
-  }
-
-  const truncatedText = sentences.slice(0, maxSentences).join(' ');
-
   return (
-    <p className={className}>
-      {isExpanded ? description : `${truncatedText}... `}
+    <div className="space-y-1.5">
+      <p className={`${className} ${!isExpanded ? 'line-clamp-5' : ''}`}>
+        {description}
+      </p>
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           setIsExpanded(!isExpanded);
         }}
-        className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-cyan-400 hover:underline hover:opacity-80 transition-all cursor-pointer ml-1 select-none focus:outline-none"
+        className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-cyan-400 hover:underline transition-all cursor-pointer select-none focus:outline-none"
       >
         {isExpanded ? 'Show less ↑' : 'Read more →'}
       </button>
-    </p>
+    </div>
   );
 };
 

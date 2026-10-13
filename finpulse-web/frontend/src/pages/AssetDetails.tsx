@@ -23,7 +23,8 @@ import {
   getUnifiedAssetDetails,
   getFundamentals,
   getTechnicals,
-  getAIScore
+  getAIScore,
+  getStockSentiment
 } from "../services/marketService";
 import {
   useWatchlists,
@@ -53,41 +54,22 @@ type TabType =
 
 const ExpandableDescription = ({
   description,
-  maxSentences = 5,
   className = "text-xs text-slate-400 leading-relaxed",
   emptyText = "No description available."
 }: {
   description?: string;
+  maxLines?: number;
   maxSentences?: number;
   className?: string;
   emptyText?: string;
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   if (!description) {
     return <p className={className}>{emptyText}</p>;
   }
 
-  const sentences = description.split(/(?<=[.!?])\s+/).filter(Boolean);
-  if (sentences.length <= maxSentences) {
-    return <p className={className}>{description}</p>;
-  }
-
-  const truncatedText = sentences.slice(0, maxSentences).join(' ');
-
   return (
-    <p className={className}>
-      {isExpanded ? description : `${truncatedText}... `}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsExpanded(!isExpanded);
-        }}
-        className="inline-flex items-center gap-1 font-semibold text-blue-400 hover:underline hover:opacity-80 transition-all cursor-pointer ml-1 select-none focus:outline-none"
-      >
-        {isExpanded ? 'Show less ↑' : 'Read more →'}
-      </button>
+    <p className={`${className} line-clamp-5`}>
+      {description}
     </p>
   );
 };
@@ -197,11 +179,10 @@ function WatchlistToggleButton({ symbol }: { symbol: string }) {
     <button
       onClick={handleFollowToggle}
       disabled={isPending}
-      className={`asset-watchlist-button inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${
-        isFollowing
+      className={`asset-watchlist-button inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${isFollowing
           ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 border border-emerald-500/30'
           : 'bg-blue-600 hover:bg-blue-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-night-950 border border-transparent'
-      }`}
+        }`}
     >
       {isPending ? (
         <>
@@ -512,17 +493,16 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
                   const val = meta.performance?.[item.key] ?? data.statistics?.performance?.[item.key];
                   const hasVal = val !== undefined && val !== null;
                   const isPositive = val >= 0;
-                  
+
                   return (
-                    <div 
-                      key={idx} 
-                      className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${
-                        hasVal 
-                          ? isPositive 
-                            ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]" 
+                    <div
+                      key={idx}
+                      className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${hasVal
+                          ? isPositive
+                            ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
                             : "bg-rose-500/[0.02] border-rose-950/60 hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
                           : "bg-slate-950/30 border-slate-900 text-slate-655"
-                      }`}
+                        }`}
                     >
                       <div className="flex justify-between items-center z-10">
                         <span className="text-[10px] text-slate-550 uppercase font-black tracking-wider">{item.label}</span>
@@ -535,7 +515,7 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
 
                       {hasVal && (
                         <div className="w-full bg-slate-950/80 rounded-full h-1 my-1 overflow-hidden border border-slate-900">
-                          <div 
+                          <div
                             className={`h-full rounded-full ${isPositive ? "bg-emerald-500" : "bg-rose-500"}`}
                             style={{ width: `${Math.min(100, Math.abs(val) * (item.key === "1D" || item.key === "1W" ? 10 : 1))}%` }}
                           />
@@ -543,17 +523,15 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
                       )}
 
                       <div className="z-10 mt-auto">
-                        <span className={`text-sm font-mono font-black block tracking-tight ${
-                          hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
-                        }`}>
+                        <span className={`text-sm font-mono font-black block tracking-tight ${hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
+                          }`}>
                           {hasVal ? `${isPositive ? "+" : ""}${val.toFixed(2)}%` : "N/A"}
                         </span>
                       </div>
 
                       {hasVal && (
-                        <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${
-                          isPositive ? "bg-emerald-400" : "bg-rose-400"
-                        }`} />
+                        <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${isPositive ? "bg-emerald-400" : "bg-rose-400"
+                          }`} />
                       )}
                     </div>
                   );
@@ -567,28 +545,20 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
               const newsItems = (data.news || []).slice(0, 10);
               const leftColNews = newsItems.slice(0, 5);
               const rightColNews = newsItems.slice(5, 10);
-              
+
               const renderNewsTable = (items: any[]) => (
                 <div className="overflow-x-auto rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-900 bg-[#0c1022]">
-                        <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-20">Image</th>
-                        <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
+                        <th className="px-5 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
                         <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-16 text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-900/60">
                       {items.map((item, idx) => (
                         <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
-                          <td className="px-4 py-3 align-middle w-20">
-                            <img
-                              src={item.thumbnail?.resolutions?.[0]?.url || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=200&q=80"}
-                              alt="News thumbnail"
-                              className="w-16 h-11 rounded-lg object-cover border border-slate-900 shadow-sm shrink-0 bg-slate-950"
-                            />
-                          </td>
-                          <td className="px-4 py-3.5 align-middle space-y-1">
+                          <td className="px-5 py-3.5 align-middle space-y-1">
                             <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block">
                               {item.publisher || "General News"}
                             </span>
@@ -614,7 +584,7 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
                       ))}
                       {items.length === 0 && (
                         <tr>
-                          <td colSpan={3} className="px-4 py-8 text-center text-xs text-slate-500">
+                          <td colSpan={2} className="px-4 py-8 text-center text-xs text-slate-500">
                             No articles found.
                           </td>
                         </tr>
@@ -676,6 +646,32 @@ export default function AssetDetails() {
   const [meta, setMeta] = useState<any>(null);
   const [hasComparison, setHasComparison] = useState(false);
   const [timeframe, setTimeframe] = useState("1Y");
+  const [aiSentiment, setAiSentiment] = useState<{ score: number; label: string; reasons: string[] } | null>(null);
+  const [sentimentLoading, setSentimentLoading] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+    const fetchSentiment = async () => {
+      setSentimentLoading(true);
+      try {
+        const res = await getStockSentiment(symbol);
+        if (!ignore && res && res.score !== undefined) {
+          setAiSentiment({
+            score: Number(res.score),
+            label: String(res.label || "Neutral"),
+            reasons: Array.isArray(res.reasons) ? res.reasons : []
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch dedicated stock sentiment:", err);
+      } finally {
+        if (!ignore) setSentimentLoading(false);
+      }
+    };
+
+    fetchSentiment();
+    return () => { ignore = true; };
+  }, [symbol]);
 
   useEffect(() => {
     if (isSpecialAsset) {
@@ -718,7 +714,7 @@ export default function AssetDetails() {
           getUnifiedAssetDetails(symbol),
           getTechnicals(symbol).catch(() => null)
         ]);
-        
+
         if (unifiedData) {
           unifiedData.technicals = techData;
         }
@@ -911,12 +907,15 @@ export default function AssetDetails() {
 
   // Derive dynamic sentiment
   const sentiment = useMemo(() => {
-    if (!data) return { score: 50, label: "Neutral", reasons: ["No coverage available"] };
-    if (data.sentiment) {
+    if (aiSentiment && aiSentiment.reasons && aiSentiment.reasons.length > 0) {
+      return aiSentiment;
+    }
+    if (!data) return { score: 50, label: "Neutral", reasons: ["Analyzing market sentiment..."] };
+    if (data.sentiment && Array.isArray(data.sentiment.reasons) && data.sentiment.reasons.length > 0) {
       return {
         score: Number(data.sentiment.score ?? 50),
         label: String(data.sentiment.label ?? "Neutral"),
-        reasons: Array.isArray(data.sentiment.reasons) ? data.sentiment.reasons : ["No coverage available"]
+        reasons: data.sentiment.reasons
       };
     }
     let score = 50;
@@ -965,7 +964,7 @@ export default function AssetDetails() {
 
     const label = score >= 65 ? "Bullish" : score <= 35 ? "Bearish" : "Neutral";
     return { score: Math.min(Math.max(score, 0), 100), label, reasons };
-  }, [data]);
+  }, [aiSentiment, data]);
 
   const isEtfOrMutual = useMemo(() => {
     if (data?.quote?.quoteType === "ETF" || data?.quote?.quoteType === "MUTUALFUND") return true;
@@ -1026,11 +1025,15 @@ export default function AssetDetails() {
               symbol={symbol}
               timeframe={timeframe}
               onCompareChange={(compareSym) => setHasComparison(!!compareSym)}
-              onMetaLoaded={(incoming) => setMeta((prev: any) => ({
-                ...prev,
-                ...incoming,
-                performance: incoming.performance || prev?.performance
-              }))}
+              onMetaLoaded={(incoming) => {
+                queueMicrotask(() => {
+                  setMeta((prev: any) => ({
+                    ...prev,
+                    ...incoming,
+                    performance: incoming.performance || prev?.performance
+                  }));
+                });
+              }}
             />
           </div>
         </div>
@@ -1085,7 +1088,7 @@ export default function AssetDetails() {
                   <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-3 mb-5">
                     Company Profile
                   </h3>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Sector */}
                     <div className="bg-[#0c1022]/40 border border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800/50 transition-all">
@@ -1412,31 +1415,62 @@ export default function AssetDetails() {
             {activeTab === "sentiment" && data && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md flex flex-col items-center justify-center">
-                    <span className="text-xs font-black uppercase text-slate-500">Sentiment Score</span>
-                    <span className="text-5xl font-black text-white mt-4 font-mono">{sentiment.score}%</span>
-                    <span className={`text-sm font-black uppercase mt-3 tracking-wide ${sentiment.label === "Bullish" ? "text-emerald-400" : sentiment.label === "Bearish" ? "text-rose-400" : "text-amber-500"
-                      }`}>
-                      {sentiment.label}
-                    </span>
+                  {/* Sentiment Score Card */}
+                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md flex flex-col items-center justify-center relative overflow-hidden">
+
+                    <span className="text-xs font-black uppercase text-slate-500 mt-2">Sentiment Score</span>
+
+                    {sentimentLoading ? (
+                      <div className="py-6 flex flex-col items-center gap-3">
+                        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                        <span className="text-xs text-slate-400 font-mono">Analyzing with AI...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-5xl font-black text-white mt-4 font-mono">{sentiment.score}%</span>
+                        <div className="flex items-center gap-2 mt-3">
+                          <span className={`text-sm font-black uppercase tracking-wide ${sentiment.label === "Bullish" ? "text-emerald-400" : sentiment.label === "Bearish" ? "text-rose-400" : "text-amber-500"
+                            }`}>
+                            {sentiment.label}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
+                  {/* Sentiment Analysis Parameters */}
                   <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md col-span-2 space-y-4">
-                    <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-2">
-                      Sentiment Analysis Parameters
-                    </h4>
-                    <ul className="space-y-3 text-xs text-slate-350">
-                      {sentiment.reasons && sentiment.reasons.length > 0 ? (
-                        sentiment.reasons.map((reason: string, i: number) => (
-                          <li key={i} className="flex items-start gap-2.5 leading-relaxed">
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
-                            <span>{reason}</span>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="text-slate-500 italic py-2">No key sentiment drivers detected for this asset currently.</li>
+                    <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                      <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider flex items-center gap-2">
+                        <Activity className="w-3.5 h-3.5 text-blue-400" />
+                        Sentiment Analysis Parameters
+                      </h4>
+                      {sentimentLoading && (
+                        <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Live AI Analysis
+                        </span>
                       )}
-                    </ul>
+                    </div>
+
+                    {sentimentLoading ? (
+                      <div className="py-8 flex items-center justify-center gap-2 text-slate-400 text-xs">
+                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                        <span>Querying real-time AI sentiment drivers for {symbol}...</span>
+                      </div>
+                    ) : (
+                      <ul className="space-y-3 text-xs text-slate-350">
+                        {sentiment.reasons && sentiment.reasons.length > 0 ? (
+                          sentiment.reasons.map((reason: string, i: number) => (
+                            <li key={i} className="flex items-start gap-2.5 leading-relaxed bg-[#0c1022]/40 p-3 rounded-xl border border-slate-900/60">
+                              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0 shadow-[0_0_6px_#22d3ee]" />
+                              <span className="text-slate-200">{reason}</span>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="text-slate-500 italic py-2">No key sentiment drivers detected for this asset currently.</li>
+                        )}
+                      </ul>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1766,7 +1800,7 @@ export default function AssetDetails() {
                                   <div className="relative w-full px-6 h-36 flex items-center justify-center">
                                     {/* Vertical track */}
                                     <div className="absolute top-0 bottom-0 w-1.5 rounded-full bg-gradient-to-t from-emerald-500/20 via-blue-500/10 to-rose-500/20 border border-slate-900" />
-                                    
+
                                     {/* Ticks/Labels */}
                                     {[
                                       { label: "R2", value: R2, color: "text-rose-455" },
@@ -1777,8 +1811,8 @@ export default function AssetDetails() {
                                     ].map((lvl, idx) => {
                                       const pct = getPct(lvl.value);
                                       return (
-                                        <div 
-                                          key={idx} 
+                                        <div
+                                          key={idx}
                                           className="absolute left-0 right-0 flex items-center justify-between pointer-events-none"
                                           style={{ bottom: `${pct}%` }}
                                         >
@@ -1790,14 +1824,14 @@ export default function AssetDetails() {
                                     })}
 
                                     {/* Current Price Pointer */}
-                                    <div 
+                                    <div
                                       className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 ease-out z-10 w-12"
                                       style={{ bottom: `${pricePct}%` }}
                                     >
                                       <div className="w-full h-[2px] bg-cyan-400 shadow-[0_0_8px_#22d3ee] relative flex items-center justify-center">
                                         <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
                                         <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950" />
-                                        
+
                                         {/* Price Label Overlay (Centered above pointer) */}
                                         <div className="absolute bottom-full mb-1.5 bg-cyan-950/90 text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded text-[8px] font-black font-mono shadow-[0_0_10px_rgba(34,211,238,0.2)] whitespace-nowrap">
                                           {formatVal(price, true)}
@@ -1818,8 +1852,8 @@ export default function AssetDetails() {
                                   ].map((lvl, idx) => {
                                     const isAbove = price >= lvl.value;
                                     return (
-                                      <div 
-                                        key={idx} 
+                                      <div
+                                        key={idx}
                                         className={`flex justify-between items-center px-3 py-1.5 rounded-xl transition-all duration-200 ${lvl.bgClass}`}
                                       >
                                         <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
@@ -1856,29 +1890,28 @@ export default function AssetDetails() {
                   const p1y = meta.performance?.["1Y"];
                   const p5y = meta.performance?.["5Y"];
                   const pAll = meta.performance?.["All Time"];
-                  
+
                   const primaryGrowth = p5y ?? p1y ?? pAll ?? 0;
-                  
+
                   return (
-                    <div className={`border rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md transition-all duration-300 ${
-                      primaryGrowth >= 0 
-                        ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20" 
+                    <div className={`border rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md transition-all duration-300 ${primaryGrowth >= 0
+                        ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20"
                         : "bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent border-rose-500/20"
-                    }`}>
+                      }`}>
                       <div className="space-y-1">
                         <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Return Analysis</span>
                         <h4 className="text-xl font-black text-slate-200">
-                          {primaryGrowth >= 20 
-                            ? "Exceptional Long-Term Growth" 
-                            : primaryGrowth >= 0 
-                              ? "Steady Wealth Growth" 
+                          {primaryGrowth >= 20
+                            ? "Exceptional Long-Term Growth"
+                            : primaryGrowth >= 0
+                              ? "Steady Wealth Growth"
                               : "Undergoing Asset Consolidation"}
                         </h4>
                         <p className="text-xs text-slate-400 max-w-xl leading-relaxed mt-1">
                           This asset has delivered a cumulative return of <span className={`font-bold ${primaryGrowth >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{primaryGrowth >= 0 ? "+" : ""}{primaryGrowth.toFixed(1)}%</span> over the multi-year cycle.
                         </p>
                       </div>
-                      
+
                       <div className="flex gap-4 shrink-0 font-mono">
                         <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
                           <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">1-Year Return</span>
@@ -1912,17 +1945,16 @@ export default function AssetDetails() {
                     const val = meta.performance?.[item.key];
                     const hasVal = val !== undefined && val !== null;
                     const isPositive = val >= 0;
-                    
+
                     return (
-                      <div 
-                        key={idx} 
-                        className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${
-                          hasVal 
-                            ? isPositive 
-                              ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]" 
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${hasVal
+                            ? isPositive
+                              ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
                               : "bg-rose-500/[0.02] border-rose-950/60 hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
                             : "bg-slate-950/30 border-slate-900 text-slate-655"
-                        }`}
+                          }`}
                       >
                         {/* Period label */}
                         <div className="flex justify-between items-center z-10">
@@ -1937,7 +1969,7 @@ export default function AssetDetails() {
                         {/* Visual bar/track of performance magnitude */}
                         {hasVal && (
                           <div className="w-full bg-slate-950/80 rounded-full h-1 my-1 overflow-hidden border border-slate-900">
-                            <div 
+                            <div
                               className={`h-full rounded-full ${isPositive ? "bg-emerald-500" : "bg-rose-500"}`}
                               style={{ width: `${Math.min(100, Math.abs(val) * (item.key === "1D" || item.key === "1W" ? 10 : 1))}%` }}
                             />
@@ -1946,18 +1978,16 @@ export default function AssetDetails() {
 
                         {/* Value */}
                         <div className="z-10 mt-auto">
-                          <span className={`text-sm font-mono font-black block tracking-tight ${
-                            hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
-                          }`}>
+                          <span className={`text-sm font-mono font-black block tracking-tight ${hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
+                            }`}>
                             {hasVal ? `${isPositive ? "+" : ""}${val.toFixed(2)}%` : "N/A"}
                           </span>
                         </div>
 
                         {/* Ambient Card Glow */}
                         {hasVal && (
-                          <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${
-                            isPositive ? "bg-emerald-400" : "bg-rose-400"
-                          }`} />
+                          <div className={`absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all duration-300 ${isPositive ? "bg-emerald-400" : "bg-rose-400"
+                            }`} />
                         )}
                       </div>
                     );
@@ -1972,34 +2002,20 @@ export default function AssetDetails() {
                 const newsItems = (data.news || []).slice(0, 10);
                 const leftColNews = newsItems.slice(0, 5);
                 const rightColNews = newsItems.slice(5, 10);
-                
+
                 const renderNewsTable = (items: any[]) => (
                   <div className="overflow-x-auto rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="border-b border-slate-900 bg-[#0c1022]">
-                          <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-20">Image</th>
-                          <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
+                          <th className="px-5 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
                           <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-16 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-900/60">
                         {items.map((item, idx) => (
                           <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
-                            <td className="px-4 py-3 align-middle w-20">
-                              {item.thumbnail?.resolutions?.[0]?.url ? (
-                                <img
-                                  src={item.thumbnail.resolutions[0].url}
-                                  alt="News thumbnail"
-                                  className="w-16 h-11 rounded-lg object-cover border border-slate-900 shadow-sm shrink-0 bg-slate-950"
-                                />
-                              ) : (
-                                <div className="w-16 h-11 rounded-lg border border-slate-900/60 shadow-sm shrink-0 bg-gradient-to-br from-[#0c1022] to-[#090d1a] flex items-center justify-center text-slate-500 hover:text-cyan-400 transition-colors">
-                                  <Newspaper className="h-5 w-5 opacity-60" />
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-4 py-3.5 align-middle space-y-1">
+                            <td className="px-5 py-3.5 align-middle space-y-1">
                               <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block">
                                 {item.publisher || "General News"}
                               </span>
@@ -2025,7 +2041,7 @@ export default function AssetDetails() {
                         ))}
                         {items.length === 0 && (
                           <tr>
-                            <td colSpan={3} className="px-4 py-8 text-center text-xs text-slate-500">
+                            <td colSpan={2} className="px-4 py-8 text-center text-xs text-slate-500">
                               No articles found.
                             </td>
                           </tr>

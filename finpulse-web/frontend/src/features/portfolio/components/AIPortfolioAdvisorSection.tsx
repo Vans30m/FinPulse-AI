@@ -254,37 +254,38 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
   }, [advisor.portfolioHealth.strengths, advisor.portfolioHealth.weaknesses]);
 
   return (
-    <section id="ai-advisor-section" className="relative overflow-hidden rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4 text-white shadow-xl sm:p-5 lg:p-6">
+    <section id="ai-advisor-section" className="glass-panel relative overflow-hidden p-4 sm:p-5 lg:p-6 shadow-xl">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] via-transparent to-cyan-500/[0.04] pointer-events-none" />
 
-      <div className="relative mb-5 flex flex-col justify-between gap-3 border-b border-[#2a2a2a] pb-4 sm:flex-row sm:items-center">
+      <div className="relative mb-5 flex flex-col justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4 sm:flex-row sm:items-center">
         <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8d8d8d]">AI Portfolio Advisor</span>
-          <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">Portfolio intelligence and actionable risk guidance</h2>
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">AI Portfolio Advisor</span>
+          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">Portfolio intelligence and actionable risk guidance</h2>
         </div>
         {advisor.generatedAt && (
-          <div className="self-start rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-1.5 font-mono text-[10px] font-bold text-[#8d8d8d] sm:self-center">
+          <div className="self-start rounded-xl border border-slate-200/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03] px-3 py-1.5 font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400 sm:self-center">
             Updated: {formattedDate}
           </div>
         )}
       </div>
 
       <div className="relative mb-5 grid grid-cols-1 items-stretch gap-3 lg:grid-cols-[minmax(220px,280px)_1fr]">
-        <div className="flex flex-col justify-center rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 sm:p-5">
+        <div className="flex flex-col justify-center rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-4 sm:p-5 shadow-sm">
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="relative">
               <ProgressRing value={advisor.healthScore} />
             </div>
 
             <div>
-              <p className="text-lg font-bold text-white">{advisor.healthGrade}</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-[#8d8d8d]">Portfolio health index across diversification, concentration, and risk.</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">{advisor.healthGrade}</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Portfolio health index across diversification, concentration, and risk.</p>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {/* Card 1: Diversification */}
-          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 transition-colors hover:border-[#3a3a3a] sm:p-5">
+          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-4 transition-all hover:border-blue-500/20 dark:hover:border-cyan-500/20 shadow-sm sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
@@ -296,10 +297,10 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                 </div>
               </div>
               <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${advisor.diversification.status === "Strong"
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : advisor.diversification.status === "Moderate"
-                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    : "bg-rose-500/10 text-rose-600 dark:text-rose-455"
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : advisor.diversification.status === "Moderate"
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  : "bg-rose-500/10 text-rose-600 dark:text-rose-455"
                 }`}>
                 {advisor.diversification.status}
               </span>
@@ -308,34 +309,18 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
             <div className="space-y-3.5">
               <RecommendationProgress label="Diversification Score" value={advisor.diversification.score} tone="blue" />
 
-              <div className="flex items-start justify-between gap-4 text-xs border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                <span className="font-medium text-slate-500 dark:text-slate-400 flex-shrink-0 mt-0.5">Sector Exposure</span>
-                <div className="flex flex-wrap gap-1 justify-end max-w-[240px]">
-                  {advisor.diversification.sectorExposure.split(',').map((item, idx) => {
-                    const clean = item.trim();
-                    if (!clean) return null;
-                    return (
-                      <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/15">
-                        {clean}
-                      </span>
-                    );
-                  })}
-                </div>
+              <div className="flex flex-col gap-1.5 text-xs border-b border-slate-100 dark:border-white/5 pb-3">
+                <span className="font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-[10px]">Sector Exposure</span>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-white/[0.02] p-2 rounded-xl border border-slate-100 dark:border-white/5">
+                  {advisor.diversification.sectorExposure}
+                </p>
               </div>
 
-              <div className="flex items-start justify-between gap-4 text-xs border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                <span className="font-medium text-slate-500 dark:text-slate-400 flex-shrink-0 mt-0.5">Suggested Allocation</span>
-                <div className="flex flex-wrap gap-1 justify-end max-w-[240px]">
-                  {advisor.diversification.suggestedAllocation.split(',').map((item, idx) => {
-                    const clean = item.trim();
-                    if (!clean) return null;
-                    return (
-                      <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/15">
-                        {clean}
-                      </span>
-                    );
-                  })}
-                </div>
+              <div className="flex flex-col gap-1.5 text-xs border-b border-slate-100 dark:border-white/5 pb-3">
+                <span className="font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-[10px]">Suggested Allocation</span>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-white/[0.02] p-2 rounded-xl border border-slate-100 dark:border-white/5">
+                  {advisor.diversification.suggestedAllocation}
+                </p>
               </div>
 
               <div className="flex items-center justify-between text-xs pt-0.5">
@@ -346,10 +331,10 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
           </motion.article>
 
           {/* Card 2: Risk */}
-          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 transition-colors hover:border-[#3a3a3a] sm:p-5">
+          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-4 transition-all hover:border-rose-500/20 dark:hover:border-rose-500/20 shadow-sm sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-400">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-400">
                   <ShieldAlert className="h-5 w-5" />
                 </div>
                 <div>
@@ -358,10 +343,10 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                 </div>
               </div>
               <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${advisor.riskAnalysis.risk === "Low"
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-455"
-                  : advisor.riskAnalysis.risk === "Moderate"
-                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    : "bg-rose-500/10 text-rose-600 dark:text-rose-455"
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : advisor.riskAnalysis.risk === "Moderate"
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                 }`}>
                 {advisor.riskAnalysis.risk}
               </span>
@@ -370,21 +355,21 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
             <div className="space-y-3">
               <RecommendationProgress label="Current Risk Level" value={advisor.riskAnalysis.score} tone="rose" />
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/50 space-y-1.5">
-                <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">Suggested Action</span>
+              <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Suggested Action</span>
                 <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 bg-slate-50/50 dark:bg-white/[0.015] p-2.5 rounded-xl border border-slate-100 dark:border-white/5 leading-relaxed">
                   {advisor.riskAnalysis.suggestedAction}
                 </div>
               </div>
 
               <div className="pt-1.5 space-y-1">
-                <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">Analysis Summary</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Analysis Summary</span>
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed pl-0.5">
                   {advisor.riskAnalysis.reason}
                 </p>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-100 dark:border-slate-800/50">
+              <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-100 dark:border-white/5">
                 <span className="font-medium text-slate-500 dark:text-slate-400">Confidence</span>
                 <span className="font-bold text-rose-600 dark:text-rose-400 tracking-wide">{advisor.riskAnalysis.confidence}%</span>
               </div>
@@ -393,10 +378,10 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
 
           {/* Card 3: Best Opportunity */}
           {advisor.bestOpportunity.symbol !== "N/A" && (
-            <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 transition-colors hover:border-[#3a3a3a] sm:p-5">
+            <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-4 transition-all hover:border-emerald-500/20 dark:hover:border-emerald-500/20 shadow-sm sm:p-5">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
                     <TrendingUp className="h-5 w-5" />
                   </div>
                   <div>
@@ -410,31 +395,31 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800/50 pb-2.5">
+                <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-white/5 pb-2.5">
                   <span className="font-semibold text-slate-500 dark:text-slate-400">Asset</span>
                   <span className="font-bold text-slate-800 dark:text-white">{advisor.bestOpportunity.symbol} ({advisor.bestOpportunity.company})</span>
                 </div>
-                <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800/50 pb-2.5">
+                <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-white/5 pb-2.5">
                   <span className="font-semibold text-slate-500 dark:text-slate-400">Target price</span>
                   <span className="font-bold text-slate-800 dark:text-slate-200">{formatOpportunityPrice(advisor.bestOpportunity.targetPrice)} (vs {formatOpportunityPrice(advisor.bestOpportunity.currentPrice)})</span>
                 </div>
-                <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800/50 pb-2.5">
+                <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-white/5 pb-2.5">
                   <span className="font-semibold text-slate-500 dark:text-slate-400">Expected Upside</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-455">+{advisor.bestOpportunity.expectedUpside}%</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">+{advisor.bestOpportunity.expectedUpside}%</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-slate-500 dark:text-slate-400">AI Confidence</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-450">{advisor.bestOpportunity.confidence}%</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{advisor.bestOpportunity.confidence}%</span>
                 </div>
               </div>
             </motion.article>
           )}
 
           {/* Card 4: Portfolio Health Summary */}
-          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 transition-colors hover:border-[#3a3a3a] sm:p-5">
+          <motion.article whileHover={{ y: -2 }} className="flex min-h-[270px] flex-col rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-4 transition-all hover:border-blue-500/20 dark:hover:border-cyan-500/20 shadow-sm sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
                   <Layers3 className="h-5 w-5" />
                 </div>
                 <div>
@@ -443,10 +428,10 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                 </div>
               </div>
               <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${advisor.portfolioHealth.outlook === "Bullish"
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-455"
-                  : advisor.portfolioHealth.outlook === "Bearish"
-                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-455"
-                    : "bg-blue-500/10 text-blue-600 dark:text-cyan-400"
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : advisor.portfolioHealth.outlook === "Bearish"
+                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                  : "bg-blue-500/10 text-blue-600 dark:text-cyan-400"
                 }`}>
                 {advisor.portfolioHealth.outlook}
               </span>
@@ -466,9 +451,9 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
       </div>
 
       {/* Expandable Sections Accordion */}
-      <div className="relative mt-5 space-y-2">
-        <h3 className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d8d8d]">
-          <Info className="h-3.5 w-3.5 text-cyan-400" />
+      <div className="relative mt-5 space-y-2.5">
+        <h3 className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+          <Info className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400" />
           Deep AI Portfolio Breakdown
         </h3>
 
@@ -476,26 +461,25 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
           { id: "strengths", title: "Portfolio Strengths", icon: Award, color: "text-emerald-500", data: advisor.portfolioHealth.strengths },
           { id: "weaknesses", title: "Portfolio Weaknesses", icon: AlertTriangle, color: "text-rose-500", data: advisor.portfolioHealth.weaknesses },
           { id: "risks", title: "Risk Breakdown & Market Headwinds", icon: ShieldAlert, color: "text-amber-500", data: advisor.portfolioHealth.risks },
-          { id: "diversification", title: "Diversification Suggestions", icon: PieChart, color: "text-blue-500", data: [advisor.diversification.reason, `Suggested structure: ${advisor.diversification.suggestedAllocation}`] },
+          { id: "diversification", title: "Diversification Suggestions", icon: PieChart, color: "text-cyan-500", data: [advisor.diversification.reason, `Suggested structure: ${advisor.diversification.suggestedAllocation}`] },
           { id: "rebalancing", title: "Rebalancing Recommendations", icon: RotateCcw, color: "text-cyan-500", data: advisor.rebalanceSuggestions.map(s => `${s.action} ${s.asset} - ${s.reason}`) },
-          { id: "outlook", title: "Long-term Outlook & AI Summary", icon: BrainCircuit, color: "text-purple-500", data: [advisor.portfolioHealth.outlook + " Outlook.", ...advisor.portfolioHealth.recommendations] }
+          { id: "outlook", title: "Long-term Outlook & AI Summary", icon: BrainCircuit, color: "text-cyan-500", data: [advisor.portfolioHealth.outlook + " Outlook.", ...advisor.portfolioHealth.recommendations] }
         ].map((sec) => {
           const isExpanded = expandedSection === sec.id;
-          const SecIcon = sec.icon;
 
           return (
-            <div key={sec.id} className="overflow-hidden rounded-lg border border-[#2a2a2a] bg-[#171717] transition-colors hover:border-[#3a3a3a]">
+            <div key={sec.id} className="overflow-hidden rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] transition-all hover:border-slate-300 dark:hover:border-white/10 shadow-sm">
               <button
                 onClick={() => toggleSection(sec.id)}
                 type="button"
                 aria-expanded={isExpanded}
-                className="flex w-full items-center justify-between px-3.5 py-3 text-left text-xs font-semibold text-[#d7d7d7] transition-colors hover:bg-[#1d1d1d] focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
+                className="flex w-full items-center justify-between px-4 py-3.5 text-left text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-50/70 dark:hover:bg-white/[0.03] focus:outline-none"
               >
-                <div className="flex items-center gap-2">
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${sec.color.replace('text-', 'bg-')}`} />
+                <div className="flex items-center gap-2.5">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${sec.color.replace('text-', 'bg-')}`} />
                   <span>{sec.title}</span>
                 </div>
-                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
               </button>
 
               <AnimatePresence initial={false}>
@@ -504,13 +488,13 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                     initial={{ height: 0 }}
                     animate={{ height: "auto" }}
                     exit={{ height: 0 }}
-                    className="overflow-hidden border-t border-[#2a2a2a] bg-[#141414]"
+                    className="overflow-hidden border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]"
                   >
-                    <div className="space-y-2 px-3.5 py-3">
+                    <div className="space-y-2.5 px-4 py-3.5">
                       {sec.data && sec.data.length > 0 ? (
                         sec.data.map((item, idx) => (
-                          <div key={idx} className="flex items-start gap-2.5 text-xs font-medium leading-relaxed text-[#bdbdbd] md:text-sm">
-                            <span className="select-none font-extrabold text-cyan-400">•</span>
+                          <div key={idx} className="flex items-start gap-2.5 text-xs font-medium leading-relaxed text-slate-600 dark:text-slate-300">
+                            <span className="select-none font-extrabold text-blue-600 dark:text-cyan-400">•</span>
                             <span>{item}</span>
                           </div>
                         ))
@@ -527,54 +511,53 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
       </div>
 
       {/* AI Action Center */}
-      <div className="mt-5 rounded-xl border border-[#2a2a2a] bg-[#171717] p-4 sm:p-5">
-        <div className="mb-4 flex items-center gap-2 border-b border-[#2a2a2a] pb-3">
-          <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8d8d8d]">AI Action Center</span>
-            </div>
+      <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-4 sm:p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">AI Action Center</span>
+        </div>
 
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-              {[
-                { id: "full-report", label: "Generate Full Report", icon: FileText },
-                { id: "optimize", label: "Optimize Portfolio", icon: BrainCircuit },
-                { id: "risk-profile", label: "Improve Risk Profile", icon: ShieldAlert },
-              ].map((action) => {
-                const Icon = action.icon;
-                const isActive = activeAction === action.id;
-                return (
-                  <button
-                    key={action.id}
-                    type="button"
-                    onClick={() => handleAction(action.id)}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#d7d7d7] transition-colors hover:border-cyan-500/40 hover:bg-[#222] hover:text-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
-                  >
-                    {isActive && <RefreshCcw className="h-3.5 w-3.5 animate-spin text-cyan-400" />}
-                    {action.label}
-                  </button>
-                );
-              })}
-            </div>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+          {[
+            { id: "full-report", label: "Generate Full Report", icon: FileText },
+            { id: "optimize", label: "Optimize Portfolio", icon: BrainCircuit },
+            { id: "risk-profile", label: "Improve Risk Profile", icon: ShieldAlert },
+          ].map((action) => {
+            const isActive = activeAction === action.id;
+            return (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => handleAction(action.id)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-100/70 hover:bg-slate-200/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] px-3.5 py-3 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 transition-all hover:border-blue-500/30 dark:hover:border-cyan-400/30 focus:outline-none"
+              >
+                {isActive && <RefreshCcw className="h-3.5 w-3.5 animate-spin text-blue-600 dark:text-cyan-400" />}
+                {action.label}
+              </button>
+            );
+          })}
+        </div>
 
-          <div className="mt-3 flex flex-wrap justify-end gap-2">
-              <button
-                onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#bdbdbd] transition-colors hover:bg-[#222] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
-              >
-                <FileText className="h-3.5 w-3.5 text-blue-500" /> PDF
-              </button>
-              <button
-                onClick={downloadCSV}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#bdbdbd] transition-colors hover:bg-[#222] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
-              >
-                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500" /> CSV
-              </button>
-              <button
-                onClick={downloadCSV}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1d1d1d] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#bdbdbd] transition-colors hover:bg-[#222] hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
-              >
-                <Download className="h-3.5 w-3.5 text-purple-500" /> Excel
-              </button>
-            </div>
-          </div>
+        <div className="mt-3 flex flex-wrap justify-end gap-2">
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-100/70 hover:bg-slate-200/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 transition-all focus:outline-none"
+          >
+            <FileText className="h-3.5 w-3.5 text-blue-500" /> PDF
+          </button>
+          <button
+            onClick={downloadCSV}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-100/70 hover:bg-slate-200/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 transition-all focus:outline-none"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500" /> CSV
+          </button>
+          <button
+            onClick={downloadCSV}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-100/70 hover:bg-slate-200/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 transition-all focus:outline-none"
+          >
+            <Download className="h-3.5 w-3.5 text-purple-500" /> Excel
+          </button>
+        </div>
+      </div>
 
       {/* Rebalance Modal */}
       <AnimatePresence>
@@ -894,12 +877,12 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
                   <div className="space-y-2.5">
                     {advisor.rebalanceSuggestions.map((s, idx) => (
                       <div key={idx} className={`p-3.5 rounded-2xl border flex items-center gap-3.5 transition-all ${s.action === "Reduce" || s.action === "Trim"
-                          ? "bg-rose-500/[0.02] border-rose-500/15"
-                          : "bg-emerald-500/[0.02] border-emerald-500/15"
+                        ? "bg-rose-500/[0.02] border-rose-500/15"
+                        : "bg-emerald-500/[0.02] border-emerald-500/15"
                         }`}>
                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border ${s.action === "Reduce" || s.action === "Trim"
-                            ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                          : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                           }`}>{s.action}</span>
                         <div className="text-xs">
                           <strong className="font-mono text-slate-950 dark:text-white mr-2 text-sm">{s.asset}</strong>
