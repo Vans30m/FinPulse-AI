@@ -57,41 +57,22 @@ const parseDateParts = (dateVal: any) => {
 
 const ExpandableDescription = ({
   description,
-  maxSentences = 5,
   className = "text-xs text-slate-400 leading-relaxed text-justify",
   emptyText = "No description available."
 }: {
   description?: string;
+  maxLines?: number;
   maxSentences?: number;
   className?: string;
   emptyText?: string;
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   if (!description) {
     return <p className={className}>{emptyText}</p>;
   }
 
-  const sentences = description.split(/(?<=[.!?])\s+/).filter(Boolean);
-  if (sentences.length <= maxSentences) {
-    return <p className={className}>{description}</p>;
-  }
-
-  const truncatedText = sentences.slice(0, maxSentences).join(' ');
-
   return (
-    <p className={className}>
-      {isExpanded ? description : `${truncatedText}... `}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsExpanded(!isExpanded);
-        }}
-        className="inline-flex items-center gap-1 font-semibold text-blue-400 hover:underline hover:opacity-80 transition-all cursor-pointer ml-1 select-none focus:outline-none"
-      >
-        {isExpanded ? 'Show less ↑' : 'Read more →'}
-      </button>
+    <p className={`${className} line-clamp-5`}>
+      {description}
     </p>
   );
 };
@@ -690,11 +671,15 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                     symbol={symbol}
                     timeframe={timeframe}
                     onCompareChange={(compareSym) => setHasComparison(!!compareSym)}
-                    onMetaLoaded={(incoming) => setMeta((prev: any) => ({
-                      ...prev,
-                      ...incoming,
-                      performance: incoming.performance || prev?.performance
-                    }))}
+                    onMetaLoaded={(incoming) => {
+                      queueMicrotask(() => {
+                        setMeta((prev: any) => ({
+                          ...prev,
+                          ...incoming,
+                          performance: incoming.performance || prev?.performance
+                        }));
+                      });
+                    }}
                   />
                 </div>
               </div>

@@ -453,8 +453,8 @@ export default function PerformanceComparison() {
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap self-start md:self-center">
-            {/* Currency Pill Selector */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/[0.04] p-1 rounded-2xl border border-slate-200/60 dark:border-white/5">
+            {/* Currency Pill Selector (matching portfolio layout) */}
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar scrollbar-none">
               {[
                 { code: 'USD', symbol: '$' },
                 { code: 'INR', symbol: '₹' },
@@ -465,9 +465,9 @@ export default function PerformanceComparison() {
                   key={cur.code}
                   onClick={() => handleCurrencyChange(cur.code as 'USD' | 'INR' | 'EUR' | 'GBP')}
                   aria-pressed={portfolioCurrency === cur.code}
-                  className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all ${portfolioCurrency === cur.code
-                    ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 shadow-sm border border-slate-200/60 dark:border-white/5'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  className={`currency-selector ${portfolioCurrency === cur.code ? 'currency-selector-active' : ''} px-2.5 py-1 rounded-md text-[9px] font-bold border transition-all whitespace-nowrap min-h-[30px] flex items-center justify-center ${portfolioCurrency === cur.code
+                    ? 'bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 border-transparent font-black shadow-sm'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5'
                     }`}
                 >
                   {cur.code} ({cur.symbol})
@@ -477,16 +477,16 @@ export default function PerformanceComparison() {
 
             <button
               onClick={handleRefresh}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-white/10 shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/5 shadow-sm transition-all min-h-[30px] active:scale-95 cursor-pointer"
             >
-              <Activity className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400" />
+              <Activity className="h-3 w-3 text-blue-600 dark:text-cyan-400" />
               <span>Recalculate</span>
             </button>
           </div>
         </div>
 
         {/* TABS CONTROLLER */}
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pt-2">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1.5 px-1 -mx-1">
           {[
             { id: "overview", label: "Overview & Returns", icon: LineChartIcon },
             { id: "metrics", label: "Advanced Metrics", icon: Layers },
@@ -498,48 +498,63 @@ export default function PerformanceComparison() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-200 whitespace-nowrap border ${isActive
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500/20 dark:to-blue-500/20 text-white dark:text-cyan-300 border-blue-500 dark:border-cyan-400/40 shadow-sm"
-                  : "bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border-transparent hover:bg-slate-100 dark:hover:bg-white/5"
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap min-h-[36px] cursor-pointer shrink-0 ${isActive
+                  ? "bg-slate-900 dark:bg-[#0c192e] text-white dark:text-cyan-300 border-2 border-blue-500 dark:border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400/30"
+                  : "bg-slate-200/90 hover:bg-slate-300 dark:bg-[#131b2e] dark:hover:bg-[#1c2742] text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/80 hover:border-slate-400 dark:hover:border-slate-600"
                   }`}
               >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{tab.label}</span>
+                <Icon className={`h-3.5 w-3.5 transition-colors ${isActive ? "text-blue-400 dark:text-cyan-400" : "text-slate-500 dark:text-slate-400"}`} />
+                <span className="font-extrabold">{tab.label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* HERO PERFORMANCE SUMMARY */}
+      {/* HERO PERFORMANCE SUMMARY - Harmonized with Portfolio KPI Cards */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Total Return", accent: "text-cyan-500 dark:text-cyan-400", icon: <TrendingUp className="h-5 w-5 text-cyan-500" />, iconBg: "bg-cyan-500/10 border-cyan-500/20" },
-            { label: "Total Profit / Loss", val: formatSignedCurrency(displayGain), desc: "Unrealized P&L", accent: displayGain >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400", icon: <Activity className="h-5 w-5 text-emerald-500" />, iconBg: "bg-emerald-500/10 border-emerald-500/20" },
-            { label: "Capital Valuation Ledger", val: formatCurrency(displayValuation), desc: "Total Portfolio Value", accent: "text-blue-600 dark:text-blue-400", icon: <Layers className="h-5 w-5 text-blue-600" />, iconBg: "bg-blue-500/10 border-blue-500/20" },
-            { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active Holdings", accent: "text-purple-600 dark:text-purple-400", icon: <PieIcon className="h-5 w-5 text-purple-600" />, iconBg: "bg-purple-500/10 border-purple-500/20" }
-          ].map((card, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="glass-panel p-5 flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.02] backdrop-blur-xl shadow-lg hover:border-slate-300 dark:hover:border-cyan-500/30 transition-all duration-300"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{card.label}</span>
-                <div className={`p-2 rounded-xl border ${card.iconBg}`}>
-                  {card.icon}
-                </div>
-              </div>
+            { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Total Return", isPositive: portfolioStats.yieldReturn >= 0, icon: TrendingUp, iconKey: "yield", accentClass: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
+            { label: "Total Profit / Loss", val: formatSignedCurrency(displayGain), desc: "Unrealized P&L", isPositive: displayGain >= 0, icon: Activity, iconKey: "pnl", accentClass: displayGain >= 0 ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-rose-400 bg-rose-500/10 border-rose-500/20" },
+            { label: "Capital Valuation Ledger", val: formatCurrency(displayValuation), desc: "Total Portfolio Value", isPositive: true, icon: Layers, iconKey: "valuation", accentClass: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+            { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active Holdings", isPositive: true, icon: PieIcon, iconKey: "assets", accentClass: "text-purple-400 bg-purple-500/10 border-purple-500/20" }
+          ].map((card, i) => {
+            const Icon = card.icon;
+            return (
+              <motion.article
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.05, ease: "easeOut" }}
+                whileHover={{ y: -4 }}
+                className="group relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-4 sm:p-5 shadow-[0_10px_30px_-22px_rgba(15,23,42,0.65)] transition-all duration-300 hover:border-blue-500/20 dark:hover:border-cyan-500/20 hover:shadow-[0_18px_48px_-28px_rgba(6,182,212,0.45)]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] to-cyan-500/[0.05] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-              <div className="mt-3">
-                <h3 className={`text-2xl sm:text-3xl font-black tracking-tight ${card.accent}`}>{card.val}</h3>
-                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1 block">{card.desc}</span>
-              </div>
-            </motion.div>
-          ))}
+                <div className="relative flex items-center justify-between gap-2 mb-3">
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border shadow-sm shrink-0 ${card.accentClass}`}>
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0 ${card.isPositive ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-600 dark:text-rose-400"}`}>
+                    {card.isPositive ? "+" : "-"}{card.desc}
+                  </span>
+                </div>
+
+                <div className="relative space-y-1">
+                  <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500 truncate">
+                    {card.label}
+                  </p>
+                  <h3 className={`text-xl sm:text-2xl font-black tracking-tight truncate ${card.iconKey === "yield" ? (card.isPositive ? "text-cyan-600 dark:text-cyan-400" : "text-rose-600 dark:text-rose-400") : card.iconKey === "pnl" ? (card.isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400") : "text-slate-900 dark:text-white"}`}>
+                    {card.val}
+                  </h3>
+                  <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block truncate pt-0.5">
+                    {card.iconKey === "yield" ? "Return relative to invested cost" : card.iconKey === "pnl" ? "Mark to market overall return" : card.iconKey === "valuation" ? "Live global aggregate portfolio worth" : "Live categorized allocation targets"}
+                  </span>
+                </div>
+              </motion.article>
+            );
+          })}
         </div>
       )}
       {/* TAB CONTENT RENDERING */}

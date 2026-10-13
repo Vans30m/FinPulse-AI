@@ -509,6 +509,10 @@ export default function CandlestickChart({
       sma: calculateSMA(displayCompareCandles, 20),
       vwap: calculateVWAP(displayCompareCandles),
       bb: calculateBollingerBands(displayCompareCandles, 20, 2),
+      rsi: calculateRSI(displayCompareCandles, 14),
+      macd: calculateMACD(displayCompareCandles),
+      stoch: calculateStochastic(displayCompareCandles),
+      atr: calculateATR(displayCompareCandles)
     };
   }, [displayCompareCandles]);
 
@@ -610,7 +614,8 @@ export default function CandlestickChart({
               open: Number(q.open),
               high: Number(q.high),
               low: Number(q.low),
-              close: Number(q.close)
+              close: Number(q.close),
+              volume: q.volume ? Number(q.volume) : 0
             }));
           setCompareCandles(mapped);
         }
@@ -1031,24 +1036,25 @@ export default function CandlestickChart({
           candleSeriesRef.current.update(lastCandle);
         }
 
+        let updatedMeta: any = null;
         setMeta(prevMeta => {
           const delta = newClose - (prevMeta.price || oldClose);
           const newPrice = newClose;
           const newChange = prevMeta.change + delta;
           const newChangePercent = (newChange / (newPrice - newChange)) * 100;
 
-          const updatedMeta = {
+          updatedMeta = {
             ...prevMeta,
             price: newPrice,
             change: newChange,
             changePercent: newChangePercent
           };
-
-          if (onMetaLoaded) {
-            onMetaLoaded(updatedMeta);
-          }
           return updatedMeta;
         });
+
+        if (onMetaLoaded && updatedMeta) {
+          onMetaLoaded(updatedMeta);
+        }
 
         next[lastIndex] = lastCandle;
         return next;
@@ -1069,9 +1075,10 @@ export default function CandlestickChart({
         if (fundamentalsResponse) {
           setFundamentals(fundamentalsResponse);
 
+          let updatedMeta: any = null;
           setMeta(prevMeta => {
             const newPrice = fundamentalsResponse.price || prevMeta.price;
-            const updatedMeta = {
+            updatedMeta = {
               ...prevMeta,
               name: fundamentalsResponse.name || prevMeta.name,
               price: newPrice,
@@ -1081,11 +1088,12 @@ export default function CandlestickChart({
               currency: fundamentalsResponse.currency || prevMeta.currency,
               performance: fundamentalsResponse.performance || prevMeta.performance
             };
-            if (onMetaLoaded) {
-              onMetaLoaded(updatedMeta);
-            }
             return updatedMeta;
           });
+
+          if (onMetaLoaded && updatedMeta) {
+            onMetaLoaded(updatedMeta);
+          }
 
           setCandles(prev => {
             if (!prev.length) return prev;
@@ -1121,9 +1129,10 @@ export default function CandlestickChart({
   useEffect(() => {
     if (!liveQuote || !candles.length) return;
 
+    let updatedMeta: any = null;
     setMeta(prevMeta => {
       const newPrice = liveQuote.price || prevMeta.price;
-      const updatedMeta = {
+      updatedMeta = {
         ...prevMeta,
         price: newPrice,
         change: liveQuote.change !== undefined ? liveQuote.change : prevMeta.change,
@@ -1131,11 +1140,12 @@ export default function CandlestickChart({
         marketState: liveQuote.marketState || prevMeta.marketState,
         currency: liveQuote.currency || prevMeta.currency
       };
-      if (onMetaLoaded) {
-        onMetaLoaded(updatedMeta);
-      }
       return updatedMeta;
     });
+
+    if (onMetaLoaded && updatedMeta) {
+      onMetaLoaded(updatedMeta);
+    }
 
     setCandles(prev => {
       if (!prev.length) return prev;
@@ -1637,8 +1647,8 @@ export default function CandlestickChart({
       if (!container) return;
       const newWidth = container.clientWidth;
       if (Math.abs(newWidth - lastSubWidth) > 3) {
-        activePanes.forEach(pane => {
-          const paneChart = subChartsRef.current[pane];
+        Object.keys(subChartsRef.current).forEach(paneKey => {
+          const paneChart = subChartsRef.current[paneKey];
           if (paneChart) {
             paneChart.applyOptions({ width: newWidth });
           }
@@ -1653,11 +1663,11 @@ export default function CandlestickChart({
 
     return () => {
       resizeObserver.disconnect();
-      activePanes.forEach(pane => {
-        const paneChart = subChartsRef.current[pane];
+      Object.keys(subChartsRef.current).forEach(paneKey => {
+        const paneChart = subChartsRef.current[paneKey];
         if (paneChart) {
-          if (paneChart._cleanupSync) {
-            paneChart._cleanupSync();
+          if ((paneChart as any)._cleanupSync) {
+            (paneChart as any)._cleanupSync();
           }
           paneChart.remove();
         }
