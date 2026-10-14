@@ -407,21 +407,21 @@ export default function BenchmarkRadarSection() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5">
+        <div className="grid grid-cols-1 items-stretch gap-3 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-4">
           
           {/* LEFT: RADAR CHART CONTAINER */}
-          <div className="flex min-h-[470px] flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#263247] dark:bg-[#080e19] sm:p-5">
-            <div className="mb-2 flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-[#263247]">
+          <div className="flex min-h-[350px] sm:min-h-[420px] flex-col justify-between rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-[#263247] dark:bg-[#080e19] sm:p-4">
+            <div className="mb-1.5 flex flex-col gap-2 border-b border-slate-200/80 pb-2 sm:flex-row sm:items-center sm:justify-between dark:border-[#263247]">
               <div>
                 <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Relative Alignment</span>
-                <span className="mt-1 block text-[10px] font-medium text-slate-400 dark:text-slate-500">Normalized 0-100 efficiency scale</span>
+                <span className="mt-0.5 block text-[9px] font-medium text-slate-400 dark:text-slate-500">Normalized 0-100 efficiency scale</span>
               </div>
               
               {/* Interactive Legend with toggle options */}
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => setShowPortfolio(!showPortfolio)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase transition-all whitespace-nowrap ${
                     showPortfolio
                       ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400"
                       : "bg-slate-100 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 text-slate-500"
@@ -432,7 +432,7 @@ export default function BenchmarkRadarSection() {
                 </button>
                 <button
                   onClick={() => setShowBenchmark(!showBenchmark)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase transition-all whitespace-nowrap ${
                     showBenchmark
                       ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
                       : "bg-slate-100 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 text-slate-500"
@@ -445,9 +445,9 @@ export default function BenchmarkRadarSection() {
             </div>
 
             {/* Recharts Radar Chart */}
-            <div id="radar-chart-container" className="h-[430px] w-full flex items-center justify-center sm:h-[460px]">
+            <div id="radar-chart-container" className="h-[290px] sm:h-[350px] w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <RadarChart cx="50%" cy="50%" outerRadius={isMobile ? "60%" : "78%"} data={chartData}>
+                <RadarChart cx="50%" cy="50%" outerRadius={isMobile ? "68%" : "80%"} data={chartData}>
                   <PolarGrid stroke={theme === "dark" ? "#263247" : "#cbd5e1"} strokeOpacity={0.9} radialLines={true} />
                   <PolarAngleAxis
                     dataKey="subject"

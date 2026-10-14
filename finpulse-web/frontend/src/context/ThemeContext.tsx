@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { profileService } from '../profile/services/profileService';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -38,6 +39,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(nextTheme);
     localStorage.setItem('theme', nextTheme);
     applyThemeToDOM(nextTheme);
+
+    // Sync preference to backend profile if logged in
+    const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
+    if (token) {
+      profileService.updatePreferences({ preferences: { theme: nextTheme } as any }).catch(() => {});
+    }
   };
 
   useEffect(() => {

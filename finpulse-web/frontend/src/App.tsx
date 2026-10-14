@@ -43,10 +43,11 @@ export default function App() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Sync saved theme preference from database profile on load (once on mount)
+  // Sync saved theme preference from database profile on load if no local theme was explicitly set
   useEffect(() => {
     const token = localStorage.getItem('finpulse_token') || localStorage.getItem('finpulse-token');
-    if (token) {
+    const localTheme = localStorage.getItem('theme');
+    if (token && !localTheme) {
       profileService.getProfile()
         .then(data => {
           if (data?.preferences?.theme) {

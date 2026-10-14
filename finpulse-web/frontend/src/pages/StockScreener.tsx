@@ -184,7 +184,7 @@ const ExpandableDescription = ({
   description,
   maxLines = 5,
   maxSentences,
-  className = 'text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal',
+  className = 'text-xs sm:text-[13px] leading-relaxed text-slate-650 dark:text-slate-350 font-normal',
   emptyText = 'Loading company description...'
 }: {
   description?: string;
@@ -193,27 +193,15 @@ const ExpandableDescription = ({
   className?: string;
   emptyText?: string;
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   if (!description) {
     return <p className={className}>{emptyText}</p>;
   }
 
   return (
     <div className="space-y-1.5">
-      <p className={`${className} ${!isExpanded ? 'line-clamp-5' : ''}`}>
+      <p className={`${className} line-clamp-5`}>
         {description}
       </p>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsExpanded(!isExpanded);
-        }}
-        className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-cyan-400 hover:underline transition-all cursor-pointer select-none focus:outline-none"
-      >
-        {isExpanded ? 'Show less ↑' : 'Read more →'}
-      </button>
     </div>
   );
 };
@@ -1844,25 +1832,23 @@ export default function StockScreener() {
 
           {/* Search bar wrapper */}
           <div className="w-full relative z-10">
-            <div className="p-1 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 shadow-xl">
-              <StockSearch
-                placeholder="Search by company name or ticker"
-                onSelect={(asset) => handleSelectStock(asset.symbol)}
-                simple={true}
-                onlyTypes={['Stocks']}
-              />
-            </div>
+            <StockSearch
+              placeholder="Search by company name or ticker"
+              onSelect={(asset) => handleSelectStock(asset.symbol)}
+              simple={true}
+              onlyTypes={['Stocks']}
+            />
           </div>
 
           {/* Quick links */}
           <div className="space-y-3 relative z-10">
             <div className="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
-              <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[11px]">Popular Tickers:</span>
+              <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px]">Popular Tickers:</span>
               {SUGGESTED_COMPANIES.map((company) => (
                 <button
                   key={company.symbol}
                   onClick={() => handleSelectStock(company.symbol)}
-                  className="px-3.5 py-1.5 bg-slate-900/40 hover:bg-cyan-500/15 text-slate-300 hover:text-cyan-400 rounded-xl border border-white/10 hover:border-cyan-400/30 shadow-sm font-semibold transition-all hover:scale-105 active:scale-95"
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800/80 dark:hover:bg-cyan-500/15 dark:text-slate-200 dark:hover:text-cyan-300 rounded-xl border border-slate-300/80 hover:border-slate-400 dark:border-white/10 dark:hover:border-cyan-400/30 shadow-sm font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer"
                 >
                   {company.name}
                 </button>
@@ -1977,8 +1963,8 @@ export default function StockScreener() {
           {/* Main content wrapper with sticky left sidebar */}
           <div className="flex flex-col lg:flex-row gap-6 items-start w-full relative mt-4">
             {/* Sticky Left Sidebar Navbar */}
-            <div className="hidden lg:flex lg:flex-col gap-2 w-60 shrink-0 sticky top-24 self-start bg-slate-900/40 dark:bg-slate-950/40 backdrop-blur-md border border-white/5 p-3 rounded-2xl shadow-xl z-20">
-              <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black text-cyan-400 uppercase tracking-widest border-b border-white/5 mb-1">
+            <div className="hidden lg:flex lg:flex-col gap-2 w-60 shrink-0 sticky top-24 self-start bg-slate-100/90 dark:bg-slate-950/40 backdrop-blur-md border border-slate-200 dark:border-white/5 p-3 rounded-2xl shadow-xl z-20">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black text-blue-600 dark:text-cyan-400 uppercase tracking-widest border-b border-slate-200/80 dark:border-white/5 mb-1">
                 <span>Sections</span>
               </div>
               {[
@@ -1995,13 +1981,13 @@ export default function StockScreener() {
                   <button
                     key={tab.tab}
                     onClick={() => handleTabClick(tab.id, tab.tab)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 text-left w-full group ${isActive
-                      ? 'bg-gradient-to-r from-cyan-500/15 to-blue-500/15 text-cyan-400 border border-cyan-400/30 shadow-lg shadow-cyan-500/10'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 text-left w-full group cursor-pointer ${isActive
+                      ? 'bg-blue-600/10 text-blue-700 border-blue-500/30 dark:bg-gradient-to-r dark:from-cyan-500/15 dark:to-blue-500/15 dark:text-cyan-400 border dark:border-cyan-400/30 shadow-md shadow-blue-500/5 dark:shadow-cyan-500/10'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 border border-transparent'
                       }`}
                     title={tab.label}
                   >
-                    <Icon className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                    <Icon className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-blue-600 dark:text-cyan-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200'}`} />
                     <span className="truncate">{tab.label}</span>
                   </button>
                 );
@@ -2037,34 +2023,34 @@ export default function StockScreener() {
               </div>
 
               {/* 0. Overview Section */}
-              <div id="screener-overview" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-violet-500/30">
+              <div id="screener-overview" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-violet-500/30">
                 <button
                   onClick={handleToggleOverview}
-                  className="w-full flex items-center justify-between text-left focus:outline-none group"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-violet-500/15 text-violet-400 border border-violet-500/25 group-hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/25 group-hover:scale-110 transition-transform">
                       <BookOpen className="h-5 w-5" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight group-hover:text-violet-300 transition-colors">
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
                         {selectedStock?.name || 'Company'} Overview
                       </h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Business profile, executive information, and latest company news</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Business profile, executive information, and latest company news</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
                       {isOverviewOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isOverviewOpen ? 'transform rotate-180 text-violet-400' : ''}`} />
+                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isOverviewOpen ? 'transform rotate-180 text-violet-600 dark:text-violet-400' : ''}`} />
                     </div>
                   </div>
                 </button>
 
                 {isOverviewOpen && (
-                  <div className="space-y-6 mt-5 pt-5 border-t border-white/10 animate-fadeIn">
+                  <div className="space-y-6 mt-5 pt-5 border-t border-slate-200 dark:border-white/10 animate-fadeIn">
                     {/* Top: Description & Profile Info */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {/* Left: Description & Website */}
@@ -2072,7 +2058,7 @@ export default function StockScreener() {
                         <ExpandableDescription
                           description={assetDetails?.profile?.description}
                           maxSentences={5}
-                          className="text-xs sm:text-[13px] leading-relaxed text-slate-600 dark:text-slate-350 font-normal"
+                          className="text-xs sm:text-[13px] leading-relaxed text-slate-700 dark:text-slate-300 font-normal"
                           emptyText="Loading company description..."
                         />
                         {assetDetails?.profile?.website && (
@@ -2231,28 +2217,28 @@ export default function StockScreener() {
               </div>
 
               {/* 1. Market Data Section */}
-              <div id="screener-market-data" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-cyan-500/30 mt-6">
+              <div id="screener-market-data" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-cyan-500/30 mt-6">
                 <button
                   onClick={handleToggleMarketData}
-                  className="w-full flex items-center justify-between text-left focus:outline-none group"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 group-hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25 group-hover:scale-110 transition-transform">
                       <Globe className="h-5 w-5" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
                         Market Data & Price Statistics
                       </h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Highs, lows, beta volatility, shares outstanding & volume statistics</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Highs, lows, beta volatility, shares outstanding & volume statistics</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
                       {isMarketDataOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isMarketDataOpen ? 'transform rotate-180 text-cyan-400' : ''}`} />
+                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isMarketDataOpen ? 'transform rotate-180 text-cyan-600 dark:text-cyan-400' : ''}`} />
                     </div>
                   </div>
                 </button>
@@ -2293,28 +2279,28 @@ export default function StockScreener() {
               </div>
 
               {/* 2. Valuation Section */}
-              <div id="screener-valuation" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-indigo-500/30 mt-6">
+              <div id="screener-valuation" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-indigo-500/30 mt-6">
                 <button
                   onClick={handleToggleValuation}
-                  className="w-full flex items-center justify-between text-left focus:outline-none group"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 group-hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 group-hover:scale-110 transition-transform">
                       <Bookmark className="h-5 w-5" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
                         Valuation Multiples
                       </h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Historical quarterly P/E, Price to Book, EV/EBITDA, and valuation tracks</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Historical quarterly P/E, Price to Book, EV/EBITDA, and valuation tracks</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
                       {isValuationOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isValuationOpen ? 'transform rotate-180 text-indigo-400' : ''}`} />
+                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isValuationOpen ? 'transform rotate-180 text-indigo-600 dark:text-indigo-400' : ''}`} />
                     </div>
                   </div>
                 </button>
@@ -2353,28 +2339,28 @@ export default function StockScreener() {
               </div>
 
               {/* 3. Fundamentals Section */}
-              <div id="screener-fundamentals" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-emerald-500/30 mt-6">
+              <div id="screener-fundamentals" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-emerald-500/30 mt-6">
                 <button
                   onClick={handleToggleFundamentals}
-                  className="w-full flex items-center justify-between text-left focus:outline-none group"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 group-hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 group-hover:scale-110 transition-transform">
                       <FileText className="h-5 w-5" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
                         Financial Statements & Fundamentals
                       </h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Quarterly Income Statement, Balance Sheet, and Free Cash Flow</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Quarterly Income Statement, Balance Sheet, and Free Cash Flow</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
                       {isFundamentalsOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isFundamentalsOpen ? 'transform rotate-180 text-emerald-400' : ''}`} />
+                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isFundamentalsOpen ? 'transform rotate-180 text-emerald-600 dark:text-emerald-400' : ''}`} />
                     </div>
                   </div>
                 </button>
@@ -2500,28 +2486,28 @@ export default function StockScreener() {
               </div>
 
               {/* 4. Shareholding Pattern Section */}
-              <div id="screener-shareholding" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-pink-500/30 mt-6">
+              <div id="screener-shareholding" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-pink-500/30 mt-6">
                 <button
                   onClick={handleToggleShareholding}
-                  className="w-full flex items-center justify-between text-left focus:outline-none group"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-pink-500/15 text-pink-400 border border-pink-500/25 group-hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-xl bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/25 group-hover:scale-110 transition-transform">
                       <PieChart className="h-5 w-5" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-pink-600 dark:group-hover:text-pink-300 transition-colors">
                         Shareholding & Institutional Ownership
                       </h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Insiders, institutional funds float concentration & stakeholder counts</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Insiders, institutional funds float concentration & stakeholder counts</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
                       {isShareholdingOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isShareholdingOpen ? 'transform rotate-180 text-pink-400' : ''}`} />
+                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isShareholdingOpen ? 'transform rotate-180 text-pink-600 dark:text-pink-400' : ''}`} />
                     </div>
                   </div>
                 </button>
@@ -2584,32 +2570,32 @@ export default function StockScreener() {
               </div>
 
               {/* 5. Technical & Health Analytics Widgets Section */}
-              <div id="screener-trendlyne" className="scroll-mt-28 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-slate-950/60 dark:from-[#0d1428]/60 dark:via-[#0a0e1c]/40 dark:to-[#070a14]/60 border border-slate-700/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all hover:border-cyan-500/30 mt-6">
+              <div id="screener-trendlyne" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-cyan-500/30 mt-6">
                 <button
                   onClick={handleToggleTrendlyne}
-                  className="w-full flex items-center justify-between text-left focus:outline-none group"
+                  className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 group-hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25 group-hover:scale-110 transition-transform">
                       <Activity className="h-5 w-5" />
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
                           Technical Signals & Health Checklist
                         </h3>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                         Real-time momentum oscillators, moving averages, and fundamental checklist ratings
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white/5 px-2 py-1 rounded-md border border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
                       {isTrendlyneOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${isTrendlyneOpen ? 'transform rotate-180 text-cyan-400' : ''}`} />
+                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isTrendlyneOpen ? 'transform rotate-180 text-cyan-600 dark:text-cyan-400' : ''}`} />
                     </div>
                   </div>
                 </button>

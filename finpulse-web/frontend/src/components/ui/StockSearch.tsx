@@ -255,7 +255,7 @@ export default function StockSearch({
     <div className="relative w-full" ref={searchRef}>
       {/* Search Input Field */}
       <div className="relative flex items-center">
-        <Search className="absolute left-3.5 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+        <Search className="absolute left-3.5 h-4.5 w-4.5 text-slate-500 dark:text-slate-400" />
         <input
           type="text"
           value={query}
@@ -263,7 +263,7 @@ export default function StockSearch({
           onKeyDown={handleKeyDown}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] py-3 pl-11 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-night-900 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-blue-500/20 dark:focus:ring-cyan-400/20 shadow-inner transition-all duration-300"
+          className="w-full rounded-2xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900/60 py-3 pl-11 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:bg-white dark:focus:bg-night-900 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-cyan-400/20 shadow-sm transition-all duration-200"
         />
         {query && (
           <button

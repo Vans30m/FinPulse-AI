@@ -197,15 +197,10 @@ export default function Footer() {
           {/* Sub-Footer Meta Attributions */}
           <div className="flex flex-col gap-4 border-t border-slate-200 pt-5 text-[11px] font-medium text-slate-400 dark:border-[#242424] dark:text-[#737373] sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-cyan-400" />
               <p>© {currentYear} FinPulse.ai Technologies Inc. All rights reserved.</p>
-            </div>
-            <div className="flex items-center gap-2 text-slate-500 dark:text-[#8a8a8a] sm:text-right">
-              <p>Secure data practices · Powered by custom financial models</p>
             </div>
           </div>
         </div>
-
       </div>
     </footer>
   );

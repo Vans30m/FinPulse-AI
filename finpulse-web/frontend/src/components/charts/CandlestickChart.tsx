@@ -616,7 +616,9 @@ export default function CandlestickChart({
               low: Number(q.low),
               close: Number(q.close),
               volume: q.volume ? Number(q.volume) : 0
-            }));
+            }))
+            .sort((a: any, b: any) => a.time - b.time)
+            .filter((item: any, idx: number, arr: any[]) => idx === 0 || item.time > arr[idx - 1].time);
           setCompareCandles(mapped);
         }
       } catch (err) {
@@ -1358,6 +1360,9 @@ export default function CandlestickChart({
       const gridColorVal = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(30, 41, 59, 0.04)";
       const isComparison = pane === "Comparison";
 
+      // Clear any previous chart canvases or orphaned elements from this container
+      containerEl.innerHTML = "";
+
       // Create sub-chart pane
       const paneChart = createChart(containerEl, {
         layout: {
@@ -1422,14 +1427,21 @@ export default function CandlestickChart({
 
         const addCompareIndicatorLine = (lineData: { time: number; value: number }[], color: string, style?: any) => {
           if (!lineData || !lineData.length) return;
+          const cleanLineData = lineData
+            .filter(d => d && typeof d.time === "number" && typeof d.value === "number" && !isNaN(d.value))
+            .sort((a, b) => a.time - b.time)
+            .filter((d, i, arr) => i === 0 || d.time > arr[i - 1].time);
+          if (!cleanLineData.length) return;
+
           const lineSeries = paneChart.addLineSeries({
             color,
             lineWidth: settings.lineThickness || 2,
             lineStyle: style ?? LineStyle.Solid,
             priceLineVisible: false,
             lastValueVisible: false,
+            priceScaleId: "right",
           });
-          lineSeries.setData(lineData as any);
+          lineSeries.setData(cleanLineData as any);
         };
 
         if (activeOverlays.includes("EMA 20") && compareIndicatorData.ema20) {
