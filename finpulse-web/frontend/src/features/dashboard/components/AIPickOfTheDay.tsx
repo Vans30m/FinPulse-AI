@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { AlertCircle, RotateCcw, ShieldAlert, Calendar } from "lucide-react";
 import { getAIPickOfTheDay, type AIPickOfTheDayData } from "../../../services/marketService";
+import { useChart } from "../../../context/ChartContext";
 
 export default function AIPickOfTheDay({ className = "" }: { className?: string }) {
+  const { openAsset } = useChart();
   const [data, setData] = useState<AIPickOfTheDayData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -149,21 +151,28 @@ export default function AIPickOfTheDay({ className = "" }: { className?: string 
         
         {/* Stock Info Row */}
         <div className="flex items-center justify-between mt-1">
-          <a
-            href={`#/stock/${brief.symbol}`}
-            onClick={(e) => {
-              e.preventDefault();
-              window.location.hash = `#/stock/${brief.symbol}`;
-            }}
-            className="flex items-baseline gap-2"
+          <button
+            type="button"
+            onClick={() =>
+              openAsset({
+                symbol: brief.symbol,
+                yahooSymbol: brief.symbol,
+                name: brief.company,
+                exchange: "Global",
+                type: "Stock",
+                price: brief.currentPrice,
+              })
+            }
+            className="flex items-baseline gap-2 text-left group cursor-pointer"
+            title={`View ${brief.symbol} charts and details`}
           >
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white hover:text-emerald-500 transition-colors tracking-tight">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors tracking-tight">
               {brief.symbol}
             </h3>
-            <span className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
+            <span className="text-xs text-slate-500 dark:text-neutral-400 font-medium group-hover:text-slate-700 dark:group-hover:text-neutral-200 transition-colors">
               {brief.company}
             </span>
-          </a>
+          </button>
 
           <span className={`text-[9px] font-bold px-2.5 py-1 rounded border uppercase tracking-wider ${getRecColors(brief.recommendation)}`}>
             {brief.recommendation}
