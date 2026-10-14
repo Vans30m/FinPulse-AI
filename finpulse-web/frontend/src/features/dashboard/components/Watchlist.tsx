@@ -314,65 +314,66 @@ export default function Watchlist() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 md:gap-3">
-        <div className="rounded-md border border-slate-200 bg-white p-3 dark:border-[#242424] dark:bg-[#111111]">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#737373]">Tracked assets</p>
-          <p className="mt-1 font-mono text-lg font-black text-slate-900 dark:text-[#f5f5f5]">{stats.total}</p>
+      {/* STATS METRIC PILLS / CARDS */}
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+        <div className="rounded-xl border border-slate-200 bg-white p-2 sm:p-3 dark:border-[#242424] dark:bg-[#111111] shadow-xs">
+          <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#737373] truncate">Tracked</p>
+          <p className="mt-0.5 sm:mt-1 font-mono text-base sm:text-lg font-black text-slate-900 dark:text-[#f5f5f5]">{stats.total}</p>
         </div>
-        <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3 dark:border-emerald-500/25 dark:bg-emerald-500/10">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Gainers</p>
-          <p className="mt-1 font-mono text-lg font-black text-emerald-600 dark:text-emerald-400">{stats.gainers}</p>
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-2 sm:p-3 dark:border-emerald-500/25 dark:bg-emerald-500/10 shadow-xs">
+          <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 truncate">Gainers</p>
+          <p className="mt-0.5 sm:mt-1 font-mono text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">{stats.gainers}</p>
         </div>
-        <div className={`rounded-md border p-3 ${stats.avgChange.startsWith('-') ? 'border-rose-500/20 bg-rose-500/5 dark:border-rose-500/25 dark:bg-rose-500/10' : 'border-blue-500/20 bg-blue-500/5 dark:border-cyan-500/25 dark:bg-cyan-500/10'}`}>
-          <p className={`text-[9px] font-bold uppercase tracking-wider ${stats.avgChange.startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-cyan-400'}`}>Average move</p>
-          <p className={`mt-1 font-mono text-lg font-black ${stats.avgChange.startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-cyan-400'}`}>{stats.avgChange}</p>
+        <div className={`rounded-xl border p-2 sm:p-3 shadow-xs ${stats.avgChange.startsWith('-') ? 'border-rose-500/20 bg-rose-500/5 dark:border-rose-500/25 dark:bg-rose-500/10' : 'border-blue-500/20 bg-blue-500/5 dark:border-cyan-500/25 dark:bg-cyan-500/10'}`}>
+          <p className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-wider truncate ${stats.avgChange.startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-cyan-400'}`}>Avg Move</p>
+          <p className={`mt-0.5 sm:mt-1 font-mono text-base sm:text-lg font-black ${stats.avgChange.startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-cyan-400'}`}>{stats.avgChange}</p>
         </div>
       </div>
 
 
 
       {/* WATCHLIST SWITCHER & CONTROLS */}
-      <div className="watchlist-controls relative z-30 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] p-4 md:p-5 rounded-lg flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+      <div className="watchlist-controls relative z-30 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] p-3 sm:p-4 md:p-5 rounded-2xl flex flex-col gap-3 sm:gap-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full">
           {/* List selection segment selector */}
           <div className="flex-1 overflow-x-auto scrollbar-none w-full">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {isCreatingList ? (
-                <form onSubmit={handleCreateWatchlist} className="flex items-center gap-2 bg-slate-100 dark:bg-[#141414] p-1.5 rounded-md border border-slate-200 dark:border-[#242424]">
+                <form onSubmit={handleCreateWatchlist} className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#141414] p-1 sm:p-1.5 rounded-xl border border-slate-200 dark:border-[#242424]">
                   <input
                     autoFocus
                     type="text"
                     placeholder="Name..."
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
-                    className="bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-[#242424] px-3 py-1 text-xs rounded focus:outline-none w-32 text-slate-900 dark:text-white font-medium"
+                    className="bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-[#242424] px-2.5 py-1 text-xs rounded-lg focus:outline-none w-28 sm:w-32 text-slate-900 dark:text-white font-medium"
                   />
-                  <button type="submit" disabled={createListMutation.isPending} className="bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-neutral-200 disabled:opacity-60 px-3 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1">
+                  <button type="submit" disabled={createListMutation.isPending} className="bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-neutral-200 disabled:opacity-60 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1">
                     {createListMutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
                     Save
                   </button>
-                  <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs px-2">Cancel</button>
+                  <button type="button" onClick={() => setIsCreatingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs px-1.5">Cancel</button>
                 </form>
               ) : (
-                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#141414] p-1 rounded-md border border-slate-200 dark:border-[#242424]">
-                  {watchlists.map((list, rIdx) => (
+                <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-100 dark:bg-[#141414] p-1 rounded-xl border border-slate-200 dark:border-[#242424] overflow-x-auto scrollbar-none">
+                  {watchlists.map((list) => (
                     <div
                       key={list.id}
                       onClick={() => setActiveListId(list.id)}
-                      className={`group relative flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium tracking-wide transition-colors cursor-pointer border ${activeListId === list.id
-                        ? "watchlist-active-tab bg-blue-600 dark:bg-cyan-500 text-white dark:text-[#07110a] border-transparent shadow-sm"
-                        : "bg-transparent border-transparent hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-slate-500 dark:text-neutral-400 hover:text-blue-700 dark:hover:text-cyan-400"
+                      className={`group relative flex items-center gap-1.5 px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-colors cursor-pointer border shrink-0 ${activeListId === list.id
+                        ? "watchlist-active-tab bg-blue-600 dark:bg-cyan-500 text-white dark:text-[#07110a] border-transparent shadow-xs"
+                        : "bg-transparent border-transparent hover:bg-blue-50 dark:hover:bg-cyan-500/10 text-slate-600 dark:text-neutral-400 hover:text-blue-700 dark:hover:text-cyan-400"
                         }`}
                     >
-                      <span>{list.name}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-[#242424] text-slate-500 dark:text-neutral-400"
+                      <span className="truncate max-w-[110px] sm:max-w-none">{list.name}</span>
+                      <span className={`text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded font-mono ${activeListId === list.id ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-[#242424] text-slate-600 dark:text-neutral-400"
                         }`}>
                         {list.items?.length || 0}
                       </span>
                       {watchlists.length > 1 && (
                         <button
                           onClick={(e) => handleDeleteWatchlist(e, list.id, list.name)}
-                          className={`p-0.5 rounded-lg transition-colors ${activeListId === list.id ? "text-white/60 hover:text-white" : "text-slate-400 hover:text-rose-500 hover:bg-rose-500/10"
+                          className={`p-0.5 rounded transition-colors ${activeListId === list.id ? "text-white/70 hover:text-white" : "text-slate-400 hover:text-rose-500 hover:bg-rose-500/10"
                             }`}
                           title={`Delete watchlist "${list.name}"`}
                         >
@@ -383,7 +384,7 @@ export default function Watchlist() {
                   ))}
                   <button
                     onClick={() => setIsCreatingList(true)}
-                    className="p-2.5 rounded-2xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-cyan-400 transition-all border border-blue-500/10 hover:border-blue-500/30 shadow-sm shrink-0"
+                    className="p-1.5 sm:p-2 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-cyan-400 transition-all border border-blue-500/10 hover:border-blue-500/30 shadow-xs shrink-0"
                     title="Create custom watchlist"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -393,22 +394,22 @@ export default function Watchlist() {
             </div>
           </div>
 
-          {/* Export & Actions */}
-          <div className="shrink-0 w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+          {/* Export & Actions - compact responsive 2-column grid on mobile */}
+          <div className="shrink-0 w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-row gap-2">
             <button
               onClick={() => setShowAddAsset((current) => !current)}
-              className="watchlist-add w-full justify-center px-5 py-2.5 border border-blue-500/40 dark:border-cyan-500/40 bg-blue-600 text-white dark:bg-cyan-500 dark:text-[#07110a] hover:bg-blue-700 dark:hover:bg-cyan-400 rounded-md text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-sm"
+              className="watchlist-add justify-center px-3.5 py-2 sm:px-5 sm:py-2.5 border border-blue-500/40 dark:border-cyan-500/40 bg-blue-600 text-white dark:bg-cyan-500 dark:text-[#07110a] hover:bg-blue-700 dark:hover:bg-cyan-400 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 shadow-xs cursor-pointer"
               title="Add an asset to this watchlist"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Add Asset</span>
             </button>
             <button
               onClick={handleExportCSV}
-              className="watchlist-export w-full justify-center px-5 py-2.5 border border-blue-500/40 dark:border-cyan-500/40 bg-blue-600/10 dark:bg-cyan-500/10 hover:bg-blue-600/20 dark:hover:bg-cyan-500/15 text-blue-600 dark:text-cyan-400 rounded-md text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-sm"
+              className="watchlist-export justify-center px-3.5 py-2 sm:px-5 sm:py-2.5 border border-blue-500/40 dark:border-cyan-500/40 bg-blue-600/10 dark:bg-cyan-500/10 hover:bg-blue-600/20 dark:hover:bg-cyan-500/15 text-blue-600 dark:text-cyan-400 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 shadow-xs cursor-pointer"
               title="Download watchlist items as CSV file"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Export CSV</span>
             </button>
           </div>
@@ -481,15 +482,15 @@ export default function Watchlist() {
         </div>
 
         {processedItems.length === 0 ? (
-          <div className="text-center py-12 bg-white/40 dark:bg-night-900/40 rounded-3xl border border-slate-200 dark:border-white/10 backdrop-blur-xl">
-            <Star className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-            <h3 className="font-bold text-base text-slate-700 dark:text-slate-300">No assets found</h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+          <div className="text-center py-10 bg-white/40 dark:bg-night-900/40 rounded-2xl border border-slate-200 dark:border-white/10 backdrop-blur-xl">
+            <Star className="h-8 w-8 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
+            <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">No assets found</h3>
+            <p className="text-xs text-slate-400 mt-0.5 max-w-sm mx-auto">
               Use Add Asset above to start tracking a market.
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-4">
             <AnimatePresence>
               {processedItems.map((item: any) => {
                 const isPositive = parseFloat(String(item.changePercent || "0").replace(/[^0-9.-]+/g, "")) >= 0;
@@ -505,13 +506,13 @@ export default function Watchlist() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className={`group rounded-3xl border border-slate-200 dark:border-white/10 ${isPositive ? 'border-l-2 border-l-emerald-500/70' : 'border-l-2 border-l-rose-500/70'} bg-white/70 dark:bg-night-900/70 backdrop-blur-xl p-4 md:p-5 shadow-lg hover:shadow-xl hover:border-slate-350 dark:hover:border-white/20 transition-all flex flex-col justify-between`}
+                    className={`group rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/10 ${isPositive ? 'border-l-3 sm:border-l-4 border-l-emerald-500' : 'border-l-3 sm:border-l-4 border-l-rose-500'} bg-white/80 dark:bg-night-900/80 backdrop-blur-xl p-2 sm:p-4 md:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between`}
                   >
                     <div>
-                      {/* Top bar with symbol, title, delete and pin buttons */}
-                      <div className="flex justify-between items-start gap-3">
+                      {/* Top bar with symbol, title, live quote */}
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-2">
                         <div
-                          className="flex items-center gap-2 md:gap-3 cursor-pointer"
+                          className="flex items-center gap-1.5 sm:gap-2 cursor-pointer min-w-0 w-full sm:w-auto"
                           onClick={() => openAsset({
                             symbol: item.symbol,
                             yahooSymbol: item.symbol,
@@ -522,21 +523,21 @@ export default function Watchlist() {
                           title="Click to view detailed asset profile page"
                         >
                           <div className="min-w-0">
-                            <h3 className="font-extrabold text-sm md:text-base text-slate-800 dark:text-white leading-tight transition-colors group-hover:text-blue-600 dark:group-hover:text-cyan-400">
+                            <h3 className="font-extrabold text-xs sm:text-base text-slate-800 dark:text-white leading-tight transition-colors group-hover:text-blue-600 dark:group-hover:text-cyan-400 truncate">
                               {item.symbol}
                             </h3>
-                            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 truncate max-w-[100px] md:max-w-[140px] font-medium mt-0.5">{item.name || "Stock Asset"}</p>
+                            <p className="text-[9px] sm:text-xs text-slate-400 dark:text-slate-500 truncate max-w-[90px] sm:max-w-[160px] font-medium mt-0.5">{item.name || "Stock Asset"}</p>
                           </div>
                         </div>
 
                         {/* Live Quote Details */}
                         {formattedPrice && (
-                          <div className="text-right">
-                            <div className={`font-black text-sm md:text-base leading-tight ${isPositive ? 'text-slate-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
+                          <div className="text-left sm:text-right shrink-0 mt-0.5 sm:mt-0">
+                            <div className="font-black text-xs sm:text-base leading-tight text-slate-900 dark:text-white font-mono">
                               {formattedPrice}
                             </div>
-                            <div className={`text-[10px] md:text-xs font-black mt-0.5 flex items-center justify-end gap-1 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                              {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                            <div className={`text-[9px] sm:text-xs font-black mt-0.5 flex items-center sm:justify-end gap-0.5 sm:gap-1 font-mono ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                              {isPositive ? <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> : <TrendingDown className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
                               <span>{formattedPercent}</span>
                             </div>
                           </div>
@@ -545,15 +546,15 @@ export default function Watchlist() {
 
                       {/* Middle Notes Indicator */}
                       {item.notes && !["Added to watchlist", "Added from Details Page", "Added from Charts", "Added from Screener"].includes(item.notes) && (
-                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center gap-1.5 text-[10px] md:text-xs text-slate-400 dark:text-slate-500 italic font-medium">
-                          <Info className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
+                        <div className="mt-1.5 sm:mt-2.5 pt-1.5 sm:pt-2 border-t border-slate-100 dark:border-white/5 flex items-center gap-1 text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 italic font-medium">
+                          <Info className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
                           <span className="truncate">{item.notes}</span>
                         </div>
                       )}
 
-                      {/* Bottom action drawer bar */}
-                      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex justify-between items-center">
-                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      {/* Bottom action drawer bar - compact on mobile */}
+                      <div className="mt-2 sm:mt-3 pt-1.5 sm:pt-2.5 border-t border-slate-100 dark:border-white/5 flex justify-between items-center">
+                        <span className="text-[7.5px] sm:text-[9px] font-extrabold px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           {item.exchange || "GLOBAL"}
                         </span>
 
@@ -562,13 +563,13 @@ export default function Watchlist() {
                           <button
                             onClick={() => handleRemoveAsset(item.id)}
                             disabled={pendingItemId === item.id}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                            className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
                             title="Remove from watchlist"
                           >
                             {pendingItemId === item.id && pendingAction === "remove" ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              <Loader2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin" />
                             ) : (
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                             )}
                           </button>
                         </div>

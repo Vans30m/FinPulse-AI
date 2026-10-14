@@ -1651,7 +1651,7 @@ export default function PortfolioDashboard() {
         </div>
 
         <div className="glass-panel p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-slate-350 dark:hover:border-slate-850 hover:shadow-lg transition-all duration-300 min-w-0">
-          <div className="flex p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 shrink-0">
+          <div className="flex p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
             <TrendingUp className="h-5 w-5" />
           </div>
           <div className="min-w-0 w-full text-left">
@@ -1659,7 +1659,7 @@ export default function PortfolioDashboard() {
               <span className="hidden sm:inline">Total Returns</span>
               <span className="inline sm:hidden">Returns</span>
             </p>
-            <h3 className={`text-sm sm:text-2xl font-black mt-0.5 truncate ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+            <h3 className={`text-sm sm:text-2xl font-black mt-0.5 truncate ${totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
               {totalGain >= 0 ? '+' : ''}{displayCurrency}{totalGain.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>
@@ -1677,7 +1677,7 @@ export default function PortfolioDashboard() {
               <span className="hidden sm:inline">Booked P&L</span>
               <span className="inline sm:hidden">Booked</span>
             </p>
-            <h3 className={`text-sm sm:text-2xl font-black mt-0.5 truncate ${totalBookedPL >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+            <h3 className={`text-sm sm:text-2xl font-black mt-0.5 truncate ${totalBookedPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
               {totalBookedPL >= 0 ? '+' : ''}{displayCurrency}{totalBookedPL.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </h3>
           </div>
@@ -1873,7 +1873,7 @@ export default function PortfolioDashboard() {
                       {posCurrency}{displayMarketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-4 text-right align-middle">
-                      <div className={`flex flex-col items-end justify-center ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                      <div className={`flex flex-col items-end justify-center ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                         <span className="text-sm font-semibold flex items-center gap-0.5">
                           {asset.totalGain >= 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
                           {posCurrency}{Math.abs(displayTotalGain).toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -1884,7 +1884,7 @@ export default function PortfolioDashboard() {
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right align-middle font-mono hidden sm:table-cell">
-                      <div className={`flex flex-col items-end justify-center ${displayDailyGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                      <div className={`flex flex-col items-end justify-center ${displayDailyGain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                         <span className="text-sm font-semibold flex items-center gap-0.5">
                           {displayDailyGain >= 0 ? '+' : ''}
                           {posCurrency}{displayDailyGain.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -1972,7 +1972,7 @@ export default function PortfolioDashboard() {
                       <span className="text-[11px] font-bold text-slate-955 dark:text-white">
                         {posCurrency}{displayMarketValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </span>
-                      <span className={`text-[9px] font-semibold flex items-center gap-0.5 ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                      <span className={`text-[9px] font-semibold flex items-center gap-0.5 ${asset.totalGain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                         {asset.totalGain >= 0 ? '+' : ''}{posCurrency}{displayTotalGain.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({asset.totalGain >= 0 ? '+' : ''}{asset.gainPercent.toFixed(1)}%)
                       </span>
                     </div>
@@ -2353,7 +2353,7 @@ export default function PortfolioDashboard() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-sm font-black font-mono ${(asset.bookedPL || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-500'}`}>
+                    <span className={`text-sm font-black font-mono ${(asset.bookedPL || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                       {(asset.bookedPL || 0) >= 0 ? '+' : ''}{asset.posCurrency}{(asset.bookedPL || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
                     <button

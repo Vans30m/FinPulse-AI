@@ -122,14 +122,14 @@ export default function RollingCagrSection() {
   ];
 
   return (
-    <section className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-205 dark:border-slate-900 rounded-3xl p-5 shadow-md">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-4">
+    <section className="bg-white dark:bg-[#121a2a]/45 border border-slate-200 dark:border-slate-900 rounded-2xl p-3.5 sm:p-5 shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-3 border-b border-slate-100 dark:border-slate-900 pb-3">
         <div>
-          <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Rolling CAGR</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Compounded annual growth trajectory across rolling windows and benchmark overlays.</p>
+          <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Rolling CAGR</h3>
+          <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Compounded annual growth trajectory across rolling windows and benchmark overlays.</p>
         </div>
 
-        <div className="flex bg-slate-50 dark:bg-[#050711] p-1 rounded-xl border border-slate-205 dark:border-slate-900 w-fit">
+        <div className="flex bg-slate-50 dark:bg-[#050711] p-1 rounded-xl border border-slate-200 dark:border-slate-900 w-fit">
           {timeframeOptions.map((option) => (
             <button
               key={option}
@@ -140,8 +140,8 @@ export default function RollingCagrSection() {
                   setLoading(false);
                 }, 180);
               }}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                timeframe === option ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all ${
+                timeframe === option ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-xs" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               {option}
@@ -175,25 +175,25 @@ export default function RollingCagrSection() {
         </div>
       ) : (
         <>
-          <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-slate-50 dark:bg-[#050711]/70 border border-slate-205 dark:border-slate-900 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-3">
-                <Trophy className="h-4 w-4 text-blue-400" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Benchmark Comparison</span>
+          <div className="mt-3.5 grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+            <div className="bg-slate-50/70 dark:bg-[#050711]/70 border border-slate-200/80 dark:border-slate-900 rounded-xl p-3 sm:p-3.5">
+              <div className="flex items-center gap-1.5 mb-2.5 border-b border-slate-200/70 dark:border-slate-900 pb-2">
+                <Trophy className="h-3.5 w-3.5 text-blue-500" />
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">Benchmark Comparison</span>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-1.5 sm:space-y-2">
                 {benchmarkComparison.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/80 p-3">
+                  <div key={item.label} className="flex items-center justify-between rounded-lg border border-slate-200/80 dark:border-slate-900 bg-white dark:bg-[#050711]/80 px-2.5 py-1.5 sm:px-3 sm:py-2">
                     <div>
-                      <p className="text-xs font-black text-slate-900 dark:text-white">{item.label}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Benchmark CAGR {item.value.toFixed(2)}%</p>
+                      <p className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white">{item.label}</p>
+                      <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium">Benchmark CAGR {item.value.toFixed(2)}%</p>
                     </div>
                     <div className="text-right">
-                      <p className={`text-xs font-black font-mono ${item.outperform ? "text-emerald-400" : "text-rose-400"}`}>
+                      <p className={`text-[11px] sm:text-xs font-black font-mono ${item.outperform ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                         {item.diff >= 0 ? "+" : ""}{item.diff.toFixed(2)}%
                       </p>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${item.outperform ? "text-emerald-400" : "text-rose-400"}`}>
+                      <span className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-wider ${item.outperform ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                         {item.outperform ? "Outperform" : "Underperform"}
                       </span>
                     </div>
@@ -202,30 +202,30 @@ export default function RollingCagrSection() {
               </div>
             </div>
 
-            <div className="bg-slate-50 dark:bg-[#050711]/70 border border-slate-205 dark:border-slate-900 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-3">
-                <BarChart3 className="h-4 w-4 text-cyan-400" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">CAGR Statistics</span>
+            <div className="bg-slate-50/70 dark:bg-[#050711]/70 border border-slate-200/80 dark:border-slate-900 rounded-xl p-3 sm:p-3.5">
+              <div className="flex items-center gap-1.5 mb-2.5 border-b border-slate-200/70 dark:border-slate-900 pb-2">
+                <BarChart3 className="h-3.5 w-3.5 text-cyan-500" />
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">CAGR Statistics</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
                 {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-xl border border-slate-205 dark:border-slate-900 bg-slate-50 dark:bg-[#050711]/85 p-3">
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">{stat.label}</p>
-                    <p className="text-xs font-black text-slate-900 dark:text-white font-mono mt-1.5">{stat.value}</p>
+                  <div key={stat.label} className="rounded-lg border border-slate-200/80 dark:border-slate-900 bg-white dark:bg-[#050711]/85 p-2 sm:p-2.5">
+                    <p className="text-[8px] sm:text-[9px] text-slate-400 uppercase font-bold tracking-wider">{stat.label}</p>
+                    <p className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white font-mono mt-0.5">{stat.value}</p>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="mt-4 bg-slate-50 dark:bg-[#050711]/70 border border-slate-205 dark:border-slate-900 rounded-2xl p-4">
-            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-205 dark:border-slate-900 pb-3 mb-3">
-              <Trophy className="h-4 w-4 text-purple-400" />
-              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">AI CAGR Insights</span>
+          <div className="mt-3.5 bg-slate-50/70 dark:bg-[#050711]/70 border border-slate-200/80 dark:border-slate-900 rounded-xl p-3 sm:p-3.5">
+            <div className="flex items-center gap-1.5 border-b border-slate-200/70 dark:border-slate-900 pb-2 mb-2.5">
+              <Trophy className="h-3.5 w-3.5 text-purple-500" />
+              <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">AI CAGR Insights</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-2.5">
               {insights.map((insight) => (
-                <div key={insight} className="rounded-xl border border-slate-150/40 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-3 text-xs text-slate-650 dark:text-slate-300 font-medium leading-relaxed shadow-sm">
+                <div key={insight} className="rounded-lg border border-slate-200/80 dark:border-white/5 bg-white dark:bg-white/[0.02] p-2 sm:p-2.5 text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed shadow-2xs">
                   {insight}
                 </div>
               ))}

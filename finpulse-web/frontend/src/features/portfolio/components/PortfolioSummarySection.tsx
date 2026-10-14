@@ -125,7 +125,7 @@ function PortfolioSummarySection({ metrics, currencySymbol, loading = false }: P
                       const isPLMetric = ["today-pnl", "total-pnl", "overall-return"].includes(metric.id);
                       const colorClass = isPLMetric
                         ? metric.isPositive
-                          ? "text-emerald-650 dark:text-emerald-400"
+                          ? "text-emerald-600 dark:text-emerald-400"
                           : "text-rose-600 dark:text-rose-500"
                         : "text-slate-900 dark:text-white";
                       const signPrefix = isPLMetric ? (metric.isPositive ? "+" : "-") : "";

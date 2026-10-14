@@ -486,7 +486,7 @@ export default function PerformanceComparison() {
         </div>
 
         {/* TABS CONTROLLER */}
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1.5 px-1 -mx-1">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 px-1 -mx-1">
           {[
             { id: "overview", label: "Overview & Returns", icon: LineChartIcon },
             { id: "metrics", label: "Advanced Metrics", icon: Layers },
@@ -498,13 +498,18 @@ export default function PerformanceComparison() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap min-h-[36px] cursor-pointer shrink-0 ${isActive
-                  ? "bg-slate-900 dark:bg-[#0c192e] text-white dark:text-cyan-300 border-2 border-blue-500 dark:border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400/30"
-                  : "bg-slate-200/90 hover:bg-slate-300 dark:bg-[#131b2e] dark:hover:bg-[#1c2742] text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/80 hover:border-slate-400 dark:hover:border-slate-600"
-                  }`}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap min-h-[36px] cursor-pointer shrink-0 border ${
+                  isActive
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40 dark:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
+                    : "bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200/90 shadow-2xs dark:bg-white/[0.03] dark:hover:bg-white/[0.07] dark:text-slate-400 dark:hover:text-white dark:border-white/5"
+                }`}
               >
-                <Icon className={`h-3.5 w-3.5 transition-colors ${isActive ? "text-blue-400 dark:text-cyan-400" : "text-slate-500 dark:text-slate-400"}`} />
-                <span className="font-extrabold">{tab.label}</span>
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${
+                  isActive
+                    ? "text-white dark:text-cyan-300"
+                    : "text-slate-500 dark:text-slate-400"
+                }`} />
+                <span className="tracking-wider">{tab.label}</span>
               </button>
             );
           })}
@@ -513,12 +518,50 @@ export default function PerformanceComparison() {
 
       {/* HERO PERFORMANCE SUMMARY - Harmonized with Portfolio KPI Cards */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-4">
           {[
-            { label: "Portfolio Yield Return", val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`, desc: "Total Return", isPositive: portfolioStats.yieldReturn >= 0, icon: TrendingUp, iconKey: "yield", accentClass: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
-            { label: "Total Profit / Loss", val: formatSignedCurrency(displayGain), desc: "Unrealized P&L", isPositive: displayGain >= 0, icon: Activity, iconKey: "pnl", accentClass: displayGain >= 0 ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-rose-400 bg-rose-500/10 border-rose-500/20" },
-            { label: "Capital Valuation Ledger", val: formatCurrency(displayValuation), desc: "Total Portfolio Value", isPositive: true, icon: Layers, iconKey: "valuation", accentClass: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
-            { label: "Assets Tracked", val: `${holdings.length} Positions`, desc: "Active Holdings", isPositive: true, icon: PieIcon, iconKey: "assets", accentClass: "text-purple-400 bg-purple-500/10 border-purple-500/20" }
+            {
+              label: "Portfolio Yield Return",
+              val: `${portfolioStats.yieldReturn >= 0 ? "+" : ""}${portfolioStats.yieldReturn.toFixed(2)}%`,
+              desc: "Total Return",
+              shortDesc: "Return",
+              isPositive: portfolioStats.yieldReturn >= 0,
+              icon: TrendingUp,
+              iconKey: "yield",
+              accentClass: "text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/20"
+            },
+            {
+              label: "Total Profit / Loss",
+              val: formatSignedCurrency(displayGain),
+              desc: "Unrealized P&L",
+              shortDesc: "P&L",
+              isPositive: displayGain >= 0,
+              icon: Activity,
+              iconKey: "pnl",
+              accentClass: displayGain >= 0
+                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20"
+                : "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20"
+            },
+            {
+              label: "Capital Valuation Ledger",
+              val: formatCurrency(displayValuation),
+              desc: "Portfolio Value",
+              shortDesc: "Value",
+              isPositive: true,
+              icon: Layers,
+              iconKey: "valuation",
+              accentClass: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20"
+            },
+            {
+              label: "Assets Tracked",
+              val: `${holdings.length} Positions`,
+              desc: "Active Holdings",
+              shortDesc: "Holdings",
+              isPositive: true,
+              icon: PieIcon,
+              iconKey: "assets",
+              accentClass: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/20"
+            }
           ].map((card, i) => {
             const Icon = card.icon;
             return (
@@ -528,28 +571,40 @@ export default function PerformanceComparison() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: i * 0.05, ease: "easeOut" }}
                 whileHover={{ y: -4 }}
-                className="group relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/70 dark:bg-white/[0.025] backdrop-blur-sm p-4 sm:p-5 shadow-[0_10px_30px_-22px_rgba(15,23,42,0.65)] transition-all duration-300 hover:border-blue-500/20 dark:hover:border-cyan-500/20 hover:shadow-[0_18px_48px_-28px_rgba(6,182,212,0.45)]"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/5 bg-white dark:bg-white/[0.025] backdrop-blur-sm p-3 sm:p-4 md:p-5 shadow-xs dark:shadow-[0_10px_30px_-22px_rgba(15,23,42,0.65)] transition-all duration-300 hover:border-blue-500/30 dark:hover:border-cyan-500/20 hover:shadow-md dark:hover:shadow-[0_18px_48px_-28px_rgba(6,182,212,0.45)]"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] to-cyan-500/[0.05] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-                <div className="relative flex items-center justify-between gap-2 mb-3">
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border shadow-sm shrink-0 ${card.accentClass}`}>
+                <div className="relative flex items-center justify-between gap-1.5 sm:gap-2 mb-2.5 sm:mb-3">
+                  <div className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl border shadow-xs shrink-0 ${card.accentClass}`}>
                     <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0 ${card.isPositive ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-600 dark:text-rose-400"}`}>
-                    {card.isPositive ? "+" : "-"}{card.desc}
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider shrink-0 ${
+                    card.isPositive
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                      : "bg-rose-50 text-rose-700 border border-rose-200/70 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
+                  }`}>
+                    {card.isPositive ? "+" : "-"}
+                    <span className="hidden sm:inline">{card.desc}</span>
+                    <span className="inline sm:hidden">{card.shortDesc}</span>
                   </span>
                 </div>
 
                 <div className="relative space-y-1">
-                  <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500 truncate">
+                  <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.2em] sm:tracking-[0.24em] text-slate-500 dark:text-slate-400 truncate">
                     {card.label}
                   </p>
-                  <h3 className={`text-xl sm:text-2xl font-black tracking-tight truncate ${card.iconKey === "yield" ? (card.isPositive ? "text-cyan-600 dark:text-cyan-400" : "text-rose-600 dark:text-rose-400") : card.iconKey === "pnl" ? (card.isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400") : "text-slate-900 dark:text-white"}`}>
+                  <h3 className={`text-sm sm:text-xl md:text-2xl font-black tracking-tight truncate ${
+                    card.iconKey === "yield"
+                      ? (card.isPositive ? "text-cyan-700 dark:text-cyan-400" : "text-rose-600 dark:text-rose-400")
+                      : card.iconKey === "pnl"
+                        ? (card.isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")
+                        : "text-slate-900 dark:text-white"
+                  }`}>
                     {card.val}
                   </h3>
-                  <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 block truncate pt-0.5">
-                    {card.iconKey === "yield" ? "Return relative to invested cost" : card.iconKey === "pnl" ? "Mark to market overall return" : card.iconKey === "valuation" ? "Live global aggregate portfolio worth" : "Live categorized allocation targets"}
+                  <span className="text-[9px] sm:text-[10px] font-medium text-slate-400 dark:text-slate-500 block truncate pt-0.5">
+                    {card.iconKey === "yield" ? "Return relative to cost" : card.iconKey === "pnl" ? "Mark to market overall return" : card.iconKey === "valuation" ? "Live aggregate portfolio worth" : "Live categorized allocation"}
                   </span>
                 </div>
               </motion.article>
@@ -580,10 +635,10 @@ export default function PerformanceComparison() {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Chart Block */}
-                <div className="lg:col-span-2 glass-panel rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.02] p-4 sm:p-5 shadow-xl backdrop-blur-xl">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 dark:border-white/10 pb-3.5">
+                <div className="lg:col-span-2 glass-panel rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.02] p-4 sm:p-5 shadow-xs dark:shadow-xl backdrop-blur-xl">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-white/10 pb-3.5">
                     <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/20 dark:border-cyan-400/20">
+                      <div className="p-2 rounded-xl bg-blue-50 dark:bg-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-200 dark:border-cyan-400/20 shadow-xs">
                         <LineChartIcon size={16} />
                       </div>
                       <span className="text-xs font-black tracking-wider uppercase text-slate-900 dark:text-white">
@@ -596,8 +651,8 @@ export default function PerformanceComparison() {
                         <div
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
                             comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn
-                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                              : "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                              : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400"
                           }`}
                         >
                           {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
@@ -612,8 +667,8 @@ export default function PerformanceComparison() {
                         </div>
                       )}
 
-                      <div className="relative inline-flex items-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300">
-                        <span className="text-slate-400 dark:text-slate-500 mr-1.5 uppercase text-[9px] font-bold">Benchmark:</span>
+                      <div className="relative inline-flex items-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300 shadow-xs">
+                        <span className="text-slate-500 dark:text-slate-400 mr-1.5 uppercase text-[9px] font-bold">Benchmark:</span>
                         <select
                           value={benchmarkTicker}
                           onChange={(e) => setBenchmarkTicker(e.target.value)}
@@ -646,33 +701,33 @@ export default function PerformanceComparison() {
                 </div>
 
                 {/* Statistics Panel */}
-                <div className="glass-panel rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.02] p-4 sm:p-5 shadow-xl backdrop-blur-xl flex flex-col justify-between">
+                <div className="glass-panel rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.02] p-3 sm:p-4 shadow-xs dark:shadow-xl backdrop-blur-xl flex flex-col justify-between">
                   <div>
-                    <div className="mb-4 flex items-center justify-between border-b border-slate-200/60 dark:border-white/10 pb-3">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Benchmark Comparison Stats</span>
-                      <div className="rounded-lg border border-slate-200/60 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    <div className="mb-2.5 flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">Benchmark Comparison Stats</span>
+                      <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-2 py-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                         Active: <span className="text-blue-600 dark:text-cyan-400 font-black">{BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name}</span>
                       </div>
                     </div>
 
                     {comparisonData?.stats && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-2.5">
-                          <div className="rounded-xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] p-3">
-                            <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Portfolio Return</span>
-                            <span className={`mt-1 block font-mono text-base font-black ${comparisonData.stats.portfolioReturn >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                      <div className="space-y-2.5">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-lg border border-slate-200/90 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] p-2 sm:p-2.5 shadow-xs">
+                            <span className="block text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Portfolio Return</span>
+                            <span className={`mt-0.5 block font-mono text-sm sm:text-base font-black ${comparisonData.stats.portfolioReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                               {comparisonData.stats.portfolioReturn >= 0 ? "+" : ""}{comparisonData.stats.portfolioReturn}%
                             </span>
                           </div>
-                          <div className="rounded-xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] p-3">
-                            <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Benchmark Return</span>
-                            <span className={`mt-1 block font-mono text-base font-black ${comparisonData.stats.benchmarkReturn >= 0 ? "text-slate-900 dark:text-white" : "text-rose-500"}`}>
+                          <div className="rounded-lg border border-slate-200/90 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] p-2 sm:p-2.5 shadow-xs">
+                            <span className="block text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Benchmark Return</span>
+                            <span className={`mt-0.5 block font-mono text-sm sm:text-base font-black ${comparisonData.stats.benchmarkReturn >= 0 ? "text-slate-900 dark:text-white" : "text-rose-600 dark:text-rose-400"}`}>
                               {comparisonData.stats.benchmarkReturn >= 0 ? "+" : ""}{comparisonData.stats.benchmarkReturn}%
                             </span>
                           </div>
                         </div>
 
-                        <div className="space-y-1 border-t border-slate-200/60 dark:border-white/10 pt-3">
+                        <div className="space-y-0.5 border-t border-slate-100 dark:border-white/10 pt-1.5">
                           {[
                             { label: "Alpha (Jensen's Alpha)", value: `${comparisonData.stats.alpha >= 0 ? "+" : ""}${comparisonData.stats.alpha.toFixed(2)}` },
                             { label: "Beta (Systematic Risk)", value: comparisonData.stats.beta.toFixed(2) },
@@ -683,8 +738,8 @@ export default function PerformanceComparison() {
                             { label: "Max Drawdown", value: `${comparisonData.stats.maxDrawdown.toFixed(2)}%` },
                             { label: "Portfolio Volatility", value: `${comparisonData.stats.volatility.toFixed(2)}%` }
                           ].map((stat, idx) => (
-                            <div key={idx} className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 py-2 text-xs">
-                              <span className="text-slate-500 dark:text-slate-400 font-medium">{stat.label}</span>
+                            <div key={idx} className="flex items-center justify-between gap-2 border-b border-slate-100/80 dark:border-white/5 py-1 text-[11px] sm:text-xs">
+                              <span className="text-slate-600 dark:text-slate-400 font-medium">{stat.label}</span>
                               <span className="font-mono font-bold text-slate-900 dark:text-white">{stat.value}</span>
                             </div>
                           ))}
@@ -694,12 +749,12 @@ export default function PerformanceComparison() {
                   </div>
 
                   {comparisonData?.stats && (
-                    <div className="mt-4 rounded-xl border border-blue-500/20 dark:border-cyan-400/20 bg-blue-500/5 dark:bg-cyan-500/5 p-3">
-                      <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-cyan-400">
-                        <Activity className="h-3.5 w-3.5" />
+                    <div className="mt-2.5 rounded-lg border border-blue-200 dark:border-cyan-400/20 bg-blue-50/70 dark:bg-cyan-500/5 p-2 sm:p-2.5">
+                      <div className="mb-1 flex items-center gap-1.5 text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
+                        <Activity className="h-3 w-3" />
                         AI Performance Insights
                       </div>
-                      <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 font-medium">
+                      <p className="text-[10px] leading-snug text-slate-700 dark:text-slate-300 font-medium">
                         {comparisonData.stats.portfolioReturn >= comparisonData.stats.benchmarkReturn ? (
                           `Your portfolio has outperformed ${BENCHMARK_OPTIONS.find(b => b.symbol === benchmarkTicker)?.name || 'index'} by ${(comparisonData.stats.portfolioReturn - comparisonData.stats.benchmarkReturn).toFixed(2)}%. Active alpha remains positive with disciplined risk-adjusted returns.`
                         ) : (
@@ -712,28 +767,28 @@ export default function PerformanceComparison() {
               </div>
 
               {/* Alpha & Beta Cards */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-5 shadow-lg backdrop-blur-xl">
-                  <div className="flex items-center gap-2 border-b border-slate-200/60 dark:border-white/10 pb-3 mb-4">
-                    <TrendingUp size={16} className="text-emerald-500" />
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">Top Alpha Contributors</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="glass-panel bg-white dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-3.5 sm:p-5 shadow-xs dark:shadow-lg backdrop-blur-xl">
+                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-white/10 pb-2.5 mb-3">
+                    <TrendingUp size={15} className="text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">Top Alpha Contributors</span>
                   </div>
 
-                  <div className="space-y-2.5">
+                  <div className="space-y-1.5 sm:space-y-2">
                     {contributors.length === 0 ? (
                       <div className="text-slate-400 text-xs py-4 font-bold text-center">No profitable assets currently.</div>
                     ) : (
                       contributors.map((c, i) => {
                         const displayVal = normalizeHoldingValueForDisplay(c.profit, c.marketId);
                         return (
-                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-xl hover:border-emerald-500/30 transition-all">
-                            <div>
-                              <span className="text-xs font-black text-slate-900 dark:text-white">{c.symbol}</span>
-                              <span className="text-[10px] text-slate-400 block font-medium">{c.name}</span>
+                          <div key={i} className="flex justify-between items-center px-2.5 py-1.5 sm:px-3 sm:py-2 bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 rounded-lg sm:rounded-xl hover:border-emerald-500/40 hover:bg-emerald-50/20 transition-all">
+                            <div className="min-w-0 pr-2">
+                              <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white block truncate">{c.symbol}</span>
+                              <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 block font-medium truncate">{c.name}</span>
                             </div>
-                            <div className="text-right">
-                              <span className="text-xs font-black text-emerald-500 font-mono">{c.return}</span>
-                              <span className="text-[10px] text-slate-400 block font-mono font-medium">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
+                            <div className="text-right shrink-0">
+                              <span className="text-[11px] sm:text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono block">{c.return}</span>
+                              <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 block font-mono font-medium">+{cSymbol}{displayVal.toFixed(2)} Profit</span>
                             </div>
                           </div>
                         );
@@ -742,27 +797,27 @@ export default function PerformanceComparison() {
                   </div>
                 </div>
 
-                <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-5 shadow-lg backdrop-blur-xl">
-                  <div className="flex items-center gap-2 border-b border-slate-200/60 dark:border-white/10 pb-3 mb-4">
-                    <TrendingDown size={16} className="text-rose-500" />
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">Biggest Beta Underperformers</span>
+                <div className="glass-panel bg-white dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-3.5 sm:p-5 shadow-xs dark:shadow-lg backdrop-blur-xl">
+                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-white/10 pb-2.5 mb-3">
+                    <TrendingDown size={15} className="text-rose-600 dark:text-rose-400" />
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">Biggest Beta Underperformers</span>
                   </div>
 
-                  <div className="space-y-2.5">
+                  <div className="space-y-1.5 sm:space-y-2">
                     {losses.length === 0 ? (
                       <div className="text-slate-400 text-xs py-4 font-bold text-center">No negative assets currently.</div>
                     ) : (
                       losses.map((l, i) => {
                         const displayVal = normalizeHoldingValueForDisplay(Math.abs(l.loss), l.marketId);
                         return (
-                          <div key={i} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-xl hover:border-rose-500/30 transition-all">
-                            <div>
-                              <span className="text-xs font-black text-slate-900 dark:text-white">{l.symbol}</span>
-                              <span className="text-[10px] text-slate-400 block font-medium">{l.name}</span>
+                          <div key={i} className="flex justify-between items-center px-2.5 py-1.5 sm:px-3 sm:py-2 bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 rounded-lg sm:rounded-xl hover:border-rose-500/40 hover:bg-rose-50/20 transition-all">
+                            <div className="min-w-0 pr-2">
+                              <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white block truncate">{l.symbol}</span>
+                              <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 block font-medium truncate">{l.name}</span>
                             </div>
-                            <div className="text-right">
-                              <span className="text-xs font-black text-rose-500 font-mono">{l.return}</span>
-                              <span className="text-[10px] text-slate-400 block font-mono font-medium">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
+                            <div className="text-right shrink-0">
+                              <span className="text-[11px] sm:text-xs font-black text-rose-600 dark:text-rose-400 font-mono block">{l.return}</span>
+                              <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 block font-mono font-medium">-{cSymbol}{displayVal.toFixed(2)} Loss</span>
                             </div>
                           </div>
                         );
@@ -828,45 +883,45 @@ export default function PerformanceComparison() {
       )}
 
       {/* COMMON COMPLIANCE & GLOSSARY FOOTER */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-200/60 dark:border-white/5 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200/70 dark:border-white/5 mt-6">
         {/* Metric Glossary */}
-        <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-6 space-y-4 relative overflow-hidden backdrop-blur-xl before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-500">
-          <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2 pl-2">
-            <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <div className="glass-panel bg-white dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-xl p-3.5 sm:p-4 space-y-2.5 relative overflow-hidden backdrop-blur-xl shadow-xs dark:shadow-none before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-blue-600">
+          <h4 className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5 pl-1.5">
+            <Layers className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
             Performance Metrics Glossary
           </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px] pl-2">
-            <div className="space-y-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[10px] pl-1.5">
+            <div className="space-y-0.5">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Alpha (Jensen's Alpha)</span>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Measures the portfolio's active return against a benchmark. A positive alpha indicates outperforming the index.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-snug font-medium">Measures active return against benchmark. Positive alpha indicates outperforming the index.</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Beta (Systematic Risk)</span>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Indicates sensitivity to market movements. A Beta of 1.0 matches the benchmark; &gt;1.0 implies higher sensitivity and market-relative volatility.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-snug font-medium">Sensitivity to market. Beta 1.0 matches benchmark; &gt;1.0 implies higher sensitivity.</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Sharpe Ratio</span>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Quantifies risk-adjusted return. Higher values (&gt;1.5) indicate efficient returns per unit of volatility risk.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-snug font-medium">Risk-adjusted return. Values &gt;1.5 indicate efficient returns per unit of volatility.</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <span className="font-extrabold text-blue-600 dark:text-blue-400 block">Max Drawdown</span>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">Represents the maximum observed peak-to-trough drop in value, signaling worst-case historical risk exposure.</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-snug font-medium">Maximum peak-to-trough drop, signaling worst-case historical risk exposure.</p>
             </div>
           </div>
         </div>
 
         {/* Compliance Card */}
-        <div className="glass-panel bg-white/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-2xl p-6 space-y-4 flex flex-col justify-between relative overflow-hidden backdrop-blur-xl before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500">
-          <div className="space-y-2 pl-2">
-            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
+        <div className="glass-panel bg-white dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-xl p-3.5 sm:p-4 space-y-2.5 flex flex-col justify-between relative overflow-hidden backdrop-blur-xl shadow-xs dark:shadow-none before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-amber-500">
+          <div className="space-y-1.5 pl-1.5">
+            <h4 className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
               Regulatory Compliance & Disclosures
             </h4>
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-snug font-medium">
               All performance metrics, mock calculations, and simulated returns generated on this analytics dashboard are purely illustrative. FinPulse AI does not act as a SEBI or SEC registered investment advisor. Backtested results do not guarantee future asset performance.
             </p>
           </div>
-          <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider pt-3 border-t border-slate-200/60 dark:border-white/5 pl-2 mt-4">
+          <div className="flex items-center justify-between text-[8px] sm:text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider pt-2 border-t border-slate-100 dark:border-white/5 pl-1.5 mt-2">
             <span>Version 1.0.0 (Beta)</span>
           </div>
         </div>

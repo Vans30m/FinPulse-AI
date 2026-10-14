@@ -37,6 +37,7 @@ import SubscriptionCard from "../components/profile/SubscriptionCard";
 import SecurityCard from "../components/profile/SecurityCard";
 import toast from "react-hot-toast";
 import API_BASE_URL from "../config/api";
+import PageLoader from "../components/ui/PageLoader";
 
 const MODAL_COUNTRIES_MAPPING = [
   { name: 'India', flag: '🇮🇳', timezone: 'Asia/Kolkata', currency: 'INR (₹)' },
@@ -498,12 +499,10 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="relative w-12 h-12">
-          <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 border-t-indigo-600 animate-spin" />
-        </div>
-        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 animate-pulse">Loading FinPulse Profile Hub…</p>
-      </div>
+      <PageLoader 
+        title="Loading Profile" 
+        message="Syncing user profile hub, portfolio stats, and account settings..." 
+      />
     );
   }
 
