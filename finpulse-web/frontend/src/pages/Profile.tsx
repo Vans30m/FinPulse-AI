@@ -33,7 +33,6 @@ import { profileService, type UserProfileData, type SessionData, type WatchlistS
 import ProfileHeaderCard from "../components/profile/ProfileHeaderCard";
 import StatisticCard from "../components/profile/StatisticCard";
 import ToggleRow from "../components/profile/ToggleRow";
-import SubscriptionCard from "../components/profile/SubscriptionCard";
 import SecurityCard from "../components/profile/SecurityCard";
 import toast from "react-hot-toast";
 import API_BASE_URL from "../config/api";
