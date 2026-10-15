@@ -578,10 +578,34 @@ export default function PortfolioDashboard() {
 
   const handleAddAsset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAsset || !shares || !cost) return;
+
+    const searchVal = assetSearch.trim();
+    const effectiveAsset = selectedAsset || (searchVal ? {
+      ticker: searchVal.split(' ')[0].replace(/[\(\)]/g, '').toUpperCase(),
+      yahooSymbol: searchVal.split(' ')[0].replace(/[\(\)]/g, '').toUpperCase(),
+      name: searchVal,
+      exchange: marketId === 'domestic' ? 'NSE' : 'US',
+      type: 'Equity'
+    } : null);
+
+    if (!effectiveAsset || !effectiveAsset.ticker) {
+      toast.error("Please search and select an asset or enter a valid symbol");
+      return;
+    }
 
     const numShares = parseFloat(shares);
     const numCost = parseFloat(cost);
+
+    if (isNaN(numShares) || numShares <= 0) {
+      toast.error("Please enter a valid quantity greater than 0");
+      return;
+    }
+
+    if (isNaN(numCost) || numCost < 0) {
+      toast.error("Please enter a valid average price");
+      return;
+    }
+
     setIsAddingAsset(true);
 
     try {
@@ -599,8 +623,8 @@ export default function PortfolioDashboard() {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          ticker: selectedAsset.ticker,
-          name: selectedAsset.name,
+          ticker: effectiveAsset.ticker,
+          name: effectiveAsset.name,
           shares: numShares,
           avgCost: numCost,
           marketId
@@ -608,7 +632,7 @@ export default function PortfolioDashboard() {
       });
 
       if (res.ok) {
-        toast.success(`Successfully added holding ${selectedAsset.ticker}`);
+        toast.success(`Successfully added holding ${effectiveAsset.ticker}`);
         loadPortfolioData();
         setIsModalOpen(false);
         setAssetSearch('');
@@ -616,7 +640,13 @@ export default function PortfolioDashboard() {
         setShares('');
         setCost('');
       } else {
-        toast.error("Failed to add position");
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          toast.error("Please log in to add holdings to your portfolio");
+          window.dispatchEvent(new Event('finpulse:force-login'));
+        } else {
+          toast.error(errorData.error || "Failed to add position");
+        }
       }
     } catch (err) {
       console.error(err);
@@ -2093,8 +2123,8 @@ export default function PortfolioDashboard() {
                       key={opt.value}
                       type="button"
                       onClick={() => setMarketId(opt.value)}
-                      className={`py-2.5 px-3 text-xs font-extrabold rounded-xl border transition-all ${marketId === opt.value
-                        ? "bg-blue-600 dark:bg-cyan-500 border-blue-600 dark:border-cyan-500 text-white dark:text-night-900 shadow-md shadow-blue-500/10"
+                      className={`portfolio-category-btn py-2.5 px-3 text-xs font-extrabold rounded-xl border transition-all ${marketId === opt.value
+                        ? "portfolio-category-btn-active bg-blue-600 dark:bg-cyan-400 border-blue-600 dark:border-cyan-400 text-white dark:text-night-950 shadow-md shadow-blue-500/10"
                         : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                         }`}
                     >
@@ -2117,7 +2147,7 @@ export default function PortfolioDashboard() {
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-2.5 text-sm rounded-xl outline-none text-slate-900 dark:text-white pr-10 focus:border-blue-500 dark:focus:border-cyan-400 transition-colors"
-                    placeholder="Search by symbol or name"
+                    placeholder="Search by symbol or name (e.g. RELIANCE, AAPL)"
                     required
                   />
                   {isSearching && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 animate-spin" />}
@@ -2125,9 +2155,9 @@ export default function PortfolioDashboard() {
 
                 {showSuggestions && assetSuggestions.length > 0 && (
                   <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
-                    {assetSuggestions.map((asset) => (
+                    {assetSuggestions.map((asset, idx) => (
                       <div
-                        key={asset.id}
+                        key={asset.symbol || idx}
                         className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 flex justify-between items-center border-b border-slate-50 dark:border-white/5 last:border-0"
                         onClick={() => handleSelectAsset(asset)}
                       >
@@ -2142,8 +2172,8 @@ export default function PortfolioDashboard() {
                 )}
 
                 {selectedAsset && (
-                  <p className="mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-450 flex items-center gap-1.5">
-                    ✓ Selected: {selectedAsset.name}
+                  <p className="mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    ✓ Selected: {selectedAsset.name} ({selectedAsset.ticker})
                   </p>
                 )}
               </div>
@@ -2178,7 +2208,7 @@ export default function PortfolioDashboard() {
               <button
                 type="submit"
                 disabled={isAddingAsset}
-                className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 py-3 text-sm font-bold text-white dark:text-night-900 mt-2 shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="portfolio-add-asset-submit w-full rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-400 dark:hover:bg-cyan-300 py-3 text-sm font-bold text-white dark:text-night-950 mt-2 shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isAddingAsset && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isAddingAsset ? "Adding Position..." : "Log Position"}

@@ -617,6 +617,42 @@ html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
   color: #07110a !important;
 }
 
+.dark .secondary-page .portfolio-category-btn-active {
+  background: #22d3ee !important;
+  background-color: #22d3ee !important;
+  border-color: #22d3ee !important;
+  color: #07110a !important;
+  box-shadow: 0 4px 14px rgba(34, 211, 238, 0.3) !important;
+}
+
+.dark .secondary-page .portfolio-category-btn-active:hover {
+  background: #67e8f9 !important;
+  background-color: #67e8f9 !important;
+  color: #07110a !important;
+}
+
+.dark .secondary-page .portfolio-add-asset-submit {
+  background: #22d3ee !important;
+  background-color: #22d3ee !important;
+  border-color: #22d3ee !important;
+  color: #07110a !important;
+  box-shadow: 0 4px 16px rgba(34, 211, 238, 0.35) !important;
+}
+
+.dark .secondary-page .portfolio-add-asset-submit:hover:not(:disabled) {
+  background: #67e8f9 !important;
+  background-color: #67e8f9 !important;
+  color: #000000 !important;
+}
+
+.dark .secondary-page .portfolio-add-asset-submit * {
+  color: #07110a !important;
+}
+
+.dark .secondary-page .portfolio-add-asset-submit:disabled {
+  opacity: 0.5 !important;
+}
+
 .navbar-nav-link-hover,
 .navbar-nav-link-active-line {
   background-color: #2563eb;
