@@ -26,10 +26,10 @@ const transporter = nodemailer.createTransport({
 const SMTP_SEND_TIMEOUT_MS = 15_000;
 
 async function sendOtpEmail(email: string, code: string) {
-  console.log(`✉️ [sendOtpEmail] Initiated. BREVO_API_KEY detected: ${process.env.BREVO_API_KEY ? "YES" : "NO"}`);
+  console.log(`[sendOtpEmail] Initiated. BREVO_API_KEY detected: ${process.env.BREVO_API_KEY ? "YES" : "NO"}`);
   if (process.env.BREVO_API_KEY) {
     try {
-      console.log(`✉️ Attempting to send OTP email to ${email} via Brevo API...`);
+      console.log(`Attempting to send OTP email to ${email} via Brevo API...`);
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -62,7 +62,7 @@ async function sendOtpEmail(email: string, code: string) {
         throw new Error(JSON.stringify(errorData));
       }
 
-      console.log(`✉️ OTP email sent to ${email} successfully via Brevo API`);
+      console.log(`OTP email sent to ${email} successfully via Brevo API`);
       return;
     } catch (error) {
       console.error(`Failed to send OTP email via Brevo API to ${email}:`, error);
@@ -72,7 +72,7 @@ async function sendOtpEmail(email: string, code: string) {
 
   if (process.env.RESEND_API_KEY) {
     try {
-      console.log(`✉️ Attempting to send OTP email to ${email} via Resend API...`);
+      console.log(`Attempting to send OTP email to ${email} via Resend API...`);
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -102,7 +102,7 @@ async function sendOtpEmail(email: string, code: string) {
         throw new Error(JSON.stringify(errorData));
       }
 
-      console.log(`✉️ OTP email sent to ${email} successfully via Resend API`);
+      console.log(`OTP email sent to ${email} successfully via Resend API`);
       return;
     } catch (error) {
       console.error(`Failed to send OTP email via Resend API to ${email}:`, error);
@@ -112,7 +112,7 @@ async function sendOtpEmail(email: string, code: string) {
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log(`\n==========================================`);
-    console.log(`✉️  [OTP Fallback] Verification code for ${email}: ${code}`);
+    console.log(`[OTP Fallback] Verification code for ${email}: ${code}`);
     console.log(`==========================================\n`);
     return;
   }
@@ -140,7 +140,7 @@ async function sendOtpEmail(email: string, code: string) {
         setTimeout(() => reject(new Error('SMTP send timed out')), SMTP_SEND_TIMEOUT_MS)
       ),
     ]);
-    console.log(`✉️ OTP email sent to ${email}`);
+    console.log(`OTP email sent to ${email}`);
   } catch (error) {
     console.error(`Failed to send OTP email to ${email}:`, error);
   }
@@ -151,10 +151,10 @@ function queueOtpEmail(email: string, code: string) {
 }
 
 async function sendResetPasswordEmail(email: string, code: string) {
-  console.log(`✉️ [sendResetPasswordEmail] Initiated. BREVO_API_KEY detected: ${process.env.BREVO_API_KEY ? "YES" : "NO"}`);
+  console.log(`[sendResetPasswordEmail] Initiated. BREVO_API_KEY detected: ${process.env.BREVO_API_KEY ? "YES" : "NO"}`);
   if (process.env.BREVO_API_KEY) {
     try {
-      console.log(`✉️ Attempting to send reset password email to ${email} via Brevo API...`);
+      console.log(`Attempting to send reset password email to ${email} via Brevo API...`);
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -187,7 +187,7 @@ async function sendResetPasswordEmail(email: string, code: string) {
         throw new Error(JSON.stringify(errorData));
       }
 
-      console.log(`✉️ Reset password email sent to ${email} successfully via Brevo API`);
+      console.log(`Reset password email sent to ${email} successfully via Brevo API`);
       return;
     } catch (error) {
       console.error(`Failed to send reset password email via Brevo API to ${email}:`, error);
@@ -197,7 +197,7 @@ async function sendResetPasswordEmail(email: string, code: string) {
 
   if (process.env.RESEND_API_KEY) {
     try {
-      console.log(`✉️ Attempting to send reset password email to ${email} via Resend API...`);
+      console.log(`Attempting to send reset password email to ${email} via Resend API...`);
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -227,7 +227,7 @@ async function sendResetPasswordEmail(email: string, code: string) {
         throw new Error(JSON.stringify(errorData));
       }
 
-      console.log(`✉️ Reset password email sent to ${email} successfully via Resend API`);
+      console.log(`Reset password email sent to ${email} successfully via Resend API`);
       return;
     } catch (error) {
       console.error(`Failed to send reset password email via Resend API to ${email}:`, error);
@@ -237,7 +237,7 @@ async function sendResetPasswordEmail(email: string, code: string) {
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log(`\n==========================================`);
-    console.log(`✉️  [Reset Password Fallback] Verification code for ${email}: ${code}`);
+    console.log(`[Reset Password Fallback] Verification code for ${email}: ${code}`);
     console.log(`==========================================\n`);
     return;
   }
@@ -265,7 +265,7 @@ async function sendResetPasswordEmail(email: string, code: string) {
         setTimeout(() => reject(new Error('SMTP send timed out')), SMTP_SEND_TIMEOUT_MS)
       ),
     ]);
-    console.log(`✉️ Reset password email sent to ${email}`);
+    console.log(`Reset password email sent to ${email}`);
   } catch (error) {
     console.error(`Failed to send reset password email to ${email}:`, error);
   }
@@ -274,6 +274,118 @@ async function sendResetPasswordEmail(email: string, code: string) {
 function queueResetPasswordEmail(email: string, code: string) {
   void sendResetPasswordEmail(email, code);
 }
+
+async function sendNewsletterWelcomeEmail(email: string) {
+  const subject = 'Welcome to the FinPulse AI Market Brief';
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; padding: 24px; max-width: 600px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #0f172a;">
+      <div style="margin-bottom: 20px;">
+        <h1 style="font-size: 22px; font-weight: 800; color: #0284c7; margin: 0 0 8px 0;">FinPulse<span style="color: #0369a1;">.ai</span></h1>
+        <p style="font-size: 14px; color: #64748b; margin: 0;">Institutional Market Brief & Computational Sentiment</p>
+      </div>
+      <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 24px;">You're on the list!</h2>
+      <p style="font-size: 14px; line-height: 1.6; color: #334155;">Thank you for subscribing to the FinPulse AI daily market brief. Each morning before the opening bell, you will receive our quantitative breakdown of global indices, high-sentiment momentum picks, and computational market driver insights.</p>
+      <div style="padding: 16px; background-color: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7; margin: 24px 0;">
+        <p style="margin: 0; color: #0369a1; font-weight: 600; font-size: 13px;">Next intelligence brief scheduled: Tomorrow at 08:00 AM UTC</p>
+      </div>
+      <p style="font-size: 12px; color: #94a3b8; margin-top: 32px; border-top: 1px solid #f1f5f9; padding-top: 16px;">You received this email because ${email} was subscribed on finpulse.ai. If this was not you, you can ignore this notice.</p>
+    </div>
+  `;
+
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: 'FinPulse AI',
+            email: process.env.SENDER_EMAIL || 'afinpulse@gmail.com',
+          },
+          to: [{ email }],
+          subject,
+          htmlContent,
+        }),
+      });
+      if (response.ok) {
+        console.log(`Newsletter welcome email sent to ${email} via Brevo`);
+        return;
+      }
+    } catch (error) {
+      console.error('Brevo newsletter email dispatch failed:', error);
+    }
+  }
+
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      await transporter.sendMail({
+        from: `"FinPulse AI" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject,
+        html: htmlContent,
+      });
+      console.log(`Newsletter welcome email sent to ${email} via SMTP`);
+    } catch (err) {
+      console.error('SMTP newsletter email dispatch failed:', err);
+    }
+  }
+}
+
+// POST /api/auth/subscribe (Newsletter & Market Brief)
+router.post('/subscribe', authLimiter, async (req: any, res: any) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'A valid email address is required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // If an existing registered user matches, update their preferences
+    try {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: cleanEmail }
+      });
+
+      if (existingUser) {
+        let currentSettings: any = {};
+        if (existingUser.notificationSettings) {
+          try {
+            currentSettings = JSON.parse(existingUser.notificationSettings);
+          } catch {
+            currentSettings = {};
+          }
+        }
+        currentSettings.newsletter = true;
+        currentSettings.marketBrief = true;
+
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            notificationSettings: JSON.stringify(currentSettings)
+          }
+        });
+      }
+    } catch (dbErr) {
+      console.warn('Notice: User preference sync skipped:', dbErr);
+    }
+
+    // Send confirmation email asynchronously
+    void sendNewsletterWelcomeEmail(cleanEmail);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Subscribed to FinPulse Market Brief successfully!',
+      email: cleanEmail
+    });
+  } catch (error: any) {
+    console.error('Error handling newsletter subscription:', error);
+    return res.status(500).json({ error: error.message || 'Failed to process subscription' });
+  }
+});
 
 // 1. Google Login Check
 router.post('/google-login', authLimiter, async (req: any, res: any) => {
@@ -305,6 +417,7 @@ router.post('/google-login', authLimiter, async (req: any, res: any) => {
       where: { email },
     });
 
+    const isNewUser = !user;
     if (!user) {
       user = await prisma.user.create({
         data: {
@@ -366,6 +479,7 @@ router.post('/google-login', authLimiter, async (req: any, res: any) => {
         role: user.role,
       },
       hasPin: !!user.devicePin,
+      isNewUser,
       email: user.email,
     });
   } catch (error: any) {
@@ -600,6 +714,7 @@ router.post('/verify-otp', async (req: any, res: any) => {
         avatar: user.avatar,
         role: user.role,
       },
+      isNewUser: true,
     });
   } catch (error: any) {
     console.error('Error in verify-otp:', error);
