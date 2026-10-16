@@ -173,8 +173,8 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
           <button
             onClick={() => setShowIntervals(!showIntervals)}
             className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 ${showIntervals
-              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-sm"
-              : "text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40"
+              ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600"
+              : "text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/60 shadow-sm dark:shadow-none"
               }`}
           >
             <span className="font-mono">{currentInterval}</span>
@@ -224,14 +224,17 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
             aria-label="Toggle Technical Indicators List"
             aria-haspopup="true"
             className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 ${showDropdown || activeOverlays.length > 0 || activePanes.length > 0
-              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-sm"
-              : "text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40"
+              ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600"
+              : "text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/60 shadow-sm dark:shadow-none"
               }`}
           >
             <LineChart className="h-3.5 w-3.5" />
             <span className="hidden md:inline">Indicators</span>
             {(activeOverlays.length > 0 || activePanes.length > 0) && (
-              <span className="ml-1 px-1.5 py-0.2 text-[9px] bg-blue-500 text-white rounded-full font-bold">
+              <span className={`ml-1 px-1.5 py-0.5 text-[9px] rounded-full font-bold leading-none ${showDropdown || activeOverlays.length > 0 || activePanes.length > 0
+                ? "bg-white text-blue-600 dark:bg-white dark:text-blue-700 shadow-sm"
+                : "bg-blue-500 text-white"
+                }`}>
                 {activeOverlays.length + activePanes.length}
               </span>
             )}
@@ -350,8 +353,8 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
             aria-label="Compare Tickers Menu"
             aria-haspopup="true"
             className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 ${showCompare || compareSymbol
-              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-sm"
-              : "text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40"
+              ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600"
+              : "text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/60 shadow-sm dark:shadow-none"
               }`}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -421,7 +424,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
           onClick={onZoomIn}
           title="Zoom In"
           aria-label="Zoom In"
-          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          className="p-2 rounded-lg bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
         >
           <Plus size={15} />
         </button>
@@ -429,7 +432,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
           onClick={onZoomOut}
           title="Zoom Out"
           aria-label="Zoom Out"
-          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          className="p-2 rounded-lg bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
         >
           <Minus size={15} />
         </button>
@@ -437,7 +440,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
           onClick={onReset}
           title="Reset View"
           aria-label="Reset Chart Zoom"
-          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          className="p-2 rounded-lg bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
         >
           <RotateCcw size={15} />
         </button>
@@ -447,7 +450,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
           onClick={onTakeScreenshot}
           title="Export Screenshot"
           aria-label="Export Chart Screenshot"
-          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          className="p-2 rounded-lg bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
         >
           <Camera size={15} />
         </button>
@@ -461,8 +464,8 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
             aria-label="Toggle Chart Custom Settings Panel"
             aria-haspopup="true"
             className={`p-2 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 ${showSettings
-              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-sm"
-              : "text-slate-550 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40"
+              ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600"
+              : "text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/60 shadow-sm dark:shadow-none"
               }`}
           >
             <SlidersHorizontal size={15} />
@@ -509,7 +512,7 @@ export const ChartToolbar = memo<ChartToolbarProps>(({
           onClick={onToggleFullscreen}
           title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           aria-label={isFullscreen ? "Exit Fullscreen Mode" : "Enter Fullscreen Mode"}
-          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-350 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700/80 border border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
         >
           {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
         </button>

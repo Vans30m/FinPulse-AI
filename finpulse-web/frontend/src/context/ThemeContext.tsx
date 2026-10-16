@@ -16,7 +16,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (saved === 'light' || saved === 'dark' || saved === 'system') {
       return saved as ThemeMode;
     }
-    return 'dark';
+    return 'light';
   });
 
   const applyThemeToDOM = (themeMode: ThemeMode) => {

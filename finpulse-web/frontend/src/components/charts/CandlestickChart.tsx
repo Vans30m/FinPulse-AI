@@ -23,6 +23,7 @@ import {
   calculateStochastic,
   calculateATR,
 } from "../../utils/indicators";
+import toast from "react-hot-toast";
 import { X } from "lucide-react";
 
 const findClosestData = (data: any[] | undefined, targetTime: number): any => {
@@ -587,6 +588,7 @@ export default function CandlestickChart({
     link.download = `${symbol || compareSymbol || "chart"}_screenshot.png`;
     link.href = dataUrl;
     link.click();
+    toast.success("Chart screenshot downloaded!");
   }, [symbol, compareSymbol]);
 
   // Load Compare candles & fundamentals

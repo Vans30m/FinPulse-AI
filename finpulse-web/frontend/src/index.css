@@ -631,26 +631,114 @@ html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
   color: #07110a !important;
 }
 
+.portfolio-add-asset-submit {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+.portfolio-add-asset-submit:hover:not(:disabled) {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
 .dark .secondary-page .portfolio-add-asset-submit {
-  background: #22d3ee !important;
-  background-color: #22d3ee !important;
-  border-color: #22d3ee !important;
-  color: #07110a !important;
-  box-shadow: 0 4px 16px rgba(34, 211, 238, 0.35) !important;
+  background: #06b6d4 !important;
+  background-color: #06b6d4 !important;
+  border: 1px solid #22d3ee !important;
+  color: #080808 !important;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.45) !important;
 }
 
 .dark .secondary-page .portfolio-add-asset-submit:hover:not(:disabled) {
-  background: #67e8f9 !important;
-  background-color: #67e8f9 !important;
+  background: #22d3ee !important;
+  background-color: #22d3ee !important;
   color: #000000 !important;
 }
 
 .dark .secondary-page .portfolio-add-asset-submit * {
-  color: #07110a !important;
+  color: #080808 !important;
 }
 
+.portfolio-add-asset-submit:disabled,
 .dark .secondary-page .portfolio-add-asset-submit:disabled {
-  opacity: 0.5 !important;
+  opacity: 0.8 !important;
+  cursor: not-allowed !important;
+}
+
+/* Profile Modal Action Buttons (Ensures buttons retain their bright, premium colors and are never washed out) */
+.profile-modal-btn-primary {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+.profile-modal-btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+.dark .secondary-page .profile-modal-btn-primary {
+  background-color: #06b6d4 !important;
+  color: #080808 !important;
+  border: 1px solid #22d3ee !important;
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.4) !important;
+}
+
+.dark .secondary-page .profile-modal-btn-primary:hover:not(:disabled) {
+  background-color: #22d3ee !important;
+  color: #000000 !important;
+}
+
+.dark .secondary-page .profile-modal-btn-primary * {
+  color: #080808 !important;
+}
+
+.profile-modal-btn-danger {
+  background-color: #e11d48 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35) !important;
+}
+
+.profile-modal-btn-danger:hover:not(:disabled) {
+  background-color: #be123c !important;
+  color: #ffffff !important;
+}
+
+.dark .secondary-page .profile-modal-btn-danger {
+  background-color: #f43f5e !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(244, 63, 94, 0.6) !important;
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4) !important;
+}
+
+.dark .secondary-page .profile-modal-btn-danger:hover:not(:disabled) {
+  background-color: #fb7185 !important;
+  color: #ffffff !important;
+}
+
+.profile-modal-btn-secondary {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.profile-modal-btn-secondary:hover:not(:disabled) {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.dark .secondary-page .profile-modal-btn-secondary {
+  background-color: #1a1a1a !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #333333 !important;
+}
+
+.dark .secondary-page .profile-modal-btn-secondary:hover:not(:disabled) {
+  background-color: #262626 !important;
+  color: #ffffff !important;
 }
 
 .navbar-nav-link-hover,
@@ -851,23 +939,24 @@ html:not(.dark) .secondary-page [class*="from-\[#090d1a\]"] {
 
 /* Portfolio Page Add Action Button overrides against dark secondary-page resets */
 .portfolio-action-btn {
-  background: #22d3ee !important;
-  background-color: #22d3ee !important;
-  border: 1px solid #38bdf8 !important;
-  color: #050811 !important;
-  box-shadow: 0 4px 16px rgba(34, 211, 238, 0.4) !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  background-color: #2563eb !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
   opacity: 1 !important;
   visibility: visible !important;
 }
 
 .portfolio-action-btn:hover {
-  background: #67e8f9 !important;
-  background-color: #67e8f9 !important;
-  color: #000000 !important;
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
 }
 
 .portfolio-action-btn * {
-  color: #050811 !important;
+  color: #ffffff !important;
 }
 
 .portfolio-action-btn-sandbox {

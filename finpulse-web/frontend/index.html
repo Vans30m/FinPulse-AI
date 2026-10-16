@@ -10,17 +10,18 @@
     (function () {
       try {
         var theme = localStorage.getItem('theme');
-        var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (theme === 'dark' || (!theme && supportDarkMode)) {
+        if (theme === 'dark') {
           document.documentElement.classList.add('dark');
-        } else if (theme === 'light') {
-          document.documentElement.classList.remove('dark');
         } else if (theme === 'system') {
+          var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
           if (supportDarkMode) {
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
           }
+        } else {
+          // Default to light mode on initial load
+          document.documentElement.classList.remove('dark');
         }
       } catch (e) {}
     })();

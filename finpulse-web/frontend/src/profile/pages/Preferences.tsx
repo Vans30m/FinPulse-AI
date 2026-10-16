@@ -11,7 +11,7 @@ export default function Preferences() {
   const { theme: currentTheme, setTheme } = useTheme();
 
   const [preferences, setPreferences] = useState({
-    theme: 'dark',
+    theme: 'light',
     language: 'English',
     currency: 'INR (₹)',
     region: 'India',
@@ -33,7 +33,7 @@ export default function Preferences() {
     if (profile) {
       if (profile.preferences) {
         setPreferences({
-          theme: profile.preferences.theme || 'dark',
+          theme: profile.preferences.theme || 'light',
           language: profile.preferences.language || 'English',
           currency: profile.preferences.currency || 'INR (₹)',
           region: profile.preferences.region || 'India',

@@ -58,6 +58,25 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
             localStorage.setItem('finpulse-user', JSON.stringify(data.user));
             setUser(data.user);
 
+            if (data.isNewUser && data.user?.email) {
+              fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  service_id: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+                  template_id: import.meta.env.VITE_EMAILJS_WELCOME_TEMPLATE_ID,
+                  user_id: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+                  template_params: {
+                    to_email: data.user.email,
+                    email: data.user.email,
+                    user_email: data.user.email,
+                    to_name: data.user.name || data.user.email.split('@')[0],
+                    name: data.user.name || data.user.email.split('@')[0],
+                  },
+                }),
+              }).catch(() => {});
+            }
+
             if (data.hasPin) {
               sessionStorage.setItem('finpulse_pin_verified', 'true');
               onLoginSuccess();
@@ -195,6 +214,24 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
           localStorage.setItem('finpulse-user', JSON.stringify(data.user));
           setUser(data.user);
           setProfileUserId(data.user.id);
+          if (data.user?.email) {
+            fetch('https://api.emailjs.com/api/v1.0/email/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                service_id: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+                template_id: import.meta.env.VITE_EMAILJS_WELCOME_TEMPLATE_ID,
+                user_id: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+                template_params: {
+                  to_email: data.user.email,
+                  email: data.user.email,
+                  user_email: data.user.email,
+                  to_name: data.user.name || data.user.email.split('@')[0],
+                  name: data.user.name || data.user.email.split('@')[0],
+                },
+              }),
+            }).catch(() => {});
+          }
           setStep('profile-setup');
         } else {
           if (data.hasPin) {

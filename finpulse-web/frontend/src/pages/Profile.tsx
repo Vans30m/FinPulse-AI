@@ -25,7 +25,10 @@ import {
   LogOut,
   FileText,
   FileSpreadsheet,
-  ArrowRight
+  ArrowRight,
+  Eye,
+  EyeOff,
+  KeyRound
 } from "lucide-react";
 import { useAppData } from "../context/AppDataContext";
 import { useTheme, type ThemeMode } from "../context/ThemeContext";
@@ -115,6 +118,8 @@ export default function Profile() {
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Edit Profile Form State
   const [editForm, setEditForm] = useState({
@@ -135,6 +140,10 @@ export default function Profile() {
     newPassword: "",
     confirmPassword: ""
   });
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Investment Profile Form State
   const [investmentForm, setInvestmentForm] = useState({
@@ -371,6 +380,7 @@ export default function Profile() {
     }
 
     try {
+      setIsUpdatingPassword(true);
       await profileService.changePassword({
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
@@ -378,8 +388,13 @@ export default function Profile() {
       toast.success("Password changed successfully!");
       setIsChangePasswordOpen(false);
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to change password");
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -395,15 +410,19 @@ export default function Profile() {
   };
 
   const handleCombinedLogout = async () => {
-    if (logoutScope === 'all') {
-      try {
-        await profileService.revokeAllOtherSessions();
-        toast.success("Logged out from other devices successfully");
-      } catch (err: any) {
-        toast.error("Failed to sign out other devices, logging out locally.");
+    try {
+      setIsLoggingOut(true);
+      if (logoutScope === 'all') {
+        try {
+          await profileService.revokeAllOtherSessions();
+        } catch (err: any) {
+          console.error("Failed to sign out other devices", err);
+        }
       }
+      handleConfirmLogout();
+    } finally {
+      setIsLoggingOut(false);
     }
-    handleConfirmLogout();
   };
 
   // Account Operations
@@ -415,12 +434,15 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     try {
+      setIsDeletingAccount(true);
       await profileService.deleteAccount();
       localStorage.clear();
       toast.success("Account deleted permanently");
       window.location.href = "/";
     } catch (err: any) {
       toast.error(err.message || "Failed to delete account");
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -441,6 +463,7 @@ export default function Profile() {
 
   // Data Export Actions
   const handleExportData = async (format: 'pdf' | 'docx') => {
+    const toastId = toast.loading(`Downloading ${format.toUpperCase()} export...`);
     try {
       const blob = await profileService.exportData(format);
       const url = window.URL.createObjectURL(blob);
@@ -451,10 +474,10 @@ export default function Profile() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      toast.success(`Data exported to ${format.toUpperCase()} successfully!`);
+      toast.success(`Data exported to ${format.toUpperCase()} successfully!`, { id: toastId });
     } catch (err) {
       console.error("Export failed:", err);
-      toast.error("Failed to export data");
+      toast.error("Failed to export data", { id: toastId });
     }
   };
 
@@ -836,66 +859,142 @@ export default function Profile() {
       {/* 2. Change Password Modal */}
       {isChangePasswordOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-800">
-              <h4 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <Unlock className="h-5 w-5 text-indigo-500" /> Change Account Password
-              </h4>
+          <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-150 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-indigo-500/10 dark:bg-cyan-400/10 text-indigo-600 dark:text-cyan-400">
+                  <KeyRound className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-base font-black text-slate-900 dark:text-white">
+                    Change Account Password
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Ensure your account is using a strong password
+                  </p>
+                </div>
+              </div>
               <button 
-                onClick={() => setIsChangePasswordOpen(false)}
-                className="text-slate-450 hover:text-slate-600 dark:hover:text-white"
+                type="button"
+                onClick={() => {
+                  setIsChangePasswordOpen(false);
+                  setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                }}
+                disabled={isUpdatingPassword}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             
             <form onSubmit={handleChangePasswordSubmit} className="p-6 space-y-4">
+              {/* Current Password Field */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Current Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] rounded-xl text-xs font-bold text-slate-700 dark:text-slate-250 focus:outline-none focus:border-indigo-500"
-                />
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Current Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    required
+                    disabled={isUpdatingPassword}
+                    placeholder="Enter current password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    className="w-full pl-3.5 pr-10 py-2.5 border border-slate-300 dark:border-white/10 bg-slate-50/70 dark:bg-[#1a1a1a] rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-cyan-400/30 focus:border-indigo-500 dark:focus:border-cyan-400 transition-all disabled:opacity-60"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
+              {/* New Password Field */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">New Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] rounded-xl text-xs font-bold text-slate-700 dark:text-slate-250 focus:outline-none focus:border-indigo-500"
-                />
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    disabled={isUpdatingPassword}
+                    placeholder="At least 6 characters"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    className="w-full pl-3.5 pr-10 py-2.5 border border-slate-300 dark:border-white/10 bg-slate-50/70 dark:bg-[#1a1a1a] rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-cyan-400/30 focus:border-indigo-500 dark:focus:border-cyan-400 transition-all disabled:opacity-60"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
+              {/* Confirm New Password Field */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Confirm New Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] rounded-xl text-xs font-bold text-slate-700 dark:text-slate-250 focus:outline-none focus:border-indigo-500"
-                />
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    disabled={isUpdatingPassword}
+                    placeholder="Re-enter new password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    className="w-full pl-3.5 pr-10 py-2.5 border border-slate-300 dark:border-white/10 bg-slate-50/70 dark:bg-[#1a1a1a] rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-cyan-400/30 focus:border-indigo-500 dark:focus:border-cyan-400 transition-all disabled:opacity-60"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-white/10">
                 <button
                   type="button"
-                  onClick={() => setIsChangePasswordOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+                  disabled={isUpdatingPassword}
+                  onClick={() => {
+                    setIsChangePasswordOpen(false);
+                    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                  }}
+                  className="profile-modal-btn-secondary px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-black uppercase transition-all"
+                  disabled={isUpdatingPassword}
+                  className="profile-modal-btn-primary px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Update Password
+                  {isUpdatingPassword ? (
+                    <>
+                      <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <span>Update Password</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -906,73 +1005,115 @@ export default function Profile() {
       {/* 3. Confirm Logout Modal (Unified Choice) */}
       {isLogoutOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-200">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mx-auto text-xl font-bold">
-              <LogOut className="h-6 w-6" />
-            </div>
-            <div className="text-center">
-              <h4 className="text-base font-extrabold text-slate-900 dark:text-white">Sign Out of FinPulse</h4>
-              <p className="text-xs text-slate-400 mt-1.5">Choose your logout preference below:</p>
-            </div>
-
-            {/* Selection Options */}
-            <div className="space-y-2 text-left">
-              <button
-                type="button"
-                onClick={() => setLogoutScope('current')}
-                className={`w-full p-3 rounded-2xl border text-left flex items-start gap-3 transition-all ${
-                  logoutScope === 'current'
-                    ? 'border-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10 text-indigo-600 dark:text-cyan-400 font-extrabold'
-                    : 'border-slate-200 dark:border-white/5 bg-transparent text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${logoutScope === 'current' ? 'border-indigo-500' : 'border-slate-350 dark:border-slate-700'}`}>
-                  {logoutScope === 'current' && <div className="w-2 h-2 rounded-full bg-indigo-500 dark:bg-cyan-400" />}
+          <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-150 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400">
+                  <LogOut className="h-5 w-5" />
                 </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-black block uppercase tracking-wide">This Device Only</span>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5 leading-snug">Sign out of this browser session only. Other devices remain logged in.</span>
+                <div>
+                  <h4 className="text-base font-black text-slate-900 dark:text-white">
+                    Sign Out of FinPulse
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Choose your logout preference below
+                  </p>
                 </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setLogoutScope('all')}
-                className={`w-full p-3 rounded-2xl border text-left flex items-start gap-3 transition-all ${
-                  logoutScope === 'all'
-                    ? 'border-red-500 bg-red-500/5 dark:bg-red-500/10 text-red-650 dark:text-red-400 font-extrabold'
-                    : 'border-slate-200 dark:border-white/5 bg-transparent text-slate-650 dark:text-slate-400'
-                }`}
-              >
-                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${logoutScope === 'all' ? 'border-red-500' : 'border-slate-350 dark:border-slate-700'}`}>
-                  {logoutScope === 'all' && <div className="w-2 h-2 rounded-full bg-red-500" />}
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-black block uppercase tracking-wide">All Active Devices</span>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5 leading-snug">Sign out from this and all other connected browsers and mobile devices.</span>
-                </div>
-              </button>
-            </div>
-
-            <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <button
+              </div>
+              <button 
                 type="button"
                 onClick={() => setIsLogoutOpen(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+                disabled={isLoggingOut}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
               >
-                Cancel
+                <X className="h-5 w-5" />
               </button>
-              <button
-                type="button"
-                onClick={handleCombinedLogout}
-                className={`flex-1 py-2.5 rounded-xl text-white text-xs font-black uppercase transition-all shadow-md ${
-                  logoutScope === 'all'
-                    ? 'bg-red-500 hover:bg-red-600 shadow-red-500/10 hover:shadow-red-500/20'
-                    : 'bg-indigo-500 hover:bg-indigo-650 shadow-indigo-500/10 hover:shadow-indigo-500/20 dark:bg-cyan-500 dark:hover:bg-cyan-600 dark:text-slate-950'
-                }`}
-              >
-                Confirm Sign Out
-              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Selection Options */}
+              <div className="space-y-2.5 text-left">
+                <button
+                  type="button"
+                  disabled={isLoggingOut}
+                  onClick={() => setLogoutScope('current')}
+                  className={`w-full p-3.5 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                    logoutScope === 'current'
+                      ? 'border-blue-600 bg-blue-50/70 dark:border-cyan-400 dark:bg-cyan-950/20 text-blue-900 dark:text-cyan-300 font-extrabold shadow-sm'
+                      : 'border-slate-200 dark:border-white/10 bg-slate-50/40 dark:bg-white/[0.01] hover:bg-slate-100/70 dark:hover:bg-white/[0.03] text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                    logoutScope === 'current' 
+                      ? 'border-blue-600 dark:border-cyan-400' 
+                      : 'border-slate-400 dark:border-slate-600'
+                  }`}>
+                    {logoutScope === 'current' && <div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-cyan-400" />}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-black block uppercase tracking-wide">This Device Only</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 leading-snug">
+                      Sign out of this browser session only. Other devices remain logged in.
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isLoggingOut}
+                  onClick={() => setLogoutScope('all')}
+                  className={`w-full p-3.5 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                    logoutScope === 'all'
+                      ? 'border-rose-500 bg-rose-50/70 dark:border-rose-400 dark:bg-rose-950/20 text-rose-900 dark:text-rose-300 font-extrabold shadow-sm'
+                      : 'border-slate-200 dark:border-white/10 bg-slate-50/40 dark:bg-white/[0.01] hover:bg-slate-100/70 dark:hover:bg-white/[0.03] text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                    logoutScope === 'all' 
+                      ? 'border-rose-500 dark:border-rose-400' 
+                      : 'border-slate-400 dark:border-slate-600'
+                  }`}>
+                    {logoutScope === 'all' && <div className="w-2 h-2 rounded-full bg-rose-500 dark:bg-rose-400" />}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-black block uppercase tracking-wide">All Active Devices</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 leading-snug">
+                      Sign out from this and all other connected browsers and mobile devices.
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-150 dark:border-white/10">
+                <button
+                  type="button"
+                  disabled={isLoggingOut}
+                  onClick={() => setIsLogoutOpen(false)}
+                  className="profile-modal-btn-secondary flex-1 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoggingOut}
+                  onClick={handleCombinedLogout}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 ${
+                    logoutScope === 'all'
+                      ? 'profile-modal-btn-danger'
+                      : 'profile-modal-btn-primary'
+                  }`}
+                >
+                  {isLoggingOut ? (
+                    <>
+                      <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span>Signing Out...</span>
+                    </>
+                  ) : (
+                    <span>Confirm Sign Out</span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -981,26 +1122,39 @@ export default function Profile() {
       {/* 5. Delete Account Permanently Modal */}
       {isDeleteAccountOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-night-900 border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 text-center space-y-4 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 text-center space-y-4 animate-in fade-in zoom-in duration-200">
             <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div>
               <h4 className="text-base font-extrabold text-slate-900 dark:text-white">Delete Profile permanently</h4>
-              <p className="text-xs text-slate-400 mt-1.5">WARNING: This soft-deletes your user profile, watchlist settings, and portfolio details. This cannot be undone.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                WARNING: This soft-deletes your user profile, watchlist settings, and portfolio details. This cannot be undone.
+              </p>
             </div>
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-2 border-t border-slate-150 dark:border-white/10">
               <button
+                type="button"
+                disabled={isDeletingAccount}
                 onClick={() => setIsDeleteAccountOpen(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+                className="profile-modal-btn-secondary flex-1 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
+                disabled={isDeletingAccount}
                 onClick={handleDeleteAccount}
-                className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-black uppercase"
+                className="profile-modal-btn-danger flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
-                Delete Account
+                {isDeletingAccount ? (
+                  <>
+                    <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Delete Account</span>
+                )}
               </button>
             </div>
           </div>

@@ -216,8 +216,12 @@ export default function Watchlist() {
       .join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `${activeWatchlist.name || 'watchlist'}.csv`; a.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activeWatchlist.name || 'watchlist'}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
+    toast.success("Watchlist exported to CSV successfully!");
   };
 
   const processedItems = useMemo(() => {

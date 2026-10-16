@@ -7,6 +7,8 @@ import {
   ArrowUpRight,
   CheckCircle2
 } from 'lucide-react';
+import API_BASE_URL from '../../config/api';
+import toast from 'react-hot-toast';
 
 // Explicit interfaces for clean sitemap mapping
 interface FooterLink {
@@ -62,26 +64,62 @@ export default function Footer() {
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
 
     setStatus('loading');
     try {
-      const res = await fetch('/api/auth/subscribe', {
+      // 1. Dispatch EmailJS newsletter market brief email directly
+      const emailJsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      const emailJsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const emailJsTemplateId = import.meta.env.VITE_EMAILJS_MARKET_BRIEF_TEMPLATE_ID;
+
+      if (emailJsPublicKey && emailJsServiceId && emailJsTemplateId) {
+        fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service_id: emailJsServiceId,
+            template_id: emailJsTemplateId,
+            user_id: emailJsPublicKey,
+            template_params: {
+              to_email: cleanEmail,
+              email: cleanEmail,
+              subscriber_email: cleanEmail,
+              to_name: cleanEmail.split('@')[0],
+              name: cleanEmail.split('@')[0],
+            },
+          }),
+        }).catch((err) => console.warn('EmailJS newsletter dispatch error:', err));
+      }
+
+      // 2. Persist subscription in backend API using absolute API_BASE_URL
+      const subscribeUrl = `${API_BASE_URL}/api/auth/subscribe`;
+      const res = await fetch(subscribeUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: cleanEmail }),
       });
+
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         setStatus('success');
         setEmail('');
+        toast.success(data.message || 'Subscribed to market brief successfully!');
       } else {
+        const errorData = await res.json().catch(() => ({}));
         setStatus('error');
+        toast.error(errorData.error || 'Failed to subscribe. Please try again.');
       }
     } catch (err) {
       console.error('Subscription error:', err);
       setStatus('error');
+      toast.error('Unable to reach server. Please try again later.');
     }
   };
 

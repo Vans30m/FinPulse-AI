@@ -1364,6 +1364,7 @@ export default function PortfolioDashboard() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Portfolio data exported successfully!");
   };
 
   const exportPortfolioToPDF = () => {
@@ -1553,7 +1554,7 @@ export default function PortfolioDashboard() {
             ) : (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="portfolio-action-btn flex items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-4 sm:px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg transition-all duration-300 min-h-[44px]"
+                className="portfolio-action-btn flex items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 px-4 sm:px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-blue-600/30 transition-all duration-300 min-h-[44px]"
               >
                 <Plus className="h-4 w-4 stroke-[3]" />
                 <span>Add Asset Position</span>
@@ -1786,7 +1787,7 @@ export default function PortfolioDashboard() {
             ) : (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="portfolio-action-btn inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-cyan-400 text-slate-950 text-xs font-black transition-all shadow-sm"
+                className="portfolio-action-btn inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-all shadow-sm shadow-blue-600/25"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[3]" />
                 <span>Add Position</span>
@@ -2208,10 +2209,16 @@ export default function PortfolioDashboard() {
               <button
                 type="submit"
                 disabled={isAddingAsset}
-                className="portfolio-add-asset-submit w-full rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-cyan-400 dark:hover:bg-cyan-300 py-3 text-sm font-bold text-white dark:text-night-950 mt-2 shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="portfolio-add-asset-submit w-full rounded-xl py-3 px-4 text-xs font-black uppercase tracking-wider mt-4 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-lg"
               >
-                {isAddingAsset && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isAddingAsset ? "Adding Position..." : "Log Position"}
+                {isAddingAsset ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-current" />
+                    <span>Adding Position...</span>
+                  </>
+                ) : (
+                  <span>Log Position</span>
+                )}
               </button>
             </form>
           </div>

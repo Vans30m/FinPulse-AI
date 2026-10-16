@@ -21,6 +21,7 @@ import {
   RefreshCcw
 } from "lucide-react";
 import AnimatedNumber from "./AnimatedNumber";
+import toast from "react-hot-toast";
 
 interface Props {
   advisor: {
@@ -188,6 +189,7 @@ function AIPortfolioAdvisorSection({ advisor }: Props) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("AI Advisor Report exported successfully!");
   };
 
   const toggleSection = (section: string) => {

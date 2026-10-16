@@ -11,6 +11,7 @@ import {
   Tooltip as ChartTooltip,
 } from "recharts";
 import API_BASE_URL from "../../../../config/api";
+import toast from "react-hot-toast";
 import {
   Award,
   Info,
@@ -179,6 +180,7 @@ export default function BenchmarkRadarSection() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Benchmark radar comparison exported!");
   };
 
   const exportPNG = () => {
@@ -216,6 +218,7 @@ export default function BenchmarkRadarSection() {
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
+        toast.success("Benchmark radar chart image downloaded!");
       }
       URL.revokeObjectURL(url);
     };

@@ -414,7 +414,7 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
       </div>
 
       {/* Header Info */}
-      <div className="bg-gradient-to-r from-[#0d122e]/80 via-[#0a0d1d]/85 to-[#080b18]/90 border border-slate-800/80 p-6 rounded-2xl shadow-xl backdrop-blur-md">
+      <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-800/80 p-6 rounded-2xl shadow-sm dark:shadow-xl backdrop-blur-md">
         {meta ? (
           <ChartHeader
             name={meta.name}
@@ -464,11 +464,11 @@ function EtfDetails({ symbol, data, meta }: { symbol: string; data: any; meta: a
                 assetType={resolvedType}
               />
               {data.profile?.description && (
-                <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl">
-                  <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-3 mb-5">
+                <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm dark:shadow-2xl backdrop-blur-xl">
+                  <h3 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-5">
                     {resolvedType} Description
                   </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed pl-4 border-l-2 border-l-slate-700/40">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pl-4 border-l-2 border-l-slate-300 dark:border-l-slate-700/40">
                     {data.profile.description}
                   </p>
                 </div>
@@ -805,21 +805,21 @@ export default function AssetDetails() {
       };
 
     return (
-      <div className="flex items-center gap-4 bg-[#0c1022] p-4 rounded-xl border border-slate-900 hover:border-slate-800 transition-all duration-300">
+      <div className="flex items-center gap-4 bg-white dark:bg-[#0c1022] p-4 rounded-xl border border-slate-200 dark:border-slate-900 hover:border-slate-300 dark:hover:border-slate-800 shadow-sm dark:shadow-none transition-all duration-300">
         {parts ? (
-          <div className={`w-12 h-14 rounded-lg overflow-hidden flex flex-col items-center justify-between border border-slate-800 shrink-0 ${colorClasses.glow}`}>
+          <div className={`w-12 h-14 rounded-lg overflow-hidden flex flex-col items-center justify-between border border-slate-200 dark:border-slate-800 shrink-0 ${colorClasses.glow}`}>
             <div className={`w-full py-0.5 text-[8px] font-black text-center uppercase tracking-wider ${colorClasses.header}`}>
               {parts.month}
             </div>
-            <div className="flex-1 flex items-center justify-center bg-[#070b19] w-full text-base font-black text-white font-mono leading-none">
+            <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-[#070b19] w-full text-base font-black text-slate-900 dark:text-white font-mono leading-none">
               {parts.day}
             </div>
-            <div className="w-full text-[8px] text-slate-500 text-center pb-0.5 bg-[#070b19] font-bold">
+            <div className="w-full text-[8px] text-slate-500 text-center pb-0.5 bg-slate-50 dark:bg-[#070b19] font-bold">
               {parts.year}
             </div>
           </div>
         ) : (
-          <div className="w-12 h-14 rounded-lg bg-[#070b19] border border-slate-800 flex items-center justify-center text-slate-600 shrink-0">
+          <div className="w-12 h-14 rounded-lg bg-slate-100 dark:bg-[#070b19] border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-600 shrink-0">
             <span className="text-xs font-bold font-mono">N/A</span>
           </div>
         )}
@@ -827,7 +827,7 @@ export default function AssetDetails() {
           <span className="text-[9px] text-slate-400 uppercase font-black tracking-wider block">
             {title}
           </span>
-          <span className="text-sm font-black text-slate-100 mt-1 block truncate">
+          <span className="text-sm font-black text-slate-900 dark:text-slate-100 mt-1 block truncate">
             {parts
               ? new Date(dateVal).toLocaleDateString(undefined, { dateStyle: 'long' })
               : "Not Scheduled"}
@@ -854,14 +854,14 @@ export default function AssetDetails() {
     }
 
     return (
-      <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 hover:border-slate-800 transition-all duration-300 flex flex-col justify-between h-full">
+      <div className="bg-white dark:bg-[#0c1022] p-5 rounded-2xl border border-slate-200 dark:border-slate-900 hover:border-slate-300 dark:hover:border-slate-800 shadow-sm dark:shadow-none transition-all duration-300 flex flex-col justify-between h-full">
         <div>
-          <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider block">{title}</span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-wider block">{title}</span>
           <div className="flex items-baseline gap-2 mt-3">
-            <span className="text-3xl font-black text-white font-mono tracking-tight">
+            <span className="text-3xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
               {formatVal(value, isCurrency)}
             </span>
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
               Average
             </span>
           </div>
@@ -871,13 +871,13 @@ export default function AssetDetails() {
           {showBar ? (
             <>
               {/* Range track bar */}
-              <div className="relative h-2 bg-slate-950 rounded-full border border-slate-900/60 overflow-visible">
+              <div className="relative h-2 bg-slate-100 dark:bg-slate-950 rounded-full border border-slate-200 dark:border-slate-900/60 overflow-visible">
                 <div
                   className="absolute top-0 bottom-0 left-0 rounded-full bg-gradient-to-r from-blue-500/20 to-emerald-500/30 border-r border-emerald-500/50"
                   style={{ width: `${percentage}%` }}
                 />
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.6)] flex items-center justify-center transition-all duration-300 hover:scale-125 cursor-pointer"
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.6)] flex items-center justify-center transition-all duration-300 hover:scale-125 cursor-pointer"
                   style={{ left: `${percentage}%` }}
                   title={`Average: ${formatVal(value, isCurrency)}`}
                 >
@@ -886,17 +886,17 @@ export default function AssetDetails() {
               </div>
               <div className="flex justify-between text-[9px] font-bold text-slate-500 pt-1">
                 <div className="flex flex-col items-start">
-                  <span className="uppercase text-[8px] text-slate-650 tracking-wider">Low Target</span>
-                  <span className="font-mono text-slate-350 mt-0.5">{formatVal(low, isCurrency)}</span>
+                  <span className="uppercase text-[8px] text-slate-400 dark:text-slate-650 tracking-wider">Low Target</span>
+                  <span className="font-mono text-slate-700 dark:text-slate-350 mt-0.5">{formatVal(low, isCurrency)}</span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="uppercase text-[8px] text-slate-650 tracking-wider">High Target</span>
-                  <span className="font-mono text-slate-350 mt-0.5">{formatVal(high, isCurrency)}</span>
+                  <span className="uppercase text-[8px] text-slate-400 dark:text-slate-650 tracking-wider">High Target</span>
+                  <span className="font-mono text-slate-700 dark:text-slate-350 mt-0.5">{formatVal(high, isCurrency)}</span>
                 </div>
               </div>
             </>
           ) : (
-            <div className="pt-2 text-center text-[10px] text-slate-600 font-bold">
+            <div className="pt-2 text-center text-[10px] text-slate-400 dark:text-slate-600 font-bold">
               Range forecasts not available
             </div>
           )}
@@ -999,7 +999,7 @@ export default function AssetDetails() {
       </div>
 
       {/* Header Info */}
-      <div className="bg-gradient-to-r from-[#0d122e]/80 via-[#0a0d1d]/85 to-[#080b18]/90 border border-slate-800/80 p-6 rounded-2xl shadow-xl backdrop-blur-md">
+      <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-800/80 p-6 rounded-2xl shadow-sm dark:shadow-xl backdrop-blur-md">
         {meta ? (
           <ChartHeader
             name={meta.name}
@@ -1018,9 +1018,9 @@ export default function AssetDetails() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         {/* Left Side: Chart Terminal Frame */}
-        <div className="bg-[#090d1a]/80 border border-slate-800/80 rounded-2xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-xl hover:border-slate-700/50 transition-all duration-300">
+        <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-800/80 rounded-2xl flex flex-col overflow-hidden shadow-sm dark:shadow-2xl backdrop-blur-xl hover:border-slate-300 dark:hover:border-slate-700/50 transition-all duration-300">
           {/* Live Core Chart Port */}
-          <div className="flex-1 min-h-[400px] relative p-3 bg-gradient-to-b from-[#060812] to-[#0a0d24] rounded-t-2xl">
+          <div className="flex-1 min-h-[400px] relative p-3 bg-slate-50/70 dark:bg-[#060812] rounded-t-2xl">
             <CandlestickChart
               symbol={symbol}
               timeframe={timeframe}
@@ -1041,9 +1041,9 @@ export default function AssetDetails() {
         {/* Right Side Sidebar Analytics */}
         <div className="space-y-4">
           {/* Tab Navigation Menu */}
-          <div className="bg-gradient-to-br from-[#090d1a]/90 to-[#0c102b]/95 border border-slate-800/80 rounded-2xl p-4 shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center justify-between border-b border-slate-800/60 pb-2 mb-3">
-              <span className="text-xs font-bold text-slate-350 tracking-wide">Navigation Control</span>
+          <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm dark:shadow-2xl backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-2 mb-3">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide">Navigation Control</span>
             </div>
             <div className="flex flex-col gap-1.5">
               {availableTabs.map((tab) => (
@@ -1056,11 +1056,11 @@ export default function AssetDetails() {
                     }, 80);
                   }}
                   className={`w-full px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all duration-200 flex items-center gap-2.5 ${activeTab === tab.id
-                    ? "bg-gradient-to-r from-blue-600/15 to-indigo-600/10 text-blue-400 border border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.1)] border-l-4 border-l-blue-500"
-                    : "text-slate-400 hover:text-white hover:bg-slate-900/40 border border-transparent"
+                    ? "bg-blue-50 text-blue-600 border border-blue-200/90 dark:bg-blue-600/20 dark:text-blue-400 dark:border-blue-500/40 shadow-sm dark:shadow-[0_0_15px_rgba(59,130,246,0.2)] border-l-4 border-l-blue-600 dark:border-l-blue-500 font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/60 border border-transparent"
                     }`}
                 >
-                  <tab.icon size={14} />
+                  <tab.icon size={14} className={activeTab === tab.id ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500"} />
                   <span>{tab.label}</span>
                 </button>
               ))}
@@ -1070,7 +1070,7 @@ export default function AssetDetails() {
       </div>
 
       {/* ==================== SUB-TAB METRIC ARRAYS ==================== */}
-      <div ref={tabContentRef} className="pt-4 border-t border-slate-900">
+      <div ref={tabContentRef} className="pt-4 border-t border-slate-200 dark:border-slate-800">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
             {[1, 2, 3, 4].map((i) => (
@@ -1084,45 +1084,45 @@ export default function AssetDetails() {
             {/* OVERVIEW TAB */}
             {activeTab === "overview" && data && (
               <div className="space-y-6">
-                <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl">
-                  <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-3 mb-5">
+                <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm dark:shadow-2xl backdrop-blur-xl">
+                  <h3 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-5">
                     Company Profile
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Sector */}
-                    <div className="bg-[#0c1022]/40 border border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800/50 transition-all">
-                      <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15">
+                    <div className="bg-slate-50 dark:bg-[#0c1022]/40 border border-slate-200/80 dark:border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-800/50 transition-all">
+                      <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/15">
                         <Compass className="h-5 w-5" />
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Sector</span>
-                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.sector}</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{data.profile.sector}</span>
                       </div>
                     </div>
                     {/* Industry */}
-                    <div className="bg-[#0c1022]/40 border border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800/50 transition-all">
-                      <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/15">
+                    <div className="bg-slate-50 dark:bg-[#0c1022]/40 border border-slate-200/80 dark:border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-800/50 transition-all">
+                      <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/15">
                         <Layers className="h-5 w-5" />
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Industry</span>
-                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.industry}</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{data.profile.industry}</span>
                       </div>
                     </div>
                     {/* Country */}
-                    <div className="bg-[#0c1022]/40 border border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800/50 transition-all">
-                      <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+                    <div className="bg-slate-50 dark:bg-[#0c1022]/40 border border-slate-200/80 dark:border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-800/50 transition-all">
+                      <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/15">
                         <Globe className="h-5 w-5" />
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-black">Country</span>
-                        <span className="text-sm font-bold text-slate-200 mt-0.5 block">{data.profile.country}</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{data.profile.country}</span>
                       </div>
                     </div>
                     {/* Website */}
-                    <div className="bg-[#0c1022]/40 border border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-800/50 transition-all">
-                      <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15">
+                    <div className="bg-slate-50 dark:bg-[#0c1022]/40 border border-slate-200/80 dark:border-slate-900/60 rounded-xl p-4 flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-800/50 transition-all">
+                      <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/15">
                         <ExternalLink className="h-5 w-5" />
                       </div>
                       <div>
@@ -1132,23 +1132,23 @@ export default function AssetDetails() {
                             href={data.profile.website}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1 mt-0.5"
+                            className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors inline-flex items-center gap-1 mt-0.5"
                           >
                             <span>Visit Website</span>
                             <ExternalLink size={12} />
                           </a>
                         ) : (
-                          <span className="text-sm font-bold text-slate-300 mt-0.5 block">N/A</span>
+                          <span className="text-sm font-bold text-slate-500 dark:text-slate-300 mt-0.5 block">N/A</span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-6 border-t border-slate-800/60">
+                  <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/60">
                     <ExpandableDescription
                       description={data.profile.description}
                       maxSentences={5}
-                      className="text-xs text-slate-400 leading-relaxed"
+                      className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed"
                       emptyText="No description available."
                     />
                   </div>
@@ -1156,75 +1156,75 @@ export default function AssetDetails() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Statistics Grid */}
-                  <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-4">
-                    <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-2.5 mb-2">
+                  <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm dark:shadow-2xl backdrop-blur-xl space-y-4">
+                    <h4 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-2.5 mb-2">
                       Key Ratios & Statistics
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><TrendingUp size={12} className="text-blue-450" /> Market Cap</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.marketCap, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><TrendingUp size={12} className="text-blue-500 dark:text-blue-450" /> Market Cap</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.statistics.marketCap, true)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Layers size={12} className="text-indigo-405" /> EV</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.enterpriseValue, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Layers size={12} className="text-indigo-500 dark:text-indigo-405" /> EV</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.statistics.enterpriseValue, true)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Users size={12} className="text-purple-400" /> Shares Out.</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.sharesOutstanding)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Users size={12} className="text-purple-500 dark:text-purple-400" /> Shares Out.</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.statistics.sharesOutstanding)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-450" /> Price to Book</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.priceToBook)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-500 dark:text-emerald-450" /> Price to Book</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.statistics.priceToBook)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-sky-400" /> Forward PE</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.forwardPe)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-sky-500 dark:text-sky-400" /> Forward PE</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.statistics.forwardPe)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-teal-400" /> Enterprise / EBITDA</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.enterpriseToEbitda)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-teal-500 dark:text-teal-400" /> Enterprise / EBITDA</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.statistics.enterpriseToEbitda)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-400" /> Beta</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.beta)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-500 dark:text-pink-400" /> Beta</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.statistics.beta)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-yellow-500" /> Price to Book</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.statistics.priceToBook)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-yellow-600 dark:text-yellow-500" /> Price to Book</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.statistics.priceToBook)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Financial Health Grid */}
-                  <div className="bg-gradient-to-br from-[#090d1a]/85 to-[#0b0f24]/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-4">
-                    <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider border-b border-slate-800/60 pb-2.5 mb-2">
+                  <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm dark:shadow-2xl backdrop-blur-xl space-y-4">
+                    <h4 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-2.5 mb-2">
                       Financial Condition
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-400" /> Total Cash</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.cash, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><DollarSign size={12} className="text-emerald-500 dark:text-emerald-400" /> Total Cash</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.financialHealth.cash, true)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Briefcase size={12} className="text-rose-400" /> Total Debt</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.debt, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Briefcase size={12} className="text-rose-500 dark:text-rose-400" /> Total Debt</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.financialHealth.debt, true)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><TrendingUp size={12} className="text-blue-400" /> Revenue</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.revenue, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><TrendingUp size={12} className="text-blue-500 dark:text-blue-400" /> Revenue</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.financialHealth.revenue, true)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-indigo-400" /> EBITDA</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.ebitda, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-indigo-500 dark:text-indigo-400" /> EBITDA</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.financialHealth.ebitda, true)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-yellow-500" /> Oper. Margin</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.operatingMargin * 100, false, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-yellow-600 dark:text-yellow-500" /> Oper. Margin</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.financialHealth.operatingMargin * 100, false, true)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-900/30 hover:bg-slate-800/15 px-2 rounded-lg transition-all">
-                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-400" /> Prof. Margin</span>
-                        <span className="text-slate-200 font-bold">{formatVal(data.financialHealth.profitMargin * 100, false, true)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/15 px-2 rounded-lg transition-all">
+                        <span className="text-slate-500 font-sans flex items-center gap-2"><Activity size={12} className="text-pink-500 dark:text-pink-400" /> Prof. Margin</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-bold">{formatVal(data.financialHealth.profitMargin * 100, false, true)}</span>
                       </div>
                     </div>
                   </div>
@@ -1239,22 +1239,22 @@ export default function AssetDetails() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Panel 1: Rating Metrics & Consensus Gauge */}
-                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md relative overflow-hidden">
+                  <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-900 rounded-2xl p-6 shadow-sm dark:shadow-md relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
-                    <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-2 mb-6 tracking-wider">
+                    <h4 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 border-b border-slate-100 dark:border-slate-900 pb-2 mb-6 tracking-wider">
                       Analyst Recommendation Rating
                     </h4>
 
                     <div className="flex items-center justify-between mb-8">
                       <div>
                         <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Consensus Rating</span>
-                        <span className="text-3xl font-black text-white mt-1 block capitalize font-sans">
+                        <span className="text-3xl font-black text-slate-900 dark:text-white mt-1 block capitalize font-sans">
                           {data.analysts.recommendationKey && data.analysts.recommendationKey.toLowerCase() !== "none" ? data.analysts.recommendationKey : "N/A"}
                         </span>
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Mean Score (1-5)</span>
-                        <span className="text-3xl font-black text-emerald-400 mt-1 block font-mono">
+                        <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1 block font-mono">
                           {typeof data.analysts.recommendationMean === 'number' && data.analysts.recommendationMean > 0
                             ? data.analysts.recommendationMean.toFixed(2)
                             : "N/A"}
@@ -1268,7 +1268,7 @@ export default function AssetDetails() {
                         <div className="relative h-2 bg-gradient-to-r from-emerald-500 via-yellow-500 to-rose-500 rounded-full w-full">
                           {/* Glowing Pointer */}
                           <div
-                            className="absolute -top-1.5 -ml-2.5 w-5 h-5 bg-white border-2 border-slate-950 rounded-full shadow-lg shadow-white/30 flex items-center justify-center transition-all duration-500"
+                            className="absolute -top-1.5 -ml-2.5 w-5 h-5 bg-white border-2 border-slate-900 dark:border-slate-950 rounded-full shadow-lg shadow-black/20 flex items-center justify-center transition-all duration-500"
                             style={{ left: `${Math.max(0, Math.min(100, ((data.analysts.recommendationMean - 1) / 4) * 100))}%` }}
                           >
                             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
@@ -1282,48 +1282,48 @@ export default function AssetDetails() {
                       </div>
                     )}
 
-                    <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900/60 flex items-center justify-between">
+                    <div className="bg-slate-50 dark:bg-[#0c1022] p-4 rounded-xl border border-slate-200/80 dark:border-slate-900/60 flex items-center justify-between">
                       <div>
                         <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Coverage Pool</span>
-                        <span className="text-slate-300 text-xs mt-0.5 block font-sans">Based on professional analyst evaluations</span>
+                        <span className="text-slate-600 dark:text-slate-300 text-xs mt-0.5 block font-sans">Based on professional analyst evaluations</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-black text-white font-mono">{data.analysts.numberOfAnalysts || 0}</span>
+                        <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">{data.analysts.numberOfAnalysts || 0}</span>
                         <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider block">Analysts</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Panel 2: Price Targets Spectrum */}
-                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md relative overflow-hidden">
+                  <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-900 rounded-2xl p-6 shadow-sm dark:shadow-md relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />
-                    <h4 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-2 mb-6 tracking-wider">
+                    <h4 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 border-b border-slate-100 dark:border-slate-900 pb-2 mb-6 tracking-wider">
                       Price Target Thresholds
                     </h4>
 
                     {/* Price Targets Grid */}
                     <div className="grid grid-cols-4 gap-2 mb-8">
-                      <div className="bg-[#0c1022] p-3 rounded-xl border border-slate-800/40 text-center">
+                      <div className="bg-slate-50 dark:bg-[#0c1022] p-3 rounded-xl border border-slate-200/80 dark:border-slate-800/40 text-center">
                         <span className="text-[9px] text-slate-500 uppercase font-black block">Low</span>
-                        <span className="text-xs font-black font-mono text-white block mt-1">
+                        <span className="text-xs font-black font-mono text-slate-900 dark:text-white block mt-1">
                           {formatVal(data.analysts.targetLow, true)}
                         </span>
                       </div>
-                      <div className="bg-[#0c1022] p-3 rounded-xl border border-slate-800/40 text-center">
+                      <div className="bg-slate-50 dark:bg-[#0c1022] p-3 rounded-xl border border-slate-200/80 dark:border-slate-800/40 text-center">
                         <span className="text-[9px] text-slate-500 uppercase font-black block">Median</span>
-                        <span className="text-xs font-black font-mono text-white block mt-1">
+                        <span className="text-xs font-black font-mono text-slate-900 dark:text-white block mt-1">
                           {formatVal(data.analysts.targetMedian, true)}
                         </span>
                       </div>
-                      <div className="bg-[#0c1022] p-3 rounded-xl border border-slate-800/40 text-center">
+                      <div className="bg-slate-50 dark:bg-[#0c1022] p-3 rounded-xl border border-slate-200/80 dark:border-slate-800/40 text-center">
                         <span className="text-[9px] text-slate-500 uppercase font-black block">Mean</span>
-                        <span className="text-xs font-black font-mono text-white block mt-1">
+                        <span className="text-xs font-black font-mono text-slate-900 dark:text-white block mt-1">
                           {formatVal(data.analysts.targetMeanPrice, true)}
                         </span>
                       </div>
-                      <div className="bg-[#0c1022] p-3 rounded-xl border border-slate-800/40 text-center">
+                      <div className="bg-slate-50 dark:bg-[#0c1022] p-3 rounded-xl border border-slate-200/80 dark:border-slate-800/40 text-center">
                         <span className="text-[9px] text-slate-500 uppercase font-black block">High</span>
-                        <span className="text-xs font-black font-mono text-white block mt-1">
+                        <span className="text-xs font-black font-mono text-slate-900 dark:text-white block mt-1">
                           {formatVal(data.analysts.targetHigh, true)}
                         </span>
                       </div>
@@ -1351,57 +1351,71 @@ export default function AssetDetails() {
                       const highPct = getPct(high);
 
                       return (
-                        <div className="relative h-24 w-full mt-10">
-                          {/* Track bar */}
-                          <div className="absolute top-12 left-0 right-0 h-1.5 bg-slate-800 rounded-full" />
+                        <div className="relative h-28 w-full mt-6">
+                          {/* Full Background Track line */}
+                          <div 
+                            className="absolute left-0 right-0 rounded-full z-0 pointer-events-none" 
+                            style={{ 
+                              top: "48px", 
+                              height: "4px", 
+                              backgroundColor: "rgba(148, 163, 184, 0.4)",
+                            }} 
+                          />
 
-                          {/* Target range highlight track */}
+                          {/* Active Range Gradient Track (connecting Low to High) */}
                           <div
-                            className="absolute top-12 h-1.5 bg-gradient-to-r from-blue-500/40 via-purple-500/40 to-emerald-500/40 rounded-full"
-                            style={{ left: `${lowPct}%`, right: `${100 - highPct}%` }}
+                            className="absolute rounded-full z-[1] pointer-events-none"
+                            style={{ 
+                              top: "47px",
+                              height: "6px",
+                              left: `${Math.max(0, Math.min(100, lowPct))}%`, 
+                              width: `${Math.max(2, Math.min(100 - lowPct, highPct - lowPct))}%`,
+                              background: "linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%)",
+                              boxShadow: "0 0 14px rgba(59, 130, 246, 0.7)"
+                            }}
                           />
 
                           {Math.abs(high - low) < 0.01 * (median || 1) ? (
-                            <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
-                              <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Consensus Target</span>
-                              <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median || low, true)}</span>
-                              <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
-                              <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
+                            <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${medianPct}%` }}>
+                              <span className="text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider">Consensus Target</span>
+                              <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono mt-0.5">{formatVal(median || low, true)}</span>
+                              <div className="w-0.5 h-3 bg-purple-500 dark:bg-purple-400 my-0.5" />
+                              <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
                             </div>
                           ) : (
                             <>
                               {/* Low Marker Anchor & Label */}
-                              <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${lowPct}%` }}>
-                                <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Low</span>
-                                <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(low, true)}</span>
-                                <div className="w-0.5 h-3.5 bg-blue-500/40 my-0.5" />
-                                <div className="w-3.5 h-3.5 bg-blue-500 border-2 border-slate-900 rounded-full shadow-md shadow-blue-500/30" />
+                              <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${lowPct}%` }}>
+                                <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider">Low</span>
+                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono mt-0.5">{formatVal(low, true)}</span>
+                                <div className="w-0.5 h-3 bg-blue-500 dark:bg-blue-400 my-0.5" />
+                                <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
                               </div>
 
                               {/* Median Marker Anchor & Label */}
-                              <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${medianPct}%` }}>
-                                <span className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Median</span>
-                                <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(median, true)}</span>
-                                <div className="w-0.5 h-3.5 bg-purple-500/40 my-0.5" />
-                                <div className="w-3.5 h-3.5 bg-purple-500 border-2 border-slate-900 rounded-full shadow-md shadow-purple-500/30" />
+                              <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${medianPct}%` }}>
+                                <span className="text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider">Median</span>
+                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono mt-0.5">{formatVal(median, true)}</span>
+                                <div className="w-0.5 h-3 bg-purple-500 dark:bg-purple-400 my-0.5" />
+                                <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
                               </div>
 
                               {/* High Marker Anchor & Label */}
-                              <div className="absolute top-0 flex flex-col items-center -translate-x-1/2" style={{ left: `${highPct}%` }}>
-                                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">High</span>
-                                <span className="text-[10px] font-black text-slate-300 font-mono mt-0.5">{formatVal(high, true)}</span>
-                                <div className="w-0.5 h-3.5 bg-emerald-500/40 my-0.5" />
-                                <div className="w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-md shadow-emerald-500/30" />
+                              <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${highPct}%` }}>
+                                <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">High</span>
+                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono mt-0.5">{formatVal(high, true)}</span>
+                                <div className="w-0.5 h-3 bg-emerald-500 dark:bg-emerald-400 my-0.5" />
+                                <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
                               </div>
                             </>
                           )}
 
                           {/* Current Price Pointer */}
-                          <div className="absolute top-12 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${currentPct}%` }}>
-                            <div className="w-2.5 h-4 bg-white border border-slate-950 shadow-md shadow-white/50 rounded-full" />
-                            <div className="w-0.5 h-3.5 bg-white/70 my-0.5" />
-                            <span className="text-[9px] font-black text-slate-900 bg-white px-1.5 py-0.5 rounded uppercase shadow-md leading-none tracking-wider mt-0.5">Current</span>
-                            <span className="text-[10px] font-black text-white font-mono mt-0.5">{formatVal(current, true)}</span>
+                          <div className="absolute top-[43px] flex flex-col items-center -translate-x-1/2 z-20 pointer-events-none" style={{ left: `${currentPct}%` }}>
+                            <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,1)]" />
+                            <div className="w-0.5 h-2 bg-slate-400 dark:bg-white my-0.5" />
+                            <span className="text-[9px] font-black text-white dark:text-slate-950 bg-slate-900 dark:bg-white px-1.5 py-0.5 rounded uppercase shadow-md leading-none tracking-wider whitespace-nowrap">Current</span>
+                            <span className="text-[10px] font-black text-slate-800 dark:text-white font-mono mt-0.5 whitespace-nowrap">{formatVal(current, true)}</span>
                           </div>
                         </div>
                       );
@@ -1416,20 +1430,20 @@ export default function AssetDetails() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Sentiment Score Card */}
-                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md flex flex-col items-center justify-center relative overflow-hidden">
+                  <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-900 rounded-2xl p-6 shadow-sm dark:shadow-md flex flex-col items-center justify-center relative overflow-hidden">
 
                     <span className="text-xs font-black uppercase text-slate-500 mt-2">Sentiment Score</span>
 
                     {sentimentLoading ? (
                       <div className="py-6 flex flex-col items-center gap-3">
-                        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                        <span className="text-xs text-slate-400 font-mono">Analyzing with AI...</span>
+                        <Loader2 className="w-8 h-8 text-cyan-500 dark:text-cyan-400 animate-spin" />
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Analyzing with AI...</span>
                       </div>
                     ) : (
                       <>
-                        <span className="text-5xl font-black text-white mt-4 font-mono">{sentiment.score}%</span>
+                        <span className="text-5xl font-black text-slate-900 dark:text-white mt-4 font-mono">{sentiment.score}%</span>
                         <div className="flex items-center gap-2 mt-3">
-                          <span className={`text-sm font-black uppercase tracking-wide ${sentiment.label === "Bullish" ? "text-emerald-400" : sentiment.label === "Bearish" ? "text-rose-400" : "text-amber-500"
+                          <span className={`text-sm font-black uppercase tracking-wide ${sentiment.label === "Bullish" ? "text-emerald-600 dark:text-emerald-400" : sentiment.label === "Bearish" ? "text-rose-600 dark:text-rose-400" : "text-amber-500"
                             }`}>
                             {sentiment.label}
                           </span>
@@ -1439,31 +1453,31 @@ export default function AssetDetails() {
                   </div>
 
                   {/* Sentiment Analysis Parameters */}
-                  <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md col-span-2 space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-                      <h4 className="text-xs font-black uppercase text-slate-350 tracking-wider flex items-center gap-2">
-                        <Activity className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-900 rounded-2xl p-6 shadow-sm dark:shadow-md col-span-2 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-900 pb-2">
+                      <h4 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 tracking-wider flex items-center gap-2">
+                        <Activity className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                         Sentiment Analysis Parameters
                       </h4>
                       {sentimentLoading && (
-                        <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
+                        <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-mono flex items-center gap-1">
                           <Loader2 className="w-3 h-3 animate-spin" /> Live AI Analysis
                         </span>
                       )}
                     </div>
 
                     {sentimentLoading ? (
-                      <div className="py-8 flex items-center justify-center gap-2 text-slate-400 text-xs">
-                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                      <div className="py-8 flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 text-xs">
+                        <Loader2 className="w-4 h-4 animate-spin text-cyan-500 dark:text-cyan-400" />
                         <span>Querying real-time AI sentiment drivers for {symbol}...</span>
                       </div>
                     ) : (
-                      <ul className="space-y-3 text-xs text-slate-350">
+                      <ul className="space-y-3 text-xs text-slate-700 dark:text-slate-350">
                         {sentiment.reasons && sentiment.reasons.length > 0 ? (
                           sentiment.reasons.map((reason: string, i: number) => (
-                            <li key={i} className="flex items-start gap-2.5 leading-relaxed bg-[#0c1022]/40 p-3 rounded-xl border border-slate-900/60">
-                              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0 shadow-[0_0_6px_#22d3ee]" />
-                              <span className="text-slate-200">{reason}</span>
+                            <li key={i} className="flex items-start gap-2.5 leading-relaxed bg-slate-50 dark:bg-[#0c1022]/40 p-3 rounded-xl border border-slate-200/80 dark:border-slate-900/60">
+                              <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 mt-1.5 shrink-0 shadow-[0_0_6px_#06b6d4] dark:shadow-[0_0_6px_#22d3ee]" />
+                              <span className="text-slate-800 dark:text-slate-200">{reason}</span>
                             </li>
                           ))
                         ) : (
@@ -1478,8 +1492,8 @@ export default function AssetDetails() {
 
             {/* OWNERSHIP TAB */}
             {activeTab === "ownership" && data && (
-              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
-                <h3 className="text-xs font-black uppercase text-slate-350 border-b border-slate-900 pb-3 tracking-wider">
+              <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-900 rounded-2xl p-6 shadow-sm dark:shadow-md space-y-6">
+                <h3 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 border-b border-slate-100 dark:border-slate-900 pb-3 tracking-wider">
                   Share Ownership Breakdown
                 </h3>
 
@@ -1494,11 +1508,11 @@ export default function AssetDetails() {
                     <div className="space-y-6">
                       {/* Visual Progress Bar Chart */}
                       <div className="space-y-2">
-                        <div className="flex justify-between items-center text-[10px] text-slate-450 uppercase font-black tracking-wider">
+                        <div className="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-450 uppercase font-black tracking-wider">
                           <span>Holding Distribution</span>
                           <span>Total: 100%</span>
                         </div>
-                        <div className="w-full bg-slate-950 rounded-full h-3 flex overflow-hidden border border-slate-900">
+                        <div className="w-full bg-slate-100 dark:bg-slate-950 rounded-full h-3 flex overflow-hidden border border-slate-200 dark:border-slate-900">
                           {inst > 0 && (
                             <div style={{ width: `${inst}%` }} className="bg-cyan-500 h-full transition-all duration-500" title={`Institutions: ${inst.toFixed(2)}%`} />
                           )}
@@ -1511,7 +1525,7 @@ export default function AssetDetails() {
                         </div>
 
                         {/* Legend */}
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[10px] font-bold text-slate-400">
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[10px] font-bold text-slate-600 dark:text-slate-400">
                           <span className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 bg-cyan-500 inline-block rounded-full" />
                             Institutions ({inst.toFixed(2)}%)
@@ -1529,24 +1543,24 @@ export default function AssetDetails() {
 
                       {/* Detailed Statistics Cards */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
+                        <div className="bg-slate-50 dark:bg-[#0c1022] p-5 rounded-2xl border border-slate-200/80 dark:border-slate-900 flex flex-col justify-between">
                           <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutional Holdings</span>
-                          <span className="text-2xl font-black text-white font-mono mt-3">{inst > 0 ? `${inst.toFixed(2)}%` : "N/A"}</span>
+                          <span className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-3">{inst > 0 ? `${inst.toFixed(2)}%` : "N/A"}</span>
                         </div>
 
-                        <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
+                        <div className="bg-slate-50 dark:bg-[#0c1022] p-5 rounded-2xl border border-slate-200/80 dark:border-slate-900 flex flex-col justify-between">
                           <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Insider Holdings</span>
-                          <span className="text-2xl font-black text-white font-mono mt-3">{insider > 0 ? `${insider.toFixed(2)}%` : "N/A"}</span>
+                          <span className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-3">{insider > 0 ? `${insider.toFixed(2)}%` : "N/A"}</span>
                         </div>
 
-                        <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
+                        <div className="bg-slate-50 dark:bg-[#0c1022] p-5 rounded-2xl border border-slate-200/80 dark:border-slate-900 flex flex-col justify-between">
                           <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Retail & Public</span>
-                          <span className="text-2xl font-black text-white font-mono mt-3">{retail > 0 ? `${retail.toFixed(2)}%` : "N/A"}</span>
+                          <span className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-3">{retail > 0 ? `${retail.toFixed(2)}%` : "N/A"}</span>
                         </div>
 
-                        <div className="bg-[#0c1022] p-5 rounded-2xl border border-slate-900 flex flex-col justify-between">
+                        <div className="bg-slate-50 dark:bg-[#0c1022] p-5 rounded-2xl border border-slate-200/80 dark:border-slate-900 flex flex-col justify-between">
                           <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Institutional Float / Count</span>
-                          <span className="text-xs font-black text-slate-300 font-mono mt-3 block leading-tight">
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-300 font-mono mt-3 block leading-tight">
                             Float: {instFloat > 0 ? `${instFloat.toFixed(2)}%` : "N/A"}<br />
                             Holders: {instCount}
                           </span>
@@ -1559,9 +1573,9 @@ export default function AssetDetails() {
             )}
             {/* CALENDAR EVENTS TAB */}
             {activeTab === "events" && data && (
-              <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
-                <div className="border-b border-slate-900 pb-3 flex items-center justify-between">
-                  <h3 className="text-xs font-black uppercase text-slate-350 tracking-wider">
+              <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-900 rounded-2xl p-6 shadow-sm dark:shadow-md space-y-6">
+                <div className="border-b border-slate-100 dark:border-slate-900 pb-3 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase text-slate-500 dark:text-slate-350 tracking-wider">
                     Calendar Events & Estimates Forecasts
                   </h3>
                   <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
@@ -1671,20 +1685,20 @@ export default function AssetDetails() {
                   }
 
                   let summaryVerdict = "NEUTRAL";
-                  let verdictColor = "bg-gradient-to-r from-slate-950 to-slate-900 border-slate-850 text-slate-300";
+                  let verdictColor = "bg-slate-50 dark:bg-[#090d1a] border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-300";
 
                   if (buyCount === 2) {
                     summaryVerdict = "STRONG BUY";
-                    verdictColor = "bg-gradient-to-r from-emerald-500/15 via-teal-500/5 to-transparent border-emerald-500/30 text-emerald-400";
+                    verdictColor = "bg-emerald-50 dark:bg-[#090d1a] border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400";
                   } else if (buyCount === 1 && sellCount === 0) {
                     summaryVerdict = "BUY";
-                    verdictColor = "bg-gradient-to-r from-cyan-500/15 via-blue-500/5 to-transparent border-cyan-500/30 text-cyan-400";
+                    verdictColor = "bg-cyan-50 dark:bg-[#090d1a] border-cyan-200 dark:border-cyan-500/40 text-cyan-700 dark:text-cyan-400";
                   } else if (sellCount === 2) {
                     summaryVerdict = "STRONG SELL";
-                    verdictColor = "bg-gradient-to-r from-rose-500/15 via-red-500/5 to-transparent border-rose-500/30 text-rose-400";
+                    verdictColor = "bg-rose-50 dark:bg-[#090d1a] border-rose-200 dark:border-rose-500/40 text-rose-700 dark:text-rose-400";
                   } else if (sellCount === 1 && buyCount === 0) {
                     summaryVerdict = "SELL";
-                    verdictColor = "bg-gradient-to-r from-orange-500/15 via-red-500/5 to-transparent border-orange-500/30 text-orange-400";
+                    verdictColor = "bg-orange-50 dark:bg-[#090d1a] border-orange-200 dark:border-orange-500/40 text-orange-700 dark:text-orange-400";
                   }
 
                   const totalSignals = buyCount + sellCount + neutralCount;
@@ -1692,7 +1706,7 @@ export default function AssetDetails() {
                   return (
                     <div className="space-y-6">
                       {/* Summary Banner */}
-                      <div className={`border rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md ${verdictColor}`}>
+                      <div className={`border rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm dark:shadow-md ${verdictColor}`}>
                         <div>
                           <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider leading-none">Consensus Verdict</span>
                           <h4 className="text-2xl font-black mt-2 tracking-tight">{summaryVerdict}</h4>
@@ -1700,15 +1714,15 @@ export default function AssetDetails() {
                         <div className="flex items-center gap-6">
                           <div className="text-center">
                             <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Buy</span>
-                            <span className="text-lg font-black text-emerald-400 font-mono block mt-0.5">{buyCount}</span>
+                            <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono block mt-0.5">{buyCount}</span>
                           </div>
-                          <div className="text-center border-l border-slate-900/60 pl-6">
+                          <div className="text-center border-l border-slate-200 dark:border-slate-900/60 pl-6">
                             <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Neutral</span>
-                            <span className="text-lg font-black text-slate-400 font-mono block mt-0.5">{neutralCount}</span>
+                            <span className="text-lg font-black text-slate-600 dark:text-slate-400 font-mono block mt-0.5">{neutralCount}</span>
                           </div>
-                          <div className="text-center border-l border-slate-900/60 pl-6">
+                          <div className="text-center border-l border-slate-200 dark:border-slate-900/60 pl-6">
                             <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Sell</span>
-                            <span className="text-lg font-black text-rose-400 font-mono block mt-0.5">{sellCount}</span>
+                            <span className="text-lg font-black text-rose-600 dark:text-rose-400 font-mono block mt-0.5">{sellCount}</span>
                           </div>
                         </div>
                       </div>
@@ -1716,28 +1730,28 @@ export default function AssetDetails() {
                       <div className="grid grid-cols-1 gap-6">
                         {/* Oscillators */}
                         <div className="w-full">
-                          <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-6">
-                            <h4 className="text-xs font-black uppercase text-slate-355 border-b border-slate-900 pb-3 tracking-wider">
+                          <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-900 rounded-2xl p-6 shadow-sm dark:shadow-md space-y-6">
+                            <h4 className="text-xs font-black uppercase text-slate-500 dark:text-slate-355 border-b border-slate-100 dark:border-slate-900 pb-3 tracking-wider">
                               Oscillators
                             </h4>
 
                             {/* RSI (14) */}
                             <div className="space-y-2.5">
                               <div className="flex justify-between text-xs font-mono">
-                                <span className="text-slate-400 font-sans font-bold">RSI (14)</span>
-                                <span className={`font-black ${rsi < 30 ? "text-emerald-400" : rsi > 70 ? "text-rose-400" : "text-slate-200"}`}>
+                                <span className="text-slate-600 dark:text-slate-400 font-sans font-bold">RSI (14)</span>
+                                <span className={`font-black ${rsi < 30 ? "text-emerald-600 dark:text-emerald-400" : rsi > 70 ? "text-rose-600 dark:text-rose-400" : "text-slate-800 dark:text-slate-200"}`}>
                                   {rsi.toFixed(2)} ({rsi < 30 ? "Oversold" : rsi > 70 ? "Overbought" : "Neutral"})
                                 </span>
                               </div>
-                              <div className="relative w-full bg-slate-950 rounded-full h-3 border border-slate-900">
-                                <div className="absolute inset-0 rounded-full overflow-hidden">
-                                  <div className="absolute left-0 w-[30%] h-full bg-emerald-500/20" />
-                                  <div className="absolute left-[30%] w-[40%] h-full bg-slate-800/30" />
-                                  <div className="absolute left-[70%] w-[30%] h-full bg-rose-500/20" />
+                              <div className="relative w-full rounded-full h-2.5 overflow-visible" style={{ backgroundColor: "rgba(148, 163, 184, 0.3)" }}>
+                                <div className="absolute inset-0 rounded-full overflow-hidden flex">
+                                  <div className="w-[30%] h-full bg-emerald-500/80 dark:bg-emerald-500/70" />
+                                  <div className="w-[40%] h-full" style={{ backgroundColor: "rgba(148, 163, 184, 0.45)" }} />
+                                  <div className="w-[30%] h-full bg-rose-500/80 dark:bg-rose-500/70" />
                                 </div>
                                 <div
                                   style={{ left: `${Math.min(97, Math.max(3, rsi))}%` }}
-                                  className="absolute -translate-x-1/2 top-1/2 -translate-y-1/2 w-4 h-4 bg-cyan-400 rounded-full shadow-lg shadow-cyan-400/80 border-2 border-[#090d1a] ring-2 ring-cyan-400/30 z-10"
+                                  className="absolute -translate-x-1/2 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,1)] z-10 pointer-events-none"
                                 />
                               </div>
                               <div className="flex justify-between text-[8px] text-slate-500 font-bold uppercase tracking-wider">
@@ -1750,19 +1764,19 @@ export default function AssetDetails() {
                             {/* MACD */}
                             <div className="space-y-4 pt-2">
                               <div className="flex justify-between text-xs font-mono">
-                                <span className="text-slate-500 font-sans font-bold">MACD Crossover</span>
-                                <span className={`font-black ${macd > macdSignal ? "text-emerald-450" : "text-rose-455"}`}>
+                                <span className="text-slate-600 dark:text-slate-500 font-sans font-bold">MACD Crossover</span>
+                                <span className={`font-black ${macd > macdSignal ? "text-emerald-600 dark:text-emerald-450" : "text-rose-600 dark:text-rose-455"}`}>
                                   {macd > macdSignal ? "Bullish Crossover" : "Bearish Crossover"}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 gap-4 text-center font-mono">
-                                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-900">
+                                <div className="bg-slate-50 dark:bg-slate-950/60 p-3 rounded-xl border border-slate-200/80 dark:border-slate-900">
                                   <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">Value</span>
-                                  <span className="text-sm font-black text-slate-200 block mt-1">{macd.toFixed(3)}</span>
+                                  <span className="text-sm font-black text-slate-800 dark:text-slate-200 block mt-1">{macd.toFixed(3)}</span>
                                 </div>
-                                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-900">
+                                <div className="bg-slate-50 dark:bg-slate-950/60 p-3 rounded-xl border border-slate-200/80 dark:border-slate-900">
                                   <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">Signal</span>
-                                  <span className="text-sm font-black text-slate-200 block mt-1">{macdSignal.toFixed(3)}</span>
+                                  <span className="text-sm font-black text-slate-800 dark:text-slate-200 block mt-1">{macdSignal.toFixed(3)}</span>
                                 </div>
                               </div>
                             </div>
@@ -1772,9 +1786,9 @@ export default function AssetDetails() {
 
                       {/* Major Key Levels (Structural Levels) - Rendered full-width below oscillators and MAs */}
                       {hasKeyLevels ? (
-                        <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md space-y-4 w-full">
-                          <div className="flex justify-between items-center border-b border-slate-900/60 pb-3">
-                            <h4 className="text-xs font-black uppercase text-slate-355 tracking-wider">
+                        <div className="bg-white dark:bg-[#090d1a] border border-slate-200 dark:border-slate-900 rounded-2xl p-6 shadow-sm dark:shadow-md space-y-4 w-full">
+                          <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-900/60 pb-3">
+                            <h4 className="text-xs font-black uppercase text-slate-500 dark:text-slate-355 tracking-wider">
                               Major Key Levels (Structural Levels)
                             </h4>
                             <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${verdictBadgeColor}`}>
@@ -1795,19 +1809,21 @@ export default function AssetDetails() {
                             return (
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center pt-2">
                                 {/* Price Ladder Visual Gauge */}
-                                <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-[#0c1022]/40 rounded-xl border border-slate-900/60 h-full min-h-[220px]">
+                                <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-slate-50 dark:bg-[#0c1022]/40 rounded-xl border border-slate-200/80 dark:border-slate-900/60 h-full min-h-[220px]">
                                   <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider mb-5">Price Alignment</span>
                                   <div className="relative w-full px-6 h-36 flex items-center justify-center">
                                     {/* Vertical track */}
-                                    <div className="absolute top-0 bottom-0 w-1.5 rounded-full bg-gradient-to-t from-emerald-500/20 via-blue-500/10 to-rose-500/20 border border-slate-900" />
+                                    <div className="absolute top-0 bottom-0 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700 shadow-sm overflow-hidden">
+                                      <div className="w-full h-full bg-gradient-to-t from-emerald-500/60 via-blue-500/60 to-rose-500/60" />
+                                    </div>
 
                                     {/* Ticks/Labels */}
                                     {[
-                                      { label: "R2", value: R2, color: "text-rose-455" },
-                                      { label: "R1", value: R1, color: "text-rose-400" },
-                                      { label: "PP", value: PP, color: "text-blue-400" },
-                                      { label: "S1", value: S1, color: "text-emerald-455" },
-                                      { label: "S2", value: S2, color: "text-emerald-400" },
+                                      { label: "R2", value: R2, color: "text-rose-600 dark:text-rose-455" },
+                                      { label: "R1", value: R1, color: "text-rose-500 dark:text-rose-400" },
+                                      { label: "PP", value: PP, color: "text-blue-500 dark:text-blue-400" },
+                                      { label: "S1", value: S1, color: "text-emerald-500 dark:text-emerald-455" },
+                                      { label: "S2", value: S2, color: "text-emerald-600 dark:text-emerald-400" },
                                     ].map((lvl, idx) => {
                                       const pct = getPct(lvl.value);
                                       return (
@@ -1817,7 +1833,7 @@ export default function AssetDetails() {
                                           style={{ bottom: `${pct}%` }}
                                         >
                                           <span className={`w-8 text-right font-mono text-[9px] font-bold ${lvl.color}`}>{lvl.label}</span>
-                                          <div className="w-4 h-px bg-slate-800" />
+                                          <div className="w-4 h-px bg-slate-300 dark:bg-slate-800" />
                                           <span className="w-14 text-left font-mono text-[9px] text-slate-500">{formatVal(lvl.value, true)}</span>
                                         </div>
                                       );
@@ -1828,12 +1844,12 @@ export default function AssetDetails() {
                                       className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 ease-out z-10 w-12"
                                       style={{ bottom: `${pricePct}%` }}
                                     >
-                                      <div className="w-full h-[2px] bg-cyan-400 shadow-[0_0_8px_#22d3ee] relative flex items-center justify-center">
-                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
-                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950" />
+                                      <div className="w-full h-[2px] bg-cyan-500 dark:bg-cyan-400 shadow-[0_0_8px_#06b6d4] dark:shadow-[0_0_8px_#22d3ee] relative flex items-center justify-center">
+                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 border border-white dark:border-slate-950 animate-ping" />
+                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 border border-white dark:border-slate-950" />
 
                                         {/* Price Label Overlay (Centered above pointer) */}
-                                        <div className="absolute bottom-full mb-1.5 bg-cyan-950/90 text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded text-[8px] font-black font-mono shadow-[0_0_10px_rgba(34,211,238,0.2)] whitespace-nowrap">
+                                        <div className="absolute bottom-full mb-1.5 bg-slate-900 dark:bg-cyan-950/90 text-white dark:text-cyan-400 border border-slate-700 dark:border-cyan-800/60 px-1.5 py-0.5 rounded text-[8px] font-black font-mono shadow-md whitespace-nowrap">
                                           {formatVal(price, true)}
                                         </div>
                                       </div>
@@ -1844,11 +1860,11 @@ export default function AssetDetails() {
                                 {/* Detailed Levels List */}
                                 <div className="col-span-2 space-y-2">
                                   {[
-                                    { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-455", bgClass: "hover:bg-rose-500/5" },
-                                    { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-400", bgClass: "hover:bg-rose-500/5" },
-                                    { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-400", bgClass: "bg-blue-500/5 border border-blue-500/10" },
-                                    { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-455", bgClass: "hover:bg-emerald-500/5" },
-                                    { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-400", bgClass: "hover:bg-emerald-500/5" },
+                                    { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-600 dark:text-rose-455", bgClass: "hover:bg-rose-500/5" },
+                                    { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-500 dark:text-rose-400", bgClass: "hover:bg-rose-500/5" },
+                                    { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-600 dark:text-blue-400", bgClass: "bg-blue-500/5 border border-blue-500/10" },
+                                    { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-600 dark:text-emerald-455", bgClass: "hover:bg-emerald-500/5" },
+                                    { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-500 dark:text-emerald-400", bgClass: "hover:bg-emerald-500/5" },
                                   ].map((lvl, idx) => {
                                     const isAbove = price >= lvl.value;
                                     return (
@@ -1857,7 +1873,7 @@ export default function AssetDetails() {
                                         className={`flex justify-between items-center px-3 py-1.5 rounded-xl transition-all duration-200 ${lvl.bgClass}`}
                                       >
                                         <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
-                                        <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-200">
+                                        <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
                                           <span>{formatVal(lvl.value, true)}</span>
                                           <span className={`text-[10px] font-sans px-2 py-0.5 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
                                             {isAbove ? "Above" : "Below"}
@@ -1894,34 +1910,34 @@ export default function AssetDetails() {
                   const primaryGrowth = p5y ?? p1y ?? pAll ?? 0;
 
                   return (
-                    <div className={`border rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md transition-all duration-300 ${primaryGrowth >= 0
-                        ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20"
-                        : "bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent border-rose-500/20"
+                    <div className={`border rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm dark:shadow-md transition-all duration-300 ${primaryGrowth >= 0
+                        ? "bg-emerald-50/60 dark:bg-[#090d1a] border-emerald-200 dark:border-emerald-500/30"
+                        : "bg-rose-50/60 dark:bg-[#090d1a] border-rose-200 dark:border-rose-500/30"
                       }`}>
                       <div className="space-y-1">
                         <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">Return Analysis</span>
-                        <h4 className="text-xl font-black text-slate-200">
+                        <h4 className="text-xl font-black text-slate-900 dark:text-slate-200">
                           {primaryGrowth >= 20
                             ? "Exceptional Long-Term Growth"
                             : primaryGrowth >= 0
                               ? "Steady Wealth Growth"
                               : "Undergoing Asset Consolidation"}
                         </h4>
-                        <p className="text-xs text-slate-400 max-w-xl leading-relaxed mt-1">
-                          This asset has delivered a cumulative return of <span className={`font-bold ${primaryGrowth >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{primaryGrowth >= 0 ? "+" : ""}{primaryGrowth.toFixed(1)}%</span> over the multi-year cycle.
+                        <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed mt-1">
+                          This asset has delivered a cumulative return of <span className={`font-bold ${primaryGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>{primaryGrowth >= 0 ? "+" : ""}{primaryGrowth.toFixed(1)}%</span> over the multi-year cycle.
                         </p>
                       </div>
 
                       <div className="flex gap-4 shrink-0 font-mono">
-                        <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
+                        <div className="bg-white dark:bg-[#0c1022] p-4 rounded-xl border border-slate-200 dark:border-slate-900 text-center min-w-[110px] shadow-sm dark:shadow-none">
                           <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">1-Year Return</span>
-                          <span className={`text-base font-black block mt-1 ${p1y >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                          <span className={`text-base font-black block mt-1 ${p1y >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                             {p1y != null ? `${p1y >= 0 ? "+" : ""}${p1y.toFixed(2)}%` : "N/A"}
                           </span>
                         </div>
-                        <div className="bg-[#0c1022] p-4 rounded-xl border border-slate-900 text-center min-w-[110px]">
+                        <div className="bg-white dark:bg-[#0c1022] p-4 rounded-xl border border-slate-200 dark:border-slate-900 text-center min-w-[110px] shadow-sm dark:shadow-none">
                           <span className="text-[8px] text-slate-500 uppercase font-black tracking-wider block">5-Year Return</span>
-                          <span className={`text-base font-black block mt-1 ${p5y >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                          <span className={`text-base font-black block mt-1 ${p5y >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                             {p5y != null ? `${p5y >= 0 ? "+" : ""}${p5y.toFixed(2)}%` : "N/A"}
                           </span>
                         </div>
@@ -1949,18 +1965,18 @@ export default function AssetDetails() {
                     return (
                       <div
                         key={idx}
-                        className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group ${hasVal
+                        className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between h-28 relative overflow-hidden group shadow-sm dark:shadow-none ${hasVal
                             ? isPositive
-                              ? "bg-emerald-500/[0.02] border-emerald-950/60 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
-                              : "bg-rose-500/[0.02] border-rose-950/60 hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
-                            : "bg-slate-950/30 border-slate-900 text-slate-655"
+                              ? "bg-emerald-50/40 dark:bg-emerald-500/[0.02] border-emerald-200 dark:border-emerald-950/60 hover:border-emerald-400 dark:hover:border-emerald-500/30 hover:bg-emerald-50/70 dark:hover:bg-emerald-500/[0.04]"
+                              : "bg-rose-50/40 dark:bg-rose-500/[0.02] border-rose-200 dark:border-rose-950/60 hover:border-rose-400 dark:hover:border-rose-500/30 hover:bg-rose-50/70 dark:hover:bg-rose-500/[0.04]"
+                            : "bg-slate-50 dark:bg-slate-950/30 border-slate-200 dark:border-slate-900 text-slate-400 dark:text-slate-655"
                           }`}
                       >
                         {/* Period label */}
                         <div className="flex justify-between items-center z-10">
-                          <span className="text-[10px] text-slate-505 uppercase font-black tracking-wider">{item.label}</span>
+                          <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider">{item.label}</span>
                           {hasVal && (
-                            <span className={`text-[10px] font-bold ${isPositive ? "text-emerald-455" : "text-rose-455"}`}>
+                            <span className={`text-[10px] font-bold ${isPositive ? "text-emerald-600 dark:text-emerald-455" : "text-rose-600 dark:text-rose-455"}`}>
                               {isPositive ? "▲" : "▼"}
                             </span>
                           )}
@@ -1968,7 +1984,7 @@ export default function AssetDetails() {
 
                         {/* Visual bar/track of performance magnitude */}
                         {hasVal && (
-                          <div className="w-full bg-slate-950/80 rounded-full h-1 my-1 overflow-hidden border border-slate-900">
+                          <div className="w-full bg-slate-200 dark:bg-slate-950/80 rounded-full h-1 my-1 overflow-hidden border border-slate-300/60 dark:border-slate-900">
                             <div
                               className={`h-full rounded-full ${isPositive ? "bg-emerald-500" : "bg-rose-500"}`}
                               style={{ width: `${Math.min(100, Math.abs(val) * (item.key === "1D" || item.key === "1W" ? 10 : 1))}%` }}
@@ -1978,7 +1994,7 @@ export default function AssetDetails() {
 
                         {/* Value */}
                         <div className="z-10 mt-auto">
-                          <span className={`text-sm font-mono font-black block tracking-tight ${hasVal ? (isPositive ? "text-emerald-400" : "text-rose-400") : "text-slate-600"
+                          <span className={`text-sm font-mono font-black block tracking-tight ${hasVal ? (isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400") : "text-slate-400 dark:text-slate-600"
                             }`}>
                             {hasVal ? `${isPositive ? "+" : ""}${val.toFixed(2)}%` : "N/A"}
                           </span>
@@ -2004,25 +2020,25 @@ export default function AssetDetails() {
                 const rightColNews = newsItems.slice(5, 10);
 
                 const renderNewsTable = (items: any[]) => (
-                  <div className="overflow-x-auto rounded-2xl border border-slate-900 bg-[#090d1a] shadow-md">
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-900 bg-white dark:bg-[#090d1a] shadow-sm dark:shadow-md">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-900 bg-[#0c1022]">
+                        <tr className="border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-[#0c1022]">
                           <th className="px-5 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500">Headline</th>
                           <th className="px-4 py-3 text-[10px] uppercase font-black tracking-wider text-slate-500 w-16 text-center">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-900/60">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-900/60">
                         {items.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
+                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-950/40 transition-colors">
                             <td className="px-5 py-3.5 align-middle space-y-1">
-                              <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block">
+                              <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider block">
                                 {item.publisher || "General News"}
                               </span>
-                              <h4 className="text-xs font-bold text-slate-200 line-clamp-1 leading-snug">
+                              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 line-clamp-1 leading-snug">
                                 {item.title}
                               </h4>
-                              <p className="text-[10px] text-slate-400 line-clamp-1 font-normal leading-relaxed">
+                              <p className="text-[10px] text-slate-600 dark:text-slate-400 line-clamp-1 font-normal leading-relaxed">
                                 {item.summary || item.title}
                               </p>
                             </td>
@@ -2031,7 +2047,7 @@ export default function AssetDetails() {
                                 href={item.link}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-all"
+                                className="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:text-blue-700 dark:hover:text-blue-300 transition-all shadow-sm dark:shadow-none"
                                 title="Read Article"
                               >
                                 <ExternalLink size={12} className="stroke-[2.5]" />

@@ -14,6 +14,7 @@ import type { CagrTimeframe, RollingCagrPoint } from "./rollingCagrTypes";
 import RollingCagrKpiCards from "./RollingCagrKpiCards";
 import RollingCagrChart from "./RollingCagrChart";
 import API_BASE_URL from "../../../../config/api";
+import toast from "react-hot-toast";
 
 const timeframeOptions: CagrTimeframe[] = ["1Y", "3Y", "5Y", "10Y", "MAX"];
 
@@ -40,6 +41,7 @@ function exportChartSeries(data: RollingCagrPoint[], timeframe: CagrTimeframe) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  toast.success("Rolling CAGR data exported!");
 }
 
 export default function RollingCagrSection() {
