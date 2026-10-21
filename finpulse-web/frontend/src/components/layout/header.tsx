@@ -283,13 +283,14 @@ export default function Header({ navItems, isLoggedIn, onLoginClick }: HeaderPro
                     }
                   }}
                   className={({ isActive }) =>
-                    `px-3 py-2 rounded-md text-xs font-medium transition-colors ${isActive
-                      ? "bg-blue-50 text-blue-600 dark:bg-cyan-400/10 dark:text-cyan-400"
-                      : "text-slate-600 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#141414]"
+                    `px-3.5 py-2.5 rounded-lg text-xs font-medium transition-all duration-150 flex items-center justify-between ${
+                      isActive
+                        ? "mobile-nav-link-active text-blue-600 dark:text-cyan-400"
+                        : "text-slate-600 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#141414]"
                     }`
                   }
                 >
-                  {item.label}
+                  <span>{item.label}</span>
                 </NavLink>
               );
             })}

@@ -431,23 +431,19 @@ export default function PerformanceComparison() {
 
   return (
     <div className="space-y-8 w-full max-w-7xl mx-auto px-1 relative animate-fadeIn">
-      {/* Ambient background glows */}
-      <div className="absolute top-10 left-1/4 w-72 h-72 bg-blue-400/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-400/10 dark:bg-purple-600/5 rounded-full blur-3xl pointer-events-none" />
-
       {/* HEADER SECTION WITH REFRESH TRIGGER */}
       <div className="flex flex-col gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 sm:gap-3 flex-nowrap">
-              <h1 className="text-xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent whitespace-nowrap">
+              <h1 className="text-xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display whitespace-nowrap">
                 Performance Analytics
               </h1>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:bg-cyan-500/15 dark:text-cyan-400 border border-blue-500/20 dark:border-cyan-400/25">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:bg-cyan-500/15 dark:text-cyan-300 border border-blue-500/20 dark:border-cyan-400/30">
                 Benchmark Radar
               </span>
             </div>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs font-semibold text-slate-600 dark:text-slate-200 mt-1">
               Institutional-grade return analytics, risk attribution & alpha benchmarking.
             </p>
           </div>
@@ -498,16 +494,16 @@ export default function PerformanceComparison() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap min-h-[36px] cursor-pointer shrink-0 border ${
+                className={`performance-analytics-tab flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap min-h-[36px] cursor-pointer shrink-0 border ${
                   isActive
-                    ? "bg-blue-600 text-white border-blue-600 shadow-sm dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40 dark:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
-                    : "bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200/90 shadow-2xs dark:bg-white/[0.03] dark:hover:bg-white/[0.07] dark:text-slate-400 dark:hover:text-white dark:border-white/5"
+                    ? "performance-tab-active bg-blue-600 text-white border-blue-600 shadow-sm dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40 dark:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
+                    : "performance-tab-inactive bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200/90 shadow-2xs dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-neutral-300 dark:hover:text-white dark:border-[#242424]"
                 }`}
               >
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${
                   isActive
                     ? "text-white dark:text-cyan-300"
-                    : "text-slate-500 dark:text-slate-400"
+                    : "text-slate-500 dark:text-neutral-400"
                 }`} />
                 <span className="tracking-wider">{tab.label}</span>
               </button>

@@ -470,8 +470,19 @@ html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
   background-color: var(--terminal-elevated) !important;
 }
 
-.dark .secondary-page [class*="bg-gradient-"] {
+.dark .secondary-page [class*="bg-gradient-"]:not([class*="bg-clip-text"]) {
   background-image: none !important;
+}
+
+/* Ensure text-transparent elements with bg-clip-text are clean and sharp without ghosting or double blur */
+.dark .secondary-page [class*="text-transparent"][class*="bg-clip-text"] {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-clip: border-box !important;
+  -webkit-background-clip: border-box !important;
+  background-image: none !important;
+  text-shadow: none !important;
+  filter: none !important;
 }
 
 .dark .secondary-page [class*="dark:hover:bg-"]:hover {
@@ -764,6 +775,25 @@ html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
   color: #22d3ee !important;
 }
 
+/* Mobile Nav Drawer Active Link Styling */
+.mobile-nav-link-active {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+  border-left: 3px solid #2563eb;
+  font-weight: 600;
+}
+
+.dark .mobile-nav-link-active,
+.dark .secondary-page .mobile-nav-link-active {
+  background: rgba(34, 211, 238, 0.12) !important;
+  background-color: rgba(34, 211, 238, 0.12) !important;
+  color: #38bdf8 !important;
+  border-left: 3px solid #38bdf8 !important;
+  font-weight: 600;
+  box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.08);
+}
+
+
 /* Restore the profile workspace's intentional blue/cyan visual hierarchy. */
 .dark .secondary-page .profile-hero-banner {
   background-image: linear-gradient(115deg, #0891b2 0%, #2563eb 52%, #4338ca 100%) !important;
@@ -983,9 +1013,44 @@ html:not(.dark) .secondary-page [class*="from-\[#090d1a\]"] {
    Performance & Portfolio Analytics Style Harmonization Overrides
    ==================================================================== */
 .performance-tab-active {
-  background: linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2)) !important;
-  color: #22d3ee !important;
-  border-color: rgba(34, 211, 238, 0.4) !important;
+  background: rgba(34, 211, 238, 0.18) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+}
+
+.dark .secondary-page .performance-tab-active {
+  background: rgba(34, 211, 238, 0.18) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+}
+
+.dark .secondary-page .performance-tab-active * {
+  color: #38bdf8 !important;
+}
+
+.dark .secondary-page .performance-tab-inactive {
+  background-color: #121212 !important;
+  border-color: #262626 !important;
+  color: #f1f5f9 !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.dark .secondary-page .performance-tab-inactive * {
+  color: #f1f5f9 !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.dark .secondary-page .performance-tab-inactive:hover {
+  background-color: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.18) !important;
+}
+
+.dark .secondary-page .performance-tab-inactive:hover * {
+  color: #ffffff !important;
 }
 
 .performance-recalculate-btn {

@@ -1523,7 +1523,7 @@ export default function PortfolioDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 sm:gap-3 flex-nowrap">
-              <h1 className="text-xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent whitespace-nowrap">
+              <h1 className="text-xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display whitespace-nowrap">
                 {isSandboxMode ? 'Paper Sandbox' : 'Asset Portfolio'}
               </h1>
               <button

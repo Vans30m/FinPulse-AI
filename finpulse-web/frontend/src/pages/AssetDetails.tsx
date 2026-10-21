@@ -1377,8 +1377,8 @@ export default function AssetDetails() {
 
                           {Math.abs(high - low) < 0.01 * (median || 1) ? (
                             <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${medianPct}%` }}>
-                              <span className="text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider">Consensus Target</span>
-                              <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono mt-0.5">{formatVal(median || low, true)}</span>
+                              <span className="text-[9px] font-black text-purple-600 dark:text-purple-300 uppercase tracking-wider">Consensus Target</span>
+                              <span className="text-[10px] font-black text-slate-800 dark:text-white font-mono mt-0.5">{formatVal(median || low, true)}</span>
                               <div className="w-0.5 h-3 bg-purple-500 dark:bg-purple-400 my-0.5" />
                               <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
                             </div>
@@ -1386,16 +1386,16 @@ export default function AssetDetails() {
                             <>
                               {/* Low Marker Anchor & Label */}
                               <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${lowPct}%` }}>
-                                <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider">Low</span>
-                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono mt-0.5">{formatVal(low, true)}</span>
-                                <div className="w-0.5 h-3 bg-blue-500 dark:bg-blue-400 my-0.5" />
+                                <span className="text-[9px] font-black text-blue-600 dark:text-cyan-400 uppercase tracking-wider">Low</span>
+                                <span className="text-[10px] font-black text-slate-800 dark:text-white font-mono mt-0.5">{formatVal(low, true)}</span>
+                                <div className="w-0.5 h-3 bg-blue-500 dark:bg-cyan-400 my-0.5" />
                                 <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
                               </div>
 
                               {/* Median Marker Anchor & Label */}
                               <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${medianPct}%` }}>
-                                <span className="text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider">Median</span>
-                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono mt-0.5">{formatVal(median, true)}</span>
+                                <span className="text-[9px] font-black text-purple-600 dark:text-purple-300 uppercase tracking-wider">Median</span>
+                                <span className="text-[10px] font-black text-slate-800 dark:text-white font-mono mt-0.5">{formatVal(median, true)}</span>
                                 <div className="w-0.5 h-3 bg-purple-500 dark:bg-purple-400 my-0.5" />
                                 <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
                               </div>
@@ -1403,7 +1403,7 @@ export default function AssetDetails() {
                               {/* High Marker Anchor & Label */}
                               <div className="absolute top-0 flex flex-col items-center -translate-x-1/2 z-10" style={{ left: `${highPct}%` }}>
                                 <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">High</span>
-                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 font-mono mt-0.5">{formatVal(high, true)}</span>
+                                <span className="text-[10px] font-black text-slate-800 dark:text-white font-mono mt-0.5">{formatVal(high, true)}</span>
                                 <div className="w-0.5 h-3 bg-emerald-500 dark:bg-emerald-400 my-0.5" />
                                 <div className="w-[3px] h-4 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
                               </div>
