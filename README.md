@@ -148,9 +148,9 @@
 | `axios` | `^1.19.0` | HTTP client for external API calls |
 | `yahoo-finance2` | `^4.0.1` | Yahoo Finance data: quotes, search, summary |
 | `rss-parser` | `^3.13.0` | RSS feed parsing for news |
-| `cheerio` | `^1.2.0` | HTML scraping/parsing |
-| `google-news-rss` | `^0.4.1` | Google News feed utilities |
-| `nodemailer` | `^9.0.5` | SMTP email transport (OTP fallback) |
+| `docx` | `^9.9.0` | Word document generation (.docx export) |
+| `pdfkit` | `^0.20.2` | PDF document generation (.pdf export) |
+| `nodemailer` | `^9.0.5` | SMTP email transport (OTP & newsletter fallback) |
 | `node-cache` | `^5.1.2` | In-process key-value caching |
 | `dotenv` | `^17.4.2` | Environment variable loading |
 
@@ -171,15 +171,16 @@
 | Groq API | `qwen/qwen3.8-27b` | **Secondary** LLM fallback when Gemini is unavailable |
 | Ollama (optional) | `qwen2.5` (configurable) | **Tertiary** local LLM fallback via OpenAI-compatible endpoint |
 
-### DevOps & Deployment
+### DevOps, Deployment & External Services
 
-| Tool | Purpose |
+| Tool / Service | Purpose |
 |---|---|
 | Render | PaaS for backend (Node web service) + frontend (static site) |
 | `render.yaml` | Infrastructure-as-code deployment manifest |
 | Electron | `^43.3.0` — Desktop app wrapper |
 | `electron-builder` | `^26.15.3` — Windows NSIS installer builder |
-| Brevo API | Primary transactional email (OTP, password reset) |
+| Brevo API | Primary transactional email (OTP, password reset, newsletter welcome) |
+| EmailJS API | Client-side transactional email service (welcome emails for new users & newsletter signups) |
 | Resend API | Secondary email fallback |
 
 ---
@@ -238,24 +239,41 @@ FinPulse-AI/
         |   |   |       +-- AIMarketSentiment.tsx     # AI-powered market sentiment panel
         |   |   |       +-- AIPickOfTheDay.tsx         # AI stock pick with target & stop-loss
         |   |   |       +-- AIBulletSummary.tsx        # LLM-generated market bullet points
+        |   |   |       +-- AIRankingCard.tsx          # AI rankings card for watchlist assets
+        |   |   |       +-- AlertsTimeline.tsx         # Portfolio price/status alerts timeline
         |   |   |       +-- FearGreedIndex.tsx         # AI-computed fear/greed gauge
         |   |   |       +-- GlobalMarketClock.tsx      # Live market open/close status clock
         |   |   |       +-- InvestmentCalculator.tsx   # SIP/lumpsum/compound calculator
-        |   |   |       +-- PerformanceComparison.tsx  # Multi-asset performance chart
-        |   |   |       +-- MarketFeedStream.tsx       # Live price ticker stream
+        |   |   |       +-- PerformanceComparison.tsx  # Multi-asset performance & benchmark comparison
         |   |   |       +-- MarketScreeners.tsx        # Top gainers/losers/active screener
         |   |   |       +-- Watchlist.tsx              # Full watchlist manager UI
-        |   |   |       +-- MarketExplanation.tsx      # Contextual market term explainer
         |   |   |       +-- MarketCompass.tsx          # Directional sentiment compass
+        |   |   |       +-- performance/               # Detailed performance & benchmark analytics
+        |   |   |           +-- RollingCagrSection.tsx       # Rolling CAGR metrics & charts
+        |   |   |           +-- BenchmarkRadarSection.tsx    # Multi-factor benchmark radar comparison
+        |   |   |           +-- AiPerformanceCoachSection.tsx# AI coach portfolio analysis & tips
+        |   |   |           +-- CumulativeReturnChart.tsx    # Cumulative return timeseries chart
         |   |   +-- portfolio/
         |   |       +-- components/
-        |   |           +-- PortfolioDashboard.tsx     # Real + virtual portfolio tracker
+        |   |           +-- PortfolioDashboard.tsx     # Real + virtual portfolio tracker & ledger
+        |   |           +-- AIPortfolioAdvisorSection.tsx # AI asset allocation & risk advisory
+        |   |           +-- PaperTradingLedger.tsx     # Simulated trade execution ledger
+        |   |           +-- PaperTradingOrderModal.tsx # Order entry modal for virtual trading
+        |   |           +-- PortfolioAllocationChart.tsx# Visual portfolio asset allocation
         |   +-- pages/
-        |   |   +-- AssetDetails.tsx   # Full asset page: chart, fundamentals, AI analysis, news
-        |   |   +-- StockScreener.tsx  # Advanced stock screener with filters
-        |   |   +-- Profile.tsx        # User profile, settings, sessions, data export
-        |   |   +-- News.tsx           # Financial news feed
         |   |   +-- Pulse.tsx          # Landing dashboard page
+        |   |   +-- StockScreener.tsx  # Advanced multi-metric stock screener
+        |   |   +-- AssetDetails.tsx   # Full asset page: interactive charts, technicals, fundamentals, AI sentiment, news
+        |   |   +-- News.tsx           # Financial news feed & RSS stream
+        |   |   +-- Profile.tsx        # User profile, security, session management, data export
+        |   |   +-- About.tsx          # About FinPulse AI
+        |   |   +-- Contact.tsx        # Contact and inquiry form
+        |   |   +-- Privacy.tsx        # Privacy policy
+        |   |   +-- Terms.tsx          # Terms of service
+        |   |   +-- SystemStatus.tsx   # Platform health and service statuses
+        |   |   +-- ApiDocumentation.tsx# API reference and endpoints guide
+        |   |   +-- CookiePolicy.tsx   # Cookie usage policy
+        |   |   +-- RiskDisclosure.tsx # Financial risk disclosure
         |   +-- profile/
         |   |   +-- pages/Preferences.tsx  # Investment preferences & risk profile
         |   |   +-- services/profileService # Profile API client
@@ -417,6 +435,9 @@ All routes are served from the backend base URL (default: `http://localhost:3000
 | `POST` | `/api/auth/reset-pin-with-otp` | `{ email, code, newPin }` | No | Reset PIN after OTP verification |
 | `POST` | `/api/auth/forgot-password` | `{ email }` | No | Send password-reset OTP |
 | `POST` | `/api/auth/reset-password` | `{ email, code, newPassword }` | No | Reset password after OTP verification |
+| `POST` | `/api/auth/subscribe` | `{ email }` | No | Subscribe to FinPulse Daily Market Brief & Newsletter with email confirmation dispatch |
+| `POST` | `/api/auth/update-profile` | `{ userId, name?, avatar? }` | No | Direct profile update |
+| `GET` | `/api/auth/profile-stats/:userId` | `:userId` path param | No | Fetch user stats summary (watchlists, holdings, alerts count) |
 
 ---
 
@@ -427,8 +448,10 @@ All AI endpoints are **read-only GET** requests. Responses are cached in-memory 
 | Endpoint | Description | LLM Chain |
 |---|---|---|
 | `GET /api/ai/market-brief` | Market mood, confidence score, 11-sector strength grid, top insights, daily risk summary | Gemini - Groq - static fallback |
+| `GET /api/ai/market-drivers` | Global macroeconomic drivers, impact analysis, catalyst watchpoints | Gemini - Groq - static fallback |
 | `GET /api/ai/global-market-pulse` | Global market sentiment, summary paragraph, 3 key insights | Gemini - Groq - static fallback |
 | `GET /api/ai/fear-greed` | Fear & Greed score (0-100), investor takeaways, yesterday/lastWeek/lastMonth comparisons | Gemini - Groq - static fallback |
+| `GET /api/ai/score/:symbol` | Individual stock AI scoring, bullish/bearish balance, target projection | Gemini - Groq - static fallback |
 | `GET /api/ai/pick-of-the-day` | AI-selected stock: BUY/SELL/HOLD, target, stop-loss, confidence, bullish reasons, risks | Gemini - Groq - static fallback |
 | `GET /api/ai/portfolio-advisor` | Health score/grade, diversification analysis, risk profile, best opportunity, rebalance suggestions | Gemini - Groq - static fallback |
 
@@ -439,6 +462,16 @@ All AI endpoints are **read-only GET** requests. Responses are cached in-memory 
 | Method | Endpoint | Query / Path | Auth | Description |
 |---|---|---|---|---|
 | `GET` | `/api/asset-details/:symbol` | `:symbol` = ticker | No | Full AI-enriched asset profile backed by Yahoo Finance `quoteSummary` + Gemini/Groq LLM |
+| `GET` | `/api/fundamentals/:symbol` | `:symbol` = ticker | No | Core financial ratios, income metrics, balance sheet summary |
+| `GET` | `/api/technical/:symbol` | `:symbol` = ticker | No | Technical analysis indicators: RSI, MACD, Moving Averages (50/200 DMA) |
+| `GET` | `/api/charts/:symbol` | `?range=1d\|5d\|1mo\|1y&interval=...` | No | OHLCV historical candlestick/line chart data |
+| `GET` | `/api/screener/global` | `?market=...&sort=...` | No | Multi-market equities screener data |
+| `GET` | `/api/fundamentals-timeseries/:symbol` | `:symbol` = ticker | No | Historical financial performance timeseries (revenue, net income) |
+| `GET` | `/api/fundamentals-timeseries/cash/:symbol` | `:symbol` = ticker | No | Historical free cash flow and operating cash flow metrics |
+| `GET` | `/api/fundamentals-timeseries/valuation/:symbol` | `:symbol` = ticker | No | Historical valuation multiples (P/E, P/S, EV/EBITDA) |
+| `GET` | `/api/market-data/:symbol` | `:symbol` = ticker | No | Lightweight real-time market quote and bid/ask spread |
+| `GET` | `/api/global-indices` | - | No | Major global benchmark indices performance summary |
+| `GET` | `/api/stock-sentiment/:symbol` | `:symbol` = ticker | No | Computational and AI sentiment score for specific stock |
 | `GET` | `/api/search` | `?q=<query>` | No | Symbol search via Yahoo Finance (60 req/min rate limit, 1-min cache, max 15 results) |
 
 ---
@@ -461,8 +494,14 @@ All AI endpoints are **read-only GET** requests. Responses are cached in-memory 
 | `GET` | `/api/portfolio/holdings` | `?onlyVirtual=bool&virtualTickers=SYM,SYM` | All holdings with live Yahoo Finance quotes, grouped by marketId section |
 | `POST` | `/api/portfolio/holdings` | `{ ticker, name, shares, avgCost, marketId }` | Add position (auto-merges with weighted average cost recalculation) |
 | `POST` | `/api/portfolio/holdings/:id/close` | `{ sharesToClose, closePrice }` | Partially or fully close position; books realized P&L into `bookedPL` |
+| `PATCH` | `/api/portfolio/holdings/:id/reset-booked-pl` | - | Reset accumulated booked P&L for a position |
 | `DELETE` | `/api/portfolio/holdings/:id` | - | Remove holding record |
+| `GET` | `/api/portfolio/rolling-cagr` | `?periods=1y,3y,5y` | Rolling CAGR analytics vs benchmark indices |
+| `GET` | `/api/portfolio/analysis` | - | Full portfolio risk, Sharpe ratio, volatility, and diversification analysis |
+| `GET` | `/api/portfolio/benchmark-comparison` | `?benchmark=^GSPC` | Comparative cumulative return series vs S&P 500, Nasdaq, Nifty 50 |
+| `GET` | `/api/portfolio/benchmarks` | - | Benchmark indices quotes and historical comparison data |
 | `GET` | `/api/portfolio/virtual` | - | Virtual portfolio: balance + holdings |
+| `POST` | `/api/portfolio/virtual/sync` | `{ holdings, balance }` | Bulk sync local virtual paper-trading positions with cloud |
 | `POST` | `/api/portfolio/virtual/trade` | `{ type, symbol, name, shares, price, marketId }` | Execute virtual BUY or SELL (updates balance, upserts VirtualHolding, logs VirtualTransaction) |
 | `GET` | `/api/portfolio/virtual/transactions` | - | Full virtual trade history |
 | `GET` | `/api/portfolio/alerts` | - | All active/historical alerts for user |
@@ -483,6 +522,7 @@ All AI endpoints are **read-only GET** requests. Responses are cached in-memory 
 | `DELETE` | `/api/watchlists/:listId/items/:symbol` | - | Remove ticker from watchlist |
 | `PUT` | `/api/watchlists/:listId/items/:symbol` | `{ notes?, position? }` | Update item notes or display order |
 | `GET` | `/api/watchlists/:listId/ai-analysis` | - | AI analysis for all tickers in a watchlist |
+| `GET` | `/api/watchlists/:id/ai-rankings` | - | Comparative AI ranking and scoring across tickers in a watchlist |
 
 ---
 
@@ -500,7 +540,7 @@ All AI endpoints are **read-only GET** requests. Responses are cached in-memory 
 | `DELETE` | `/api/profile/sessions` | - | Revoke all sessions except the most recent |
 | `DELETE` | `/api/profile` | - | Soft-delete account (`isDeleted = true`), invalidate all sessions |
 | `GET` | `/api/profile/watchlist-summary` | - | Asset type breakdown across all watchlists |
-| `GET` | `/api/profile/export` | `?format=json\|csv` | Export all user data: profile, portfolios, watchlists, alerts, AI sessions |
+| `GET` | `/api/profile/export` | `?format=pdf\|docx\|csv\|json` | Export formatted portfolio & watchlist reports (styled PDF with PDFKit, formatted Word document with docx, CSV spreadsheet, or raw JSON) |
 
 ---
 
@@ -555,8 +595,10 @@ LLM outputs pass through a custom 4-step pipeline to handle malformed responses:
 | Endpoint | Key Output Fields |
 |---|---|
 | `/api/ai/market-brief` | `{ marketMood, confidence, riskLevel, insights[3], sectorStrength[11]{sector,score,reason}, todayRisk, summary, generatedAt }` |
+| `/api/ai/market-drivers` | `{ drivers[5]{title, impact, description, catalyst}, macroSummary, generatedAt }` |
 | `/api/ai/global-market-pulse` | `{ sentiment, summary, insights[3], generatedAt }` |
 | `/api/ai/fear-greed` | `{ score, sentiment, description, investorTakeaways[], risk, opportunity, yesterday, lastWeek, lastMonth, generatedAt }` |
+| `/api/ai/score/:symbol` | `{ symbol, overallScore, sentiment, technicals, valuation, risks, outlook, generatedAt }` |
 | `/api/ai/pick-of-the-day` | `{ symbol, company, recommendation, confidence, aiScore, currentPrice, target, stopLoss, holdingPeriod, risk, summary, bullishReasons[], risks[], generatedAt }` |
 | `/api/ai/portfolio-advisor` | `{ healthScore, healthGrade, diversification{...}, riskAnalysis{...}, bestOpportunity{...}, portfolioHealth{outlook,strengths[],weaknesses[],risks[],recommendations[]}, rebalanceSuggestions[], generatedAt }` |
 
@@ -594,7 +636,8 @@ POST /api/auth/verify-otp
     -> Validate OTP code + expiry
     - bcrypt.hash(password, 10) - create User + Profile
     -> Delete OtpVerification record
-    -> Return: JWT (30d expiry), user object
+    -> Return: JWT (30d expiry), user object, isNewUser: true
+    -> Frontend sends welcome email via EmailJS
 
 POST /api/auth/set-pin
     - HMAC-SHA256(pin, JWT_SECRET) - store as devicePin
@@ -626,7 +669,8 @@ Frontend (@react-oauth/google) -> access_token
 POST /api/auth/google-login { token }
     -> fetch("https://www.googleapis.com/oauth2/v3/userinfo")
     -> Auto-register (provider: GOOGLE) or sync avatar if existing user
-    -> Return: JWT (30d) + hasPin flag
+    -> Return: JWT (30d) + hasPin flag + isNewUser flag
+    -> If isNewUser: Frontend dispatches onboarding welcome email via EmailJS
 
 if !hasPin -> POST /api/auth/set-pin
 if  hasPin -> POST /api/auth/verify-pin
@@ -693,10 +737,10 @@ Neither present -> 401 Unauthorized
 
 | Variable | Required | Description | Example |
 |---|---|---|---|
-| `VITE_API_URL` | Required (prod) | Backend base URL - no trailing slash | `https://finpulse-backend.onrender.com` |
-| `VITE_BACKEND_URL` | Optional | Backend URL for local dev | `http://localhost:3000` |
+| `VITE_API_URL` | Required (prod) | Primary backend base URL - no trailing slash | `https://finpulse-backend.onrender.com` |
+| `VITE_BACKEND_URL` | Optional | Secondary / local development backend URL fallback | `http://localhost:3000` |
 
-> **Local dev note:** When `VITE_API_URL` is unset and Vite is in dev mode, the frontend defaults to `""` (same-origin). Configure a Vite proxy in `vite.config.ts` to forward `/api/*` to `localhost:3000`.
+> **API Resolution Note:** `finpulse-web/frontend/src/config/api.ts` resolves `VITE_API_URL` first, falling back to `VITE_BACKEND_URL`, and finally defaulting to `""` in local development (or `http://localhost:3000` in production).
 
 ---
 
