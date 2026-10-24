@@ -35,7 +35,7 @@ import { profileService } from './profile/services/profileService';
 export default function App() {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
-  const isSecondaryPage = location.pathname !== '/pulse';
+  const isSecondaryPage = location.pathname !== '/pulse' && !location.pathname.startsWith('/screener');
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('finpulse_token'));
 
   // Scroll to top on navigation/page change

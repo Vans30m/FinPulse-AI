@@ -283,17 +283,7 @@ iframe[src*="tradingview.com"]+a {
 
 
 
-/* Muted colors for table headers */
-#screener-workbook table thead tr th,
-#screener-shareholding table thead tr th {
-  position: sticky;
-  top: 0;
-  background: #1e293b;
-  z-index: 6;
-  color: #94a3b8 !important;
-  font-weight: 800 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
+
 
 
 
@@ -470,8 +460,12 @@ html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
   background-color: var(--terminal-elevated) !important;
 }
 
-.dark .secondary-page [class*="bg-gradient-"]:not([class*="bg-clip-text"]) {
+.dark .secondary-page [class*="bg-gradient-"]:not([class*="bg-clip-text"]):not(.consensus-gauge-track) {
   background-image: none !important;
+}
+
+.consensus-gauge-track {
+  background-image: linear-gradient(to right, #10b981, #facc15, #f43f5e) !important;
 }
 
 /* Ensure text-transparent elements with bg-clip-text are clean and sharp without ghosting or double blur */
@@ -930,41 +924,96 @@ html:not(.dark) .secondary-page [class*="from-\[#090d1a\]"] {
   background-color: #67e8f9 !important;
 }
 
+
+
 /* Screener Page Follow Button overrides against dark secondary-page resets */
 .screener-follow-btn-unfollowed {
-  background: #22d3ee !important;
-  background-color: #22d3ee !important;
+  background: #38bdf8 !important;
+  background-color: #38bdf8 !important;
   border-color: #38bdf8 !important;
-  color: #050811 !important;
-  box-shadow: 0 4px 14px rgba(34, 211, 238, 0.35) !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
 }
 
 .screener-follow-btn-unfollowed:hover {
-  background: #67e8f9 !important;
-  background-color: #67e8f9 !important;
+  background: #7dd3fc !important;
+  background-color: #7dd3fc !important;
   color: #000000 !important;
 }
 
 .screener-follow-btn-unfollowed * {
-  color: #050811 !important;
+  color: #000000 !important;
 }
 
 .screener-follow-btn-following {
   background: #10b981 !important;
   background-color: #10b981 !important;
-  border-color: #34d399 !important;
-  color: #022c22 !important;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+  border-color: #10b981 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
 }
 
 .screener-follow-btn-following:hover {
   background: #34d399 !important;
   background-color: #34d399 !important;
-  color: #022c22 !important;
+  color: #000000 !important;
 }
 
 .screener-follow-btn-following * {
-  color: #022c22 !important;
+  color: #000000 !important;
+}
+
+/* Screener Company Header Card - explicit dark and light mode styling harmonized with Pulse */
+html.dark .screener-company-header-card {
+  background: #111111 !important;
+  background-color: #111111 !important;
+  background-image: none !important;
+  border-color: #242424 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+html.dark .screener-company-header-card .screener-header-title {
+  color: #ffffff !important;
+}
+
+html.dark .screener-company-header-card .screener-header-btn-search,
+html.dark .screener-company-header-card .screener-header-btn-export {
+  background-color: #171717 !important;
+  border-color: #242424 !important;
+  border-radius: 6px !important;
+  color: #e5e5e5 !important;
+}
+
+html.dark .screener-company-header-card .screener-header-btn-search:hover,
+html.dark .screener-company-header-card .screener-header-btn-export:hover {
+  background-color: #202020 !important;
+  border-color: #333333 !important;
+  color: #ffffff !important;
+}
+
+html.dark .screener-company-header-card .screener-header-price-pill {
+  background-color: #171717 !important;
+  border-color: #242424 !important;
+  border-radius: 6px !important;
+}
+
+html.dark .screener-company-header-card .screener-header-price-val {
+  color: #ffffff !important;
+}
+
+html.dark .screener-company-header-card .screener-header-ticker-badge {
+  background-color: #171717 !important;
+  border-color: #242424 !important;
+  border-radius: 6px !important;
+  color: #38bdf8 !important;
+}
+
+html.dark .screener-company-header-card .screener-header-sector-badge {
+  background-color: #171717 !important;
+  border-color: #242424 !important;
+  border-radius: 6px !important;
+  color: #a3a3a3 !important;
 }
 
 /* Portfolio Page Add Action Button overrides against dark secondary-page resets */

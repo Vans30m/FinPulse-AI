@@ -660,7 +660,7 @@ export default function StockScreener() {
     return Math.min(100, Math.max(10, score));
   }, [selectedStock]);
 
-  const isIndian = selectedStock?.symbol.endsWith('.NS');
+  const isIndian = !!(selectedStock?.symbol.endsWith('.NS') || selectedStock?.symbol.endsWith('.BO'));
   const currencySymbol = isIndian ? '₹' : '$';
   const peerData = selectedStock ? getPeerGroup(selectedStock.symbol) : null;
 
@@ -1802,7 +1802,7 @@ export default function StockScreener() {
   }, [selectedStock]);
 
   return (
-    <div className="min-h-[85vh] bg-white dark:bg-[#090d16] text-slate-900 dark:text-slate-200 font-sans transition-colors duration-300 relative w-full p-4 sm:p-6 md:p-8 rounded-3xl shadow-[0_12px_40px_-12px_rgba(0,0,0,0.06)] dark:shadow-2xl border border-slate-200 dark:border-white/5">
+    <div className="min-h-[85vh] bg-white dark:bg-[#111111] text-slate-900 dark:text-white font-sans transition-colors duration-200 relative w-full p-4 sm:p-6 md:p-8 rounded-lg shadow-sm dark:shadow-none border border-slate-200 dark:border-[#242424]">
 
       {/* Loading Overlay */}
       {isLoading && (
@@ -1813,25 +1813,19 @@ export default function StockScreener() {
 
       {/* 1. LANDING SEARCH VIEW */}
       {!selectedStock ? (
-        <div className="min-h-[72vh] flex flex-col justify-center items-center max-w-3xl mx-auto text-center space-y-8 py-12 px-4 sm:px-6 relative">
-          {/* Subtle ambient lighting effects */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-1/2 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
+        <div className="min-h-[72vh] flex flex-col justify-center items-center max-w-3xl mx-auto text-center space-y-6 py-12 px-4 sm:px-6 relative">
           {/* Logo & Subtitle */}
-          <div className="space-y-4 relative z-10">
-            <div className="flex items-center justify-center gap-2">
-              <h1 className="text-slate-900 dark:text-slate-200 bg-clip-text bg-gradient-to-r from-slate-900 via-blue-600 to-indigo-600 dark:from-white dark:via-cyan-200 dark:to-cyan-400 font-black text-5xl sm:text-6xl tracking-tight font-display">
-                screener
-              </h1>
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+          <div className="space-y-3 relative z-10">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white font-display">
+              screener
+            </h1>
+            <p className="text-slate-500 dark:text-neutral-400 text-sm md:text-base font-normal max-w-xl mx-auto leading-relaxed">
               Institutional-grade fundamental analysis, quarterly balance sheets, valuation metrics & shareholding insights.
             </p>
           </div>
 
           {/* Search bar wrapper */}
-          <div className="w-full relative z-10">
+          <div className="w-full relative z-10 max-w-xl">
             <StockSearch
               placeholder="Search by company name or ticker"
               onSelect={(asset) => handleSelectStock(asset.symbol)}
@@ -1841,14 +1835,14 @@ export default function StockScreener() {
           </div>
 
           {/* Quick links */}
-          <div className="space-y-3 relative z-10">
-            <div className="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
-              <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px]">Popular Tickers:</span>
+          <div className="space-y-2 relative z-10">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
+              <span className="text-slate-400 dark:text-neutral-500 font-semibold uppercase tracking-wider text-[10px] mr-1">Popular Tickers:</span>
               {SUGGESTED_COMPANIES.map((company) => (
                 <button
                   key={company.symbol}
                   onClick={() => handleSelectStock(company.symbol)}
-                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800/80 dark:hover:bg-cyan-500/15 dark:text-slate-200 dark:hover:text-cyan-300 rounded-xl border border-slate-300/80 hover:border-slate-400 dark:border-white/10 dark:hover:border-cyan-400/30 shadow-sm font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 dark:bg-[#141414] dark:hover:bg-[#1a1a1a] dark:text-neutral-300 rounded-md border border-slate-200 dark:border-[#242424] hover:border-slate-300 dark:hover:border-[#333333] text-xs font-medium transition-colors cursor-pointer"
                 >
                   {company.name}
                 </button>
@@ -1860,20 +1854,11 @@ export default function StockScreener() {
 
         // 2. DETAILED ANALYSIS VIEW
         <div className="space-y-6 animate-fadeIn relative">
-          {/* Ambient background glows for glassmorphic elements */}
-          <div className="absolute top-10 left-1/4 w-72 h-72 bg-blue-400/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-400/10 dark:bg-purple-650/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-20 left-1/3 w-96 h-96 bg-blue-300/5 dark:bg-blue-900/5 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Streamlined Combined Company Header Row with Premium Glassmorphism */}
-          <div className="relative overflow-hidden bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-950/90 dark:from-[#0d1326]/90 dark:via-[#090d1a]/80 dark:to-[#050811]/95 border border-slate-750/50 dark:border-cyan-500/15 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl">
-            {/* Ambient subtle glow */}
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-1/4 -mb-16 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-
+          {/* Streamlined Combined Company Header Row */}
+          <div className="screener-company-header-card relative overflow-hidden bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm transition-colors">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
               {/* Left Column: Return button + Company Title + Badges */}
-              <div className="flex flex-wrap items-center gap-3.5">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => {
                     if (loadTimerRef.current) {
@@ -1883,23 +1868,23 @@ export default function StockScreener() {
                     setIsLoading(false);
                     setSelectedStock(null);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 font-bold text-xs transition-all shadow-sm group shrink-0"
+                  className="screener-header-btn-search flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-[#171717] dark:hover:bg-[#202020] text-slate-700 hover:text-slate-900 dark:text-neutral-200 border border-slate-200 dark:border-[#242424] font-medium text-xs transition-colors shrink-0 cursor-pointer"
                 >
-                  <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                  <ArrowLeft className="h-3.5 w-3.5 text-slate-500 dark:text-neutral-400 group-hover:-translate-x-0.5 transition-transform" />
                   <span>Search</span>
                 </button>
 
-                <div className="h-5 w-[1px] bg-white/10 hidden sm:block shrink-0" />
+                <div className="h-4 w-px bg-slate-200 dark:bg-[#242424] hidden sm:block shrink-0" />
 
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate leading-none">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h1 className="screener-header-title text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight truncate leading-none">
                     {selectedStock.name}
                   </h1>
-                  <span className="px-2 py-0.5 bg-cyan-400/10 text-cyan-400 border border-cyan-400/20 text-[10px] font-black uppercase rounded-lg tracking-wider shrink-0 leading-none">
+                  <span className="screener-header-ticker-badge px-2 py-0.5 bg-slate-100 dark:bg-[#171717] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-[#242424] text-[10px] font-mono font-bold uppercase rounded tracking-wider shrink-0 leading-none">
                     {selectedStock.symbol}
                   </span>
                   {assetDetails?.profile?.sector && (
-                    <span className="hidden md:inline-flex px-2 py-0.5 bg-slate-800/80 text-slate-400 border border-white/5 text-[10px] font-bold rounded-lg tracking-wider shrink-0">
+                    <span className="screener-header-sector-badge hidden md:inline-flex px-2 py-0.5 bg-slate-100 dark:bg-[#171717] text-slate-600 dark:text-neutral-400 border border-slate-200 dark:border-[#242424] text-[10px] font-medium rounded tracking-wide shrink-0">
                       {assetDetails.profile.sector}
                     </span>
                   )}
@@ -1907,11 +1892,11 @@ export default function StockScreener() {
 
                 {/* Price Display Pill */}
                 {((assetDetails?.statistics?.price != null && assetDetails.statistics.price > 0) || selectedStock.price > 0) ? (
-                  <div className="flex items-center gap-2 bg-slate-950/60 border border-white/10 px-3 py-1.5 rounded-xl shrink-0">
-                    <span className="font-mono text-base font-black text-white leading-none">
+                  <div className="screener-header-price-pill flex items-center gap-2 bg-slate-100 dark:bg-[#171717] border border-slate-200 dark:border-[#242424] px-2.5 py-1 rounded-md shrink-0">
+                    <span className="screener-header-price-val font-mono text-sm font-bold text-slate-900 dark:text-white leading-none">
                       {currencySymbol}{(assetDetails?.statistics?.price ?? selectedStock.price).toFixed(2)}
                     </span>
-                    <span className={`font-mono text-xs font-black px-1.5 py-0.5 rounded-md leading-none ${(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-rose-500/15 text-rose-400 border border-rose-500/25'}`}>
+                    <span className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded leading-none ${(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400 border border-rose-500/20'}`}>
                       {(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent) >= 0 ? '+' : ''}{(assetDetails?.statistics?.changePercent ?? selectedStock.changePercent).toFixed(2)}%
                     </span>
                   </div>
@@ -1919,40 +1904,40 @@ export default function StockScreener() {
               </div>
 
               {/* Right Column: Actions */}
-              <div className="flex items-center gap-2.5 shrink-0 self-end lg:self-auto">
+              <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
                 <button
                   onClick={exportStockReportPDF}
-                  className="flex items-center gap-1.5 px-3.5 py-2 border border-white/10 hover:border-cyan-400/40 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition-all shadow-sm active:scale-95 cursor-pointer"
+                  className="screener-header-btn-export flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-[#242424] hover:border-slate-300 dark:hover:border-[#333333] rounded-md text-xs font-medium text-slate-700 dark:text-neutral-200 bg-slate-50 hover:bg-slate-100 dark:bg-[#171717] dark:hover:bg-[#202020] transition-colors cursor-pointer"
                   title="Export complete stock report as PDF"
                 >
-                  <Download className="h-3.5 w-3.5 text-cyan-400" />
+                  <Download className="h-3.5 w-3.5 text-slate-500 dark:text-neutral-400" />
                   <span>Export PDF</span>
                 </button>
                 <button
                   onClick={handleFollowToggle}
                   disabled={isFollowPending}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-lg whitespace-nowrap active:scale-95 cursor-pointer border ${isFollowPending
-                      ? 'opacity-70 cursor-not-allowed bg-slate-800 text-slate-400 border-white/10'
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md whitespace-nowrap active:scale-95 cursor-pointer border ${isFollowPending
+                      ? 'opacity-70 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-white/10'
                       : isFollowing
-                        ? 'screener-follow-btn-following bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-400 shadow-emerald-500/20'
-                        : 'screener-follow-btn-unfollowed bg-cyan-400 hover:bg-cyan-300 text-slate-950 border-cyan-300 shadow-cyan-400/30 font-black'
+                        ? 'screener-follow-btn-following bg-emerald-500 hover:bg-emerald-400 text-white dark:text-slate-950 border-emerald-500 dark:border-emerald-400 shadow-emerald-500/20'
+                        : 'screener-follow-btn-unfollowed bg-blue-600 hover:bg-blue-500 text-white dark:bg-cyan-400 dark:hover:bg-cyan-300 dark:text-slate-950 border-blue-600 dark:border-cyan-300 shadow-blue-500/20 dark:shadow-cyan-400/30 font-black'
                     }`}
                   title={isFollowing ? 'Remove from Watchlist' : 'Add to Watchlist'}
                 >
                   {isFollowPending ? (
                     <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-900" />
-                      <span className="text-slate-900 font-black">Updating...</span>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-white dark:text-slate-900" />
+                      <span className="text-white dark:text-slate-900 font-black">Updating...</span>
                     </>
                   ) : isFollowing ? (
                     <>
-                      <Check className="h-3.5 w-3.5 stroke-[3] text-slate-950" />
-                      <span className="text-slate-950 font-black tracking-wide">Following</span>
+                      <Check className="h-3.5 w-3.5 stroke-[3] text-white dark:text-slate-950" />
+                      <span className="text-white dark:text-slate-950 font-black tracking-wide">Following</span>
                     </>
                   ) : (
                     <>
-                      <Plus className="h-3.5 w-3.5 stroke-[3] text-slate-950" />
-                      <span className="text-slate-950 font-black tracking-wide">Follow</span>
+                      <Plus className="h-3.5 w-3.5 stroke-[3] text-white dark:text-slate-950" />
+                      <span className="text-white dark:text-slate-950 font-black tracking-wide">Follow</span>
                     </>
                   )}
                 </button>
@@ -1963,8 +1948,8 @@ export default function StockScreener() {
           {/* Main content wrapper with sticky left sidebar */}
           <div className="flex flex-col lg:flex-row gap-6 items-start w-full relative mt-4">
             {/* Sticky Left Sidebar Navbar */}
-            <div className="hidden lg:flex lg:flex-col gap-2 w-60 shrink-0 sticky top-24 self-start bg-slate-100/90 dark:bg-slate-950/40 backdrop-blur-md border border-slate-200 dark:border-white/5 p-3 rounded-2xl shadow-xl z-20">
-              <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black text-blue-600 dark:text-cyan-400 uppercase tracking-widest border-b border-slate-200/80 dark:border-white/5 mb-1">
+            <div className="hidden lg:flex lg:flex-col gap-2 w-60 shrink-0 sticky top-24 self-start bg-slate-100/90 dark:bg-[#111111] backdrop-blur-md border border-slate-200 dark:border-[#242424] p-3 rounded-lg shadow-sm z-20 transition-colors">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-widest border-b border-slate-200/80 dark:border-[#242424] mb-1">
                 <span>Sections</span>
               </div>
               {[
@@ -1973,7 +1958,7 @@ export default function StockScreener() {
                 { id: 'screener-valuation', label: 'Valuation', tab: 'valuation', icon: Bookmark },
                 { id: 'screener-fundamentals', label: 'Fundamentals', tab: 'fundamentals', icon: FileText },
                 { id: 'screener-shareholding', label: 'Shareholding', tab: 'shareholding', icon: PieChart },
-                { id: 'screener-trendlyne', label: 'Technicals', tab: 'trendlyne', icon: Activity },
+                ...(isIndian ? [{ id: 'screener-trendlyne', label: 'Technicals', tab: 'trendlyne', icon: Activity }] : []),
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.tab;
@@ -1981,13 +1966,13 @@ export default function StockScreener() {
                   <button
                     key={tab.tab}
                     onClick={() => handleTabClick(tab.id, tab.tab)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 text-left w-full group cursor-pointer ${isActive
-                      ? 'bg-blue-600/10 text-blue-700 border-blue-500/30 dark:bg-gradient-to-r dark:from-cyan-500/15 dark:to-blue-500/15 dark:text-cyan-400 border dark:border-cyan-400/30 shadow-md shadow-blue-500/5 dark:shadow-cyan-500/10'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 border border-transparent'
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors text-left w-full group cursor-pointer border ${isActive
+                      ? 'bg-slate-100 text-slate-900 border-slate-300 dark:bg-[#1C1C1C] dark:text-white dark:border-[#242424]'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-[#171717] border-transparent'
                       }`}
                     title={tab.label}
                   >
-                    <Icon className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-blue-600 dark:text-cyan-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200'}`} />
+                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-blue-600 dark:text-white' : 'text-slate-400 dark:text-neutral-500 group-hover:text-slate-700 dark:group-hover:text-neutral-300'}`} />
                     <span className="truncate">{tab.label}</span>
                   </button>
                 );
@@ -1997,7 +1982,7 @@ export default function StockScreener() {
             {/* Right main content container */}
             <div className="flex-1 min-w-0 space-y-6 w-full">
               {/* Tab Selection Navigation Bar (Mobile / Tablet only) */}
-              <div className="lg:hidden flex items-center gap-1 bg-slate-100/70 dark:bg-white/[0.02] backdrop-blur-md p-1 rounded-full border border-slate-200/50 dark:border-white/5 shadow-inner mt-2 w-full overflow-x-auto scrollbar-none">
+              <div className="lg:hidden flex items-center gap-1 bg-slate-100/70 dark:bg-[#111111] backdrop-blur-md p-1 rounded-lg border border-slate-200/50 dark:border-[#242424] shadow-inner mt-2 w-full overflow-x-auto scrollbar-none">
                 <div className="flex items-center gap-1 min-w-max">
                   {[
                     { id: 'screener-overview', label: 'Overview', tab: 'overview' },
@@ -2005,14 +1990,14 @@ export default function StockScreener() {
                     { id: 'screener-valuation', label: 'Valuation', tab: 'valuation' },
                     { id: 'screener-fundamentals', label: 'Fundamentals', tab: 'fundamentals' },
                     { id: 'screener-shareholding', label: 'Shareholding Pattern', tab: 'shareholding' },
-                    { id: 'screener-trendlyne', label: 'Technicals', tab: 'trendlyne' },
+                    ...(isIndian ? [{ id: 'screener-trendlyne', label: 'Technicals', tab: 'trendlyne' }] : []),
                   ].map((tab) => (
                     <button
                       key={tab.tab}
                       onClick={() => handleTabClick(tab.id, tab.tab)}
-                      className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-full transition-all duration-300 whitespace-nowrap ${activeTab === tab.tab
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 dark:from-cyan-400 dark:to-teal-400 dark:text-slate-950 dark:shadow-cyan-400/20 transform scale-105'
-                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-white/5'
+                      className={`px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap ${activeTab === tab.tab
+                        ? 'bg-slate-100 text-slate-900 border border-slate-300 dark:bg-[#1C1C1C] dark:text-white dark:border-[#242424]'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-[#171717]'
                         }`}
                       title={tab.label}
                     >
@@ -2023,28 +2008,28 @@ export default function StockScreener() {
               </div>
 
               {/* 0. Overview Section */}
-              <div id="screener-overview" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-violet-500/30">
+              <div id="screener-overview" className="scroll-mt-28 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-[#333333]">
                 <button
                   onClick={handleToggleOverview}
                   className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/25 group-hover:scale-110 transition-transform">
-                      <BookOpen className="h-5 w-5" />
+                    <span className="p-2 rounded-md bg-slate-100 dark:bg-[#171717] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-[#242424] transition-colors">
+                      <BookOpen className="h-4 w-4" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-neutral-100 transition-colors">
                         {selectedStock?.name || 'Company'} Overview
                       </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Business profile, executive information, and latest company news</p>
+                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">Business profile, executive information, and latest company news</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 bg-slate-100 dark:bg-[#171717] px-2 py-1 rounded-md border border-slate-200 dark:border-[#242424] hidden sm:inline-block">
                       {isOverviewOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isOverviewOpen ? 'transform rotate-180 text-violet-600 dark:text-violet-400' : ''}`} />
+                    <div className="p-1 rounded-md bg-slate-100 dark:bg-[#171717] border border-slate-200 dark:border-[#242424] group-hover:bg-slate-200 dark:group-hover:bg-[#202020] transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-neutral-400 transition-transform duration-300 ${isOverviewOpen ? 'transform rotate-180 text-slate-900 dark:text-white' : ''}`} />
                     </div>
                   </div>
                 </button>
@@ -2077,73 +2062,74 @@ export default function StockScreener() {
                       </div>
 
                       {/* Right: Key Stats */}
-                      <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-4 rounded-2xl">
+                      <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] p-4 rounded-lg">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <div className="text-xs font-mono font-black text-slate-900 dark:text-white">
                               {assetDetails?.profile?.employees ? assetDetails.profile.employees.toLocaleString() : '-'}
                             </div>
-                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mt-0.5">
                               Full Time Employees
                             </div>
                           </div>
 
-                          <div className="col-span-2 border-t border-slate-150/50 dark:border-white/5 pt-3 mt-1">
+                          <div className="col-span-2 border-t border-slate-200 dark:border-[#242424] pt-3 mt-1">
                             <div className="text-xs font-black text-slate-900 dark:text-white truncate">
                               {assetDetails?.profile?.sector || '-'}
                             </div>
-                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mt-0.5">
                               Sector
                             </div>
                           </div>
 
-                          <div className="col-span-2 border-t border-slate-150/50 dark:border-white/5 pt-3 mt-1">
+                          <div className="col-span-2 border-t border-slate-200 dark:border-[#242424] pt-3 mt-1">
                             <div className="text-xs font-black text-slate-900 dark:text-white truncate" title={assetDetails?.profile?.industry || ''}>
                               {assetDetails?.profile?.industry || '-'}
                             </div>
-                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                            <div className="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mt-0.5">
                               Industry
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
+
                     {/* Middle: Analysts Recommendations & Key Events */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200/60 dark:border-white/10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200 dark:border-[#242424]">
                       {/* Analyst Recommendations */}
-                      <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-5 rounded-2xl">
-                        <h4 className="text-xs font-black uppercase text-slate-905 dark:text-white tracking-wider flex items-center gap-2 mb-4">
+                      <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] p-5 rounded-lg">
+                        <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2 mb-4">
                           <Activity className="h-4 w-4 text-emerald-500" />
                           <span>Analyst Recommendation</span>
                         </h4>
 
-                        <div className="divide-y divide-slate-150/50 dark:divide-white/5 text-[11px] font-mono text-slate-655 dark:text-slate-300">
+                        <div className="divide-y divide-slate-200 dark:divide-[#242424] text-[11px] font-mono text-slate-700 dark:text-slate-300">
                           <div className="flex justify-between py-2 items-center">
-                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Recommendation</span>
+                            <span className="font-sans font-bold text-slate-500 dark:text-slate-400">Recommendation</span>
                             <span className="font-black text-blue-600 dark:text-cyan-400 capitalize">
                               {assetDetails?.analysts?.recommendationKey || 'N/A'} ({assetDetails?.analysts?.recommendationMean?.toFixed(2) || 'N/A'})
                             </span>
                           </div>
                           <div className="flex justify-between py-2 items-center">
-                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">High Target Price</span>
-                            <span className="font-bold text-emerald-600 dark:text-emerald-450">
+                            <span className="font-sans font-bold text-slate-500 dark:text-slate-400">High Target Price</span>
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
                               {assetDetails?.analysts?.targetHigh ? `${currencySymbol}${assetDetails.analysts.targetHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'}
                             </span>
                           </div>
                           <div className="flex justify-between py-2 items-center">
-                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Median Target Price</span>
+                            <span className="font-sans font-bold text-slate-500 dark:text-slate-400">Median Target Price</span>
                             <span className="font-bold text-slate-900 dark:text-slate-100">
                               {assetDetails?.analysts?.targetMedian ? `${currencySymbol}${assetDetails.analysts.targetMedian.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'}
                             </span>
                           </div>
                           <div className="flex justify-between py-2 items-center">
-                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Mean Target Price</span>
+                            <span className="font-sans font-bold text-slate-500 dark:text-slate-400">Mean Target Price</span>
                             <span className="font-bold text-slate-900 dark:text-slate-100">
                               {assetDetails?.analysts?.targetMeanPrice ? `${currencySymbol}${assetDetails.analysts.targetMeanPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'}
                             </span>
                           </div>
                           <div className="flex justify-between py-2 items-center">
-                            <span className="font-sans font-bold text-slate-450 dark:text-slate-500">Low Target Price</span>
+                            <span className="font-sans font-bold text-slate-500 dark:text-slate-400">Low Target Price</span>
                             <span className="font-bold text-rose-500">
                               {assetDetails?.analysts?.targetLow ? `${currencySymbol}${assetDetails.analysts.targetLow.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'}
                             </span>
@@ -2152,15 +2138,15 @@ export default function StockScreener() {
                       </div>
 
                       {/* Events Column */}
-                      <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-5 rounded-2xl h-full">
-                        <h4 className="text-xs font-black uppercase text-slate-905 dark:text-white tracking-wider flex items-center gap-2 mb-4">
+                      <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] p-5 rounded-lg h-full">
+                        <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2 mb-4">
                           <Calendar className="h-4 w-4 text-purple-500" />
                           <span>Key Events</span>
                         </h4>
 
                         <div className="space-y-4 text-xs">
                           <div>
-                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Ex-Dividend Date</span>
+                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Ex-Dividend Date</span>
                             <span className="font-mono font-bold text-slate-900 dark:text-slate-100 mt-1 block">
                               {assetDetails?.events?.exDividendDate
                                 ? new Date(assetDetails.events.exDividendDate).toLocaleDateString(undefined, { dateStyle: 'medium' })
@@ -2168,8 +2154,8 @@ export default function StockScreener() {
                             </span>
                           </div>
 
-                          <div className="border-t border-slate-150/45 dark:border-white/5 pt-3">
-                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Earnings Calendar Date</span>
+                          <div className="border-t border-slate-200 dark:border-[#242424] pt-3">
+                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Earnings Calendar Date</span>
                             <span className="font-mono font-bold text-slate-900 dark:text-slate-100 mt-1 block">
                               {assetDetails?.events?.earnings?.earningsDate?.[0]
                                 ? new Date(assetDetails.events.earnings.earningsDate[0]).toLocaleDateString(undefined, { dateStyle: 'medium' })
@@ -2181,14 +2167,14 @@ export default function StockScreener() {
                     </div>
 
                     {/* Bottom: News */}
-                    <div className="pt-4 border-t border-slate-200/60 dark:border-white/10">
-                      <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-150/40 dark:border-white/[0.03] p-5 rounded-2xl">
-                        <h4 className="text-xs font-black uppercase text-slate-905 dark:text-white tracking-wider flex items-center gap-2 mb-4">
+                    <div className="pt-4 border-t border-slate-200 dark:border-[#242424]">
+                      <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] p-5 rounded-lg">
+                        <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2 mb-4">
                           <Newspaper className="h-4 w-4 text-blue-500" />
                           <span>Latest Articles</span>
                         </h4>
 
-                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-205 dark:scrollbar-thumb-slate-805">
+                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-[#242424]">
                           {assetDetails?.news && assetDetails.news.length > 0 ? (
                             assetDetails.news.map((item: any, idx: number) => (
                               <a
@@ -2196,10 +2182,10 @@ export default function StockScreener() {
                                 href={item.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block p-3 rounded-xl border border-slate-150/30 dark:border-white/5 hover:border-blue-200 dark:hover:border-cyan-500/30 bg-white/50 dark:bg-white/[0.005] hover:bg-white dark:hover:bg-white/[0.02] transition-all group"
+                                className="block p-3 rounded-md border border-slate-200 dark:border-[#242424] hover:border-blue-400 dark:hover:border-cyan-500/50 bg-white dark:bg-[#111111] hover:bg-slate-50 dark:hover:bg-[#171717] transition-all group"
                               >
                                 <div className="flex justify-between items-start gap-3">
-                                  <h5 className="text-[11px] sm:text-xs font-bold text-slate-850 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors leading-snug">
+                                  <h5 className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors leading-snug">
                                     {item.title}
                                   </h5>
                                   <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-blue-600 dark:text-cyan-400 mt-0.5" />
@@ -2207,7 +2193,7 @@ export default function StockScreener() {
                               </a>
                             ))
                           ) : (
-                            <p className="text-xs text-slate-450 text-center py-6">No recent articles found for this ticker.</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-6">No recent articles found for this ticker.</p>
                           )}
                         </div>
                       </div>
@@ -2217,34 +2203,34 @@ export default function StockScreener() {
               </div>
 
               {/* 1. Market Data Section */}
-              <div id="screener-market-data" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-cyan-500/30 mt-6">
+              <div id="screener-market-data" className="scroll-mt-28 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-[#333333] mt-6">
                 <button
                   onClick={handleToggleMarketData}
                   className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25 group-hover:scale-110 transition-transform">
-                      <Globe className="h-5 w-5" />
+                    <span className="p-2 rounded-md bg-slate-100 dark:bg-[#171717] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-[#242424] transition-colors">
+                      <Globe className="h-4 w-4" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-neutral-100 transition-colors">
                         Market Data & Price Statistics
                       </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Highs, lows, beta volatility, shares outstanding & volume statistics</p>
+                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">Highs, lows, beta volatility, shares outstanding & volume statistics</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 bg-slate-100 dark:bg-[#171717] px-2 py-1 rounded-md border border-slate-200 dark:border-[#242424] hidden sm:inline-block">
                       {isMarketDataOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isMarketDataOpen ? 'transform rotate-180 text-cyan-600 dark:text-cyan-400' : ''}`} />
+                    <div className="p-1 rounded-md bg-slate-100 dark:bg-[#171717] border border-slate-200 dark:border-[#242424] group-hover:bg-slate-200 dark:group-hover:bg-[#202020] transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-neutral-400 transition-transform duration-300 ${isMarketDataOpen ? 'transform rotate-180 text-slate-900 dark:text-white' : ''}`} />
                     </div>
                   </div>
                 </button>
 
                 {isMarketDataOpen && (
-                  <div className="mt-5 pt-5 border-t border-white/10">
+                  <div className="mt-5 pt-5 border-t border-slate-200/60 dark:border-white/10">
                     {isMarketDataLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Loading market data...</span>
@@ -2264,11 +2250,11 @@ export default function StockScreener() {
                           { label: 'Shares Outstanding', value: assetDetails?.statistics?.sharesOutstanding ? (isIndian ? `${(assetDetails.statistics.sharesOutstanding / 10000000).toFixed(2)} Cr.` : `${(assetDetails.statistics.sharesOutstanding / 1000000).toFixed(2)}M`) : '-', desc: 'Total shares issued' },
                           { label: 'Beta (Volatility)', value: assetDetails?.statistics?.beta != null ? assetDetails.statistics.beta.toFixed(2) : '-', desc: 'Volatility relative to market' },
                         ].map((item) => (
-                          <div key={item.label} className="bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100/50 dark:hover:bg-white/[0.02] border border-slate-150/40 dark:border-white/[0.03] p-3 sm:p-4 rounded-2xl flex items-start gap-2 sm:gap-3 transition-all">
+                          <div key={item.label} className="bg-slate-50 dark:bg-[#141414] hover:bg-slate-100/50 dark:hover:bg-[#171717] border border-slate-200 dark:border-[#242424] hover:border-slate-300 dark:hover:border-cyan-500/30 p-3 sm:p-4 rounded-lg flex items-start gap-2 sm:gap-3 transition-all shadow-xs">
                             <div className="flex flex-col min-w-0">
-                              <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{item.label}</span>
-                              <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-0.5 break-all">{item.value}</span>
-                              <span className="text-[8px] text-slate-400 mt-1 font-semibold leading-tight">{item.desc}</span>
+                              <span className="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">{item.label}</span>
+                              <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 break-all">{item.value}</span>
+                              <span className="text-[8px] text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-tight">{item.desc}</span>
                             </div>
                           </div>
                         ))}
@@ -2279,49 +2265,49 @@ export default function StockScreener() {
               </div>
 
               {/* 2. Valuation Section */}
-              <div id="screener-valuation" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-indigo-500/30 mt-6">
+              <div id="screener-valuation" className="scroll-mt-28 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-[#333333] mt-6">
                 <button
                   onClick={handleToggleValuation}
                   className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 group-hover:scale-110 transition-transform">
-                      <Bookmark className="h-5 w-5" />
+                    <span className="p-2 rounded-md bg-slate-100 dark:bg-[#171717] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-[#242424] transition-colors">
+                      <Bookmark className="h-4 w-4" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-neutral-100 transition-colors">
                         Valuation Multiples
                       </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Historical quarterly P/E, Price to Book, EV/EBITDA, and valuation tracks</p>
+                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">Historical quarterly P/E, Price to Book, EV/EBITDA, and valuation tracks</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 bg-slate-100 dark:bg-[#171717] px-2 py-1 rounded-md border border-slate-200 dark:border-[#242424] hidden sm:inline-block">
                       {isValuationOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isValuationOpen ? 'transform rotate-180 text-indigo-600 dark:text-indigo-400' : ''}`} />
+                    <div className="p-1 rounded-md bg-slate-100 dark:bg-[#171717] border border-slate-200 dark:border-[#242424] group-hover:bg-slate-200 dark:group-hover:bg-[#202020] transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-neutral-400 transition-transform duration-300 ${isValuationOpen ? 'transform rotate-180 text-slate-900 dark:text-white' : ''}`} />
                     </div>
                   </div>
                 </button>
 
                 {isValuationOpen && valuationTableData && (
-                  <div className="mt-5 pt-5 border-t border-white/10 animate-fadeIn">
-                    <div className="overflow-x-auto rounded-2xl border border-slate-150/40 dark:border-white/[0.03] bg-white/50 dark:bg-slate-900/50 backdrop-blur-md">
+                  <div className="mt-5 pt-5 border-t border-slate-200 dark:border-[#242424] animate-fadeIn">
+                    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#242424] bg-white dark:bg-[#111111]">
                       <table className="w-full text-left border-collapse min-w-[750px]">
                         <thead>
-                          <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
-                            <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 sticky left-0 bg-slate-50 dark:bg-[#0b1022] z-20 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate rounded-tl-2xl">Valuation Metric</th>
+                          <tr className="border-b border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414]">
+                            <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-[#141414] z-20 border-r border-slate-200 dark:border-[#242424] max-w-[130px] sm:max-w-[220px] truncate">Valuation Metric</th>
                             {(fundamentalsData?.quarters || ['Jun 26', 'Mar 26', 'Dec 25', 'Sep 25']).map(q => (
-                              <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">{q}</th>
+                              <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 text-right">{q}</th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                        <tbody className="divide-y divide-slate-100 dark:divide-[#242424]">
                           {valuationTableData.map((row, rIdx) => (
-                            <tr key={row.label} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
+                            <tr key={row.label} className="group hover:bg-slate-50/50 dark:hover:bg-[#171717] transition-all">
                               <td
-                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === valuationTableData.length - 1 ? 'rounded-bl-2xl' : ''}`}
+                                className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#111111] group-hover:bg-slate-50 dark:group-hover:bg-[#171717] z-10 border-r border-slate-200 dark:border-[#242424] max-w-[130px] sm:max-w-[220px] truncate`}
                                 title={row.label}
                               >
                                 {row.label}
@@ -2339,28 +2325,28 @@ export default function StockScreener() {
               </div>
 
               {/* 3. Fundamentals Section */}
-              <div id="screener-fundamentals" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-emerald-500/30 mt-6">
+              <div id="screener-fundamentals" className="scroll-mt-28 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-[#333333] mt-6">
                 <button
                   onClick={handleToggleFundamentals}
                   className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 group-hover:scale-110 transition-transform">
-                      <FileText className="h-5 w-5" />
+                    <span className="p-2 rounded-md bg-slate-100 dark:bg-[#171717] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-[#242424] transition-colors">
+                      <FileText className="h-4 w-4" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-neutral-100 transition-colors">
                         Financial Statements & Fundamentals
                       </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Quarterly Income Statement, Balance Sheet, and Free Cash Flow</p>
+                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">Quarterly Income Statement, Balance Sheet, and Free Cash Flow</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 bg-slate-100 dark:bg-[#171717] px-2 py-1 rounded-md border border-slate-200 dark:border-[#242424] hidden sm:inline-block">
                       {isFundamentalsOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isFundamentalsOpen ? 'transform rotate-180 text-emerald-600 dark:text-emerald-400' : ''}`} />
+                    <div className="p-1 rounded-md bg-slate-100 dark:bg-[#171717] border border-slate-200 dark:border-[#242424] group-hover:bg-slate-200 dark:group-hover:bg-[#202020] transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-neutral-400 transition-transform duration-300 ${isFundamentalsOpen ? 'transform rotate-180 text-slate-900 dark:text-white' : ''}`} />
                     </div>
                   </div>
                 </button>
@@ -2389,17 +2375,17 @@ export default function StockScreener() {
 
                     {/* Restructured Sub-tab Table Contents */}
                     {fundamentalsData && (
-                      <div className="overflow-x-auto rounded-2xl border border-slate-150/40 dark:border-white/[0.03] bg-white/50 dark:bg-slate-900/50 backdrop-blur-md">
+                      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#242424] bg-white dark:bg-[#111111]">
                         <table className="w-full text-left border-collapse min-w-[650px]">
                           <thead>
-                            <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
-                              <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 sticky left-0 bg-slate-50 dark:bg-[#0b1022] z-20 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate rounded-tl-2xl">Metric (Quarterly)</th>
+                            <tr className="border-b border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#141414]">
+                              <th className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-[#141414] z-20 border-r border-slate-200 dark:border-[#242424] max-w-[130px] sm:max-w-[220px] truncate">Metric (Quarterly)</th>
                               {fundamentalsData.quarters.map(q => (
-                                <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">{q}</th>
+                                <th key={q} className="p-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 text-right">{q}</th>
                               ))}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                          <tbody className="divide-y divide-slate-100 dark:divide-[#242424]">
                             {isTimeseriesLoading[fundamentalsTab] ? (
                               <tr>
                                 <td colSpan={5} className="py-12 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -2456,9 +2442,9 @@ export default function StockScreener() {
                               }
 
                               return metricsList.map((metric, rIdx) => (
-                                <tr key={metric} className="group hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-all">
+                                <tr key={metric} className="group hover:bg-slate-50/50 dark:hover:bg-[#171717] transition-all">
                                   <td
-                                    className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#0b1022] group-hover:bg-slate-50 dark:group-hover:bg-[#12182e] z-10 border-r border-slate-200/60 dark:border-white/10 max-w-[130px] sm:max-w-[220px] truncate ${rIdx === metricsList.length - 1 ? 'rounded-bl-2xl' : ''}`}
+                                    className={`p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white dark:bg-[#111111] group-hover:bg-slate-50 dark:group-hover:bg-[#171717] z-10 border-r border-slate-200 dark:border-[#242424] max-w-[130px] sm:max-w-[220px] truncate`}
                                     title={metric}
                                   >
                                     {metric === 'Cash Cash Equivalents & Short-Term Investments'
@@ -2486,37 +2472,37 @@ export default function StockScreener() {
               </div>
 
               {/* 4. Shareholding Pattern Section */}
-              <div id="screener-shareholding" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-pink-500/30 mt-6">
+              <div id="screener-shareholding" className="scroll-mt-28 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-[#333333] mt-6">
                 <button
                   onClick={handleToggleShareholding}
                   className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/25 group-hover:scale-110 transition-transform">
-                      <PieChart className="h-5 w-5" />
+                    <span className="p-2 rounded-md bg-slate-100 dark:bg-[#171717] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-[#242424] transition-colors">
+                      <PieChart className="h-4 w-4" />
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-pink-600 dark:group-hover:text-pink-300 transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-neutral-100 transition-colors">
                         Shareholding & Institutional Ownership
                       </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Insiders, institutional funds float concentration & stakeholder counts</p>
+                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">Insiders, institutional funds float concentration & stakeholder counts</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 bg-slate-100 dark:bg-[#171717] px-2 py-1 rounded-md border border-slate-200 dark:border-[#242424] hidden sm:inline-block">
                       {isShareholdingOpen ? 'Collapse' : 'Expand'}
                     </span>
-                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isShareholdingOpen ? 'transform rotate-180 text-pink-600 dark:text-pink-400' : ''}`} />
+                    <div className="p-1 rounded-md bg-slate-100 dark:bg-[#171717] border border-slate-200 dark:border-[#242424] group-hover:bg-slate-200 dark:group-hover:bg-[#202020] transition-colors">
+                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-neutral-400 transition-transform duration-300 ${isShareholdingOpen ? 'transform rotate-180 text-slate-900 dark:text-white' : ''}`} />
                     </div>
                   </div>
                 </button>
 
                 {isShareholdingOpen && (
-                  <div className="mt-5 pt-5 border-t border-white/10 animate-fadeIn">
-                    <div className="bg-slate-50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-3xl p-5 sm:p-7 w-full shadow-xl backdrop-blur-md">
-                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-4 mb-5">
-                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Breakdown</h4>
+                  <div className="mt-5 pt-5 border-t border-slate-200 dark:border-[#242424] animate-fadeIn">
+                    <div className="bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] rounded-lg p-5 sm:p-6 w-full">
+                      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#242424] pb-4 mb-5">
+                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-400">Breakdown</h4>
                       </div>
                       {!assetDetails ? (
                         <div className="py-12 flex flex-col items-center justify-center gap-3 text-xs font-semibold text-slate-500">
@@ -2551,14 +2537,14 @@ export default function StockScreener() {
                               icon: <Globe className="h-4 w-4 text-indigo-500" />
                             }
                           ].map((item, idx) => (
-                            <div key={idx} className="bg-white/50 dark:bg-white/[0.005] hover:bg-white dark:hover:bg-white/[0.015] border border-slate-150/40 dark:border-white/[0.02] p-4 rounded-2xl flex items-start gap-3.5 transition-all duration-200 shadow-sm hover:shadow-md">
-                              <div className="p-2 rounded-xl bg-slate-100/50 dark:bg-white/5 shrink-0 mt-0.5">
+                            <div key={idx} className="bg-white dark:bg-[#111111] hover:bg-slate-50 dark:hover:bg-[#171717] border border-slate-200 dark:border-[#242424] p-4 rounded-lg flex items-start gap-3.5 transition-all duration-200 shadow-sm">
+                              <div className="p-2 rounded-md bg-slate-100 dark:bg-[#1c1c1c] shrink-0 mt-0.5">
                                 {item.icon}
                               </div>
                               <div className="flex flex-col min-w-0">
-                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-tight">{item.label}</span>
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider leading-tight">{item.label}</span>
                                 <span className="font-mono text-sm sm:text-base font-black text-slate-900 dark:text-white mt-1">{item.value}</span>
-                                <span className="text-[9px] text-slate-450 mt-1 font-semibold leading-tight">{item.desc}</span>
+                                <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-tight">{item.desc}</span>
                               </div>
                             </div>
                           ))}
@@ -2569,119 +2555,117 @@ export default function StockScreener() {
                 )}
               </div>
 
-              {/* 5. Technical & Health Analytics Widgets Section */}
-              <div id="screener-trendlyne" className="scroll-mt-28 bg-white dark:bg-[#0c1222] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-lg backdrop-blur-md transition-all hover:border-cyan-500/30 mt-6">
-                <button
-                  onClick={handleToggleTrendlyne}
-                  className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25 group-hover:scale-110 transition-transform">
-                      <Activity className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
-                          Technical Signals & Health Checklist
-                        </h3>
+              {/* 5. Technical & Health Analytics Widgets Section (Only for Indian stocks) */}
+              {isIndian && (
+                <div id="screener-trendlyne" className="scroll-mt-28 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-[#333333] mt-6">
+                  <button
+                    onClick={handleToggleTrendlyne}
+                    className="w-full flex items-center justify-between text-left focus:outline-none group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="p-2 rounded-md bg-slate-100 dark:bg-[#171717] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-[#242424] transition-colors">
+                        <Activity className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-neutral-100 transition-colors">
+                            Technical Signals & Health Checklist
+                          </h3>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                          Real-time momentum oscillators, moving averages, and fundamental checklist ratings
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        Real-time momentum oscillators, moving averages, and fundamental checklist ratings
-                      </p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/5 hidden sm:inline-block">
-                      {isTrendlyneOpen ? 'Collapse' : 'Expand'}
-                    </span>
-                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
-                      <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-slate-300 transition-transform duration-300 ${isTrendlyneOpen ? 'transform rotate-180 text-cyan-600 dark:text-cyan-400' : ''}`} />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 bg-slate-100 dark:bg-[#171717] px-2 py-1 rounded-md border border-slate-200 dark:border-[#242424] hidden sm:inline-block">
+                        {isTrendlyneOpen ? 'Collapse' : 'Expand'}
+                      </span>
+                      <div className="p-1 rounded-md bg-slate-100 dark:bg-[#171717] border border-slate-200 dark:border-[#242424] group-hover:bg-slate-200 dark:group-hover:bg-[#202020] transition-colors">
+                        <ChevronDown className={`h-4 w-4 text-slate-500 dark:text-neutral-400 transition-transform duration-300 ${isTrendlyneOpen ? 'transform rotate-180 text-slate-900 dark:text-white' : ''}`} />
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
 
-                {isTrendlyneOpen && (
-                  <div className="mt-5 pt-5 border-t border-white/10 animate-fadeIn space-y-5">
-                    {/* Filter sub-buttons */}
-                    <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-100 dark:border-white/5">
-                      <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
-                        {[
-                          { id: 'technical', label: 'Technical Analysis' },
-                          { id: 'checklist', label: 'Health Checklist' },
-                        ].map((btn) => (
-                          <button
-                            key={btn.id}
-                            onClick={() => setTrendlyneActiveWidget(btn.id as any)}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${trendlyneActiveWidget === btn.id
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white dark:from-cyan-500 dark:to-blue-600 dark:text-slate-950 shadow-sm'
-                                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                              }`}
-                          >
-                            {btn.label}
-                          </button>
-                        ))}
+                  {isTrendlyneOpen && (
+                    <div className="mt-5 pt-5 border-t border-slate-200 dark:border-[#242424] animate-fadeIn space-y-5">
+                      {/* Filter sub-buttons */}
+                      <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-200 dark:border-[#242424]">
+                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#141414] p-1 rounded-lg border border-slate-200 dark:border-[#242424]">
+                          {[
+                            { id: 'technical', label: 'Technical Analysis' },
+                            { id: 'checklist', label: 'Health Checklist' },
+                          ].map((btn) => (
+                            <button
+                              key={btn.id}
+                              onClick={() => setTrendlyneActiveWidget(btn.id as any)}
+                              className={`px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-colors ${trendlyneActiveWidget === btn.id
+                                  ? 'bg-slate-200 text-slate-900 dark:bg-[#1C1C1C] dark:text-white border border-slate-300 dark:border-[#242424] shadow-xs'
+                                  : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-[#171717]'
+                                }`}
+                            >
+                              {btn.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
-
-                    </div>
-
-                    {/* Widgets Grid */}
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-                      {/* 1. Technical Widget */}
-                      {(trendlyneActiveWidget === 'both' || trendlyneActiveWidget === 'technical') && (
-                        <div className={`bg-slate-50 dark:bg-white/[0.015] border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md flex flex-col ${trendlyneActiveWidget === 'technical' ? 'xl:col-span-2' : ''
-                          }`}>
-                          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/50 dark:border-white/5">
-                            <div className="flex items-center gap-2">
-
-                              <div>
-                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">
-                                  Technical Indicators & Scores
-                                </h4>
-                                <span className="text-[10px] text-slate-400">Moving averages, oscillators & trend strength</span>
+                      {/* Widgets Grid */}
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                        {/* 1. Technical Widget */}
+                        {(trendlyneActiveWidget === 'both' || trendlyneActiveWidget === 'technical') && (
+                          <div className={`bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm flex flex-col ${trendlyneActiveWidget === 'technical' ? 'xl:col-span-2' : ''
+                            }`}>
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-[#242424]">
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">
+                                    Technical Indicators & Scores
+                                  </h4>
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">Moving averages, oscillators & trend strength</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="w-full overflow-hidden flex justify-center">
-                            <TrendlyneWidget
-                              widgetType="technical-widget"
-                              symbol={selectedStock?.symbol || 'RELIANCE'}
-                              theme={effectiveTheme}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 2. Checklist Widget */}
-                      {(trendlyneActiveWidget === 'both' || trendlyneActiveWidget === 'checklist') && (
-                        <div className={`bg-slate-50 dark:bg-white/[0.015] border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md flex flex-col ${trendlyneActiveWidget === 'checklist' ? 'xl:col-span-2' : ''
-                          }`}>
-                          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/50 dark:border-white/5">
-                            <div className="flex items-center gap-2">
-
-                              <div>
-                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">
-                                  Checklist & Health Score
-                                </h4>
-                                <span className="text-[10px] text-slate-400">Durability, Valuation & Momentum (DVM)</span>
-                              </div>
+                            <div className="w-full overflow-hidden flex justify-center">
+                              <TrendlyneWidget
+                                widgetType="technical-widget"
+                                symbol={selectedStock?.symbol || 'RELIANCE'}
+                                theme={effectiveTheme}
+                              />
                             </div>
                           </div>
+                        )}
 
-                          <div className="w-full overflow-hidden flex justify-center">
-                            <TrendlyneWidget
-                              widgetType="checklist-widget"
-                              symbol={selectedStock?.symbol || 'RELIANCE'}
-                              theme={effectiveTheme}
-                            />
+                        {/* 2. Checklist Widget */}
+                        {(trendlyneActiveWidget === 'both' || trendlyneActiveWidget === 'checklist') && (
+                          <div className={`bg-slate-50 dark:bg-[#141414] border border-slate-200 dark:border-[#242424] rounded-lg p-4 sm:p-5 shadow-sm flex flex-col ${trendlyneActiveWidget === 'checklist' ? 'xl:col-span-2' : ''
+                            }`}>
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-[#242424]">
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">
+                                    Checklist & Health Score
+                                  </h4>
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">Durability, Valuation & Momentum (DVM)</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="w-full overflow-hidden flex justify-center">
+                              <TrendlyneWidget
+                                widgetType="checklist-widget"
+                                symbol={selectedStock?.symbol || 'RELIANCE'}
+                                theme={effectiveTheme}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div> {/* Closes Right main content container */}
           </div> {/* Closes Main content wrapper with sticky left sidebar */}
         </div>

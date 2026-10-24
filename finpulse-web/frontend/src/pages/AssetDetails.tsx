@@ -1265,10 +1265,10 @@ export default function AssetDetails() {
                     {/* Consensus Gauge Track */}
                     {typeof data.analysts.recommendationMean === 'number' && data.analysts.recommendationMean > 0 && (
                       <div className="space-y-4 mb-6">
-                        <div className="relative h-2 bg-gradient-to-r from-emerald-500 via-yellow-500 to-rose-500 rounded-full w-full">
+                        <div className="consensus-gauge-track relative h-2.5 bg-gradient-to-r from-emerald-500 via-yellow-400 to-rose-500 rounded-full w-full shadow-inner border border-black/10 dark:border-white/10">
                           {/* Glowing Pointer */}
                           <div
-                            className="absolute -top-1.5 -ml-2.5 w-5 h-5 bg-white border-2 border-slate-900 dark:border-slate-950 rounded-full shadow-lg shadow-black/20 flex items-center justify-center transition-all duration-500"
+                            className="absolute -top-1.5 -ml-2.5 w-5 h-5 bg-white border-2 border-slate-900 dark:border-slate-950 rounded-full shadow-lg shadow-black/30 flex items-center justify-center transition-all duration-500 z-10"
                             style={{ left: `${Math.max(0, Math.min(100, ((data.analysts.recommendationMean - 1) / 4) * 100))}%` }}
                           >
                             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />

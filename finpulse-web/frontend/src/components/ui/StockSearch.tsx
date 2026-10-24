@@ -255,7 +255,7 @@ export default function StockSearch({
     <div className="relative w-full" ref={searchRef}>
       {/* Search Input Field */}
       <div className="relative flex items-center">
-        <Search className="absolute left-3.5 h-4.5 w-4.5 text-slate-500 dark:text-slate-400" />
+        <Search className="absolute left-3.5 h-4 w-4 text-slate-400 dark:text-neutral-500" />
         <input
           type="text"
           value={query}
@@ -263,12 +263,12 @@ export default function StockSearch({
           onKeyDown={handleKeyDown}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full rounded-2xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900/60 py-3 pl-11 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:bg-white dark:focus:bg-night-900 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-cyan-400/20 shadow-sm transition-all duration-200"
+          className="w-full rounded-lg border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#111111] py-2.5 pl-10 pr-10 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:bg-white dark:focus:bg-[#141414] focus:border-slate-300 dark:focus:border-[#333333] focus:outline-none transition-colors"
         />
         {query && (
           <button
             onClick={clearSearch}
-            className="absolute right-3.5 p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="absolute right-3.5 p-1 rounded-md text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1c1c1c] hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -277,7 +277,7 @@ export default function StockSearch({
 
       {/* Dropdown Results */}
       {isOpen && (!simple || query.trim().length > 0) && (
-        <div className="absolute top-full mt-3 w-full overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full mt-2 w-full overflow-hidden rounded-lg border border-slate-200 dark:border-[#242424] bg-white dark:bg-[#111111] shadow-lg z-[100] animate-in fade-in slide-in-from-top-1 duration-150">
           
           {/* Quick Filters */}
           {!simple && filterTabs.length > 0 && (

@@ -484,6 +484,19 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
               localStorage.setItem('finpulse_token', data.token);
               localStorage.setItem('finpulse-user', JSON.stringify(data.user));
               setUser(data.user);
+              if (data.user?.preferences) {
+                try {
+                  const prefs = typeof data.user.preferences === 'string' ? JSON.parse(data.user.preferences) : data.user.preferences;
+                  if (prefs?.theme) {
+                    localStorage.setItem('theme', prefs.theme);
+                    if (prefs.theme === 'dark') {
+                      document.documentElement.classList.add('dark');
+                    } else if (prefs.theme === 'light') {
+                      document.documentElement.classList.remove('dark');
+                    }
+                  }
+                } catch {}
+              }
               sessionStorage.setItem('finpulse_pin_verified', 'true');
               setIsSuccess(true);
               // Wait 800ms for verification success animation to show
