@@ -1012,7 +1012,7 @@ html:not(.dark) .secondary-page [class*="from-\[#090d1a\]"] {
 /* ====================================================================
    Performance & Portfolio Analytics Style Harmonization Overrides
    ==================================================================== */
-.performance-tab-active {
+.dark .performance-tab-active {
   background: rgba(34, 211, 238, 0.18) !important;
   color: #38bdf8 !important;
   border-color: rgba(56, 189, 248, 0.5) !important;

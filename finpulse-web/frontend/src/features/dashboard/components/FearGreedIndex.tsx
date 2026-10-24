@@ -90,7 +90,6 @@ export default function FearGreedIndex({ className = "" }: { className?: string 
             <h3 className="text-xs sm:text-sm font-bold uppercase text-slate-900 dark:text-white">Fear & Greed Index</h3>
             <p className="text-[10px] text-slate-400 dark:text-neutral-500 mt-0.5">Calculating Global Fear & Greed Index...</p>
           </div>
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping mr-2" />
         </div>
         <div className="flex flex-col items-center justify-center py-4">
           <div className="w-48 h-24 border-6 border-slate-100 dark:border-[#202020] border-b-0 rounded-t-full animate-spin" style={{ animationDuration: '3s' }} />
