@@ -602,7 +602,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="John Doe"
                         className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
                       />
                     </div>
@@ -616,7 +615,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
                       required
                       className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
                     />
@@ -630,7 +628,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
                       required
                       className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
                     />
@@ -785,7 +782,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
                       className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
                     />
                   </div>
@@ -862,7 +858,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onLogout }
                       required
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="••••••••"
                       className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
                     />
                   </div>

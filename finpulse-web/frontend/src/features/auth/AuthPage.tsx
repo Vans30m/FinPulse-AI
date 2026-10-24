@@ -60,7 +60,6 @@ export default function AuthPage() {
                 <input
                   type="email"
                   required
-                  placeholder="you@example.com"
                   className="w-full bg-slate-100 dark:bg-night-800/80 pl-10 pr-4 py-2.5 text-sm rounded-xl border border-transparent focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-cyan-400 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all"
                 />
               </div>
@@ -83,7 +82,6 @@ export default function AuthPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="••••••••"
                   className="w-full bg-slate-100 dark:bg-night-800/80 pl-10 pr-10 py-2.5 text-sm rounded-xl border border-transparent focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-cyan-400 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all"
                 />
                 <button
