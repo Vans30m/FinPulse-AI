@@ -1,4 +1,4 @@
-# FinPulse-AI
+# FinPulse AI
 
 <div align="center">
 
@@ -14,9 +14,9 @@
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Deployed on Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://render.com)
 
-**FinPulse-AI** is a full-stack, real-time financial intelligence platform that combines live market data aggregation, AI-powered market analysis via Google Gemini and Groq, and portfolio management — accessible as a web application and as a cross-platform Electron desktop app.
+**FinPulse AI** is a full-stack, real-time financial intelligence platform that combines live market data aggregation, AI-powered market analysis via Google Gemini and Groq, and portfolio management — accessible as a web application and as a cross-platform Electron desktop app.
 
-[Live Demo](https://finpulse-frontend-jrsd.onrender.com) · [Video Walkthrough](docs/finpulse-demo.mp4) · [Report a Bug](https://github.com/Vans30m/FinPulse-AI/issues)
+[Live Demo](https://finpulse-frontend-jrsd.onrender.com) · [Video Walkthrough](docs/finpulse-demo.mp4) · [Report a Bug](https://github.com/Vans30m/FinPulse AI/issues)
 
 </div>
 
@@ -188,7 +188,7 @@
 ## Directory Structure
 
 ```
-FinPulse-AI/
+FinPulse AI/
 +-- docs/
 |   +-- finpulse-demo.mp4          # Product demo video
 +-- finpulse-web/
@@ -266,7 +266,7 @@ FinPulse-AI/
         |   |   +-- AssetDetails.tsx   # Full asset page: interactive charts, technicals, fundamentals, AI sentiment, news
         |   |   +-- News.tsx           # Financial news feed & RSS stream
         |   |   +-- Profile.tsx        # User profile, security, session management, data export
-        |   |   +-- About.tsx          # About FinPulse-AI
+        |   |   +-- About.tsx          # About FinPulse AI
         |   |   +-- Contact.tsx        # Contact and inquiry form
         |   |   +-- Privacy.tsx        # Privacy policy
         |   |   +-- Terms.tsx          # Terms of service
@@ -623,7 +623,7 @@ Performs a **parallel pre-fetch** before invoking the LLM:
 
 ## Authentication Flow
 
-FinPulse-AI uses a **multi-step, PIN-secured authentication system** with three pathways:
+FinPulse AI uses a **multi-step, PIN-secured authentication system** with three pathways:
 
 ### 1. Email/Password Registration
 
@@ -755,8 +755,8 @@ Neither present -> 401 Unauthorized
 ### Step 1 - Clone the Repository
 
 ```bash
-git clone https://github.com/Vans30m/FinPulse-AI.git
-cd FinPulse-AI
+git clone https://github.com/Vans30m/FinPulse AI.git
+cd FinPulse AI
 ```
 
 ### Step 2 - Backend Setup
@@ -895,7 +895,7 @@ npm run dist
 **Electron builder configuration:**
 
 - **App ID:** `com.finpulseai.app`
-- **Product Name:** `FinPulse-AI`
+- **Product Name:** `FinPulse AI`
 - **Window:** 1400??900 default, 1000??700 minimum
 - **Platform:** Windows NSIS installer
 - **Icon:** `electron/fp-icon.ico`
@@ -932,10 +932,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## Disclaimer
 
-**Educational Purposes Only.** FinPulse-AI is a tool for market analysis and virtual portfolio tracking. It does not provide financial advice. Market data may be delayed or incomplete. Always conduct your own due diligence and consult with a certified financial advisor before making real investment decisions.
+**Educational Purposes Only.** FinPulse AI is a tool for market analysis and virtual portfolio tracking. It does not provide financial advice. Market data may be delayed or incomplete. Always conduct your own due diligence and consult with a certified financial advisor before making real investment decisions.
 
 ---
 
 <div align="center">
 
-Built with love by the FinPulse-AI team - [Live App](https://finpulse-frontend-jrsd.onrender.com)
+Built with love by the FinPulse AI team - [Live App](https://finpulse-frontend-jrsd.onrender.com)
