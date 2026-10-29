@@ -473,7 +473,9 @@ async function queryLLMForRankings(prompt: string, fallbackData: any): Promise<{
             { role: 'user', content: rankingPrompt }
           ],
           temperature: 0.3,
-          max_tokens: 4096
+          max_tokens: 4096,
+          reasoning_effort: 'none',
+          reasoning_format: 'hidden',
         },
         {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
@@ -489,10 +491,9 @@ async function queryLLMForRankings(prompt: string, fallbackData: any): Promise<{
     }
   }
 
-  // Fallback mock data — explicitly tagged so the client can distinguish
-  // it from a genuine model response.
-  console.warn('All LLM providers failed — serving mock fallback rankings');
-  return { source: 'fallback', data: fallbackData };
+  // Fallback — return empty rankings without mock data
+  console.warn('All LLM providers failed for watchlist rankings');
+  return { source: 'fallback', data: [] };
 }
 
 // GET /api/watchlists/:id/ai-rankings
@@ -519,11 +520,12 @@ router.get('/watchlists/:id/ai-rankings', protect, async (req: AuthenticatedRequ
     }
 
     const prompt = `Provide AI rankings for the following stock symbols in a JSON array of objects with fields: symbol, score (0-100), reason. Symbols: ${symbols.join(', ')}.`;
-    const fallback = symbols.map(sym => ({ symbol: sym, score: Math.floor(Math.random() * 100), reason: 'Mock ranking data' }));
-    const { source, data } = await queryLLMForRankings(prompt, fallback);
+    const { source, data } = await queryLLMForRankings(prompt, []);
 
     const responseBody = { source, rankings: data };
-    setAiCache(cacheKey, responseBody);
+    if (source === 'live') {
+      setAiCache(cacheKey, responseBody);
+    }
     res.json(responseBody);
   } catch (error: any) {
     console.error('Failed to fetch AI rankings:', error.message);

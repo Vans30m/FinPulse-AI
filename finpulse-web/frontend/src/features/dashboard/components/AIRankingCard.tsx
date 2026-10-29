@@ -83,7 +83,7 @@ export default function AIRankingCard({ assets, isLoading = false, isError = fal
                 : hasNoStocks
                   ? "Add stocks to your watchlist to see AI rankings"
                   : isFallback
-                    ? "Offline Mode — Showing simulated fallback rankings"
+                    ? "AI ranking service temporarily unavailable"
                     : assets.length === 0
                       ? "Fetching scores for your watchlist…"
                       : "Top picks ranked by AI score — updated on demand"}
