@@ -13,7 +13,7 @@ import { useAppData } from "../../context/AppDataContext";
 import { useTheme } from '../../context/ThemeContext';
 import LightLogo from '../../assets/Dark_Logo.png';
 import DarkLogo from '../../assets/Light_Logo.png';
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useChart } from "../../context/ChartContext";
 
@@ -29,6 +29,7 @@ interface HeaderProps {
 }
 
 export default function Header({ navItems, isLoggedIn, onLoginClick }: HeaderProps) {
+  const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user } = useAppData();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -157,19 +158,23 @@ export default function Header({ navItems, isLoggedIn, onLoginClick }: HeaderPro
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Global Search Button */}
-          <button
-            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-            className="flex items-center justify-between w-32 xs:w-40 sm:w-48 md:w-56 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#111111] px-3 py-1.5 text-xs text-slate-500 dark:text-neutral-400 hover:border-slate-300 dark:hover:border-[#2A2A2A] transition-colors shrink-0"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <Search className="h-3.5 w-3.5 text-slate-400 dark:text-neutral-500 shrink-0" />
-              <span className="text-xs font-medium truncate">Search markets...</span>
-            </div>
-            <kbd className="hidden sm:inline-block rounded bg-slate-200 dark:bg-[#1C1C1C] px-1.5 py-0.5 text-[9px] font-mono text-slate-500 dark:text-neutral-400 border border-slate-300 dark:border-[#242424]">Ctrl K</kbd>
-          </button>
+          {/* Global Search Button - Hidden on Screener page since it has its own dedicated search */}
+          {!location.pathname.startsWith('/screener') && (
+            <>
+              <button
+                onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+                className="flex items-center justify-between w-32 xs:w-40 sm:w-48 md:w-56 rounded-md border border-slate-200 dark:border-[#242424] bg-slate-50 dark:bg-[#111111] px-3 py-1.5 text-xs text-slate-500 dark:text-neutral-400 hover:border-slate-300 dark:hover:border-[#2A2A2A] transition-colors shrink-0"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Search className="h-3.5 w-3.5 text-slate-400 dark:text-neutral-500 shrink-0" />
+                  <span className="text-xs font-medium truncate">Search markets...</span>
+                </div>
+                <kbd className="hidden sm:inline-block rounded bg-slate-200 dark:bg-[#1C1C1C] px-1.5 py-0.5 text-[9px] font-mono text-slate-500 dark:text-neutral-400 border border-slate-300 dark:border-[#242424]">Ctrl K</kbd>
+              </button>
 
-          <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-[#242424] mx-1"></div>
+              <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-[#242424] mx-1"></div>
+            </>
+          )}
 
           {/* Conditional Rendering: Login / Profile Menu */}
           {!isLoggedIn ? (

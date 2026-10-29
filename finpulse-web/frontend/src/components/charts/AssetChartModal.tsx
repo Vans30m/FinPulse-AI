@@ -1539,98 +1539,31 @@ export default function AssetChartModal({ open, onClose, asset }: Props) {
                                   </span>
                                 </div>
 
-                                {(() => {
-                                  const minLevel = S2;
-                                  const maxLevel = R2;
-                                  const range = maxLevel - minLevel || 1;
-                                  const getPct = (val: number) => {
-                                    return Math.max(0, Math.min(100, ((val - minLevel) / range) * 100));
-                                  };
-                                  const pricePct = getPct(price);
-
-                                  return (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center pt-2">
-                                      {/* Price Ladder Visual Gauge */}
-                                      <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-[#0c1022]/40 rounded-xl border border-slate-900/60 h-full min-h-[250px] relative">
-                                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider mb-2">Price Alignment</span>
-                                        {/* Prominent Current Price Pulsing Badge */}
-                                        <div className="mb-4 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-2.5 py-1 rounded-lg text-xs font-black font-mono shadow-sm flex items-center gap-1.5 z-10">
-                                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                                          <span>Current: {formatVal(price, true)}</span>
-                                        </div>
-                                        <div className="relative w-full px-6 h-36 flex items-center justify-center">
-                                          {/* Vertical track */}
-                                          <div className="absolute top-0 bottom-0 w-[3px] rounded-full bg-gradient-to-t from-emerald-500/30 via-blue-500/20 to-rose-500/30 border border-slate-900/40" />
-
-                                          {/* Ticks/Labels - Centered Layout */}
-                                          {[
-                                            { label: "R2", value: R2, color: "text-rose-400" },
-                                            { label: "R1", value: R1, color: "text-rose-455" },
-                                            { label: "PP", value: PP, color: "text-blue-400" },
-                                            { label: "S1", value: S1, color: "text-emerald-455" },
-                                            { label: "S2", value: S2, color: "text-emerald-400" },
-                                          ].map((lvl, idx) => {
-                                            const pct = getPct(lvl.value);
-                                            return (
-                                              <div
-                                                key={idx}
-                                                className="absolute left-0 right-0 h-0 flex items-center justify-center pointer-events-none"
-                                                style={{ bottom: `${pct}%` }}
-                                              >
-                                                {/* Left label */}
-                                                <span className={`absolute right-[56%] font-mono text-[9px] font-bold w-12 text-right ${lvl.color}`}>{lvl.label}</span>
-
-                                                {/* Center crossing tick line */}
-                                                <div className="w-3.5 h-[1px] bg-slate-700 z-10" />
-
-                                                {/* Right price value */}
-                                                <span className="absolute left-[56%] font-mono text-[9px] text-slate-500 w-16 text-left">{formatVal(lvl.value, true)}</span>
-                                              </div>
-                                            );
-                                          })}
-
-                                          {/* Current Price Pointer */}
-                                          <div
-                                            className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 ease-out z-10 w-12"
-                                            style={{ bottom: `${pricePct}%` }}
-                                          >
-                                            <div className="w-full h-[2px] bg-cyan-400 shadow-[0_0_8px_#22d3ee] relative flex items-center justify-center">
-                                              <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
-                                              <div className="absolute w-2 h-2 rounded-full bg-cyan-400 border border-slate-950" />
-                                            </div>
+                                  <div className="space-y-2.5 pt-2">
+                                    {[
+                                      { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-400", borderClass: "border-l-4 border-l-rose-500/70", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
+                                      { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-455", borderClass: "border-l-4 border-l-rose-500/40", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
+                                      { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-400", borderClass: "border-l-4 border-l-blue-500", bgClass: "border border-blue-500/20 bg-blue-500/5 shadow-md shadow-blue-500/5" },
+                                      { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-455", borderClass: "border-l-4 border-l-emerald-500/40", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
+                                      { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-400", borderClass: "border-l-4 border-l-emerald-500/70", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
+                                    ].map((lvl, idx) => {
+                                      const isAbove = price >= lvl.value;
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`flex justify-between items-center px-4 py-2.5 rounded-xl transition-all duration-250 ${lvl.bgClass} ${lvl.borderClass}`}
+                                        >
+                                          <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
+                                          <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-200 whitespace-nowrap">
+                                            <span>{formatVal(lvl.value, true)}</span>
+                                            <span className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
+                                              {isAbove ? "Above" : "Below"}
+                                            </span>
                                           </div>
                                         </div>
-                                      </div>
-
-                                      {/* Detailed Levels List */}
-                                      <div className="col-span-2 space-y-2.5">
-                                        {[
-                                          { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-400", borderClass: "border-l-4 border-l-rose-500/70", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
-                                          { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-455", borderClass: "border-l-4 border-l-rose-500/40", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
-                                          { label: "PP (Pivot Point)", value: PP, textClass: "text-blue-400", borderClass: "border-l-4 border-l-blue-500", bgClass: "border border-blue-500/20 bg-blue-500/5 shadow-md shadow-blue-500/5" },
-                                          { label: "S1 (Support 1)", value: S1, textClass: "text-emerald-455", borderClass: "border-l-4 border-l-emerald-500/40", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
-                                          { label: "S2 (Support 2)", value: S2, textClass: "text-emerald-400", borderClass: "border-l-4 border-l-emerald-500/70", bgClass: "border border-slate-900 bg-[#070b16]/80 hover:bg-[#0c1022]" },
-                                        ].map((lvl, idx) => {
-                                          const isAbove = price >= lvl.value;
-                                          return (
-                                            <div
-                                              key={idx}
-                                              className={`flex justify-between items-center px-4 py-2.5 rounded-xl transition-all duration-250 ${lvl.bgClass} ${lvl.borderClass}`}
-                                            >
-                                              <span className={`font-sans font-bold text-xs ${lvl.textClass}`}>{lvl.label}</span>
-                                              <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-200 whitespace-nowrap">
-                                                <span>{formatVal(lvl.value, true)}</span>
-                                                <span className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full ${isAbove ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
-                                                  {isAbove ? "Above" : "Below"}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
+                                      );
+                                    })}
+                                  </div>
                               </div>
                             ) : (
                               <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md text-center text-xs text-slate-500 py-8 w-full">

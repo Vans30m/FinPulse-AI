@@ -1796,69 +1796,7 @@ export default function AssetDetails() {
                             </span>
                           </div>
 
-                          {(() => {
-                            const minLevel = S2;
-                            const maxLevel = R2;
-                            const range = maxLevel - minLevel;
-                            const getPct = (val: number) => {
-                              if (!range || range <= 0) return 50;
-                              return Math.max(0, Math.min(100, ((val - minLevel) / range) * 100));
-                            };
-                            const pricePct = getPct(price);
-
-                            return (
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center pt-2">
-                                {/* Price Ladder Visual Gauge */}
-                                <div className="col-span-1 flex flex-col items-center justify-center p-3 bg-slate-50 dark:bg-[#0c1022]/40 rounded-xl border border-slate-200/80 dark:border-slate-900/60 h-full min-h-[220px]">
-                                  <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider mb-5">Price Alignment</span>
-                                  <div className="relative w-full px-6 h-36 flex items-center justify-center">
-                                    {/* Vertical track */}
-                                    <div className="absolute top-0 bottom-0 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700 shadow-sm overflow-hidden">
-                                      <div className="w-full h-full bg-gradient-to-t from-emerald-500/60 via-blue-500/60 to-rose-500/60" />
-                                    </div>
-
-                                    {/* Ticks/Labels */}
-                                    {[
-                                      { label: "R2", value: R2, color: "text-rose-600 dark:text-rose-455" },
-                                      { label: "R1", value: R1, color: "text-rose-500 dark:text-rose-400" },
-                                      { label: "PP", value: PP, color: "text-blue-500 dark:text-blue-400" },
-                                      { label: "S1", value: S1, color: "text-emerald-500 dark:text-emerald-455" },
-                                      { label: "S2", value: S2, color: "text-emerald-600 dark:text-emerald-400" },
-                                    ].map((lvl, idx) => {
-                                      const pct = getPct(lvl.value);
-                                      return (
-                                        <div
-                                          key={idx}
-                                          className="absolute left-0 right-0 flex items-center justify-between pointer-events-none"
-                                          style={{ bottom: `${pct}%` }}
-                                        >
-                                          <span className={`w-8 text-right font-mono text-[9px] font-bold ${lvl.color}`}>{lvl.label}</span>
-                                          <div className="w-4 h-px bg-slate-300 dark:bg-slate-800" />
-                                          <span className="w-14 text-left font-mono text-[9px] text-slate-500">{formatVal(lvl.value, true)}</span>
-                                        </div>
-                                      );
-                                    })}
-
-                                    {/* Current Price Pointer */}
-                                    <div
-                                      className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 ease-out z-10 w-12"
-                                      style={{ bottom: `${pricePct}%` }}
-                                    >
-                                      <div className="w-full h-[2px] bg-cyan-500 dark:bg-cyan-400 shadow-[0_0_8px_#06b6d4] dark:shadow-[0_0_8px_#22d3ee] relative flex items-center justify-center">
-                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 border border-white dark:border-slate-950 animate-ping" />
-                                        <div className="absolute w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 border border-white dark:border-slate-950" />
-
-                                        {/* Price Label Overlay (Centered above pointer) */}
-                                        <div className="absolute bottom-full mb-1.5 bg-slate-900 dark:bg-cyan-950/90 text-white dark:text-cyan-400 border border-slate-700 dark:border-cyan-800/60 px-1.5 py-0.5 rounded text-[8px] font-black font-mono shadow-md whitespace-nowrap">
-                                          {formatVal(price, true)}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Detailed Levels List */}
-                                <div className="col-span-2 space-y-2">
+                                <div className="space-y-2 pt-2">
                                   {[
                                     { label: "R2 (Resistance 2)", value: R2, textClass: "text-rose-600 dark:text-rose-455", bgClass: "hover:bg-rose-500/5" },
                                     { label: "R1 (Resistance 1)", value: R1, textClass: "text-rose-500 dark:text-rose-400", bgClass: "hover:bg-rose-500/5" },
@@ -1883,9 +1821,6 @@ export default function AssetDetails() {
                                     );
                                   })}
                                 </div>
-                              </div>
-                            );
-                          })()}
                         </div>
                       ) : (
                         <div className="bg-[#090d1a] border border-slate-900 rounded-2xl p-6 shadow-md text-center text-xs text-slate-500 py-8 w-full">

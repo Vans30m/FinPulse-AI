@@ -110,14 +110,16 @@ async function queryLLM(prompt: string, fallbackData: any): Promise<any> {
             }
           ],
           temperature: 0.2,
-          max_tokens: 1500
+          max_tokens: 4096,
+          reasoning_effort: 'none',
+          reasoning_format: 'hidden',
         },
         {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${groqKey}`
           },
-          timeout: 12000
+          timeout: 15000
         }
       );
 

@@ -202,7 +202,9 @@ async function executeGroqQuery(prompt: string, fallbackData: any): Promise<any>
             { role: 'user', content: prompt }
           ],
           temperature: 0.2,
-          max_tokens: 1400,
+          max_tokens: 4096,
+          reasoning_effort: 'none',
+          reasoning_format: 'hidden',
         },
         {
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
@@ -310,7 +312,9 @@ async function executeLLMQuery(prompt: string, fallbackData: any): Promise<any> 
               }
             ],
             temperature: 0.3,
-            max_tokens: 1200
+            max_tokens: 4096,
+            reasoning_effort: 'none',
+            reasoning_format: 'hidden',
           },
           {
             headers: {
