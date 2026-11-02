@@ -1117,4 +1117,17 @@ html.dark .screener-company-header-card .screener-header-sector-badge {
 /* Preserve vibrant badge and highlight styling inside secondary-page dark theme */
 .dark .secondary-page .performance-stat-pill {
   box-shadow: 0 0 12px -2px rgba(34, 211, 238, 0.2);
+}
+
+/* Preserve brand accent logo styling across all pages (including secondary-page dark theme) */
+.brand-logo-ai,
+.secondary-page .brand-logo-ai,
+html:not(.dark) .secondary-page .brand-logo-ai {
+  color: #2563eb !important;
+}
+
+.dark .brand-logo-ai,
+.dark .secondary-page .brand-logo-ai {
+  color: #22d3ee !important;
+
 }

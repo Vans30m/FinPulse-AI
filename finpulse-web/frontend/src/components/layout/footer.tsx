@@ -134,7 +134,7 @@ export default function Footer() {
           <div className="lg:col-span-2 space-y-5">
             <div className="flex items-center gap-2">
               <span className="text-xl font-black tracking-tight text-slate-950 dark:text-white">
-                FinPulse<span className="text-blue-600 dark:text-cyan-400">.ai</span>
+                FinPulse<span className="brand-logo-ai text-blue-600 dark:text-cyan-400 font-extrabold">.ai</span>
               </span>
             </div>
             <p className="text-sm leading-relaxed text-slate-600 dark:text-[#a3a3a3] max-w-sm">
