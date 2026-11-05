@@ -788,42 +788,70 @@ html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
 }
 
 
-/* Restore the profile workspace's intentional blue/cyan visual hierarchy. */
-.dark .secondary-page .profile-hero-banner {
-  background-image: linear-gradient(115deg, #0891b2 0%, #2563eb 52%, #4338ca 100%) !important;
+/* Profile Workspace Dark Mode Polish & Vibrant Accent Overrides */
+.dark .secondary-page .profile-hero-banner,
+.dark .profile-hero-banner {
+  background: linear-gradient(135deg, #06b6d4 0%, #2563eb 50%, #4f46e5 100%) !important;
+  background-image: linear-gradient(135deg, #06b6d4 0%, #2563eb 50%, #4f46e5 100%) !important;
+  display: block !important;
+  opacity: 1 !important;
 }
-
 
 .dark .secondary-page .profile-header-card,
+.dark .profile-header-card {
+  background-color: #121212 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7) !important;
+}
+
+.dark .secondary-page .profile-info-grid,
+.dark .profile-info-grid {
+  background-color: #181818 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+}
+
 .dark .secondary-page .profile-stat-card,
-.dark .secondary-page .profile-info-grid {
-  border-color: #242424 !important;
+.dark .profile-stat-card {
+  background-color: #141414 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5) !important;
 }
 
-.dark .secondary-page .profile-info-grid {
-  background-color: #0d0d0d !important;
+.dark .secondary-page .profile-stat-card:nth-child(1),
+.dark .profile-stat-card:nth-child(1) {
+  border-top: 3px solid #06b6d4 !important;
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.08) 0%, #141414 100%) !important;
 }
 
-.dark .secondary-page .profile-stat-card:nth-child(1) {
-  border-top-color: #38bdf8 !important;
-  background-color: #101820 !important;
+.dark .secondary-page .profile-stat-card:nth-child(2),
+.dark .profile-stat-card:nth-child(2) {
+  border-top: 3px solid #10b981 !important;
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, #141414 100%) !important;
 }
 
-.dark .secondary-page .profile-stat-card:nth-child(2) {
-  border-top-color: #22c55e !important;
-  background-color: #101a15 !important;
+.dark .secondary-page .profile-stat-card:nth-child(3),
+.dark .profile-stat-card:nth-child(3) {
+  border-top: 3px solid #f43f5e !important;
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.08) 0%, #141414 100%) !important;
 }
 
-.dark .secondary-page .profile-stat-card:nth-child(3) {
-  border-top-color: #f59e0b !important;
-  background-color: #1a1610 !important;
+.dark .secondary-page .profile-stat-card:nth-child(4),
+.dark .profile-stat-card:nth-child(4) {
+  border-top: 3px solid #a855f7 !important;
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.08) 0%, #141414 100%) !important;
 }
 
-.dark .secondary-page .profile-stat-card:nth-child(4) {
-  border-top-color: #a78bfa !important;
-  background-color: #15121d !important;
+.dark .secondary-page .profile-stat-card h4,
+.dark .profile-stat-card h4 {
+  color: #ffffff !important;
 }
 
+.dark .secondary-page .profile-stat-card p,
+.dark .profile-stat-card p {
+  color: #94a3b8 !important;
+}
 .dark .secondary-page .profile-section-card,
 .dark .secondary-page .profile-security-card {
   border-color: #242424 !important;
@@ -1017,7 +1045,9 @@ html.dark .screener-company-header-card .screener-header-sector-badge {
 }
 
 /* Portfolio Page Add Action Button overrides against dark secondary-page resets */
-.portfolio-action-btn {
+.portfolio-action-btn,
+.dark .secondary-page .portfolio-action-btn,
+.dark .portfolio-action-btn {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
   background-color: #2563eb !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
@@ -1027,18 +1057,24 @@ html.dark .screener-company-header-card .screener-header-sector-badge {
   visibility: visible !important;
 }
 
-.portfolio-action-btn:hover {
+.portfolio-action-btn:hover,
+.dark .secondary-page .portfolio-action-btn:hover,
+.dark .portfolio-action-btn:hover {
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
   background-color: #1d4ed8 !important;
   color: #ffffff !important;
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
 }
 
-.portfolio-action-btn * {
+.portfolio-action-btn *,
+.dark .secondary-page .portfolio-action-btn *,
+.dark .portfolio-action-btn * {
   color: #ffffff !important;
 }
 
-.portfolio-action-btn-sandbox {
+.portfolio-action-btn-sandbox,
+.dark .secondary-page .portfolio-action-btn-sandbox,
+.dark .portfolio-action-btn-sandbox {
   background: #a855f7 !important;
   background-color: #a855f7 !important;
   border: 1px solid #c084fc !important;
@@ -1048,13 +1084,54 @@ html.dark .screener-company-header-card .screener-header-sector-badge {
   visibility: visible !important;
 }
 
-.portfolio-action-btn-sandbox:hover {
+.portfolio-action-btn-sandbox:hover,
+.dark .secondary-page .portfolio-action-btn-sandbox:hover,
+.dark .portfolio-action-btn-sandbox:hover {
   background: #c084fc !important;
   background-color: #c084fc !important;
   color: #ffffff !important;
 }
 
-.portfolio-action-btn-sandbox * {
+.portfolio-action-btn-sandbox *,
+.dark .secondary-page .portfolio-action-btn-sandbox *,
+.dark .portfolio-action-btn-sandbox * {
+  color: #ffffff !important;
+}
+
+/* Portfolio Floating & Empty State Add Buttons in Dark Mode */
+.portfolio-fab-btn,
+.dark .secondary-page .portfolio-fab-btn,
+.dark .portfolio-fab-btn {
+  background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%) !important;
+  background-color: #06b6d4 !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.5) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.portfolio-fab-btn *,
+.dark .secondary-page .portfolio-fab-btn *,
+.dark .portfolio-fab-btn * {
+  color: #ffffff !important;
+}
+
+.portfolio-fab-btn-sandbox,
+.dark .secondary-page .portfolio-fab-btn-sandbox,
+.dark .portfolio-fab-btn-sandbox {
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%) !important;
+  background-color: #a855f7 !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 25px -5px rgba(168, 85, 247, 0.5) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.portfolio-fab-btn-sandbox *,
+.dark .secondary-page .portfolio-fab-btn-sandbox *,
+.dark .portfolio-fab-btn-sandbox * {
   color: #ffffff !important;
 }
 
@@ -1130,4 +1207,4 @@ html:not(.dark) .secondary-page .brand-logo-ai {
 .dark .secondary-page .brand-logo-ai {
   color: #22d3ee !important;
 
-}
+}

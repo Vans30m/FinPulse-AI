@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet, Activity } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Globe, DollarSign, TrendingUp, PieChart, Plus, X, Bitcoin, Loader2, ChevronDown, Download, FileText, FileSpreadsheet, Activity, Search, ArrowUpDown, Filter } from 'lucide-react';
 import { BarChart3 } from "lucide-react";
 import { Link } from 'react-router-dom';
 import PortfolioAllocationChart from "./PortfolioAllocationChart";
@@ -1650,14 +1650,14 @@ export default function PortfolioDashboard() {
         {isSandboxMode ? (
           <button
             onClick={() => setIsSandboxOpen(true)}
-            className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xl active:scale-95 transition-all"
+            className="portfolio-fab-btn-sandbox flex items-center justify-center h-14 w-14 rounded-full text-white shadow-2xl active:scale-95 transition-all"
           >
             <Plus className="h-6 w-6 stroke-[3]" />
           </button>
         ) : (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500 dark:to-blue-600 text-white dark:text-night-950 shadow-2xl active:scale-95 transition-all"
+            className="portfolio-fab-btn flex items-center justify-center h-14 w-14 rounded-full text-white shadow-2xl active:scale-95 transition-all"
           >
             <Plus className="h-6 w-6 stroke-[3]" />
           </button>
@@ -1797,43 +1797,72 @@ export default function PortfolioDashboard() {
         </div>
 
         {/* Holdings Filter Bar */}
-        <div className="p-4 bg-slate-50/30 dark:bg-white/[0.01] border-b border-slate-100/50 dark:border-slate-800/40 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="flex-1 sm:w-64">
+        <div className="p-3.5 sm:p-4 bg-slate-50/50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center justify-between">
+          {/* Search Input */}
+          <div className="relative flex-1 min-w-[200px] max-w-full sm:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500 pointer-events-none" />
             <input
               type="text"
               placeholder="Search by symbol or name..."
               value={holdingSearch}
               onChange={(e) => setHoldingSearch(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 dark:focus:border-cyan-500 transition-colors shadow-sm"
             />
+            {holdingSearch && (
+              <button
+                type="button"
+                onClick={() => setHoldingSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
-          <div className="flex items-center gap-2 sm:w-auto">
-            <select
-              value={holdingFilterGain}
-              onChange={(e) => setHoldingFilterGain(e.target.value as any)}
-              className="px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-blue-500"
-            >
-              <option value="all">All</option>
-              <option value="gainers">Gainers</option>
-              <option value="losers">Losers</option>
-            </select>
-            <select
-              value={holdingSortBy}
-              onChange={(e) => setHoldingSortBy(e.target.value as any)}
-              className="px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-blue-500 hidden sm:block"
-            >
-              <option value="marketValue">Market Value</option>
-              <option value="totalGain">Total Gain</option>
-              <option value="gainPercent">Gain %</option>
-              <option value="dailyGain">Day Change</option>
-              <option value="ticker">Symbol</option>
-            </select>
+
+          {/* Filter & Sort Controls */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            {/* Filter by Gain/Loss */}
+            <div className="relative flex-1 sm:flex-none min-w-[100px]">
+              <select
+                value={holdingFilterGain}
+                onChange={(e) => setHoldingFilterGain(e.target.value as any)}
+                aria-label="Filter positions by gain or loss"
+                className="w-full sm:w-auto appearance-none pl-3 pr-7 py-2 text-xs font-semibold bg-white dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-cyan-500 cursor-pointer shadow-sm transition-colors"
+              >
+                <option value="all">All Positions</option>
+                <option value="gainers">Gainers Only</option>
+                <option value="losers">Losers Only</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            {/* Sort Field */}
+            <div className="relative flex-1 sm:flex-none min-w-[120px]">
+              <select
+                value={holdingSortBy}
+                onChange={(e) => setHoldingSortBy(e.target.value as any)}
+                aria-label="Sort positions by field"
+                className="w-full sm:w-auto appearance-none pl-3 pr-7 py-2 text-xs font-semibold bg-white dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-cyan-500 cursor-pointer shadow-sm transition-colors"
+              >
+                <option value="marketValue">Sort: Market Value</option>
+                <option value="totalGain">Sort: Total Gain</option>
+                <option value="gainPercent">Sort: Gain %</option>
+                <option value="dailyGain">Sort: Day Change</option>
+                <option value="ticker">Sort: Symbol</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            {/* Sort Order Toggle Button */}
             <button
+              type="button"
               onClick={() => setHoldingSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-              className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="inline-flex items-center justify-center gap-1 px-3 py-2 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0 font-bold text-xs"
               title={`Sort ${holdingSortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
+              aria-label={`Toggle sort order: currently ${holdingSortOrder === 'asc' ? 'ascending' : 'descending'}`}
             >
-              <span className="text-[10px]">{holdingSortOrder === 'asc' ? '↑' : '↓'}</span>
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              <span className="text-[11px] uppercase tracking-wider">{holdingSortOrder}</span>
             </button>
           </div>
         </div>
@@ -2039,7 +2068,7 @@ export default function PortfolioDashboard() {
                 <button
                   type="button"
                   onClick={() => isSandboxMode ? setIsSandboxOpen(true) : setIsModalOpen(true)}
-                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-500 dark:to-blue-600 px-4 py-2 text-xs font-bold text-white dark:text-slate-950 shadow-md hover:shadow-lg transition-all"
+                  className={isSandboxMode ? "portfolio-action-btn-sandbox mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold" : "portfolio-action-btn mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold"}
                 >
                   <Plus className="h-3.5 w-3.5 stroke-[3]" />
                   <span>{isSandboxMode ? "Place First Paper Trade" : "Add Asset Position"}</span>

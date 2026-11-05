@@ -1802,7 +1802,7 @@ export default function StockScreener() {
   }, [selectedStock]);
 
   return (
-    <div className="min-h-[85vh] bg-white dark:bg-[#111111] text-slate-900 dark:text-white font-sans transition-colors duration-200 relative w-full p-4 sm:p-6 md:p-8 rounded-lg shadow-sm dark:shadow-none border border-slate-200 dark:border-[#242424]">
+    <div className="min-h-[85vh] bg-transparent text-slate-900 dark:text-white font-sans transition-colors duration-200 relative w-full p-0 sm:p-2">
 
       {/* Loading Overlay */}
       {isLoading && (
@@ -1825,7 +1825,7 @@ export default function StockScreener() {
           </div>
 
           {/* Search bar wrapper */}
-          <div className="w-full relative z-10 max-w-xl">
+          <div className="w-full relative z-30 max-w-xl">
             <StockSearch
               placeholder="Search by company name or ticker"
               onSelect={(asset) => handleSelectStock(asset.symbol)}
@@ -1835,7 +1835,7 @@ export default function StockScreener() {
           </div>
 
           {/* Quick links */}
-          <div className="space-y-2 relative z-10">
+          <div className="space-y-2 relative z-0">
             <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
               <span className="text-slate-400 dark:text-neutral-500 font-semibold uppercase tracking-wider text-[10px] mr-1">Popular Tickers:</span>
               {SUGGESTED_COMPANIES.map((company) => (

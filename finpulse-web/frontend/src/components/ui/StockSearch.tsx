@@ -277,7 +277,7 @@ export default function StockSearch({
 
       {/* Dropdown Results */}
       {isOpen && (!simple || query.trim().length > 0) && (
-        <div className="absolute top-full mt-2 w-full overflow-hidden rounded-lg border border-slate-200 dark:border-[#242424] bg-white dark:bg-[#111111] shadow-lg z-[100] animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute top-full mt-2 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#121212] shadow-2xl z-[150] animate-in fade-in slide-in-from-top-1 duration-150 isolate">
           
           {/* Quick Filters */}
           {!simple && filterTabs.length > 0 && (
