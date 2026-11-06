@@ -24,12 +24,6 @@ process.on('unhandledRejection', (reason, promise) => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Log incoming HTTP requests
-app.use((req, res, next) => {
-  console.log(`[HTTP] ${req.method} ${req.url}`);
-  next();
-});
-
 app.set('trust proxy', 1);
 
 app.use(compression());
@@ -76,7 +70,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 // Start server immediately
 app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`[Server] running on port ${PORT}`);
+  console.error(`[Server] running on port ${PORT}`);
 });
 
 // Test database connection in the background

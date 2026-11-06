@@ -142,29 +142,6 @@ html {
    VIEW TRANSITIONS API (Zig-Zag Theme Toggle)
    ======================================================== */
 
-
-::view-transition-old(root),
-::view-transition-new(root) {
-  /* Stop the default browser cross-fade */
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-/* Since our JS dynamically animates the mask on the NEW view, 
-  we just need to ensure the new view is stacked on top!
-*/
-::view-transition-old(root) {
-  z-index: 1;
-}
-
-::view-transition-new(root) {
-  z-index: 9999;
-}
-
-/* ========================================================
-   VIEW TRANSITIONS API (Zig-Zag Theme Toggle)
-   ======================================================== */
-
 /* 1. Stop default cross-fade on all transition elements */
 ::view-transition-group(root),
 ::view-transition-old(root),
@@ -277,17 +254,6 @@ iframe[src*="tradingview.com"]+a {
   font-weight: 700 !important;
   border-bottom: 1px solid #242424 !important;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /* Section titles */
 #screener-workbook h3,
@@ -756,19 +722,36 @@ html:not(.dark) #screener-shareholding table tbody tr:hover td:first-child {
   height: 2px;
 }
 
-.navbar-nav-link-active {
+.navbar-nav-link-active,
+.dark .secondary-page .navbar-nav-link-active,
+.secondary-page .navbar-nav-link-active {
+  color: #2563eb !important;
+}
+
+.navbar-nav-link-active *,
+.dark .secondary-page .navbar-nav-link-active *,
+.secondary-page .navbar-nav-link-active * {
   color: #2563eb !important;
 }
 
 .dark .navbar-nav-link-hover,
-.dark .navbar-nav-link-active-line {
-  background-color: #22d3ee !important;
+.dark .secondary-page .navbar-nav-link-hover,
+.dark .navbar-nav-link-active-line,
+.dark .secondary-page .navbar-nav-link-active-line {
+  background-color: #2563eb !important;
 }
 
-.dark .navbar-nav-link-active {
-  color: #22d3ee !important;
+.dark .navbar-nav-link-active,
+.dark .secondary-page .navbar-nav-link-active,
+.dark.secondary-page .navbar-nav-link-active {
+  color: #2563eb !important;
 }
 
+.dark .navbar-nav-link-active *,
+.dark .secondary-page .navbar-nav-link-active *,
+.dark.secondary-page .navbar-nav-link-active * {
+  color: #2563eb !important;
+}
 /* Mobile Nav Drawer Active Link Styling */
 .mobile-nav-link-active {
   background-color: #eff6ff !important;

@@ -26,10 +26,8 @@ const transporter = nodemailer.createTransport({
 const SMTP_SEND_TIMEOUT_MS = 15_000;
 
 async function sendOtpEmail(email: string, code: string) {
-  console.log(`[sendOtpEmail] Initiated. BREVO_API_KEY detected: ${process.env.BREVO_API_KEY ? "YES" : "NO"}`);
   if (process.env.BREVO_API_KEY) {
     try {
-      console.log(`Attempting to send OTP email to ${email} via Brevo API...`);
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -62,17 +60,14 @@ async function sendOtpEmail(email: string, code: string) {
         throw new Error(JSON.stringify(errorData));
       }
 
-      console.log(`OTP email sent to ${email} successfully via Brevo API`);
       return;
     } catch (error) {
       console.error(`Failed to send OTP email via Brevo API to ${email}:`, error);
-      console.log('Falling back to other configurations...');
     }
   }
 
   if (process.env.RESEND_API_KEY) {
     try {
-      console.log(`Attempting to send OTP email to ${email} via Resend API...`);
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -102,18 +97,13 @@ async function sendOtpEmail(email: string, code: string) {
         throw new Error(JSON.stringify(errorData));
       }
 
-      console.log(`OTP email sent to ${email} successfully via Resend API`);
       return;
     } catch (error) {
       console.error(`Failed to send OTP email via Resend API to ${email}:`, error);
-      console.log('Falling back to SMTP configuration...');
     }
   }
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`\n==========================================`);
-    console.log(`[OTP Fallback] Verification code for ${email}: ${code}`);
-    console.log(`==========================================\n`);
     return;
   }
 
@@ -140,7 +130,6 @@ async function sendOtpEmail(email: string, code: string) {
         setTimeout(() => reject(new Error('SMTP send timed out')), SMTP_SEND_TIMEOUT_MS)
       ),
     ]);
-    console.log(`OTP email sent to ${email}`);
   } catch (error) {
     console.error(`Failed to send OTP email to ${email}:`, error);
   }
@@ -151,10 +140,8 @@ function queueOtpEmail(email: string, code: string) {
 }
 
 async function sendResetPasswordEmail(email: string, code: string) {
-  console.log(`[sendResetPasswordEmail] Initiated. BREVO_API_KEY detected: ${process.env.BREVO_API_KEY ? "YES" : "NO"}`);
   if (process.env.BREVO_API_KEY) {
     try {
-      console.log(`Attempting to send reset password email to ${email} via Brevo API...`);
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -187,17 +174,14 @@ async function sendResetPasswordEmail(email: string, code: string) {
         throw new Error(JSON.stringify(errorData));
       }
 
-      console.log(`Reset password email sent to ${email} successfully via Brevo API`);
       return;
     } catch (error) {
       console.error(`Failed to send reset password email via Brevo API to ${email}:`, error);
-      console.log('Falling back to other configurations...');
     }
   }
 
   if (process.env.RESEND_API_KEY) {
     try {
-      console.log(`Attempting to send reset password email to ${email} via Resend API...`);
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -227,18 +211,13 @@ async function sendResetPasswordEmail(email: string, code: string) {
         throw new Error(JSON.stringify(errorData));
       }
 
-      console.log(`Reset password email sent to ${email} successfully via Resend API`);
       return;
     } catch (error) {
       console.error(`Failed to send reset password email via Resend API to ${email}:`, error);
-      console.log('Falling back to SMTP configuration...');
     }
   }
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`\n==========================================`);
-    console.log(`[Reset Password Fallback] Verification code for ${email}: ${code}`);
-    console.log(`==========================================\n`);
     return;
   }
 
@@ -265,7 +244,6 @@ async function sendResetPasswordEmail(email: string, code: string) {
         setTimeout(() => reject(new Error('SMTP send timed out')), SMTP_SEND_TIMEOUT_MS)
       ),
     ]);
-    console.log(`Reset password email sent to ${email}`);
   } catch (error) {
     console.error(`Failed to send reset password email to ${email}:`, error);
   }
@@ -311,7 +289,6 @@ async function sendNewsletterWelcomeEmail(email: string) {
         }),
       });
       if (response.ok) {
-        console.log(`Newsletter welcome email sent to ${email} via Brevo`);
         return;
       }
     } catch (error) {
@@ -327,7 +304,6 @@ async function sendNewsletterWelcomeEmail(email: string) {
         subject,
         html: htmlContent,
       });
-      console.log(`Newsletter welcome email sent to ${email} via SMTP`);
     } catch (err) {
       console.error('SMTP newsletter email dispatch failed:', err);
     }

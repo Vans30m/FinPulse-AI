@@ -133,8 +133,6 @@ const getDynamicQuarters = () => {
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
 
-
-
   let yr = currentYear;
   let qIndex = 0;
   if (currentMonth >= 9) qIndex = 3;
