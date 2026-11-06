@@ -6,10 +6,15 @@ function createWindow() {
         height: 900,
         minWidth: 1000,
         minHeight: 700,
-        autoHideMenuBar: true
+        autoHideMenuBar: true,
+        backgroundColor: "#0A0A0A",
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+        }
     });
 
-    win.loadURL("https://finpulse-frontend-jrsd.onrender.com");
+    win.loadURL("https://finpulse-ai-bxas.onrender.com");
 }
 
 app.whenReady().then(() => {
