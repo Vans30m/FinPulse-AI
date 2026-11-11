@@ -1,6 +1,6 @@
-# FinPulse AI
-
 <div align="center">
+
+# FinPulse AI
 
 ### AI-Powered Financial Intelligence Platform
 
