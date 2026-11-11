@@ -127,7 +127,10 @@ router.get('/portfolio/holdings', protect, async (req: AuthenticatedRequest, res
 
     const onlyVirtual = req.query.onlyVirtual === 'true';
     const dbHoldings = onlyVirtual ? [] : await prisma.holding.findMany({
-      where: { userId }
+      where: {
+        userId,
+        shares: { not: 0 }
+      }
     });
 
     const virtualTickersQuery = req.query.virtualTickers as string;
@@ -359,7 +362,10 @@ router.get('/portfolio/rolling-cagr', protect, async (req: AuthenticatedRequest,
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const dbHoldings = await prisma.holding.findMany({
-      where: { userId }
+      where: {
+        userId,
+        shares: { not: 0 }
+      }
     });
 
     const isIndian = dbHoldings.some((h: any) => h.ticker.endsWith('.NS') || h.ticker.endsWith('.BO'));
@@ -554,7 +560,10 @@ router.get('/portfolio/analysis', protect, async (req: AuthenticatedRequest, res
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const dbHoldings = await prisma.holding.findMany({
-      where: { userId }
+      where: {
+        userId,
+        shares: { not: 0 }
+      }
     });
 
     const totalInvested = dbHoldings.reduce((sum: number, h: any) => {
@@ -660,7 +669,7 @@ async function getHistoricalQuotes(symbol: string, timeframe: string): Promise<{
 }
 
 async function getPortfolioHistory(userId: string, period1: Date, period2: Date) {
-  const dbHoldings = await prisma.holding.findMany({ where: { userId } });
+  const dbHoldings = await prisma.holding.findMany({ where: { userId, shares: { not: 0 } } });
   if (dbHoldings.length === 0) return [];
 
   // Fetch charts for all holdings
@@ -737,7 +746,7 @@ router.get('/portfolio/benchmark-comparison', protect, async (req: Authenticated
     const timeframe = String(req.query.timeframe || '1Y');
     const benchmarkTicker = String(req.query.symbol || '^GSPC');
 
-    const userHoldings = await prisma.holding.findMany({ where: { userId } });
+    const userHoldings = await prisma.holding.findMany({ where: { userId, shares: { not: 0 } } });
     if (userHoldings.length === 0) {
       return res.json({ series: [], stats: {}, constituents: [] });
     }

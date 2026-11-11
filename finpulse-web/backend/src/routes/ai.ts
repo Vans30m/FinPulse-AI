@@ -659,7 +659,7 @@ router.get('/portfolio-advisor', protect, async (req: AuthenticatedRequest, res:
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const holdings = await prisma.holding.findMany({
-    where: { userId },
+    where: { userId, shares: { not: 0 } },
     orderBy: { updatedAt: 'desc' },
     select: {
       ticker: true,

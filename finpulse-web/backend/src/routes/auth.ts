@@ -1047,7 +1047,7 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
           : 'INR';
 
     const holdings = await prisma.holding.findMany({
-      where: { userId }
+      where: { userId, shares: { not: 0 } }
     });
 
     const alertsCount = await prisma.alert.count({

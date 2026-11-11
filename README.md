@@ -54,7 +54,7 @@
 **Architecture Paradigm:** Monorepo (`finpulse-web/`) with a clear client–server separation:
 - `frontend/` → React SPA (Vite + TypeScript + Tailwind CSS)
 - `backend/` → Express REST API (Node.js + TypeScript + Prisma ORM)
-- `electron/` → Electron desktop wrapper that loads the deployed frontend URL
+- `finpulse-electron/` → Standalone Electron desktop wrapper that loads the production web application
 
 ---
 
@@ -881,17 +881,20 @@ All other secrets must be set manually in the Render dashboard. `JWT_SECRET` is 
 
 ## Desktop App Build (Electron)
 
-The Electron app loads the deployed frontend URL in a native window.
+The standalone Electron desktop application is located in `finpulse-electron/`.
 
-> **Note:** `electron/main.js` is hardcoded to `https://finpulse-frontend-jrsd.onrender.com`. Update this URL if you deploy to a different host.
+> **Note:** `finpulse-electron/main.js` loads the live cloud endpoint `https://finpulse-ai-bxas.onrender.com`.
 
 ```bash
-cd finpulse-web
+cd finpulse-electron
+
+# Install dependencies if not already installed
+npm install
 
 # Run in development (opens a native window loading the production URL)
-npm run electron
+npm start
 
-# Build Windows NSIS installer -> finpulse-web/release/
+# Build Windows NSIS installer -> finpulse-electron/release/
 npm run dist
 ```
 
@@ -899,9 +902,9 @@ npm run dist
 
 - **App ID:** `com.finpulseai.app`
 - **Product Name:** `FinPulse AI`
-- **Window:** 1400??900 default, 1000??700 minimum
+- **Window:** 1400×900 default, 1000×700 minimum
 - **Platform:** Windows NSIS installer
-- **Icon:** `electron/fp-icon.ico`
+- **Icon:** `finpulse-electron/fp-icon.ico`
 
 ---
 

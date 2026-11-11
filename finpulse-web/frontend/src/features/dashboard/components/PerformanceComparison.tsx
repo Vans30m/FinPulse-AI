@@ -93,7 +93,9 @@ export default function PerformanceComparison() {
       if (holdingsRes.ok) {
         const data = await holdingsRes.json();
         const allHoldings = (data.sections || []).flatMap((s: any) =>
-          (s.holdings || []).map((h: any) => ({ ...h, marketId: s.id }))
+          (s.holdings || [])
+            .filter((h: any) => Math.abs(Number(h.shares) || 0) > 0.0001)
+            .map((h: any) => ({ ...h, marketId: s.id }))
         );
         setHoldings(allHoldings);
       }
@@ -129,6 +131,24 @@ export default function PerformanceComparison() {
 
   useEffect(() => {
     loadPerformanceData();
+
+    // Auto-refresh performance data on window focus and periodic 30s intervals
+    const interval = setInterval(() => {
+      loadPerformanceData();
+    }, 30000);
+
+    const handleFocusOrStorage = () => {
+      loadPerformanceData();
+    };
+
+    window.addEventListener('focus', handleFocusOrStorage);
+    window.addEventListener('storage', handleFocusOrStorage);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocusOrStorage);
+      window.removeEventListener('storage', handleFocusOrStorage);
+    };
   }, []);
 
   const fetchBenchmarkComparison = async (signal?: AbortSignal) => {
