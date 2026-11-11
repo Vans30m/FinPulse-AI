@@ -1,6 +1,6 @@
-# FinPulse AI
-
 <div align="center">
+
+# FinPulse AI
 
 ### AI-Powered Financial Intelligence Platform
 
@@ -17,7 +17,7 @@
 
 **FinPulse AI** is a full-stack, real-time financial intelligence platform that combines live market data aggregation, AI-powered market analysis via Google Gemini and Groq, and portfolio management — accessible as a web application and as a cross-platform Electron desktop app.
 
-[Live Demo](https://finpulse-frontend-jrsd.onrender.com) · [Video Walkthrough](docs/finpulse-demo.mp4) · [Report a Bug](https://github.com/Vans30m/FinPulse AI/issues)
+[Live Demo](https://finpulse-ai-bxas.onrender.com) · [Video Walkthrough](docs/finpulse-demo.mp4) · [Report a Bug](https://github.com/Vans30m/FinPulse-AI/issues)
 
 </div>
 
