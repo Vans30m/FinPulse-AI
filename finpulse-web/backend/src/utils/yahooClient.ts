@@ -7,7 +7,7 @@ export const yahooFinance = new YahooFinance(
     ? {
         fetch: (url: any, options?: any) => {
           const target = String(url);
-          if (target.includes('finance.yahoo.com')) {
+          if (target.includes('yahoo.com')) {
             const proxied = `${PROXY_URL}/?url=${encodeURIComponent(target)}`;
             return fetch(proxied, options);
           }
