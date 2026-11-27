@@ -3,9 +3,9 @@ import { prisma } from '../prisma.js';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 import axios from 'axios';
 import { getAiCache, setAiCache } from '../utils/aiCache.js';
-import YahooFinance from 'yahoo-finance2';
+import { yahooFinance } from '../utils/yahooClient.js';
 
-const yahooFinance = new YahooFinance();
+
 
 const router = Router();
 

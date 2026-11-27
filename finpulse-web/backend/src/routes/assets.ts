@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
-import YahooFinance from 'yahoo-finance2';
+import { yahooFinance } from '../utils/yahooClient.js';
 import Parser from 'rss-parser';
 import { buildFallbackChartData } from '../utils/chartFallback.js';
 
 const router = Router();
-const yahooFinance = new YahooFinance();
+
 const parser = new Parser();
 
 // In-memory cache Map

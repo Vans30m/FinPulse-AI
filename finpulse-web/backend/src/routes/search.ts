@@ -11,11 +11,11 @@
 //   app.use('/api', searchRoutes);
 
 import { Router, Request, Response } from 'express';
-import YahooFinance from 'yahoo-finance2';
+import { yahooFinance } from '../utils/yahooClient.js';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
-const yahooFinance = new YahooFinance();
+
 
 interface StockResult {
   symbol: string;

@@ -2,10 +2,10 @@ import { Router, Response } from 'express';
 import { prisma } from '../prisma.js';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 import axios from 'axios';
-import YahooFinance from 'yahoo-finance2';
+import { yahooFinance } from '../utils/yahooClient.js';
 
 const router = Router();
-const yahooFinance = new YahooFinance();
+
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',

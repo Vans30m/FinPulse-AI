@@ -1073,7 +1073,7 @@ router.get('/profile-stats/:userId', async (req: any, res: any) => {
     const fxSymbols = ['USDINR=X', 'USDEUR=X', 'USDGBP=X'];
     
     try {
-      const yahooFinance = new (await import('yahoo-finance2')).default();
+      const { yahooFinance } = await import('../utils/yahooClient.js');
       const results = await yahooFinance.quote([...symbols, ...fxSymbols]);
       const quotesArray = Array.isArray(results) ? results : [results];
       for (const q of quotesArray) {

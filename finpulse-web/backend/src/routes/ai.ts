@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
-import YahooFinance from 'yahoo-finance2';
+import { yahooFinance } from '../utils/yahooClient.js';
 import { getAiCache, setAiCache } from '../utils/aiCache.js';
 import { prisma } from '../prisma.js';
 import { protect, type AuthenticatedRequest } from '../utils/auth.js';
 
 const router = Router();
-const yahooFinance = new YahooFinance();
+
 
 async function fetchAdvisorQuotes(symbols: string[]) {
   if (symbols.length === 0) return {} as Record<string, number>;
